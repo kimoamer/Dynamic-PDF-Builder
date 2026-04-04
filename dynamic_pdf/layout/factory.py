@@ -1,0 +1,1895 @@
+"""
+Block → Flowable factory.
+Applies professional report typography standards:
+  • Paragraph first-line indent (APA 0.5in)
+  • Per-heading-level spacing
+  • Drop Cap on first paragraph after heading
+  • Inline Markdown → ReportLab XML
+  • Error-safe: every branch wrapped in try/except
+"""
+import re
+import unicodedata
+import html as html_mod
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.platypus import (
+    Paragraph, ListFlowable, ListItem, Spacer, PageBreak,
+    Table, TableStyle, Image, KeepTogether,
+)
+from reportlab.lib.colors import HexColor
+from reportlab.lib.units import inch
+from reportlab.platypus.flowables import Flowable
+
+from ..schema.theme import Theme
+from ..fonts import get_font_name
+
+
+# ═══════════════════════ RTL Detection ═══════════════════════
+
+def _is_rtl(text: str) -> bool:
+    """Detect if text is predominantly Arabic/Hebrew (RTL)."""
+    rtl_count = 0
+    total_alpha = 0
+    for ch in text:
+        if ch.isalpha():
+            total_alpha += 1
+            if unicodedata.bidirectional(ch) in ('R', 'AL'):
+                rtl_count += 1
+    return total_alpha > 0 and (rtl_count / total_alpha) > 0.3
+
+
+def _apply_rtl(text: str) -> str:
+    """Apply Arabic reshaping + bidi if available."""
+    try:
+        import arabic_reshaper
+        from bidi.algorithm import get_display
+        return get_display(arabic_reshaper.reshape(text))
+    except ImportError:
+        return text
+
+
+# ═══════════════════════ Inline Markdown ═══════════════════════
+
+def _md_inline(text: str) -> str:
+    """Convert Markdown inline syntax to ReportLab Paragraph XML.
+    Handles: **bold**, *italic*, `code`, ~~strike~~, [link](url),
+    ==highlight==, <sup>, <sub>, smart quotes, em-dash, footnote refs.
+    Automatically applies RTL reshaping for Arabic text.
+    """
+    if not text:
+        return ""
+    # Apply RTL reshaping if Arabic characters detected
+    if _is_rtl(text):
+        text = _apply_rtl(text)
+    text = text.replace("&", "&amp;")
+    # Smart typography
+    text = text.replace('---', '\u2014')    # em-dash
+    text = text.replace('--', '\u2013')     # en-dash
+    text = text.replace('...', '\u2026')    # ellipsis
+    # Bold: **text**
+    text = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', text)
+    # Italic: *text*
+    text = re.sub(r'(?<!\*)\*([^*]+?)\*(?!\*)', r'<i>\1</i>', text)
+    # Inline code: `text`
+    text = re.sub(r'`([^`]+?)`', r'<font face="Courier" size="9" backColor="#E8E8E8">\1</font>', text)
+    # Strikethrough: ~~text~~
+    text = re.sub(r'~~(.+?)~~', r'<strike>\1</strike>', text)
+    # Links: [text](url)
+    text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2" color="#1a73e8">\1</a>', text)
+    # Highlight: ==text==
+    text = re.sub(r'==(.+?)==', r'<font backColor="#FEF3CD">\1</font>', text)
+    # Superscript: <sup>text</sup> or ^text^
+    text = re.sub(r'<sup>(.+?)</sup>', r'<super>\1</super>', text)
+    text = re.sub(r'\^([^\^]+?)\^', r'<super>\1</super>', text)
+    # Subscript: <sub>text</sub>
+    text = re.sub(r'<sub>(.+?)</sub>', r'<sub>\1</sub>', text)
+    # Footnote ref: [^N]
+    text = re.sub(r'\[\^(\w+)\]', r'<super>\1</super>', text)
+    return text
+
+
+def _safe_color(h: str, fallback: str = "#000000") -> HexColor:
+    try:
+        return HexColor(h)
+    except Exception:
+        return HexColor(fallback)
+
+
+# ═══════════════════════ Drop Cap ═══════════════════════
+
+def _strip_markdown(text: str) -> str:
+    """Strip markdown/XML markup for plain-text measurement."""
+    t = re.sub(r'\*\*(.+?)\*\*', r'\1', text)
+    t = re.sub(r'(?<!\*)\*([^*]+?)\*(?!\*)', r'\1', t)
+    t = re.sub(r'~~(.+?)~~', r'\1', t)
+    t = re.sub(r'`([^`]+?)`', r'\1', t)
+    t = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', t)
+    t = re.sub(r'==(.+?)==', r'\1', t)
+    t = re.sub(r'<[^>]+>', '', t)
+    t = t.replace('&amp;', '&')
+    return t.strip()
+
+
+class DropCapParagraph(Flowable):
+    """Proper drop cap: large first letter with text wrapping around it.
+
+    The first letter is drawn on the canvas at the top-left. The first
+    N lines of body text are rendered at a narrower width (beside the letter).
+    Remaining lines render at full paragraph width below the letter.
+    """
+
+    def __init__(self, first_char, rest_text, cap_font, cap_size, cap_color,
+                 body_font, body_size, body_leading, body_color,
+                 cap_lines=3, space_after=6.0):
+        super().__init__()
+        self.first_char = first_char
+        self.rest_text = rest_text        # plain text (no XML)
+        self.cap_font = cap_font
+        self.cap_size = cap_size
+        self.cap_color = cap_color
+        self.body_font = body_font
+        self.body_size = body_size
+        self.body_leading = body_leading
+        self.body_color = body_color
+        self.cap_lines = cap_lines
+        self.space_after = space_after
+        self._lines_narrow = []
+        self._lines_full = []
+        self._cap_w = 0
+
+    @staticmethod
+    def _word_wrap(text, max_width, font, size):
+        """Break *text* into lines that fit inside *max_width* points."""
+        from reportlab.pdfbase.pdfmetrics import stringWidth
+        words = text.split()
+        lines, current = [], ""
+        for word in words:
+            test = f"{current} {word}".strip()
+            if stringWidth(test, font, size) <= max_width:
+                current = test
+            else:
+                if current:
+                    lines.append(current)
+                current = word
+        if current:
+            lines.append(current)
+        return lines
+
+    # ── Flowable protocol ─────────────────────────────────────────────
+
+    def wrap(self, availWidth, availHeight):
+        from reportlab.pdfbase.pdfmetrics import stringWidth
+        self._avail_w = availWidth
+
+        # Measure the drop-cap letter
+        self._cap_w = stringWidth(self.first_char, self.cap_font,
+                                  self.cap_size) + 6  # 6pt right gap
+
+        # --- word-wrap ---
+        narrow_w = availWidth - self._cap_w
+        all_narrow = self._word_wrap(self.rest_text, narrow_w,
+                                     self.body_font, self.body_size)
+        self._lines_narrow = all_narrow[:self.cap_lines]
+
+        # Remaining text re-wrapped at full width
+        leftover = " ".join(all_narrow[self.cap_lines:])
+        self._lines_full = (
+            self._word_wrap(leftover, availWidth,
+                            self.body_font, self.body_size)
+            if leftover.strip() else []
+        )
+
+        # The drop cap always occupies at least cap_lines rows vertically.
+        # If the paragraph is short and produces fewer narrow lines, we still
+        # must reserve cap_lines rows so that full-width lines don't start
+        # inside the cap's visual zone.
+        effective_narrow_rows = max(len(self._lines_narrow), self.cap_lines)
+        total_lines = effective_narrow_rows + len(self._lines_full)
+        cap_visual_h = self.cap_size * 0.82  # approximate visual height
+        text_h = total_lines * self.body_leading
+        self.height = max(text_h, cap_visual_h) + self.space_after + 2
+        self.width = availWidth
+        return (self.width, self.height)
+
+    def draw(self):
+        c = self.canv
+        c.saveState()
+
+        # Y of the first text baseline (relative to bottom of flowable)
+        y_first = self.height - self.body_leading - self.space_after * 0.3
+
+        # ── Draw the drop-cap letter ──
+        # We want the TOP of the letter (ascender) aligned with the
+        # top of the first text line (ascender).  drawString places at
+        # baseline, so:  cap_baseline = first_ascender - cap_ascent.
+        body_ascent = self.body_size * 0.75
+        cap_ascent  = self.cap_size * 0.75
+        cap_baseline = (y_first + body_ascent) - cap_ascent
+
+        c.setFillColor(_safe_color(self.cap_color))
+        c.setFont(self.cap_font, self.cap_size)
+        c.drawString(0, cap_baseline, self.first_char)
+
+        # ── Draw narrow lines (beside the letter) ──
+        c.setFillColor(_safe_color(self.body_color))
+        c.setFont(self.body_font, self.body_size)
+        y = y_first
+        for line in self._lines_narrow:
+            c.drawString(self._cap_w, y, line)
+            y -= self.body_leading
+
+        # ── Draw full-width lines (below the letter) ──
+        # Ensure full lines never start above the bottom of the cap zone,
+        # even when fewer narrow lines were produced than cap_lines.
+        if self._lines_full:
+            y_cap_cleared = y_first - self.cap_lines * self.body_leading
+            if y > y_cap_cleared:
+                y = y_cap_cleared
+        for line in self._lines_full:
+            c.drawString(0, y, line)
+            y -= self.body_leading
+
+        c.restoreState()
+        self.spaceAfter = self.space_after
+
+
+# ═══════════════════════ Custom Flowables ═══════════════════════
+
+class AccentHeading(Flowable):
+    """Heading with a left accent bar. Supports RTL (Arabic) text."""
+    def __init__(self, text, font_name, font_size, text_color, accent_color,
+                 accent_width=4, accent_gap=8, space_before=24, space_after=10,
+                 rtl=False):
+        super().__init__()
+        self.text_str = text
+        self.font_name = font_name
+        self.font_size = font_size
+        self.text_color = text_color
+        self.accent_color = accent_color
+        self.accent_width = accent_width
+        self.accent_gap = accent_gap
+        self.space_before = space_before
+        self.space_after = space_after
+        self.rtl = rtl
+
+    def wrap(self, availWidth, availHeight):
+        self.width = availWidth
+        self.height = self.font_size * 1.4 + self.space_before + self.space_after
+        return (self.width, self.height)
+
+    def draw(self):
+        c = self.canv
+        c.saveState()
+        y = self.space_after
+        bar_h = self.font_size * 1.4
+        c.setFillColor(self.accent_color)
+        if self.rtl:
+            # Accent bar on the RIGHT for RTL
+            c.rect(self.width - self.accent_width, y, self.accent_width, bar_h, fill=1, stroke=0)
+        else:
+            c.rect(0, y, self.accent_width, bar_h, fill=1, stroke=0)
+        c.setFillColor(self.text_color)
+        c.setFont(self.font_name, self.font_size)
+        text_y = y + bar_h * 0.25
+        if self.rtl:
+            c.drawRightString(self.width - self.accent_width - self.accent_gap, text_y, self.text_str)
+        else:
+            c.drawString(self.accent_width + self.accent_gap, text_y, self.text_str)
+        c.restoreState()
+
+
+class HorizontalProgressBar(Flowable):
+    """Horizontal bar chart row."""
+    def __init__(self, label, value, max_value=100, bar_color="#38A169",
+                 benchmark=None, delta=None, text_color="#1A1A2E",
+                 bg_color="#E2E8F0", font_name="Helvetica", font_size=9,
+                 label_width=160, value_width=40, delta_width=40):
+        super().__init__()
+        self.label = label
+        self.value = value
+        self.max_value = max_value
+        self.bar_color = bar_color
+        self.benchmark = benchmark
+        self.delta = delta
+        self.text_color = text_color
+        self.bg_color = bg_color
+        self.font_name = font_name
+        self.font_size = font_size
+        self.label_width = label_width
+        self.value_width = value_width
+        self.delta_width = delta_width
+        self.row_height = 28
+
+    def wrap(self, availWidth, availHeight):
+        self.width = availWidth
+        self.height = self.row_height
+        return (self.width, self.height)
+
+    def draw(self):
+        c = self.canv
+        c.saveState()
+        y_mid = self.height / 2
+        bar_h = 14
+        bar_y = y_mid - bar_h / 2
+        c.setFillColor(_safe_color(self.text_color))
+        c.setFont(self.font_name, self.font_size)
+        c.drawString(0, y_mid - 4, self.label)
+        bar_x = self.label_width
+        bar_w = self.width - self.label_width - self.value_width - self.delta_width - 10
+        c.setFillColor(_safe_color(self.bg_color))
+        c.roundRect(bar_x, bar_y, bar_w, bar_h, 3, fill=1, stroke=0)
+        fill_w = max(0, min(bar_w, bar_w * (self.value / self.max_value)))
+        c.setFillColor(_safe_color(self.bar_color))
+        c.roundRect(bar_x, bar_y, fill_w, bar_h, 3, fill=1, stroke=0)
+        if self.benchmark is not None:
+            bx = bar_x + bar_w * (self.benchmark / self.max_value)
+            c.setStrokeColor(_safe_color("#9CA3AF"))
+            c.setLineWidth(2)
+            c.line(bx, bar_y - 2, bx, bar_y + bar_h + 2)
+        vx = bar_x + bar_w + 8
+        c.setFillColor(_safe_color(self.text_color))
+        c.setFont(self.font_name, self.font_size + 1)
+        c.drawRightString(vx + self.value_width - 5, y_mid - 4, str(int(self.value)))
+        if self.delta:
+            dx = vx + self.value_width
+            is_pos = self.delta.startswith("+")
+            c.setFillColor(_safe_color("#38A169" if is_pos else "#E53E3E"))
+            c.setFont(self.font_name, self.font_size - 1)
+            c.drawString(dx, y_mid - 4, self.delta)
+        c.restoreState()
+
+
+class ScoreDisplay(Flowable):
+    """Large score: big number /max + label + sublabel."""
+    def __init__(self, score, max_score, label, sublabel, score_color, label_color,
+                 font_name="Helvetica", big_size=36, label_size=12, sublabel_size=9):
+        super().__init__()
+        self.score = score
+        self.max_score = max_score
+        self.label_str = label
+        self.sublabel_str = sublabel
+        self.score_color = score_color
+        self.label_color = label_color
+        self.font_name = font_name
+        self.big_size = big_size
+        self.label_size = label_size
+        self.sublabel_size = sublabel_size
+
+    def wrap(self, availWidth, availHeight):
+        self.width = availWidth
+        self.height = self.big_size + 30
+        return (self.width, self.height)
+
+    def draw(self):
+        c = self.canv
+        c.saveState()
+        c.setFillColor(_safe_color(self.score_color))
+        c.setFont(self.font_name, self.big_size)
+        ss = str(int(self.score))
+        c.drawString(10, 20, ss)
+        sw = c.stringWidth(ss, self.font_name, self.big_size)
+        c.setFillColor(_safe_color("#718096"))
+        c.setFont(self.font_name, self.big_size * 0.4)
+        c.drawString(10 + sw + 2, 20 + self.big_size * 0.1, f"/{int(self.max_score)}")
+        mw = c.stringWidth(f"/{int(self.max_score)}", self.font_name, self.big_size * 0.4)
+        lx = 10 + sw + mw + 20
+        c.setFillColor(_safe_color(self.label_color or "#1A1A2E"))
+        c.setFont(self.font_name, self.label_size)
+        c.drawString(lx, 20 + self.big_size * 0.4, self.label_str)
+        if self.sublabel_str:
+            c.setFillColor(_safe_color(self.score_color))
+            c.setFont(self.font_name, self.label_size + 2)
+            c.drawString(lx, 20 + self.big_size * 0.05, self.sublabel_str)
+        c.restoreState()
+
+
+class DividerFlowable(Flowable):
+    def __init__(self, color="#CBD5E0", thickness=1.0, style="solid"):
+        super().__init__()
+        self.color_str = color
+        self.thickness = thickness
+        self.style = style
+
+    def wrap(self, availWidth, availHeight):
+        self.width = availWidth
+        self.height = self.thickness + 16
+        return (self.width, self.height)
+
+    def draw(self):
+        c = self.canv
+        c.saveState()
+        c.setStrokeColor(_safe_color(self.color_str))
+        c.setLineWidth(self.thickness)
+        if self.style == "dashed":
+            c.setDash([6, 4])
+        elif self.style == "dotted":
+            c.setDash([1.5, 3])
+        c.line(0, 8, self.width, 8)
+        c.restoreState()
+
+
+class WatermarkFlowable(Flowable):
+    """Diagonal text watermark drawn across the available content area."""
+    def __init__(self, text, color="#cccccc", opacity=0.1):
+        super().__init__()
+        self.text = text
+        self.color_str = color
+        self.opacity = opacity
+
+    def wrap(self, availWidth, availHeight):
+        self.width = availWidth
+        self.height = availWidth * 0.55
+        return (self.width, self.height)
+
+    def draw(self):
+        c = self.canv
+        c.saveState()
+        hc = _safe_color(self.color_str)
+        from reportlab.lib.colors import Color
+        c.setFillColor(Color(hc.red, hc.green, hc.blue, alpha=self.opacity))
+        font_size = min(self.width * 0.15, 72)
+        c.setFont("Helvetica-Bold", font_size)
+        c.translate(self.width / 2, self.height / 2)
+        c.rotate(45)
+        c.drawCentredString(0, 0, self.text)
+        c.restoreState()
+
+
+class ShapeFlowable(Flowable):
+    """Draws a vector shape (rect, circle, ellipse, line, arrow, polygon, arc, wedge)."""
+    def __init__(self, block, theme):
+        super().__init__()
+        self.block = block
+        self.theme = theme
+
+    def wrap(self, availWidth, availHeight):
+        self.width = availWidth
+        self.height = self.block.height + 16
+        return (self.width, self.height)
+
+    def draw(self):
+        c = self.canv
+        b = self.block
+        fill_c = _safe_color(b.fill_color or "none") if b.fill_color else None
+        stroke_c = _safe_color(b.stroke_color or self.theme.colors.primary)
+
+        if b.alignment == "center":
+            x = (self.width - b.width) / 2
+        elif b.alignment == "right":
+            x = self.width - b.width
+        else:
+            x = 0
+        y = 8
+
+        c.saveState()
+        c.setStrokeColor(stroke_c)
+        c.setLineWidth(b.stroke_width)
+        if b.stroke_dash:
+            c.setDash(b.stroke_dash)
+        if fill_c:
+            c.setFillColor(fill_c)
+
+        do_fill = 1 if fill_c else 0
+        st = b.shape_type.lower().replace("-", "_")
+
+        if st == "rect":
+            c.rect(x, y, b.width, b.height, fill=do_fill, stroke=1)
+        elif st == "rounded_rect":
+            c.roundRect(x, y, b.width, b.height, b.corner_radius, fill=do_fill, stroke=1)
+        elif st == "circle":
+            r = min(b.width, b.height) / 2
+            c.circle(x + b.width / 2, y + b.height / 2, r, fill=do_fill, stroke=1)
+        elif st == "ellipse":
+            c.ellipse(x, y, x + b.width, y + b.height, fill=do_fill, stroke=1)
+        elif st == "line":
+            c.line(x, y + b.height / 2, x + b.width, y + b.height / 2)
+        elif st == "arrow":
+            tip_x = x + b.width
+            mid_y = y + b.height / 2
+            arr = b.height * 0.25
+            c.line(x, mid_y, tip_x - arr * 1.5, mid_y)
+            c.setFillColor(stroke_c)
+            p = c.beginPath()
+            p.moveTo(tip_x - arr * 1.5, mid_y + arr)
+            p.lineTo(tip_x - arr * 1.5, mid_y - arr)
+            p.lineTo(tip_x, mid_y)
+            p.close()
+            c.drawPath(p, fill=1, stroke=0)
+        elif st == "polygon" and b.points:
+            pts = [(x + pt[0], y + pt[1]) for pt in b.points]
+            p = c.beginPath()
+            p.moveTo(*pts[0])
+            for pt in pts[1:]:
+                p.lineTo(*pt)
+            p.close()
+            c.drawPath(p, fill=do_fill, stroke=1)
+        elif st == "arc":
+            c.arc(x, y, x + b.width, y + b.height, b.start_angle,
+                  b.end_angle - b.start_angle)
+        elif st == "wedge":
+            c.wedge(x, y, x + b.width, y + b.height, b.start_angle,
+                    b.end_angle - b.start_angle, fill=do_fill, stroke=1)
+
+        if b.label:
+            lc = _safe_color(b.label_color or "#ffffff")
+            c.setFillColor(lc)
+            c.setFont("Helvetica-Bold", 10)
+            c.drawCentredString(x + b.width / 2, y + b.height / 2 - 5, b.label)
+
+        c.restoreState()
+
+
+class LegendFlowable(Flowable):
+    def __init__(self, items, title=None, layout="horizontal", font_name="Helvetica", font_size=8):
+        super().__init__()
+        self.items = items
+        self.title_str = title
+        self.layout = layout
+        self.font_name = font_name
+        self.font_size = font_size
+
+    def wrap(self, availWidth, availHeight):
+        self.width = availWidth
+        title_h = (self.font_size + 14) if self.title_str else 0
+        if self.layout == "horizontal":
+            self.height = title_h + self.font_size + 24
+        else:
+            self.height = title_h + (self.font_size + 10) * len(self.items) + 10
+        return (self.width, self.height)
+
+    def draw(self):
+        c = self.canv
+        c.saveState()
+        y = self.height - 10
+        if self.title_str:
+            c.setFillColor(_safe_color("#1A1A2E"))
+            c.setFont(self.font_name, self.font_size + 3)
+            c.drawString(10, y, self.title_str)
+            y -= self.font_size + 14
+        if self.layout == "horizontal":
+            x = 10
+            for item in self.items:
+                c.setFillColor(_safe_color(item.get("color", "#888")))
+                c.circle(x + 5, y + 2, 5, fill=1, stroke=0)
+                c.setFillColor(_safe_color("#1A1A2E"))
+                c.setFont(self.font_name, self.font_size)
+                c.drawString(x + 14, y - 2, item.get("label", ""))
+                desc = item.get("description", "")
+                if desc:
+                    c.setFillColor(_safe_color("#718096"))
+                    c.setFont(self.font_name, self.font_size - 1)
+                    c.drawString(x + 14, y - 2 - self.font_size, desc)
+                x += 100
+        else:
+            for item in self.items:
+                c.setFillColor(_safe_color(item.get("color", "#888")))
+                c.circle(15, y + 2, 5, fill=1, stroke=0)
+                c.setFillColor(_safe_color("#1A1A2E"))
+                c.setFont(self.font_name, self.font_size)
+                c.drawString(24, y - 2, item.get("label", ""))
+                y -= self.font_size + 10
+        c.restoreState()
+
+
+# ═══════════════════════ Render Context (thread-safe) ═══════════════════════
+
+class RenderContext:
+    """Thread-safe rendering context passed from LayoutEngine to the factory.
+
+    Replaces the old module-level _ParagraphContext singleton so that
+    concurrent renders (e.g., in a web server) cannot leak state.
+    """
+
+    def __init__(self, available_width: float = 460.0,
+                 section_numbering: bool = False):
+        self.available_width = available_width
+        self.apply_drop_cap_next = False
+        self.section_numbering = section_numbering
+        self.heading_counters = [0, 0, 0, 0, 0, 0]  # H1–H6
+        self.toc_entries: list = []  # (level, text) for TOC
+
+    def next_heading_number(self, level: int) -> str:
+        """Increment heading counter and return formatted number string."""
+        idx = level - 1
+        self.heading_counters[idx] += 1
+        # Reset deeper levels
+        for i in range(idx + 1, 6):
+            self.heading_counters[i] = 0
+        parts = []
+        for i in range(idx + 1):
+            if self.heading_counters[i] > 0:
+                parts.append(str(self.heading_counters[i]))
+        return ".".join(parts)
+
+
+# ═══════════════════════ Main Factory ═══════════════════════
+
+def create_flowables(block, theme: Theme, ctx: RenderContext = None) -> list:
+    if ctx is None:
+        ctx = RenderContext()  # backward-compat fallback
+    try:
+        return _create_inner(block, theme, ctx)
+    except Exception as e:
+        err = ParagraphStyle('Err', fontSize=8, textColor=HexColor(theme.colors.error))
+        return [Paragraph(f"[Block Error ({block.type}): {type(e).__name__}: {e}]", err)]
+
+
+def _body_style(theme: Theme, indent: bool = True) -> ParagraphStyle:
+    sp = theme.spacing
+    return ParagraphStyle(
+        'Body',
+        fontName=get_font_name(theme.typography.body_family),
+        fontSize=theme.typography.base_size,
+        leading=theme.typography.base_size * theme.typography.line_height,
+        textColor=_safe_color(theme.colors.text_primary),
+        spaceBefore=sp.paragraph_spacing_before,
+        spaceAfter=sp.paragraph_spacing_after,
+        firstLineIndent=sp.first_line_indent if indent else 0,
+    )
+
+
+def _arabic_font(theme: Theme, bold: bool = False) -> str:
+    """Return the Arabic-capable font name, falling back to body/heading font."""
+    if theme.typography.arabic_family:
+        name = get_font_name(theme.typography.arabic_family, bold=bold)
+        if name not in ("Helvetica", "Helvetica-Bold", "Helvetica-Oblique"):
+            return name
+    return get_font_name(theme.typography.body_family, bold=bold)
+
+
+def _rtl_para(text: str, base_style: ParagraphStyle, theme: Theme,
+              bold: bool = False) -> 'Paragraph':
+    """Return a right-aligned Paragraph with Arabic font when text is RTL."""
+    if _is_rtl(text):
+        sty = ParagraphStyle(
+            f'RTL_{id(base_style)}',
+            parent=base_style,
+            fontName=_arabic_font(theme, bold=bold),
+            alignment=2,       # RIGHT
+            firstLineIndent=0,
+        )
+        return Paragraph(_md_inline(text), sty)
+    return Paragraph(_md_inline(text), base_style)
+
+
+def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
+    if ctx is None:
+        ctx = RenderContext()
+    bs = _body_style(theme)
+    bs_no_indent = _body_style(theme, indent=False)
+    sp = theme.spacing
+    btype = block.type
+
+    # ─── Reset drop cap flag for any non-paragraph block ───
+    if btype not in ("heading", "paragraph") and ctx.apply_drop_cap_next:
+        ctx.apply_drop_cap_next = False
+
+    # ─── Heading ───
+    if btype == "heading":
+        ctx.apply_drop_cap_next = True   # next paragraph gets drop cap
+        idx = max(0, min(5, block.level - 1))
+        scale = theme.typography.heading_scale[idx]
+        fs = theme.typography.base_size * scale
+        h_before = sp.heading_spacing_before[idx]
+        h_after = sp.heading_spacing_after[idx]
+        text_color = _safe_color(block.color or theme.colors.text_primary)
+        accent_color = _safe_color(theme.decorations.heading_accent_bar_color or theme.colors.accent)
+        is_rtl_heading = _is_rtl(block.text)
+        head_font = (_arabic_font(theme, bold=True) if is_rtl_heading
+                     else get_font_name(theme.typography.heading_family, bold=True))
+
+        # Section numbering
+        display_text = block.text
+        if ctx.section_numbering or block.numbered:
+            number = ctx.next_heading_number(block.level)
+            display_text = f"{number}  {block.text}"
+
+        # Collect for TOC
+        ctx.toc_entries.append((block.level, block.text))
+
+        if theme.decorations.heading_accent_bar and block.level <= 3:
+            anchor_text = (_apply_rtl(display_text) if is_rtl_heading else display_text)
+            return [AccentHeading(
+                text=anchor_text,
+                font_name=head_font,
+                font_size=fs, text_color=text_color, accent_color=accent_color,
+                accent_width=theme.decorations.heading_accent_bar_width,
+                accent_gap=theme.decorations.heading_accent_bar_gap,
+                space_before=h_before, space_after=h_after,
+                rtl=is_rtl_heading,
+            )]
+        else:
+            sty = ParagraphStyle(
+                f'H{block.level}',
+                fontName=head_font,
+                fontSize=fs, leading=fs * 1.3,
+                textColor=text_color,
+                spaceBefore=h_before, spaceAfter=h_after,
+                alignment=2 if is_rtl_heading else 0,
+            )
+            return [Paragraph(_md_inline(display_text), sty)]
+
+    # ─── Paragraph ───
+    if btype == "paragraph":
+        raw = block.text
+        is_rtl = _is_rtl(raw)
+        text = _md_inline(raw)
+        body_font = get_font_name(theme.typography.body_family)
+        if is_rtl and theme.typography.arabic_family:
+            body_font = get_font_name(theme.typography.arabic_family)
+
+        # ── Drop Cap (proper typographic wrap-around) ──
+        if ctx.apply_drop_cap_next and theme.decorations.drop_cap_enabled and not is_rtl:
+            ctx.apply_drop_cap_next = False
+            plain = _strip_markdown(raw)
+            if len(plain) > 1:
+                dec = theme.decorations
+                first_char = plain[0]
+                rest_text  = plain[1:]
+                cap_font  = get_font_name(theme.typography.heading_family, bold=True)
+                cap_size  = theme.typography.base_size * dec.drop_cap_font_size_ratio
+                cap_color = dec.drop_cap_color or theme.colors.drop_cap
+                return [DropCapParagraph(
+                    first_char=first_char,
+                    rest_text=rest_text,
+                    cap_font=cap_font,
+                    cap_size=cap_size,
+                    cap_color=cap_color,
+                    body_font=body_font,
+                    body_size=theme.typography.base_size,
+                    body_leading=theme.typography.base_size * theme.typography.line_height,
+                    body_color=theme.colors.text_primary,
+                    cap_lines=dec.drop_cap_lines,
+                    space_after=sp.paragraph_spacing_after,
+                )]
+
+        # ── RTL alignment ──
+        if is_rtl:
+            rtl_style = ParagraphStyle('RTL', parent=bs, alignment=2, fontName=body_font)
+            return [Paragraph(text, rtl_style)]
+        return [Paragraph(text, bs)]
+
+    # ─── Rich Text ───
+    if btype == "rich_text":
+        sty = ParagraphStyle(
+            'Rich', parent=bs_no_indent,
+            fontSize=block.font_size or theme.typography.base_size,
+            textColor=_safe_color(block.color or theme.colors.text_primary),
+            alignment={'left': 0, 'center': 1, 'right': 2, 'justify': 4}.get(block.alignment, 0),
+        )
+        text = _md_inline(block.text)
+        if block.bold:
+            text = f"<b>{text}</b>"
+        if block.italic:
+            text = f"<i>{text}</i>"
+        return [Paragraph(text, sty)]
+
+    # ─── Note ───
+    if btype == "note":
+        sty = ParagraphStyle(
+            'Note', parent=bs_no_indent,
+            fontSize=theme.typography.base_size * theme.typography.note_size_ratio,
+            textColor=_safe_color(theme.colors.text_muted),
+        )
+        return [Paragraph(_md_inline(block.text), sty)]
+
+    # ─── Bullet List ───
+    if btype == "bullet_list":
+        list_rtl = any(
+            _is_rtl(i if isinstance(i, str) else i.text)
+            for i in block.items
+        )
+        # Normalize items to ListItemModel
+        from ..schema.blocks import ListItemModel as LIM
+        items = [LIM(text=i) if isinstance(i, str) else i for i in block.items]
+        if list_rtl:
+            return _render_rtl_list(
+                [i.text for i in items], 'bullet', theme, bs_no_indent, sp)
+        return [_build_list_flowable(items, 'bullet', theme, bs_no_indent, sp)]
+
+    # ─── Numbered List ───
+    if btype == "numbered_list":
+        list_rtl = any(
+            _is_rtl(i if isinstance(i, str) else i.text)
+            for i in block.items
+        )
+        from ..schema.blocks import ListItemModel as LIM
+        items = [LIM(text=i) if isinstance(i, str) else i for i in block.items]
+        if list_rtl:
+            return _render_rtl_list(
+                [i.text for i in items], 'numbered', theme, bs_no_indent, sp,
+                start=block.start)
+        return [_build_list_flowable(items, '1', theme, bs_no_indent, sp,
+                                     start=block.start)]
+
+    # ─── Table ───
+    if btype == "table":
+        return _render_table(block, theme, bs_no_indent)
+
+    # ─── Code ───
+    if btype == "code":
+        return _render_code(block, theme)
+
+    # ─── Image ───
+    if btype == "image":
+        return _render_image(block, theme, ctx.available_width)
+
+    # ─── Chart ───
+    if btype == "chart":
+        return _render_chart(block, theme)
+
+    # ─── Diagram ───
+    if btype == "diagram":
+        return _render_diagram(block, theme)
+
+    # ─── Math ───
+    if btype == "math":
+        return _render_math(block, theme)
+
+    # ─── Callout ───
+    if btype == "callout":
+        return _render_callout(block, theme, bs_no_indent)
+
+    # ─── Quote ───
+    if btype == "quote":
+        return _render_quote(block, theme)
+
+    # ─── Metrics ───
+    if btype == "metric_row":
+        return _render_metrics(block, theme, ctx.available_width)
+
+    # ─── Progress Bar ───
+    if btype == "progress_bar":
+        return _render_progress(block, theme)
+
+    # ─── Score Display ───
+    if btype == "score_display":
+        return _render_score(block, theme)
+
+    # ─── Legend ───
+    if btype == "legend":
+        items = [{"label": i.label, "color": i.color, "description": i.description or ""} for i in block.items]
+        return [LegendFlowable(items, title=block.title, layout=block.layout,
+                               font_name=get_font_name(theme.typography.body_family),
+                               font_size=theme.typography.base_size * 0.8)]
+
+    # ─── Badge ───
+    if btype == "badge":
+        bg = block.bg_color or theme.colors.accent
+        fg = block.color or theme.colors.text_on_primary
+        sty = ParagraphStyle('Badge', fontName=get_font_name(theme.typography.body_family, bold=True),
+                             fontSize=block.font_size, textColor=_safe_color(fg),
+                             backColor=_safe_color(bg), borderPadding=4, spaceAfter=6)
+        return [Paragraph(block.text, sty)]
+
+    # ─── Divider ───
+    if btype == "divider":
+        return [DividerFlowable(color=block.color or theme.colors.border,
+                                thickness=block.thickness, style=block.style)]
+
+    # ─── Spacer ───
+    if btype == "spacer":
+        return [Spacer(1, block.height)]
+
+    # ─── Page Break ───
+    if btype == "page_break":
+        return [PageBreak()]
+
+    # ─── Cover Page ───
+    if btype == "cover_page":
+        return _render_cover(block, theme)
+
+    # ─── Mermaid ───
+    if btype == "mermaid":
+        from ..renderers.mermaid import render_mermaid
+        return render_mermaid(block, theme)
+
+    # ─── Two Column ───
+    if btype == "two_column":
+        return _render_columns(block, theme, 2, ctx)
+
+    # ─── Three Column ───
+    if btype == "three_column":
+        return _render_columns(block, theme, 3, ctx)
+
+    # ─── Checklist ───
+    if btype == "checklist":
+        return _render_checklist(block, theme, bs_no_indent)
+
+    # ─── Definition List ───
+    if btype == "definition_list":
+        return _render_definition_list(block, theme, bs_no_indent)
+
+    # ─── Footnote ───
+    if btype == "footnote":
+        return _render_footnote(block, theme, bs_no_indent)
+
+    # ─── Abstract ───
+    if btype == "abstract":
+        return _render_abstract(block, theme, bs_no_indent)
+
+    # ─── Bibliography ───
+    if btype == "bibliography":
+        return _render_bibliography(block, theme, bs_no_indent)
+
+    # ─── Citation ───
+    if btype == "citation":
+        return [Paragraph(f"<super>[{block.key}]</super>", bs_no_indent)]
+
+    # ─── Signature ───
+    if btype == "signature":
+        return _render_signature(block, theme)
+
+    # ─── Timeline ───
+    if btype == "timeline":
+        return _render_timeline(block, theme, bs_no_indent)
+
+    # ─── Sidebar ───
+    if btype == "sidebar":
+        return _render_sidebar(block, theme, ctx)
+
+    # ─── TOC ───
+    if btype == "table_of_contents":
+        return _render_toc_placeholder(block, theme, ctx)
+
+    # ─── Watermark ───
+    if btype == "watermark":
+        return [WatermarkFlowable(text=block.text, color=block.color, opacity=block.opacity)]
+
+    # ─── Shape ───
+    if btype == "shape":
+        return [ShapeFlowable(block, theme)]
+
+    # ─── QR Code ───
+    if btype == "qrcode":
+        return _render_qrcode(block, theme)
+
+    # ─── Introduction Page ───
+    if btype == "introduction_page":
+        return _render_introduction_page(block, theme)
+
+    return [Paragraph(f"[Unsupported: {btype}]", bs_no_indent)]
+
+
+# ═══════════════════════ Renderer Helpers ═══════════════════════
+
+
+def _render_rtl_list(items, list_type, theme, bs, sp, start=1):
+    """Render a bullet/numbered list with RTL layout (marker on right)."""
+    item_style = ParagraphStyle('RTL_LI', parent=bs, firstLineIndent=0,
+                                fontName=_arabic_font(theme),
+                                alignment=2)  # RIGHT aligned
+    marker_style = ParagraphStyle('RTL_Marker', parent=bs, firstLineIndent=0,
+                                  fontName=_arabic_font(theme),
+                                  alignment=1)  # CENTER aligned
+    rows = []
+    for idx, item_text in enumerate(items):
+        text_para = Paragraph(_md_inline(item_text), item_style)
+        if list_type == 'bullet':
+            marker = Paragraph("\u2022", marker_style)
+        else:
+            marker = Paragraph(str(start + idx), marker_style)
+        # RTL: text on LEFT, marker on RIGHT
+        rows.append([text_para, marker])
+
+    marker_col_w = 30
+    t = Table(rows, colWidths=[None, marker_col_w], style=TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+    ]))
+    t.hAlign = 'RIGHT'
+    t.spaceAfter = sp.block_gap
+    return [t]
+
+
+def _render_table(block, theme, bs):
+    # Detect if any cell content is RTL to decide font usage
+    all_text = " ".join(block.headers) + " ".join(str(c) for r in block.rows for c in r)
+    tbl_rtl = _is_rtl(all_text)
+    body_font = _arabic_font(theme, bold=True) if tbl_rtl else get_font_name(theme.typography.body_family, bold=True)
+    cell_font = _arabic_font(theme) if tbl_rtl else get_font_name(theme.typography.body_family)
+    tbl_align = 2 if tbl_rtl else 0
+
+    h_sty = ParagraphStyle('TH', parent=bs, firstLineIndent=0,
+                           fontName=body_font,
+                           textColor=_safe_color(block.header_text_color or theme.colors.text_on_primary),
+                           alignment=tbl_align)
+    c_sty = ParagraphStyle('TD', parent=bs, firstLineIndent=0, fontName=cell_font, alignment=tbl_align)
+    # For RTL tables, reverse column order so rightmost column appears first
+    headers = list(reversed(block.headers)) if tbl_rtl else list(block.headers)
+    data = [[Paragraph(_md_inline(h), h_sty) for h in headers]]
+    for row in block.rows:
+        cells = list(reversed(row)) if tbl_rtl else list(row)
+        data.append([Paragraph(_md_inline(str(c)), c_sty) for c in cells])
+    # Footer row (summary/totals)
+    if block.footer_row:
+        f_sty = ParagraphStyle('TF', parent=bs, firstLineIndent=0,
+                               fontName=body_font, alignment=tbl_align)
+        footer = list(reversed(block.footer_row)) if tbl_rtl else list(block.footer_row)
+        data.append([Paragraph(_md_inline(str(c)), f_sty) for c in footer])
+    hbg = _safe_color(block.header_bg or theme.colors.primary)
+    cmds = [
+        ('BACKGROUND', (0, 0), (-1, 0), hbg),
+        ('TEXTCOLOR', (0, 0), (-1, 0), _safe_color(block.header_text_color or theme.colors.text_on_primary)),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
+        ('TOPPADDING', (0, 0), (-1, -1), 7),
+        ('LEFTPADDING', (0, 0), (-1, -1), 10),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+        ('GRID', (0, 0), (-1, -1), 0.5, _safe_color(theme.colors.border)),
+    ]
+    if theme.decorations.table_row_alternating:
+        for i in range(1, len(data)):
+            if i % 2 == 0:
+                cmds.append(('BACKGROUND', (0, i), (-1, i), _safe_color(theme.colors.surface)))
+    if block.footer_row:
+        cmds.append(('BACKGROUND', (0, -1), (-1, -1), _safe_color(theme.colors.surface)))
+        cmds.append(('LINEABOVE', (0, -1), (-1, -1), 1.5, _safe_color(theme.colors.text_primary)))
+    col_widths = list(reversed(block.column_widths)) if (tbl_rtl and block.column_widths) else block.column_widths
+    t = Table(data, colWidths=col_widths, style=TableStyle(cmds), repeatRows=1)
+    t.hAlign = 'RIGHT' if tbl_rtl else 'LEFT'
+    t.spaceAfter = theme.spacing.block_gap
+    flowables = []
+    label = ""
+    if block.table_number:
+        label = f"Table {block.table_number}"
+    if block.caption:
+        label = f"{label}: {block.caption}" if label else block.caption
+    if label:
+        cap_font = _arabic_font(theme) if _is_rtl(label) else get_font_name(theme.typography.body_family)
+        cap_align = 2 if _is_rtl(label) else 0
+        cap_sty = ParagraphStyle('Cap', parent=bs, firstLineIndent=0,
+                                 fontSize=theme.typography.base_size * theme.typography.caption_size_ratio,
+                                 textColor=_safe_color(theme.colors.text_muted), spaceAfter=4,
+                                 fontName=cap_font, alignment=cap_align)
+        flowables.append(Paragraph(_md_inline(label), cap_sty))
+    flowables.append(t)
+    return flowables
+
+
+def _render_code(block, theme):
+    import html as html_mod
+    try:
+        from pygments import lex
+        from pygments.lexers import get_lexer_by_name, guess_lexer
+        from pygments.styles import get_style_by_name
+        from pygments.util import ClassNotFound
+        try:
+            lexer = get_lexer_by_name(block.language)
+        except ClassNotFound:
+            try:
+                lexer = guess_lexer(block.code)
+            except ClassNotFound:
+                lexer = get_lexer_by_name("text")
+        pname = "monokai" if "dark" in theme.name or "claude" in theme.name or "corporate" in theme.name else "default"
+        pstyle = get_style_by_name(pname)
+        parts = []
+        for ttype, value in lex(block.code, lexer):
+            color = None
+            ct = ttype
+            while ct is not None:
+                sd = pstyle.style_for_token(ct)
+                if sd and sd.get("color"):
+                    color = sd["color"]
+                    break
+                ct = ct.parent
+            val = html_mod.escape(value).replace("\n", "<br/>").replace(" ", "&nbsp;")
+            if color:
+                parts.append(f'<font color="#{color}">{val}</font>')
+            else:
+                parts.append(f'<font color="{theme.colors.code_text}">{val}</font>')
+        html_code = "".join(parts)
+    except ImportError:
+        html_code = f'<font color="{theme.colors.code_text}">{html_mod.escape(block.code).replace(chr(10), "<br/>")}</font>'
+
+    # ── Line numbers & highlight ──
+    if block.line_numbers or block.highlight_lines:
+        lines = html_code.split('<br/>')
+        max_ln = len(str(len(lines)))
+        new_lines = []
+        highlight_set = set(block.highlight_lines) if block.highlight_lines else set()
+        for i, line in enumerate(lines, 1):
+            ln_str = str(i).rjust(max_ln)
+            ln_prefix = f'<font color="#6272A4">{ln_str} \u2502 </font>'
+            if i in highlight_set:
+                new_lines.append(f'<font backColor="#44475a">{ln_prefix}{line}  </font>')
+            else:
+                new_lines.append(f'{ln_prefix}{line}')
+        html_code = '<br/>'.join(new_lines)
+
+    flowables = []
+    # Filename header bar (VS Code style)
+    if block.filename:
+        fn_sty = ParagraphStyle('CodeFn', fontName=get_font_name(theme.typography.mono_family),
+                                fontSize=theme.typography.base_size * theme.typography.caption_size_ratio,
+                                textColor=_safe_color("#A0AEC0"),
+                                backColor=_safe_color("#2D2D3F"), borderPadding=6, spaceAfter=0)
+        flowables.append(Paragraph(block.filename, fn_sty))
+    elif block.caption:
+        cap_sty = ParagraphStyle('CCap', fontName=get_font_name(theme.typography.mono_family),
+                                 fontSize=theme.typography.base_size * theme.typography.caption_size_ratio,
+                                 textColor=_safe_color("#A0AEC0"),
+                                 backColor=_safe_color("#2D2D3F"), borderPadding=6, spaceAfter=0)
+        flowables.append(Paragraph(block.caption, cap_sty))
+    code_sty = ParagraphStyle(
+        'Code', fontName=get_font_name(theme.typography.mono_family),
+        fontSize=theme.typography.base_size * 0.85,
+        leading=theme.typography.base_size * 1.2,
+        textColor=_safe_color(theme.colors.code_text),
+        backColor=_safe_color(theme.colors.code_bg),
+        borderPadding=12, spaceAfter=theme.spacing.block_gap, wordWrap='CJK',
+    )
+    flowables.append(Paragraph(html_code, code_sty))
+    return flowables
+
+
+def _render_image(block, theme, available_width=460):
+    try:
+        from reportlab.lib.utils import ImageReader
+        ir = ImageReader(block.src)
+        w, h = ir.getSize()
+        max_w = block.width or available_width
+        if w > max_w:
+            h = h * (max_w / w)
+            w = max_w
+        if block.height and h > block.height:
+            w = w * (block.height / h)
+            h = block.height
+        img = Image(block.src, width=w, height=h)
+        img.hAlign = block.alignment.upper()
+        img.spaceAfter = theme.spacing.block_gap
+        flowables = [img]
+        label = ""
+        if block.figure_number:
+            label = f"Figure {block.figure_number}"
+        if block.caption:
+            label = f"{label}: {block.caption}" if label else block.caption
+        if label:
+            cap_sty = ParagraphStyle('ImgCap',
+                                     fontSize=theme.typography.base_size * theme.typography.caption_size_ratio,
+                                     textColor=_safe_color(theme.colors.text_muted),
+                                     alignment=1, spaceAfter=theme.spacing.block_gap)
+            flowables.append(Paragraph(f"<i>{_md_inline(label)}</i>", cap_sty))
+        return flowables
+    except Exception as e:
+        return [Paragraph(f"[Image: {e}]", _body_style(theme, indent=False))]
+
+
+def _render_chart(block, theme):
+    from ..renderers.chart import render_chart
+    return render_chart(block, theme)
+
+
+def _render_diagram(block, theme):
+    from ..renderers.diagram import render_diagram
+    return render_diagram(block, theme)
+
+
+def _render_math(block, theme):
+    try:
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        import matplotlib.mathtext as mathtext
+        import tempfile, os
+        from svglib.svglib import svg2rlg
+
+        # Use a dedicated figure sized to fit the math expression
+        fig = plt.figure(figsize=(7, 1.2))
+        fig.patch.set_alpha(0)
+        fig.text(0.5, 0.5, f"${block.latex}$", fontsize=13,
+                 ha='center', va='center',
+                 usetex=False)          # matplotlib mathtext — no LaTeX install needed
+
+        with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as tf:
+            fig.savefig(tf.name, format="svg", bbox_inches="tight",
+                        transparent=True, dpi=150)
+            tf_name = tf.name
+        plt.close(fig)
+
+        drawing = svg2rlg(tf_name)
+        os.unlink(tf_name)
+
+        if drawing and drawing.width:
+            target_w = min(drawing.width, theme.spacing.page_margin_left * 5)
+            scale = target_w / drawing.width
+            drawing.width = target_w
+            drawing.height = drawing.height * scale
+            drawing.transform = (scale, 0, 0, scale, 0, 0)
+            drawing.hAlign = 'CENTER'
+            return [drawing, Spacer(1, theme.spacing.block_gap)]
+        return []
+    except Exception:
+        # Fallback: render as styled monospace text (no raw $ signs)
+        mono = ParagraphStyle('MathFallback',
+                              fontName=get_font_name(theme.typography.mono_family),
+                              fontSize=theme.typography.base_size * 0.9,
+                              textColor=_safe_color(theme.colors.text_secondary),
+                              spaceAfter=theme.spacing.block_gap,
+                              leftIndent=24)
+        return [Paragraph(html_mod.escape(block.latex), mono)]
+
+
+def _render_callout(block, theme, bs):
+    variant_colors = {"info": theme.colors.info, "warning": theme.colors.warning,
+                      "error": theme.colors.error, "success": theme.colors.success, "tip": theme.colors.tip}
+    bar_color = _safe_color(variant_colors.get(block.variant, theme.colors.info))
+    bg_map = {"info": "#EBF5FF", "warning": "#FFF8E1", "error": "#FFF0F0",
+              "success": "#F0FFF4", "tip": "#F5F0FF"}
+    bg_color = _safe_color(bg_map.get(block.variant, "#F7F9FC"))
+
+    is_rtl = _is_rtl(block.text) or (block.title and _is_rtl(block.title))
+    body_font = _arabic_font(theme) if is_rtl else get_font_name(theme.typography.body_family)
+    align = 2 if is_rtl else 0  # RIGHT or LEFT
+
+    inner_sty = ParagraphStyle('CalloutInner', parent=bs, firstLineIndent=0, spaceAfter=0,
+                               fontSize=theme.typography.base_size * 0.95,
+                               fontName=body_font, alignment=align)
+    parts = []
+    if block.title:
+        title_text = _apply_rtl(block.title) if is_rtl else html_mod.escape(block.title)
+        parts.append(f"<b>{title_text}</b><br/>")
+    parts.append(_md_inline(block.text))
+    inner = Paragraph("".join(parts), inner_sty)
+
+    pad = theme.spacing.callout_padding
+    bar_width = theme.decorations.callout_left_bar_width
+    style_cmds = [
+        ('BACKGROUND', (0, 0), (-1, -1), bg_color),
+        ('TOPPADDING', (0, 0), (-1, -1), pad),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), pad),
+    ]
+    if is_rtl:
+        # RTL: bar on the RIGHT side, extra padding on right
+        style_cmds.append(('LINEAFTER', (-1, 0), (-1, -1), bar_width, bar_color))
+        style_cmds.append(('RIGHTPADDING', (0, 0), (-1, -1), pad + 4))
+        style_cmds.append(('LEFTPADDING', (0, 0), (-1, -1), pad))
+    else:
+        style_cmds.append(('LINEBEFORE', (0, 0), (0, -1), bar_width, bar_color))
+        style_cmds.append(('LEFTPADDING', (0, 0), (-1, -1), pad + 4))
+        style_cmds.append(('RIGHTPADDING', (0, 0), (-1, -1), pad))
+    t = Table([[inner]], style=TableStyle(style_cmds))
+    t.hAlign = 'LEFT'
+    t.spaceAfter = theme.spacing.block_gap
+    return [t]
+
+
+def _render_quote(block, theme):
+    is_rtl = _is_rtl(block.text)
+    body_font = _arabic_font(theme) if is_rtl else get_font_name(theme.typography.body_family)
+    align = 2 if is_rtl else 0
+    q_sty = ParagraphStyle(
+        'Quote', fontName=body_font,
+        fontSize=theme.typography.base_size,
+        leading=theme.typography.base_size * theme.typography.line_height,
+        textColor=_safe_color(theme.colors.text_secondary),
+        leftIndent=0 if is_rtl else theme.spacing.quote_indent,
+        rightIndent=theme.spacing.quote_indent if is_rtl else 0,
+        borderPadding=8, spaceAfter=4, alignment=align,
+    )
+    text_content = _md_inline(block.text)
+    # Avoid <i> wrapping for RTL — italic doesn't apply to Arabic
+    flowables = [Paragraph(text_content if is_rtl else f"<i>{text_content}</i>", q_sty)]
+    if block.attribution:
+        attr_rtl = is_rtl or _is_rtl(block.attribution)
+        attr_font = _arabic_font(theme) if attr_rtl else body_font
+        attr = ParagraphStyle('Attr', parent=q_sty,
+                              fontSize=q_sty.fontSize * theme.typography.caption_size_ratio,
+                              textColor=_safe_color(theme.colors.text_muted),
+                              fontName=attr_font, alignment=2 if attr_rtl else 0)
+        if attr_rtl:
+            attr_text = _apply_rtl(block.attribution)
+            flowables.append(Paragraph(attr_text, attr))
+        else:
+            flowables.append(Paragraph(f"\u2014 {block.attribution}", attr))
+    flowables.append(Spacer(1, theme.spacing.block_gap))
+    return flowables
+
+
+def _render_metrics(block, theme, available_width=460):
+    lbl_sty = ParagraphStyle('ML', fontName=get_font_name(theme.typography.body_family),
+                             fontSize=theme.typography.base_size * theme.typography.caption_size_ratio,
+                             textColor=_safe_color(theme.colors.text_muted))
+    val_sty = ParagraphStyle('MV', fontName=get_font_name(theme.typography.heading_family, bold=True),
+                             fontSize=theme.typography.base_size * 2.2,
+                             textColor=_safe_color(theme.colors.text_primary),
+                             leading=theme.typography.base_size * 2.6)
+    cells = []
+    for m in block.metrics:
+        parts = [Paragraph(m.label.upper(), lbl_sty), Paragraph(m.value, val_sty)]
+        if m.delta:
+            is_pos = "+" in m.delta
+            dc = theme.colors.success if is_pos else theme.colors.error
+            d_sty = ParagraphStyle('MD', fontName=get_font_name(theme.typography.body_family, bold=True),
+                                   textColor=_safe_color(dc), fontSize=theme.typography.base_size * 0.8)
+            parts.append(Paragraph(m.delta, d_sty))
+        cells.append(parts)
+    w = available_width / max(len(cells), 1)
+    t = Table([cells], colWidths=[w] * len(cells), style=TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+    ]))
+    t.hAlign = 'LEFT'
+    t.spaceAfter = theme.spacing.block_gap * 1.5
+    return [t]
+
+
+def _render_progress(block, theme):
+    flowables = []
+    if block.title:
+        flowables.append(AccentHeading(
+            block.title, font_name=get_font_name(theme.typography.heading_family, bold=True),
+            font_size=theme.typography.base_size * 1.3,
+            text_color=_safe_color(theme.colors.text_primary),
+            accent_color=_safe_color(theme.colors.accent),
+            accent_width=theme.decorations.heading_accent_bar_width,
+            accent_gap=theme.decorations.heading_accent_bar_gap))
+    if block.subtitle:
+        sub = ParagraphStyle('PSub', fontSize=theme.typography.base_size * theme.typography.caption_size_ratio,
+                             textColor=_safe_color(theme.colors.text_muted), spaceAfter=8)
+        flowables.append(Paragraph(_md_inline(block.subtitle), sub))
+    for item in block.items:
+        flowables.append(HorizontalProgressBar(
+            label=item.label, value=item.value, max_value=item.max_value,
+            bar_color=item.color or theme.colors.success, benchmark=item.benchmark,
+            delta=item.delta, text_color=theme.colors.text_primary,
+            bg_color=theme.colors.surface,
+            font_name=get_font_name(theme.typography.body_family),
+            font_size=theme.typography.base_size * 0.9))
+    flowables.append(Spacer(1, theme.spacing.block_gap))
+    return flowables
+
+
+def _render_score(block, theme):
+    return [
+        ScoreDisplay(
+            score=block.score, max_score=block.max_score,
+            label=block.label, sublabel=block.sublabel,
+            score_color=block.score_color or theme.colors.accent,
+            label_color=block.label_color or theme.colors.text_primary,
+            font_name=get_font_name(theme.typography.heading_family, bold=True)),
+        Spacer(1, theme.spacing.block_gap),
+    ]
+
+
+def _render_cover(block, theme):
+    flowables = [Spacer(1, 80)]
+    if block.logo:
+        try:
+            import os
+            from reportlab.lib.utils import ImageReader
+            if os.path.exists(block.logo):
+                ir = ImageReader(block.logo)
+                w, h = ir.getSize()
+                if w > 200:
+                    h = h * (200 / w)
+                    w = 200
+                img = Image(block.logo, width=w, height=h)
+                img.hAlign = 'LEFT'
+                flowables.append(img)
+                flowables.append(Spacer(1, 30))
+        except Exception:
+            pass
+    ts = ParagraphStyle('CoverTitle',
+                        fontName=get_font_name(theme.typography.heading_family, bold=True),
+                        fontSize=theme.typography.base_size * theme.typography.heading_scale[0] * 1.4,
+                        leading=theme.typography.base_size * theme.typography.heading_scale[0] * 1.7,
+                        textColor=_safe_color(theme.colors.text_primary), spaceAfter=8)
+    flowables.append(Paragraph(block.title, ts))
+    if block.subtitle:
+        ss = ParagraphStyle('CoverSub', fontName=get_font_name(theme.typography.body_family),
+                            fontSize=theme.typography.base_size * 1.3,
+                            textColor=_safe_color(theme.colors.text_secondary), spaceAfter=30)
+        flowables.append(Paragraph(block.subtitle, ss))
+    if block.author:
+        a_sty = ParagraphStyle('CoverAuthor', fontName=get_font_name(theme.typography.body_family),
+                               fontSize=theme.typography.base_size,
+                               textColor=_safe_color(theme.colors.text_muted))
+        flowables.append(Paragraph(f"Prepared by {block.author}", a_sty))
+    if block.date:
+        d_sty = ParagraphStyle('CoverDate', fontName=get_font_name(theme.typography.body_family),
+                               fontSize=theme.typography.base_size,
+                               textColor=_safe_color(theme.colors.text_muted))
+        flowables.append(Spacer(1, 60))
+        flowables.append(Paragraph(block.date, d_sty))
+    flowables.append(PageBreak())
+    return flowables
+
+
+def _render_columns(block, theme, count, ctx=None):
+    col_lists = [block.left, block.right] if count == 2 else (block.columns or [])
+    ratios = [block.ratio, 1 - block.ratio] if count == 2 else [1.0 / max(len(col_lists), 1)] * len(col_lists)
+    total_w = ctx.available_width if ctx else 460
+    col_widths = [total_w * r for r in ratios]
+    rendered = []
+    for col in col_lists:
+        cf = []
+        for b in col:
+            try:
+                cf.extend(create_flowables(b, theme, ctx))
+            except Exception:
+                pass
+        rendered.append(cf)
+    t = Table([rendered], colWidths=col_widths, style=TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    t.hAlign = 'LEFT'
+    t.spaceAfter = theme.spacing.block_gap
+    return [t]
+
+
+# ═══════════════════════ New Block Renderers ═══════════════════════
+
+def _render_checklist(block, theme, bs):
+    """GFM task list: checkmark/box characters."""
+    flowables = []
+    for item in block.items:
+        marker = "\u2611" if item.checked else "\u2610"  # checked/unchecked box
+        is_rtl = _is_rtl(item.text)
+        text = _md_inline(item.text)
+        if item.checked:
+            text = f"<strike>{text}</strike>"
+        font = _arabic_font(theme) if is_rtl else get_font_name(theme.typography.body_family)
+        sty = ParagraphStyle('CL', parent=bs, firstLineIndent=0,
+                             leftIndent=theme.spacing.list_indent,
+                             spaceBefore=2, spaceAfter=2,
+                             fontName=font, alignment=2 if is_rtl else 0)
+        flowables.append(Paragraph(f"{marker}  {text}", sty))
+    flowables.append(Spacer(1, theme.spacing.block_gap))
+    return flowables
+
+
+def _render_definition_list(block, theme, bs):
+    """Definition list: bold term + indented definition."""
+    flowables = []
+    all_text = " ".join(item.term + item.definition for item in block.items)
+    is_rtl = _is_rtl(all_text)
+    font = _arabic_font(theme) if is_rtl else get_font_name(theme.typography.body_family)
+    align = 2 if is_rtl else 0
+    term_sty = ParagraphStyle('DT', parent=bs, firstLineIndent=0,
+                              fontName=_arabic_font(theme, bold=True) if is_rtl else get_font_name(theme.typography.body_family, bold=True),
+                              spaceBefore=6, spaceAfter=2, alignment=align)
+    defn_sty = ParagraphStyle('DD', parent=bs, firstLineIndent=0,
+                              fontName=font,
+                              leftIndent=0 if is_rtl else theme.spacing.list_indent,
+                              rightIndent=theme.spacing.list_indent if is_rtl else 0,
+                              textColor=_safe_color(theme.colors.text_secondary),
+                              spaceAfter=4, alignment=align)
+    for item in block.items:
+        flowables.append(Paragraph(_md_inline(item.term), term_sty))
+        flowables.append(Paragraph(_md_inline(item.definition), defn_sty))
+    flowables.append(Spacer(1, theme.spacing.block_gap))
+    return flowables
+
+
+def _render_footnote(block, theme, bs):
+    """Footnote: superscript marker with indented text."""
+    sty = ParagraphStyle('FN', parent=bs, firstLineIndent=0,
+                         fontSize=theme.typography.base_size * theme.typography.caption_size_ratio,
+                         textColor=_safe_color(theme.colors.text_secondary),
+                         leftIndent=theme.spacing.list_indent,
+                         spaceBefore=2, spaceAfter=2)
+    marker = block.marker
+    return [Paragraph(f"<super>{marker}</super> {_md_inline(block.text)}", sty)]
+
+
+def _render_abstract(block, theme, bs):
+    """IMRAD structured abstract in a bordered box."""
+    flowables = []
+    title_sty = ParagraphStyle('AbsTitle',
+                               fontName=get_font_name(theme.typography.heading_family, bold=True),
+                               fontSize=theme.typography.base_size * 1.3,
+                               spaceBefore=4, spaceAfter=8)
+    flowables.append(Paragraph("Abstract", title_sty))
+    for field in block.fields:
+        label_sty = ParagraphStyle('AbsLabel', parent=bs, firstLineIndent=0,
+                                   fontName=get_font_name(theme.typography.body_family, bold=True),
+                                   spaceBefore=4, spaceAfter=1)
+        text_sty = ParagraphStyle('AbsText', parent=bs, firstLineIndent=0,
+                                  leftIndent=0, spaceAfter=4)
+        flowables.append(Paragraph(f"{field.label}:", label_sty))
+        flowables.append(Paragraph(_md_inline(field.text), text_sty))
+    if block.keywords:
+        kw_sty = ParagraphStyle('AbsKW', parent=bs, firstLineIndent=0,
+                                fontName=get_font_name(theme.typography.body_family, italic=True),
+                                fontSize=theme.typography.base_size * 0.9,
+                                spaceBefore=6)
+        flowables.append(Paragraph(f"<b>Keywords:</b> {', '.join(block.keywords)}", kw_sty))
+    # Wrap in a bordered table; each flowable is its own row so ReportLab can
+    # split long abstracts across pages (a single KeepTogether would overflow).
+    pad = theme.spacing.callout_padding
+    rows = [[f] for f in flowables]
+    t = Table(rows, style=TableStyle([
+        ('BOX', (0, 0), (-1, -1), 1, _safe_color(theme.colors.border)),
+        ('LEFTPADDING', (0, 0), (-1, -1), pad + 4),
+        ('RIGHTPADDING', (0, 0), (-1, -1), pad),
+        ('TOPPADDING', (0, 0), (0, 0), pad),
+        ('TOPPADDING', (1, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-2, -1), 0),
+        ('BOTTOMPADDING', (0, -1), (-1, -1), pad),
+    ]))
+    t.hAlign = 'LEFT'
+    t.spaceAfter = theme.spacing.block_gap * 2
+    return [t]
+
+
+def _render_bibliography(block, theme, bs):
+    """Reference list with numbered entries and hanging indent."""
+    flowables = []
+    title_sty = ParagraphStyle('BibTitle',
+                               fontName=get_font_name(theme.typography.heading_family, bold=True),
+                               fontSize=theme.typography.base_size * 1.3,
+                               spaceBefore=12, spaceAfter=8)
+    flowables.append(Paragraph("References", title_sty))
+    ref_sty = ParagraphStyle('BibEntry', parent=bs, firstLineIndent=-24,
+                             leftIndent=24,
+                             fontSize=theme.typography.base_size * 0.9,
+                             spaceBefore=2, spaceAfter=4)
+    for i, entry in enumerate(block.entries, 1):
+        if block.style == "ieee":
+            text = f"[{i}] {entry.authors}, \"{entry.title},\" <i>{entry.source}</i>, {entry.year}."
+        elif block.style == "chicago":
+            text = f"{entry.authors}. {entry.title}. <i>{entry.source}</i>, {entry.year}."
+        else:  # apa
+            text = f"{entry.authors} ({entry.year}). {entry.title}. <i>{entry.source}</i>."
+        if entry.doi:
+            text += f" https://doi.org/{entry.doi}"
+        flowables.append(Paragraph(text, ref_sty))
+    flowables.append(Spacer(1, theme.spacing.block_gap))
+    return flowables
+
+
+def _render_signature(block, theme):
+    """Signature: line + name + title + date."""
+    flowables = []
+    flowables.append(Spacer(1, 30))
+    if block.show_line:
+        flowables.append(DividerFlowable(color=theme.colors.text_primary, thickness=1.0))
+    name_sty = ParagraphStyle('SigName',
+                              fontName=get_font_name(theme.typography.body_family, bold=True),
+                              fontSize=theme.typography.base_size,
+                              spaceBefore=4, spaceAfter=2)
+    flowables.append(Paragraph(block.name, name_sty))
+    if block.title:
+        title_sty = ParagraphStyle('SigTitle',
+                                   fontName=get_font_name(theme.typography.body_family),
+                                   fontSize=theme.typography.base_size * 0.9,
+                                   textColor=_safe_color(theme.colors.text_secondary),
+                                   spaceAfter=2)
+        flowables.append(Paragraph(block.title, title_sty))
+    if block.date:
+        date_sty = ParagraphStyle('SigDate',
+                                  fontName=get_font_name(theme.typography.body_family),
+                                  fontSize=theme.typography.base_size * 0.85,
+                                  textColor=_safe_color(theme.colors.text_muted),
+                                  spaceAfter=2)
+        flowables.append(Paragraph(block.date, date_sty))
+    flowables.append(Spacer(1, theme.spacing.block_gap))
+    return flowables
+
+
+class TimelineDot(Flowable):
+    """Single timeline event with a colored dot and vertical line."""
+    def __init__(self, date_str, title, description, dot_color, line_color,
+                 font_name, font_size, is_last=False):
+        super().__init__()
+        self.date_str = date_str
+        self.title_str = title
+        self.desc_str = description
+        self.dot_color = dot_color
+        self.line_color = line_color
+        self.font_name = font_name
+        self.font_size = font_size
+        self.is_last = is_last
+
+    def wrap(self, availWidth, availHeight):
+        self.width = availWidth
+        self.height = self.font_size * 4 + (10 if self.desc_str else 0)
+        return (self.width, self.height)
+
+    def draw(self):
+        c = self.canv
+        c.saveState()
+        dot_x = 20
+        text_x = 40
+        y_top = self.height - 8
+        # Vertical line
+        if not self.is_last:
+            c.setStrokeColor(_safe_color(self.line_color))
+            c.setLineWidth(1.5)
+            c.line(dot_x, y_top - 6, dot_x, 0)
+        # Dot
+        c.setFillColor(_safe_color(self.dot_color))
+        c.circle(dot_x, y_top, 5, fill=1, stroke=0)
+        # Date
+        c.setFillColor(_safe_color("#718096"))
+        c.setFont(self.font_name, self.font_size * 0.85)
+        c.drawString(text_x, y_top - 3, self.date_str)
+        # Title
+        c.setFillColor(_safe_color("#1A1A2E"))
+        c.setFont(self.font_name, self.font_size)
+        c.drawString(text_x, y_top - 3 - self.font_size * 1.3, self.title_str)
+        # Description
+        if self.desc_str:
+            c.setFillColor(_safe_color("#718096"))
+            c.setFont(self.font_name, self.font_size * 0.9)
+            c.drawString(text_x, y_top - 3 - self.font_size * 2.5, self.desc_str)
+        c.restoreState()
+
+
+def _render_timeline(block, theme, bs):
+    """Vertical timeline with dots and connecting line."""
+    flowables = []
+    for i, event in enumerate(block.events):
+        is_last = (i == len(block.events) - 1)
+        dot_color = event.color or theme.colors.accent
+        flowables.append(TimelineDot(
+            date_str=event.date, title=event.title,
+            description=event.description or "",
+            dot_color=dot_color, line_color=theme.colors.border,
+            font_name=get_font_name(theme.typography.body_family),
+            font_size=theme.typography.base_size,
+            is_last=is_last))
+    flowables.append(Spacer(1, theme.spacing.block_gap))
+    return flowables
+
+
+def _render_qrcode(block, theme):
+    """Render a QR code using the qrcode library → PIL Image → ReportLab Image."""
+    try:
+        import qrcode
+        from PIL import Image as PILImage
+        import io as _io
+        ec_map = {"L": qrcode.constants.ERROR_CORRECT_L,
+                  "M": qrcode.constants.ERROR_CORRECT_M,
+                  "Q": qrcode.constants.ERROR_CORRECT_Q,
+                  "H": qrcode.constants.ERROR_CORRECT_H}
+        qr = qrcode.QRCode(
+            error_correction=ec_map.get(block.error_correction.upper(),
+                                        qrcode.constants.ERROR_CORRECT_M),
+            box_size=10, border=2)
+        qr.add_data(block.data)
+        qr.make(fit=True)
+        img: PILImage.Image = qr.make_image(fill_color="black", back_color="white").convert("RGB")
+        buf = _io.BytesIO()
+        img.save(buf, format="PNG")
+        buf.seek(0)
+        from reportlab.lib.utils import ImageReader
+        rl_img = Image(buf, width=block.size, height=block.size)
+        rl_img.hAlign = block.alignment.upper()
+        rl_img.spaceAfter = theme.spacing.block_gap
+        flowables = [rl_img]
+        if block.caption:
+            cap_sty = ParagraphStyle(
+                "QRCap",
+                fontSize=theme.typography.base_size * theme.typography.caption_size_ratio,
+                textColor=_safe_color(theme.colors.text_muted),
+                alignment=1, spaceAfter=theme.spacing.block_gap)
+            flowables.append(Paragraph(f"<i>{_md_inline(block.caption)}</i>", cap_sty))
+        return flowables
+    except ImportError:
+        bs = _body_style(theme, indent=False)
+        return [Paragraph(
+            f'[QR Code: install <font face="Courier">qrcode[pil]</font> — '
+            f'pip install "dynamic-pdf-builder[qrcode]"]', bs)]
+    except Exception as e:
+        return [Paragraph(f"[QR Code Error: {e}]", _body_style(theme, indent=False))]
+
+
+def _render_sidebar(block, theme, ctx=None):
+    """Main content + floating sidebar via 2-column table."""
+    main_f, side_f = [], []
+    for b in block.main_content:
+        try:
+            main_f.extend(create_flowables(b, theme, ctx))
+        except Exception:
+            pass
+    for b in block.sidebar_content:
+        try:
+            side_f.extend(create_flowables(b, theme, ctx))
+        except Exception:
+            pass
+    total_w = ctx.available_width if ctx else 460
+    side_w = total_w * block.sidebar_ratio
+    main_w = total_w - side_w - 10
+    if block.sidebar_position == "left":
+        cols = [side_f, main_f]
+        widths = [side_w, main_w]
+    else:
+        cols = [main_f, side_f]
+        widths = [main_w, side_w]
+    t = Table([cols], colWidths=widths, style=TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    t.hAlign = 'LEFT'
+    t.spaceAfter = theme.spacing.block_gap
+    return [t]
+
+
+def _build_list_flowable(items, bullet_type, theme, bs, sp, start=1, depth=0):
+    """Recursively build a nested ListFlowable from ListItemModel objects."""
+    from reportlab.platypus import ListFlowable, ListItem
+    BULLET_CHARS = ["\u2022", "\u25e6", "\u25aa", "\u2013"]  # •, ◦, ▪, –
+    bullet_char = BULLET_CHARS[min(depth, len(BULLET_CHARS) - 1)]
+
+    li_list = []
+    for idx, item in enumerate(items):
+        item_sty = ParagraphStyle(
+            f'LI_d{depth}',
+            parent=bs,
+            firstLineIndent=0,
+            fontSize=max(theme.typography.base_size - depth * 0.5, 8),
+        )
+        para = Paragraph(_md_inline(item.text), item_sty)
+
+        if item.children:
+            # Nested sub-list, same or next bullet type
+            child_type = '1' if bullet_type == '1' else 'bullet'
+            child_flow = _build_list_flowable(
+                item.children, child_type, theme, bs, sp, depth=depth + 1)
+            li_list.append(ListItem([para, child_flow],
+                                    leftIndent=sp.list_indent * (depth + 1)))
+        else:
+            li_list.append(ListItem(para, leftIndent=sp.list_indent * (depth + 1)))
+
+    kwargs = dict(
+        leftIndent=sp.list_indent * (depth + 1),
+        spaceBefore=2 if depth > 0 else sp.block_gap / 2,
+        bulletOffsetY=2,
+    )
+    if bullet_type == '1':
+        kwargs['bulletType'] = '1'
+        kwargs['start'] = start
+    else:
+        kwargs['bulletType'] = 'bullet'
+        kwargs['start'] = bullet_char
+
+    return ListFlowable(li_list, **kwargs)
+
+
+def _render_toc_placeholder(block, theme, ctx):
+    """Render table of contents with proper dot-leaders using a Table layout."""
+    from reportlab.platypus import HRFlowable
+
+    flowables = []
+
+    # ─ Title
+    title_sty = ParagraphStyle(
+        'TOCTitle',
+        fontName=get_font_name(theme.typography.heading_family, bold=True),
+        fontSize=theme.typography.base_size * 1.4,
+        textColor=_safe_color(theme.colors.text_primary),
+        spaceBefore=0, spaceAfter=12,
+    )
+    flowables.append(Paragraph("Table of Contents", title_sty))
+    flowables.append(HRFlowable(
+        width="100%", thickness=1,
+        color=_safe_color(theme.colors.accent), spaceAfter=8))
+
+    if not ctx.toc_entries:
+        note_sty = ParagraphStyle(
+            'TOCNote',
+            fontName=get_font_name(theme.typography.body_family, italic=True),
+            fontSize=theme.typography.base_size * 0.9,
+            textColor=_safe_color(theme.colors.text_muted),
+        )
+        flowables.append(Paragraph(
+            "Place this block <i>after</i> your headings to auto-populate.",
+            note_sty,
+        ))
+        flowables.append(PageBreak())
+        return flowables
+
+    depth_limit = getattr(block, 'depth', 3)
+
+    for level, text in ctx.toc_entries:
+        if level > depth_limit:
+            continue
+
+        indent = (level - 1) * 20
+        fs = theme.typography.base_size * (1.0 if level == 1 else 0.88)
+        is_bold = level <= 2
+        fg = theme.colors.text_primary if level <= 2 else theme.colors.text_secondary
+        muted = theme.colors.text_muted
+
+        # Left cell: indented heading text
+        title_sty = ParagraphStyle(
+            f'TOC_L{level}_title',
+            fontName=get_font_name(theme.typography.body_family, bold=is_bold),
+            fontSize=fs,
+            leading=fs * 1.4,
+            leftIndent=indent,
+            spaceBefore=5 if level == 1 else 2,
+            spaceAfter=1,
+            textColor=_safe_color(fg),
+        )
+
+        # Right cell: dot-leaders (muted colour)
+        dots_sty = ParagraphStyle(
+            f'TOC_L{level}_dots',
+            fontName=get_font_name(theme.typography.body_family),
+            fontSize=fs,
+            leading=fs * 1.4,
+            alignment=2,   # right-align
+            textColor=_safe_color(muted),
+        )
+
+        title_cell = Paragraph(_md_inline(text), title_sty)
+        dots_cell  = Paragraph("." * 60, dots_sty)
+
+        row_tbl = Table(
+            [[title_cell, dots_cell]],
+            colWidths=[None, 80],
+            style=TableStyle([
+                ('VALIGN',       (0, 0), (-1, -1), 'BOTTOM'),
+                ('LEFTPADDING',  (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                ('TOPPADDING',   (0, 0), (-1, -1), 0),
+                ('BOTTOMPADDING',(0, 0), (-1, -1), 0),
+                ('FONTSIZE',     (1, 0), (1, 0), fs * 0.85),
+            ]),
+        )
+        row_tbl.hAlign = 'LEFT'
+        flowables.append(row_tbl)
+
+    flowables.append(Spacer(1, 8))
+    flowables.append(PageBreak())
+    return flowables
+
+
+def _render_introduction_page(block, theme):
+    """Render a styled introduction / preface page."""
+    flowables = [Spacer(1, 40)]
+    accent = _safe_color(block.accent_color or theme.colors.accent)
+
+    # Accent bar
+    flowables.append(DividerFlowable(color=block.accent_color or theme.colors.accent,
+                                     thickness=3.0))
+    flowables.append(Spacer(1, 16))
+
+    # Title
+    title_sty = ParagraphStyle('IntroTitle',
+                               fontName=get_font_name(theme.typography.heading_family, bold=True),
+                               fontSize=theme.typography.base_size * theme.typography.heading_scale[0] * 1.2,
+                               leading=theme.typography.base_size * theme.typography.heading_scale[0] * 1.5,
+                               textColor=_safe_color(theme.colors.text_primary),
+                               spaceAfter=8)
+    flowables.append(Paragraph(block.title, title_sty))
+
+    # Subtitle
+    if block.subtitle:
+        sub_sty = ParagraphStyle('IntroSub',
+                                 fontName=get_font_name(theme.typography.body_family, italic=True),
+                                 fontSize=theme.typography.base_size * 1.1,
+                                 textColor=_safe_color(theme.colors.text_secondary),
+                                 spaceAfter=16)
+        flowables.append(Paragraph(block.subtitle, sub_sty))
+
+    flowables.append(Spacer(1, 12))
+
+    # Body content
+    if block.content:
+        body_sty = ParagraphStyle('IntroBody',
+                                  fontName=get_font_name(theme.typography.body_family),
+                                  fontSize=theme.typography.base_size,
+                                  leading=theme.typography.base_size * theme.typography.line_height,
+                                  textColor=_safe_color(theme.colors.text_primary),
+                                  spaceAfter=8)
+        for para in block.content.split('\n\n'):
+            if para.strip():
+                flowables.append(Paragraph(_md_inline(para.strip()), body_sty))
+
+    flowables.append(PageBreak())
+    return flowables

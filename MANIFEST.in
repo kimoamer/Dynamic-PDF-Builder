@@ -1,0 +1,15 @@
+# Include the license and readme
+include LICENSE
+include README.md
+
+# Include bundled font files (JetBrains Mono, Amiri)
+recursive-include dynamic_pdf/fonts/bundled *.ttf *.otf
+
+# Include any JSON/YAML assets inside the package
+recursive-include dynamic_pdf *.json *.yaml *.yml
+
+# Exclude compiled Python files and caches
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude *.so
+global-exclude .DS_Store

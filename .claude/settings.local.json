@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(\"C:\\\\Users\\\\LOQ\\\\AppData\\\\Local\\\\Python\\\\bin\\\\python.exe\" example_bilingual.py)"
+    ]
+  }
+}

@@ -1,0 +1,42 @@
+"""
+Dynamic PDF Builder
+Generate beautiful PDF reports from Markdown, JSON, or structured blocks.
+
+Version 0.3.0
+"""
+from .builder import (
+    DocumentBuilder,
+    render_from_json,
+    markdown_to_pdf,
+    render_to_bytes,
+    render_to_base64,
+)
+from .schema.blocks import Block
+from .streaming import stream
+from .fonts.manager import register_custom_font, list_available_fonts
+from .themes.registry import list_themes, register_theme, get_theme
+
+
+def render(blocks: list, output: str, theme: str = "claude") -> None:
+    """Quick render: list of Block objects → PDF file."""
+    builder = DocumentBuilder(theme=theme)
+    builder._blocks.extend(blocks)
+    builder.render(output)
+
+
+__version__ = "0.3.0"
+
+__all__ = [
+    # Core
+    "DocumentBuilder", "Block", "render",
+    # Helpers
+    "markdown_to_pdf", "render_from_json", "render_to_bytes", "render_to_base64",
+    # Streaming
+    "stream",
+    # Fonts
+    "register_custom_font", "list_available_fonts",
+    # Themes
+    "list_themes", "register_theme", "get_theme",
+    # Version
+    "__version__",
+]
