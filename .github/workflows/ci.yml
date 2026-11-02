@@ -30,6 +30,17 @@ jobs:
           pip install -e ".[dev,qrcode]"
       - name: Test
         run: python -m pytest -q --junitxml=test-results.xml
+      - name: Golden fixtures + page contact sheets
+        if: matrix.python-version == '3.12'
+        run: |
+          python -m dynamic_pdf.qa.golden tests/fixtures tests/golden
+          python -m dynamic_pdf.qa.golden tests/fixtures review --update --sheets
+      - name: Upload contact sheets for visual review
+        if: matrix.python-version == '3.12' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: page-contact-sheets
+          path: review/sheets/*.png
       - name: Upload test report
         if: always()
         uses: actions/upload-artifact@v4

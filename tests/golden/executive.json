@@ -1,0 +1,61 @@
+{
+ "profile": "executive_report",
+ "direction": "ltr",
+ "pdf_pages": 1,
+ "pdf_orientations": [
+  "P"
+ ],
+ "pdf_outline": [
+  [
+   1,
+   "1  Executive Summary",
+   1
+  ],
+  [
+   1,
+   "2  Key Findings",
+   1
+  ],
+  [
+   1,
+   "3  Recommendations",
+   1
+  ],
+  [
+   1,
+   "4  Outlook",
+   1
+  ]
+ ],
+ "pdf_fonts": [
+  "Helvetica",
+  "Helvetica-Bold"
+ ],
+ "pdf_qa_errors": [],
+ "tables": [],
+ "docx_headings": [
+  [
+   "Heading 1",
+   "1  Executive Summary"
+  ],
+  [
+   "Heading 1",
+   "2  Key Findings"
+  ],
+  [
+   "Heading 1",
+   "3  Recommendations"
+  ],
+  [
+   "Heading 1",
+   "4  Outlook"
+  ]
+ ],
+ "docx_tables": [],
+ "docx_sections": 1,
+ "layout": [
+  "headings: shallow outline: stronger H1 contrast",
+  "measure: 91 chars/line",
+  "lead: opening paragraph set as a lead (larger, no indent)"
+ ]
+}

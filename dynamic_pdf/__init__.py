@@ -20,7 +20,7 @@ from .policy import RenderPolicy, ResourceLimits, Diagnostic
 from .assets import AssetPolicy
 from .utils.errors import (
     DynamicPDFError, BlockRenderError, EncryptionError, AssetError,
-    ResourceLimitError, RenderError,
+    ResourceLimitError, RenderError, QualityError,
 )
 
 
@@ -47,7 +47,7 @@ __all__ = [
     # Policy & errors
     "RenderPolicy", "ResourceLimits", "AssetPolicy", "Diagnostic",
     "DynamicPDFError", "BlockRenderError", "EncryptionError", "AssetError",
-    "ResourceLimitError", "RenderError",
+    "ResourceLimitError", "RenderError", "QualityError",
     # Version
     "__version__",
 ]

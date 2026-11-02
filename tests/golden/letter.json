@@ -1,0 +1,21 @@
+{
+ "profile": "letter",
+ "direction": "ltr",
+ "pdf_pages": 1,
+ "pdf_orientations": [
+  "P"
+ ],
+ "pdf_outline": [],
+ "pdf_fonts": [
+  "Helvetica",
+  "Times-Roman"
+ ],
+ "pdf_qa_errors": [],
+ "tables": [],
+ "docx_headings": [],
+ "docx_tables": [],
+ "docx_sections": 1,
+ "layout": [
+  "measure: 89 chars/line"
+ ]
+}

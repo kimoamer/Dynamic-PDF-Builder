@@ -323,6 +323,8 @@ class DocxRenderer:
             num = ".".join(str(n) for n in self.heading_counters[:idx + 1] if n > 0)
             text = f"{num}  {text}"
         p = self._para(c, f"Heading {lvl}", b.text)
+        if (b.hints or {}).get("break_before"):
+            p.paragraph_format.page_break_before = True
         self._runs(p, text, color=b.color)
         if b.id:
             F.add_bookmark(p, F.bookmark_name(b.id), self.bm)
@@ -533,6 +535,8 @@ class DocxRenderer:
                 p.paragraph_format.keep_with_next = len(lines) <= 25
             prefix = f"{i:>{width}}  " if b.line_numbers else ""
             r = p.add_run(prefix + line.replace("\t", "    ") if (prefix + line) else " ")
+            if (b.hints or {}).get("font_size"):
+                r.font.size = Pt(b.hints["font_size"])
             if i in (b.highlight_lines or []):
                 F.set_run_shading(r, "3A3F58")
         self._spacer_after(c)

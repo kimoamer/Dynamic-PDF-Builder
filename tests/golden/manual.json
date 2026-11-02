@@ -1,0 +1,68 @@
+{
+ "profile": "technical_manual",
+ "direction": "ltr",
+ "pdf_pages": 2,
+ "pdf_orientations": [
+  "P",
+  "P"
+ ],
+ "pdf_outline": [
+  [
+   1,
+   "1  Installation",
+   2
+  ],
+  [
+   1,
+   "2  Configuration",
+   2
+  ],
+  [
+   1,
+   "3  Usage",
+   2
+  ],
+  [
+   1,
+   "4  Troubleshooting",
+   2
+  ]
+ ],
+ "pdf_fonts": [
+  "Courier",
+  "Helvetica",
+  "Helvetica-Bold",
+  "JetBrainsMono-Regular"
+ ],
+ "pdf_qa_errors": [],
+ "tables": [],
+ "docx_headings": [
+  [
+   "Heading 1",
+   "1  Installation"
+  ],
+  [
+   "Heading 1",
+   "2  Configuration"
+  ],
+  [
+   "Heading 1",
+   "3  Usage"
+  ],
+  [
+   "Heading 1",
+   "4  Troubleshooting"
+  ]
+ ],
+ "docx_tables": [
+  [
+   1,
+   1
+  ]
+ ],
+ "docx_sections": 1,
+ "layout": [
+  "headings: shallow outline: stronger H1 contrast",
+  "measure: 96 chars/line"
+ ]
+}

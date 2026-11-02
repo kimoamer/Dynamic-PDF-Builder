@@ -1,0 +1,81 @@
+{
+ "profile": "academic_report",
+ "direction": "ltr",
+ "pdf_pages": 2,
+ "pdf_orientations": [
+  "P",
+  "P"
+ ],
+ "pdf_outline": [
+  [
+   1,
+   "1  Abstract",
+   2
+  ],
+  [
+   1,
+   "2  Introduction",
+   2
+  ],
+  [
+   1,
+   "3  Methods",
+   2
+  ],
+  [
+   1,
+   "4  Results",
+   2
+  ],
+  [
+   1,
+   "5  Discussion",
+   2
+  ],
+  [
+   1,
+   "6  References",
+   2
+  ]
+ ],
+ "pdf_fonts": [
+  "Helvetica",
+  "Times-Bold",
+  "Times-Italic",
+  "Times-Roman"
+ ],
+ "pdf_qa_errors": [],
+ "tables": [],
+ "docx_headings": [
+  [
+   "Heading 1",
+   "1  Abstract"
+  ],
+  [
+   "Heading 1",
+   "2  Introduction"
+  ],
+  [
+   "Heading 1",
+   "3  Methods"
+  ],
+  [
+   "Heading 1",
+   "4  Results"
+  ],
+  [
+   "Heading 1",
+   "5  Discussion"
+  ],
+  [
+   "Heading 1",
+   "6  References"
+  ]
+ ],
+ "docx_tables": [],
+ "docx_sections": 1,
+ "layout": [
+  "headings: shallow outline: stronger H1 contrast",
+  "measure: 92 chars/line too long for reading; margins widened by 10pt each side (≈88 chars/line)"
+ ]
+}

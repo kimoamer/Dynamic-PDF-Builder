@@ -38,6 +38,7 @@ class ExportResult:
         self.page_count = page_count
         self.profile = profile
         self.diagnostics = diagnostics or []
+        self.qa = {}             # format -> QAReport (when exported with qa=True)
 
     @property
     def status(self) -> str:
@@ -72,6 +73,7 @@ class DocumentBuilder:
         self._source_text: Optional[str] = None
         self.front_matter: dict = {}
         self.last_design = None
+        self._qa_hints: dict = {}        # block index -> layout hints from the QA loop
 
     # ─── Semantic / design layer ───────────────────────────────────
 
@@ -110,6 +112,17 @@ class DocumentBuilder:
 
     def _prepared(self):
         """(Document, Theme | None) ready for a renderer, applying the design plan."""
+        doc, theme = self._prepared_inner()
+        if self._qa_hints:
+            doc = doc.model_copy(deep=True)
+            for idx, hint in self._qa_hints.items():
+                if 0 <= idx < len(doc.blocks):
+                    b = doc.blocks[idx]
+                    b.hints = {**(b.hints or {}), **hint}
+            doc.blocks = [b for b in doc.blocks if not (b.hints or {}).get("skip")]
+        return doc, theme
+
+    def _prepared_inner(self):
         if self._design_mode is None and self._brand is None:
             self.last_design = None
             return self.build(), None
@@ -568,14 +581,44 @@ class DocumentBuilder:
         _write_output(output, data)
         return None
 
-    def export(self, path: str, format: Optional[str] = None) -> 'ExportResult':
+    def qa(self, fmt: str = "pdf", max_attempts: int = 3, visual: bool = True):
+        """Render with visual/structural QA and bounded auto-fix. Returns (bytes, QAReport).
+
+        In strict mode remaining errors raise ``QualityError``; in permissive
+        mode the report is returned with ``passed == False``.
+        """
+        from .qa.loop import render_with_qa
+        from .utils.errors import QualityError
+        data, report = render_with_qa(self, fmt, max_attempts=max_attempts, visual_docx=visual)
+        self.last_qa = report
+        if not report.passed and self._policy.strict:
+            raise QualityError(report.summary() + ": " + "; ".join(
+                f.message for f in report.errors[:5]), report)
+        return data, report
+
+    def export(self, path: str, format: Optional[str] = None, qa: bool = False) -> 'ExportResult':
         """Export to ``path``; format inferred from the extension (``.pdf``/``.docx``)
-        unless given as ``"pdf"`` or ``"docx"``."""
+        unless given as ``"pdf"`` or ``"docx"``. ``qa=True`` inspects the rendered
+        pages, auto-fixes measurable layout defects (bounded retries) and attaches
+        the QA report."""
         import os
         fmt = (format or os.path.splitext(path)[1].lstrip(".") or "pdf").lower()
         if fmt not in ("pdf", "docx"):
             raise ValueError(f"Unsupported export format {fmt!r}; use 'pdf' or 'docx'")
         result = ExportResult()
+        if qa:
+            from .layout.engine import _write_output
+            data, report = self.qa(fmt)
+            _write_output(path, data)
+            result.qa[fmt] = report
+            if fmt == "pdf":
+                result.pdf_path, result.page_count = path, report.pages
+                result.diagnostics = self.diagnostics
+            else:
+                result.docx_path = path
+                result.diagnostics = [d.to_dict() for d in self.last_docx_diagnostics.items]
+            result.profile = self.last_design.decision.profile.value if self.last_design else None
+            return result
         if fmt == "pdf":
             self.render(path)
             result.pdf_path = path
@@ -588,17 +631,20 @@ class DocumentBuilder:
         result.profile = self.last_design.decision.profile.value if self.last_design else None
         return result
 
-    def export_both(self, directory: str, basename: Optional[str] = None) -> 'ExportResult':
+    def export_both(self, directory: str, basename: Optional[str] = None,
+                    qa: bool = False) -> 'ExportResult':
         """Export PDF and DOCX from the same semantic document into ``directory``."""
         import os
         import re as _re
         os.makedirs(directory, exist_ok=True)
         stem = basename or _re.sub(r"[^\w.-]+", "_", (self._meta.title or "document")).strip("_") or "document"
-        pdf = self.export(os.path.join(directory, stem + ".pdf"))
-        docx = self.export(os.path.join(directory, stem + ".docx"))
-        return ExportResult(pdf_path=pdf.pdf_path, docx_path=docx.docx_path,
-                            page_count=pdf.page_count, profile=pdf.profile,
-                            diagnostics=pdf.diagnostics + [dict(d, format="docx") for d in docx.diagnostics])
+        pdf = self.export(os.path.join(directory, stem + ".pdf"), qa=qa)
+        docx = self.export(os.path.join(directory, stem + ".docx"), qa=qa)
+        res = ExportResult(pdf_path=pdf.pdf_path, docx_path=docx.docx_path,
+                           page_count=pdf.page_count, profile=pdf.profile,
+                           diagnostics=pdf.diagnostics + [dict(d, format="docx") for d in docx.diagnostics])
+        res.qa = {**pdf.qa, **docx.qa}
+        return res
 
     def render_bytes(self) -> bytes:
         """Render and return raw PDF bytes."""

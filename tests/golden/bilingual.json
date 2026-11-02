@@ -1,0 +1,54 @@
+{
+ "profile": "executive_report",
+ "direction": "rtl",
+ "pdf_pages": 1,
+ "pdf_orientations": [
+  "P"
+ ],
+ "pdf_outline": [
+  [
+   1,
+   "1  Overview",
+   1
+  ],
+  [
+   1,
+   "2  نظرة عامة",
+   1
+  ]
+ ],
+ "pdf_fonts": [
+  "Amiri-Bold",
+  "Amiri-Regular",
+  "Helvetica"
+ ],
+ "pdf_qa_errors": [],
+ "tables": [
+  [
+   2,
+   3
+  ]
+ ],
+ "docx_headings": [
+  [
+   "Heading 1",
+   "1  Overview"
+  ],
+  [
+   "Heading 1",
+   "2  نظرة عامة"
+  ]
+ ],
+ "docx_tables": [
+  [
+   3,
+   3
+  ]
+ ],
+ "docx_sections": 1,
+ "layout": [
+  "headings: shallow outline: stronger H1 contrast",
+  "measure: 97 chars/line",
+  "tables: table 4: 3 cols, 2 rows; 9.5pt; kept on one page; numeric columns [2] right-aligned"
+ ]
+}

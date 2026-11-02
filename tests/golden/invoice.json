@@ -1,0 +1,43 @@
+{
+ "profile": "invoice",
+ "direction": "ltr",
+ "pdf_pages": 1,
+ "pdf_orientations": [
+  "P"
+ ],
+ "pdf_outline": [
+  [
+   1,
+   "Invoice INV-2026-0142",
+   1
+  ]
+ ],
+ "pdf_fonts": [
+  "Helvetica",
+  "Helvetica-Bold"
+ ],
+ "pdf_qa_errors": [],
+ "tables": [
+  [
+   3,
+   4
+  ]
+ ],
+ "docx_headings": [
+  [
+   "Heading 1",
+   "Invoice INV-2026-0142"
+  ]
+ ],
+ "docx_tables": [
+  [
+   4,
+   4
+  ]
+ ],
+ "docx_sections": 1,
+ "layout": [
+  "measure: 96 chars/line",
+  "tables: table 2: 4 cols, 3 rows; 9pt; kept on one page; numeric columns [1, 2, 3] right-aligned"
+ ]
+}

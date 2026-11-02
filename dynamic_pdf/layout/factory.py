@@ -87,6 +87,27 @@ def _link_sub(m) -> str:
     return f'<a href="{href}" color="#1a73e8">{label}</a>'
 
 
+def _glyph_fallback(text: str) -> str:
+    from ..qa.glyphs import needs_fallback
+    out, run_font, buf = [], None, []
+    in_tag = False
+    for ch in text:
+        if ch == "<":
+            in_tag = True
+        font = None if (in_tag or ch.isascii() or unicodedata.bidirectional(ch) in ("R", "AL", "AN")) \
+            else needs_fallback(ch)
+        if ch == ">":
+            in_tag = False
+        if font != run_font:
+            if buf:
+                out.append(f'<font name="{run_font}">{"".join(buf)}</font>' if run_font else "".join(buf))
+            buf, run_font = [], font
+        buf.append(ch)
+    if buf:
+        out.append(f'<font name="{run_font}">{"".join(buf)}</font>' if run_font else "".join(buf))
+    return "".join(out)
+
+
 def _md_inline(text: str) -> str:
     """Convert Markdown inline syntax to ReportLab Paragraph XML.
     Handles: **bold**, *italic*, `code`, ~~strike~~, [link](url),
@@ -132,6 +153,9 @@ def _md_inline(text: str) -> str:
     text = re.sub(r'(?<!\[)\^([^\^\s][^\^]*?)\^', r'<super>\1</super>', text)
     # Footnote ref: [^N]
     text = re.sub(r'\[\^(\w+)\]', r'<super>\1</super>', text)
+    # Characters the standard fonts lack (✓ → ≥ …) are drawn with a bundled
+    # face that has them instead of ReportLab's silent wrong-glyph substitution.
+    text = _glyph_fallback(text)
     # Restore code spans
     text = re.sub(r'\x00(\d+)\x00',
                   lambda m: f'<font face="Courier" size="9" backColor="#E8E8E8">{codes[int(m.group(1))]}</font>',
@@ -808,6 +832,8 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
             hf = Paragraph(_md_inline(display_text), sty)
         hf.keepWithNext = 1          # never strand a heading at a page bottom
         hf._toc_entry = toc_entry    # consumed by the doc template (TOC/outline/links)
+        if (block.hints or {}).get("break_before"):
+            return [PageBreak(), hf]   # QA fix for a heading stranded at a page bottom
         return [hf]
 
     # ─── Paragraph ───
@@ -1175,7 +1201,9 @@ def _render_table(block, theme, bs, ctx=None):
     avail = ctx.available_width if ctx else None
     col_widths = block.column_widths
     if not col_widths and hints.get("col_fractions") and avail:
-        col_widths = [f * avail for f in hints["col_fractions"]]
+        fr = hints["col_fractions"]
+        total = sum(fr) or 1.0
+        col_widths = [f / total * (avail - 1.0) for f in fr]     # exact fit, never overflow
     elif col_widths and avail and sum(col_widths) > avail:
         col_widths = [w * avail / sum(col_widths) for w in col_widths]   # never overflow the frame
     if col_widths and tbl_rtl:
@@ -1269,11 +1297,12 @@ def _render_code(block, theme):
                                  fontSize=theme.typography.base_size * theme.typography.caption_size_ratio,
                                  textColor=_safe_color("#A0AEC0"),
                                  backColor=_safe_color("#2D2D3F"), borderPadding=6, spaceAfter=0)
-        flowables.append(Paragraph(block.caption, cap_sty))
+        flowables.append(Paragraph(_md_inline(block.caption), cap_sty))
+    code_size = (block.hints or {}).get("font_size") or theme.typography.base_size * 0.85
     code_sty = ParagraphStyle(
         'Code', fontName=get_font_name(theme.typography.mono_family),
-        fontSize=theme.typography.base_size * 0.85,
-        leading=theme.typography.base_size * 1.2,
+        fontSize=code_size,
+        leading=code_size * 1.4,
         textColor=_safe_color(theme.colors.code_text),
         backColor=_safe_color(theme.colors.code_bg),
         borderPadding=12, spaceAfter=theme.spacing.block_gap, wordWrap='CJK',
@@ -1292,7 +1321,9 @@ def _render_image(block, theme, available_width=460, available_height=None):
     max_h = block.height
     if available_height:
         # leave room for a caption so figure + caption fit on one page
-        frame_cap = available_height * (0.85 if (block.caption or block.figure_number) else 0.98)
+        ratio = (block.hints or {}).get("max_height_ratio") or (
+            0.85 if (block.caption or block.figure_number) else 0.98)
+        frame_cap = available_height * ratio
         max_h = min(max_h, frame_cap) if max_h else frame_cap
     if max_h and h > max_h:
         w = w * (max_h / h)

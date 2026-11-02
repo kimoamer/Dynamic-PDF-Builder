@@ -34,6 +34,8 @@ def main():
     render_p.add_argument("--section-numbers", action="store_true", help="Enable section numbering")
     render_p.add_argument("--permissive", action="store_true",
                           help="Render failed blocks as visible markers instead of failing (exit code 3 if degraded)")
+    render_p.add_argument("--qa", action="store_true",
+                          help="Inspect rendered pages, auto-fix layout defects (bounded retries), report findings")
     render_p.add_argument("--allow-remote-assets", action="store_true",
                           help="Allow fetching http(s) images (public hosts only)")
 
@@ -122,9 +124,15 @@ def _cmd_render(args):
     paths = []
     for target in targets:
         path = args.output if (args.output and fmt != "both") else f"{stem}.{target}"
-        res = builder.export(path, format=target)
+        res = builder.export(path, format=target, qa=args.qa)
         diagnostics += res.diagnostics
         paths.append(path)
+        for rep in res.qa.values():
+            print(rep.summary())
+            for fix in rep.fixes_applied:
+                print(f"  fixed: {fix}")
+            for f in rep.findings:
+                print(f"  {f.severity}: [{f.code}] {f.message}", file=sys.stderr)
     _report(paths, diagnostics)
 
 

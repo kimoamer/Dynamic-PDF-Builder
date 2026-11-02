@@ -44,3 +44,11 @@ class RenderError(DynamicPDFError):
     def __init__(self, message: str, diagnostics=None):
         self.diagnostics = list(diagnostics or [])
         super().__init__(message)
+
+
+class QualityError(DynamicPDFError):
+    """Output failed visual/structural QA after the bounded auto-fix attempts."""
+
+    def __init__(self, message: str, report=None):
+        self.report = report
+        super().__init__(message)

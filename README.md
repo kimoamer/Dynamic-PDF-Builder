@@ -1149,6 +1149,7 @@ just that a file was produced:
 | `test_docx_semantics.py` | Word styles, numbering restarts, tables, fields, TOC, links, alt text, export API/CLI |
 | `test_docx_rtl.py` | Arabic bidi paragraphs/runs, complex-script fonts, bilingual tables |
 | `test_adaptive_layout.py` | Landscape for wide tables (PDF + DOCX), column widths, min type size, numeric alignment, lead, cover, no stranded headings, word preservation |
+| `test_visual_qa.py` | QA on every fixture, synthetic defect detection, auto-fix loop, glyph coverage, DOCX integrity, golden fingerprints |
 | `test_pdf_docx_parity.py` | Same words and heading structure in AST, PDF and DOCX; LibreOffice conversion |
 
 ## Editable Word (DOCX) export & intelligent design
@@ -1195,6 +1196,26 @@ columns, landscape pages/sections for tables that cannot be read in portrait, sh
 and captions kept on one page, comfortable line length for prose, heading ramps tuned to
 outline depth, a lead paragraph for reports and proposals, and a metadata-only cover for long
 titled reports. Headings are kept with their content and widows/orphans are suppressed.
+
+## Visual quality assurance
+
+`export(..., qa=True)` (or `builder.qa("pdf"|"docx")`, CLI `--qa`) renders the document,
+inspects every page and fixes measurable layout defects with bounded retries (3 attempts):
+
+| Check | Source | Automatic fix |
+|-------|--------|---------------|
+| Text/images clipped off the page, overflow into margins | PDF geometry (PyMuPDF); DOCX via LibreOffice | landscape page / smaller type for the table (≥ 7.5 pt), smaller code type, image rescale |
+| Overlapping text lines | same | — (reported) |
+| Heading stranded at a page bottom | PDF outline + geometry | page break moved before the heading |
+| Accidental blank pages | PDF | redundant page breaks collapsed |
+| Missing glyphs | font coverage of every character | bundled fallback face for symbols; otherwise reported |
+| Broken links, numbering, bookmarks, tables, XML, alt text | PDF links; DOCX package/XML | — (reported) |
+
+Strict mode raises `QualityError` if errors remain; permissive mode returns the report.
+`python -m dynamic_pdf.qa.golden tests/fixtures tests/golden [--update] [--sheets]` verifies
+structural fingerprints of the fixture corpus and writes page contact sheets for review; CI
+uploads them as the `page-contact-sheets` artifact. QA needs `pip install "dynamic-pdf-builder[qa]"`
+(PyMuPDF, AGPL) and LibreOffice for DOCX visual checks.
 
 ## Error handling, security & limits
 
