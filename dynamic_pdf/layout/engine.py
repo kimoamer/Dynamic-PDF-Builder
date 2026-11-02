@@ -13,7 +13,8 @@ from reportlab.lib.pagesizes import A4, LETTER, LEGAL, landscape
 from reportlab.lib.colors import HexColor, Color
 from reportlab.lib.units import inch
 from reportlab.pdfgen.canvas import Canvas
-from reportlab.platypus.flowables import Flowable
+from reportlab.platypus.flowables import Flowable, KeepTogether
+from reportlab.platypus.doctemplate import ActionFlowable
 from xml.sax.saxutils import escape as xml_escape
 from ..schema.document import Document
 from ..schema.enums import PageSize, Orientation
@@ -70,13 +71,149 @@ class _PageCounter(Flowable):
         pass
 
 
+def _landscape_indices(blocks) -> set:
+    """Blocks rendered on landscape pages: each flagged block plus the heading
+    and short intro that lead into it (so they are not stranded alone on a
+    portrait page); adjacent landscape blocks share one landscape run."""
+    out = set()
+    for i, b in enumerate(blocks):
+        if not (getattr(b, "hints", None) or {}).get("landscape"):
+            continue
+        start, chars, j = i, 0, i - 1
+        while j >= 0 and blocks[j].type in ("paragraph", "note", "rich_text") and chars < 900:
+            chars += len(getattr(blocks[j], "text", ""))
+            j -= 1
+        if j >= 0 and blocks[j].type == "heading" and chars < 900:
+            start = j
+        out.update(range(start, i + 1))
+    return out
+
+
+_ARABIC_BASE = __import__("re").compile("[\u0600-\u06FF\u0750-\u077F]")
+
+
+class _BidiCanvas(Canvas):
+    """Shapes Arabic in header/footer strings (drawn with canvas.drawString)."""
+    _dpb_bidi = False
+
+    def _shape(self, text):
+        if not (self._dpb_bidi and isinstance(text, str) and _ARABIC_BASE.search(text)):
+            return text, None
+        from .factory import _apply_rtl
+        from ..fonts import get_font_name
+        font = get_font_name("Amiri", bold="Bold" in self._fontname)
+        return _apply_rtl(text), font
+
+    def _draw(self, fn, x, y, text, *a, **k):
+        shaped, font = self._shape(text)
+        if font:
+            prev = (self._fontname, self._fontsize)
+            self.setFont(font, prev[1])
+            fn(x, y, shaped, *a, **k)
+            self.setFont(*prev)
+        else:
+            fn(x, y, text, *a, **k)
+
+    def drawString(self, x, y, text, *a, **k):
+        self._draw(super().drawString, x, y, text, *a, **k)
+
+    def drawRightString(self, x, y, text, *a, **k):
+        self._draw(super().drawRightString, x, y, text, *a, **k)
+
+    def drawCentredString(self, x, y, text, *a, **k):
+        self._draw(super().drawCentredString, x, y, text, *a, **k)
+
+
+class _FlowKeep(KeepTogether):
+    """keep-with-next that never wastes a page.
+
+    ReportLab's KeepTogether inserts a frame break whenever the whole group
+    (e.g. heading + long table) is taller than the remaining space, leaving
+    large gaps. Here the group only moves to the next page when the heading(s)
+    plus the first splittable part of the following block do not fit.
+    """
+
+    def wrap(self, aW, aH):
+        # nested KeepTogether groups report a sentinel height (0xffffff) from
+        # wrap(); use their real content height so the outer group is measured right
+        W, H = 0.0, 0.0
+        for i, f in enumerate(self._content):
+            w, h = f.wrapOn(self.canv, aW, aH)
+            if isinstance(f, KeepTogether):
+                h = getattr(f, "_H", h)
+            W = max(W, w)
+            H += h + (f.getSpaceBefore() if i else 0) + f.getSpaceAfter()
+        self._H = H
+        self._H0 = self._content[0].wrapOn(self.canv, aW, aH)[1] if self._content else 0
+        self._wrapInfo = aW, aH
+        return W, 0xffffff
+
+    def split(self, aW, aH):
+        if getattr(self, "_wrapInfo", None) != (aW, aH):
+            self.wrap(aW, aH)
+        S = self._content[:]
+        if self._H <= aH:
+            return S
+        cf = getattr(self, "_frame", None)
+        at_top = bool(cf and getattr(cf, "_atTop", False))
+        lead, last = S[:-1], S[-1]
+        lead_h = 0.0
+        for f in lead:
+            lead_h += f.wrapOn(self.canv, aW, aH)[1] + f.getSpaceBefore() + f.getSpaceAfter()
+        rest = aH - lead_h - last.getSpaceBefore()
+        fits_part = False
+        if rest > 24:
+            try:
+                parts = last.splitOn(self.canv, aW, rest)
+            except Exception:
+                parts = []
+            # the first real piece must fit beside the heading (KeepTogether groups
+            # "split" into their parts, or into a frame break, without shrinking)
+            real = [p for p in parts if not isinstance(p, ActionFlowable)]
+            if len(parts) > 1 and real and len(real) == len(parts) and not isinstance(last, KeepTogether):
+                fits_part = True
+            elif real and len(parts) == len(real):
+                h0 = real[0].wrapOn(self.canv, aW, rest)[1] + real[0].getSpaceBefore()
+                fits_part = h0 <= rest and not isinstance(last, KeepTogether)
+        if not fits_part and not at_top:
+            S.insert(0, self.FrameBreak())
+        return S
+
+
 class _EngineDocTemplate(BaseDocTemplate):
     """Registers heading destinations, PDF outline entries and TOC entries."""
 
+    keepTogetherClass = _FlowKeep
+
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
+        self.keepTogetherClass = _FlowKeep   # BaseDocTemplate sets the default per instance
         self._heading_seq = 0
         self._outline_level = -1
+
+    def handle_keepWithNext(self, flowables):
+        """As ReportLab's, but a heading may also be kept with a following
+        KeepTogether group (figure + caption, short table) — ReportLab skips
+        containers there, which left such headings stranded at page bottoms."""
+        from reportlab.platypus.doctemplate import _ktAllow
+        i, n = 0, len(flowables)
+        while i < n and flowables[i].getKeepWithNext() and _ktAllow(flowables[i]):
+            i += 1
+        if not i:
+            return
+        if i < n and (_ktAllow(flowables[i]) or type(flowables[i]) is KeepTogether):
+            i += 1
+        K = self.keepTogetherClass(flowables[:i])
+        mbe = getattr(self, '_multiBuildEdits', None)
+        for f in K._content[:-1]:
+            if mbe:
+                if hasattr(f, 'keepWithNext'):
+                    mbe((setattr, f, 'keepWithNext', f.keepWithNext))
+                else:
+                    mbe((delattr, f, 'keepWithNext'))
+            f.__dict__['keepWithNext'] = 0
+        del flowables[:i]
+        flowables.insert(0, K)
 
     def handle_documentBegin(self):
         self._heading_seq = 0
@@ -96,7 +233,12 @@ class _EngineDocTemplate(BaseDocTemplate):
         olevel = min(level - 1, self._outline_level + 1)
         self._outline_level = olevel
         c.addOutlineEntry(text, key, level=olevel, closed=olevel >= 1)
-        self.notify('TOCEntry', (level - 1, xml_escape(text), self.page, key))
+        entry = xml_escape(text)
+        if _ARABIC_BASE.search(text):
+            from .factory import _apply_rtl
+            from ..fonts import get_font_name
+            entry = f'<font name="{get_font_name("Amiri")}">{xml_escape(_apply_rtl(text))}</font>'
+        self.notify('TOCEntry', (level - 1, entry, self.page, key))
 
 
 # ═══════════════════════ Colour Helpers ═══════════════════════
@@ -164,6 +306,7 @@ class LayoutEngine:
         self.policy = policy or RenderPolicy()
         self.diagnostics = DiagnosticCollector(self.policy)
         self.page_count = 0
+        self.last_page_fill = None
         self._page_counter = None
 
     # ─── Page Size ───
@@ -403,21 +546,24 @@ class LayoutEngine:
             if dw:
                 x += dw + 14
 
-        # Title
+        # Title (flush right in right-to-left documents)
+        rtl = self._language() == "ar"
+        draw = (lambda yy, txt: c.drawRightString(w - x_start, yy, txt)) if rtl else \
+            (lambda yy, txt: c.drawString(x, yy, txt))
         title = hf.title or self.document.meta.title or ""
         if title:
             c.setFillColor(_hc(tc))
             c.setFont(self._hdr_font(bold=True), ts)
             if hf.subtitle:
-                c.drawString(x, h - bar_h + bar_h * 0.55 - y_offset, title)
+                draw(h - bar_h + bar_h * 0.55 - y_offset, title)
             else:
-                c.drawString(x, h - bar_h + (bar_h - ts) / 2 - y_offset, title)
+                draw(h - bar_h + (bar_h - ts) / 2 - y_offset, title)
 
         # Subtitle
         if hf.subtitle:
             c.setFont(self._body_font(italic=True), sts)
             c.setFillColor(_hc(tc))
-            c.drawString(x, h - bar_h + bar_h * 0.22 - y_offset, hf.subtitle)
+            draw(h - bar_h + bar_h * 0.22 - y_offset, hf.subtitle)
 
     # ═══════════════════════ FOOTER DRAWING ═══════════════════════
 
@@ -639,12 +785,22 @@ class LayoutEngine:
     # ─── Combined Page Handler ──────────────────────────────────────
 
     def _on_page(self, canvas, doc):
-        self._draw_header(canvas, doc)
-        self._draw_footer(canvas, doc)
+        canvas._dpb_bidi = True          # header/footer strings get Arabic shaping
+        try:
+            self._draw_header(canvas, doc)
+            self._draw_footer(canvas, doc)
+        finally:
+            canvas._dpb_bidi = False
         # Draw sidebar for sidebar style (full page height)
         hf = self.theme.header_footer
         if hf.header_style == "sidebar" or hf.footer_style == "sidebar":
             self._draw_sidebar_strip(canvas)
+
+    def _language(self) -> str:
+        meta = self.document.meta
+        if meta.rtl or getattr(meta, "direction", None) == "rtl":
+            return "ar" if not (meta.language or "").startswith(("he", "fa", "ur")) else meta.language
+        return (meta.language or "en").split("-")[0]
 
     def _page_wh(self, canvas):
         """Actual size of the page being drawn (landscape pages differ)."""
@@ -763,47 +919,47 @@ class LayoutEngine:
             available_width=frame_width,
             section_numbering=meta.section_numbering,
             available_height=h - top_m - bot_m,
+            language=self._language(),
         )
+        self.diagnostics.language = ctx.language
 
         token = _policy.activate(self.diagnostics)
         try:
             self._page_counter = _PageCounter(doc_template)
             flowables = [self._page_counter]
+            land = _landscape_indices(self.document.blocks) if lw > w else set()
+            in_land = False
+            from reportlab.platypus import NextPageTemplate
+            from reportlab.platypus.flowables import PageBreakIfNotEmpty
             for i, block in enumerate(self.document.blocks):
+                if (i in land) != in_land:
+                    in_land = i in land
+                    flowables += [NextPageTemplate('Landscape' if in_land else 'AllPages'),
+                                  PageBreakIfNotEmpty()]
+                    ctx.available_width = land_width if in_land else frame_width
                 self.diagnostics.block_index = i
                 self.diagnostics.block_type = getattr(block, "type", None)
                 if getattr(block, "type", None) == "table":
                     width = max([len(block.headers or [])] + [len(r) for r in block.rows] + [1])
                     _policy.check_limit("Table cells", (len(block.rows) + 1) * width,
                                         limits.max_table_cells)
-                hints = getattr(block, "hints", None) or {}
-                if hints.get("landscape") and lw > w:
-                    from reportlab.platypus import NextPageTemplate, PageBreak
-                    portrait_w = ctx.available_width
-                    ctx.available_width = land_width
-                    try:
-                        result = create_flowables(block, theme, ctx)
-                    finally:
-                        ctx.available_width = portrait_w
-                    flowables += [NextPageTemplate('Landscape'), PageBreak()] + (result or []) + [
-                        NextPageTemplate('AllPages'), PageBreak()]
-                    continue
                 result = create_flowables(block, theme, ctx)
                 if result:
                     flowables.extend(result)
             self.diagnostics.block_index = None
             self.diagnostics.block_type = None
 
-            # no trailing page break after a final landscape section
-            from reportlab.platypus import PageBreak as _PB
-            if len(flowables) >= 2 and isinstance(flowables[-1], _PB) and \
-                    type(flowables[-2]).__name__ == "NextPageTemplate":
-                flowables.pop()
             if len(flowables) == 1:
                 flowables.append(Spacer(1, 1))
 
-            doc_template.multiBuild(flowables)
+            doc_template.multiBuild(flowables, canvasmaker=_BidiCanvas)
             self.page_count = self._page_counter.total
+            # how full the final page is (0..1) — used by the page-fit step
+            fr = getattr(doc_template, "frame", None)
+            try:
+                self.last_page_fill = round(1 - (fr._y - fr._y1) / fr._height, 3) if fr else None
+            except Exception:
+                self.last_page_fill = None
         finally:
             _policy.deactivate(token)
 

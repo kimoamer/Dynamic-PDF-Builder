@@ -71,7 +71,13 @@ class DocxRenderer:
         self._setup_section()
         self._core_properties()
         self._header_footer()
+        from ..layout.engine import _landscape_indices
+        land = _landscape_indices(self.sem.blocks)
+        in_land = False
         for i, block in enumerate(self.sem.blocks):
+            if (i in land) != in_land:
+                in_land = i in land
+                self._switch_orientation(landscape=in_land)
             self.col.block_index = i
             self.col.block_type = getattr(block, "type", None)
             self._block_safe(doc, block)
@@ -81,6 +87,10 @@ class DocxRenderer:
         buf = io.BytesIO()
         doc.save(buf)
         return buf.getvalue()
+
+    def _label(self, key):
+        from ..i18n import label
+        return label(key, "ar" if self.rtl_doc else self.sem.language)
 
     def _block_safe(self, container, block):
         try:
@@ -414,15 +424,8 @@ class DocxRenderer:
     # ─── table ───
 
     def _b_table(self, c, b):
-        hints = b.hints or {}
-        landscape = bool(hints.get("landscape")) and not isinstance(c, _Cell)
-        if landscape:
-            self._switch_orientation(landscape=True)
-        try:
-            self._table(c, b, hints)
-        finally:
-            if landscape:
-                self._switch_orientation(landscape=False)
+        # landscape sections are opened/closed by render() around the table's run
+        self._table(c, b, b.hints or {})
 
     def _switch_orientation(self, landscape: bool):
         from docx.enum.section import WD_SECTION
@@ -658,6 +661,7 @@ class DocxRenderer:
         F.set_table_width_pct(t, 100)
         F.set_table_borders(t, color=self.tokens.colors["border"], size=4, inside_v=True)
         F.set_table_cell_margins(t, 100, 100, 120, 120)
+        F.set_cant_split(t.rows[0])           # a KPI tile never splits across pages
         if self.rtl_doc:
             F.set_table_bidi(t)
         for i, m in enumerate(b.metrics):
@@ -789,18 +793,18 @@ class DocxRenderer:
 
     def _b_abstract(self, c, b):
         cell = self._boxed(c, self.tokens.colors["surface"], self.tokens.colors["accent"])
-        self._runs(self._para(cell, "Heading 4", "Abstract"), "Abstract")
+        self._runs(self._para(cell, "Heading 4", self._label("abstract")), self._label("abstract"))
         for f in b.fields:
             p = self._para(cell, "Normal", f.text)
             self._runs(p, f"{f.label}: ", bold=True)
             self._runs(p, f.text)
         if b.keywords:
             p = self._para(cell, "Normal", " ".join(b.keywords))
-            self._runs(p, "Keywords: ", bold=True, italic=True)
+            self._runs(p, self._label("keywords") + ": ", bold=True, italic=True)
             self._runs(p, ", ".join(b.keywords), italic=True)
 
     def _b_bibliography(self, c, b):
-        self._runs(self._para(c, "Heading 2", "References"), "References")
+        self._runs(self._para(c, "Heading 2", self._label("references")), self._label("references"))
         for i, e in enumerate(b.entries, 1):
             p = self._para(c, "Normal", e.title)
             pf = p.paragraph_format
@@ -844,7 +848,7 @@ class DocxRenderer:
         self._runs(self._para(c, "Title", b.title), b.title)
         if b.subtitle:
             self._runs(self._para(c, "Subtitle", b.subtitle), b.subtitle)
-        for txt in ((f"Prepared by {b.author}" if b.author else None), b.date):
+        for txt in ((f"{self._label('prepared_by')} {b.author}" if b.author else None), b.date):
             if txt:
                 p = self._para(c, "Normal", txt)
                 p.paragraph_format.space_before = Pt(18)
@@ -852,8 +856,9 @@ class DocxRenderer:
         self._page_break(c)
 
     def _b_table_of_contents(self, c, b):
-        p = self._para(c, "TOC Heading", "Table of Contents")
-        p.add_run("Table of Contents")
+        title = self._label("toc")
+        p = self._para(c, "TOC Heading", title)
+        self._runs(p, title)
         depth = max(1, min(6, getattr(b, "depth", 3) or 3))
         entries = [o for o in self.sem.outline if o.level <= depth]
         # TOC field; its cached result lists every heading as a live link so the

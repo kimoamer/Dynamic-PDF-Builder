@@ -81,17 +81,22 @@ def check_docx(data: bytes, *, heading_texts: Optional[List[str]] = None,
     if visual:
         pdf = docx_to_pdf(data, timeout=timeout)
         if pdf is None:
+            # Never report a visual PASS that did not happen
+            rep.unverified.append("visual")
             rep.findings.append(Finding(severity=WARNING, code="visual_check_skipped", format="docx",
-                                        message="LibreOffice not available; DOCX visual checks skipped"))
+                                        message="LibreOffice not available; DOCX layout is UNVERIFIED"))
         else:
             from .pdf_checks import check_pdf
             sec = d.sections[0]
+            # LibreOffice lets Arabic glyph overhang reach ~1-2pt past the margin;
+            # use a slightly larger tolerance than for our own PDF output
             vis = check_pdf(pdf, margins={"left": sec.left_margin.pt, "right": sec.right_margin.pt},
-                            heading_texts=None, fmt="docx")
+                            heading_texts=None, fmt="docx", tolerance=4.0)
             rep.pages = vis.pages
             # Word/LibreOffice paginate themselves; only geometry defects are actionable
             rep.findings += [f for f in vis.findings if f.code in ("clipped_text", "clipped_image",
                                                                     "overlap", "overflow", "missing_glyph")]
+            rep.page_fill = vis.page_fill
             rep.page_images = []
             rep._pdf = pdf  # type: ignore[attr-defined]
     return rep

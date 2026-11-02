@@ -63,6 +63,7 @@
  "docx_sections": 1,
  "layout": [
   "headings: shallow outline: stronger H1 contrast",
-  "measure: 96 chars/line"
+  "measure: 96 chars/line",
+  "pagination: 2 pages, last 67% full; kept rhythm (tightening within limits would not save a page)"
  ]
 }
