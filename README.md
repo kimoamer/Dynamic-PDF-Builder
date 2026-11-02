@@ -3,7 +3,7 @@
 > Generate beautiful, professional PDF reports from **Markdown**, **JSON**, or a **fluent Python API** — pure Python, no system dependencies required.
 
 [![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)](https://pypi.org/project/dynamic-pdf-builder/)
-[![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![CI](https://github.com/kimoamer/Dynamic-PDF-Builder/actions/workflows/ci.yml/badge.svg)](https://github.com/kimoamer/Dynamic-PDF-Builder/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -1129,7 +1129,7 @@ pip install -e ".[dev]"
 python -m pytest -q
 ```
 
-CI (`.github/workflows/ci.yml`) runs the suite on Python 3.9–3.13 for every push
+CI (`.github/workflows/ci.yml`) runs the suite on Python 3.10–3.13 for every push
 and pull request; the CI badge above reflects the actual latest result. Tests
 inspect the generated PDFs (text, outline, links, page totals via PyMuPDF), not
 just that a file was produced:
