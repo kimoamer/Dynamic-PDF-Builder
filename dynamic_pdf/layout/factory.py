@@ -28,6 +28,13 @@ from .. import policy as _diag
 from ..assets import load_image as _load_image
 
 
+# Glyph-safe markers: available in the standard PDF fonts (no missing-glyph boxes)
+BULLET_CHARS = ["\u2022", "\u2013", "\u00b7", "\u2022"]      # •, –, ·, •
+# Checkbox glyphs come from the bundled JetBrains Mono (□ U+25A1, ✓ U+2713)
+CHECK_ON = '<font name="JetBrains Mono">\u2713</font>'
+CHECK_OFF = '<font name="JetBrains Mono">\u25a1</font>'
+
+
 # ═══════════════════════ RTL Detection ═══════════════════════
 
 def _is_rtl(text: str) -> bool:
@@ -755,8 +762,8 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
     if btype == "heading":
         ctx.apply_drop_cap_next = True   # next paragraph gets drop cap
         idx = max(0, min(5, block.level - 1))
-        scale = theme.typography.heading_scale[idx]
-        fs = theme.typography.base_size * scale
+        from ..design.tokens import heading_size
+        fs = heading_size(theme, block.level)   # honours heading_hN_size tokens
         h_before = sp.heading_spacing_before[idx]
         h_after = sp.heading_spacing_after[idx]
         text_color = _safe_color(block.color or theme.colors.text_primary)
@@ -1058,9 +1065,9 @@ def _flatten_list(items, list_type, start=1, depth=0):
         else:
             text, children, checked = item.text, item.children, item.checked
         if checked is not None:
-            marker = "\u2611" if checked else "\u2610"
+            marker = CHECK_ON if checked else CHECK_OFF
         elif list_type == 'bullet':
-            marker = ["\u2022", "\u25e6", "\u25aa", "\u2013"][min(depth, 3)]
+            marker = BULLET_CHARS[min(depth, 3)]
         else:
             marker = str((start if depth == 0 else 1) + idx)
         rows.append((text, marker, depth))
@@ -1558,7 +1565,7 @@ def _render_checklist(block, theme, bs):
     """GFM task list: checkmark/box characters."""
     flowables = []
     for item in block.items:
-        marker = "\u2611" if item.checked else "\u2610"  # checked/unchecked box
+        marker = CHECK_ON if item.checked else CHECK_OFF
         is_rtl = _is_rtl(item.text)
         text = _md_inline(item.text)
         if item.checked:
@@ -1841,7 +1848,6 @@ def _render_sidebar(block, theme, ctx=None):
 def _build_list_flowable(items, bullet_type, theme, bs, sp, start=1, depth=0):
     """Recursively build a nested ListFlowable from ListItemModel objects."""
     from reportlab.platypus import ListFlowable, ListItem
-    BULLET_CHARS = ["\u2022", "\u25e6", "\u25aa", "\u2013"]  # •, ◦, ▪, –
     bullet_char = BULLET_CHARS[min(depth, len(BULLET_CHARS) - 1)]
 
     li_list = []
@@ -1854,7 +1860,7 @@ def _build_list_flowable(items, bullet_type, theme, bs, sp, start=1, depth=0):
         )
         text = _md_inline(item.text).replace("\n", "<br/>")
         if item.checked is not None:
-            text = ("\u2611 " if item.checked else "\u2610 ") + text
+            text = (CHECK_ON if item.checked else CHECK_OFF) + "  " + text
         para = Paragraph(text, item_sty)
 
         if item.children:
@@ -1866,18 +1872,23 @@ def _build_list_flowable(items, bullet_type, theme, bs, sp, start=1, depth=0):
             child_flow = _build_list_flowable(
                 item.children, child_type, theme, bs, sp, depth=depth + 1)
             li_list.append(ListItem([para, child_flow],
-                                    leftIndent=sp.list_indent * (depth + 1)))
+                                    leftIndent=sp.list_indent))
         else:
-            li_list.append(ListItem(para, leftIndent=sp.list_indent * (depth + 1)))
+            li_list.append(ListItem(para, leftIndent=sp.list_indent))
 
+    item_size = max(theme.typography.base_size - depth * 0.5, 8)
     kwargs = dict(
-        leftIndent=sp.list_indent * (depth + 1),
+        leftIndent=sp.list_indent,
         spaceBefore=2 if depth > 0 else sp.block_gap / 2,
-        bulletOffsetY=2,
+        spaceAfter=0 if depth > 0 else sp.block_gap / 2,
+        bulletFontName=bs.fontName,
+        bulletFontSize=item_size,
+        bulletOffsetY=0,
     )
     if bullet_type == '1':
         kwargs['bulletType'] = '1'
         kwargs['start'] = start
+        kwargs['bulletFormat'] = '%s.'
     else:
         kwargs['bulletType'] = 'bullet'
         kwargs['start'] = bullet_char

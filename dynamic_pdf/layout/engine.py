@@ -158,9 +158,9 @@ def _draw_image(canvas, path, x, y, max_w, max_h, align="left"):
 # ═══════════════════════ Layout Engine ═══════════════════════
 
 class LayoutEngine:
-    def __init__(self, document: Document, policy: RenderPolicy = None):
+    def __init__(self, document: Document, policy: RenderPolicy = None, theme: Theme = None):
         self.document = document
-        self.theme = get_theme(document.theme)
+        self.theme = theme.model_copy(deep=True) if theme is not None else get_theme(document.theme)
         self.policy = policy or RenderPolicy()
         self.diagnostics = DiagnosticCollector(self.policy)
         self.page_count = 0
@@ -209,6 +209,8 @@ class LayoutEngine:
             return
 
         style = hf.header_style.lower().replace("-", "_").replace(" ", "_")
+        if style == "none":
+            return
         w, h = self._get_pagesize()
         bar_h = hf.height
         canvas.saveState()
@@ -427,6 +429,8 @@ class LayoutEngine:
             return
 
         style = hf.footer_style.lower().replace("-", "_").replace(" ", "_")
+        if style == "none":
+            return
         w, h = self._get_pagesize()
         bar_h = hf.footer_height
         canvas.saveState()

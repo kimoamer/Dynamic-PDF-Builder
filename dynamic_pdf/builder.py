@@ -46,6 +46,68 @@ class DocumentBuilder:
         self._blocks: list = []
         self._policy = policy or RenderPolicy()
         self.last_render = None   # LayoutEngine of the most recent render (diagnostics, page_count)
+        self._design_mode: Optional[str] = None   # None = classic theme rendering (v0.3)
+        self._brand = None
+        self._source_kind = "api"
+        self._source_text: Optional[str] = None
+        self.front_matter: dict = {}
+        self.last_design = None
+
+    # ─── Semantic / design layer ───────────────────────────────────
+
+    def document_type(self, doc_type: str) -> 'DocumentBuilder':
+        """Declare the document type (e.g. ``executive_report``, ``proposal``,
+        ``academic_report``, ``technical_manual``, ``data_report``, ``letter``)."""
+        from .design import resolve_profile_name
+        self._meta.document_type = (None if doc_type in (None, "", "auto")
+                                    else resolve_profile_name(doc_type).value)
+        return self
+
+    def direction(self, direction: str) -> 'DocumentBuilder':
+        if direction not in ("ltr", "rtl", "auto"):
+            raise ValueError("direction must be 'ltr', 'rtl' or 'auto'")
+        self._meta.direction = None if direction == "auto" else direction
+        self._meta.rtl = direction == "rtl"
+        return self
+
+    def design(self, mode: str = "auto", brand=None) -> 'DocumentBuilder':
+        """Enable intelligent design: ``"auto"`` selects a profile from the
+        content; a profile name forces it. ``brand`` is a ``BrandKit`` or dict.
+        Content is never altered — only typography, layout and navigation."""
+        from .design import BrandKit, resolve_profile_name
+        if mode != "auto":
+            resolve_profile_name(mode)   # validate early
+        self._design_mode = mode
+        if brand is not None:
+            self._brand = brand if isinstance(brand, BrandKit) else BrandKit(**brand)
+        return self
+
+    def semantic(self):
+        """The canonical, renderer-independent ``SemanticDocument``."""
+        from .core.normalize import normalize
+        return normalize(self.build(), source_kind=self._source_kind,
+                         source_text=self._source_text, front_matter=self.front_matter)
+
+    def _prepared(self):
+        """(Document, Theme | None) ready for a renderer, applying the design plan."""
+        if self._design_mode is None and self._brand is None:
+            self.last_design = None
+            return self.build(), None
+        from .design import plan_design, apply_plan
+        sem = self.semantic()
+        plan = plan_design(sem, None if self._design_mode in (None, "auto") else self._design_mode,
+                           self._brand)
+        sem = apply_plan(sem, plan)
+        self.last_design = plan
+        return sem.to_document(), plan.theme
+
+    def design_explain(self) -> dict:
+        """Why each style/layout decision was made (profile, reasons, recipe)."""
+        if self._design_mode is None and self._brand is None:
+            return {"profile": None, "reasons": ["design() not enabled; using theme "
+                                                 f"'{self._theme}' as-is"]}
+        self._prepared()
+        return self.last_design.explain()
 
     # ─── Render policy (caller-owned; never taken from document payloads) ───
 
@@ -448,7 +510,8 @@ class DocumentBuilder:
         return Document(meta=self._meta, theme=self._theme, blocks=self._blocks)
 
     def _engine(self) -> LayoutEngine:
-        self.last_render = LayoutEngine(self.build(), policy=self._policy)
+        doc, theme = self._prepared()
+        self.last_render = LayoutEngine(doc, policy=self._policy, theme=theme)
         return self.last_render
 
     def render(self, output=None) -> Optional[bytes]:
@@ -500,7 +563,13 @@ class DocumentBuilder:
         builder.meta(language=lang if isinstance(lang, str) and lang else "en", **kw)
         if isinstance(fm.get("theme"), str) and theme == "claude":
             builder._theme = fm["theme"]
+        if isinstance(fm.get("document_type"), str) and fm["document_type"]:
+            builder.document_type(fm["document_type"])
+        if fm.get("direction") in ("ltr", "rtl"):
+            builder.direction(fm["direction"])
         builder.front_matter = fm
+        builder._source_kind = "markdown"
+        builder._source_text = markdown
         builder._blocks.extend(blocks)
         return builder
 

@@ -33,3 +33,16 @@ def png_path(tmp_path):
     p = tmp_path / "img.png"
     Image.new("RGB", (40, 20), (200, 30, 30)).save(p)
     return str(p)
+
+
+import os
+FIXTURES = os.path.join(os.path.dirname(__file__), "fixtures")
+
+
+def fixture_text(name: str) -> str:
+    with open(os.path.join(FIXTURES, name), encoding="utf-8") as f:
+        return f.read()
+
+
+def all_fixtures():
+    return sorted(f for f in os.listdir(FIXTURES) if f.endswith(".md"))
