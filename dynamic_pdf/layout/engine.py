@@ -211,7 +211,7 @@ class LayoutEngine:
         style = hf.header_style.lower().replace("-", "_").replace(" ", "_")
         if style == "none":
             return
-        w, h = self._get_pagesize()
+        w, h = self._page_wh(canvas)
         bar_h = hf.height
         canvas.saveState()
 
@@ -431,7 +431,7 @@ class LayoutEngine:
         style = hf.footer_style.lower().replace("-", "_").replace(" ", "_")
         if style == "none":
             return
-        w, h = self._get_pagesize()
+        w, h = self._page_wh(canvas)
         bar_h = hf.footer_height
         canvas.saveState()
 
@@ -646,10 +646,15 @@ class LayoutEngine:
         if hf.header_style == "sidebar" or hf.footer_style == "sidebar":
             self._draw_sidebar_strip(canvas)
 
+    def _page_wh(self, canvas):
+        """Actual size of the page being drawn (landscape pages differ)."""
+        ps = getattr(canvas, "_pagesize", None)
+        return tuple(ps) if ps else self._get_pagesize()
+
     def _draw_sidebar_strip(self, canvas):
         """Vertical strip for sidebar style (drawn on every page)."""
         hf = self.theme.header_footer
-        w, h = self._get_pagesize()
+        w, h = self._page_wh(canvas)
         sw = hf.sidebar_width
         sc = hf.sidebar_color or self.theme.colors.accent
         canvas.saveState()
@@ -712,7 +717,14 @@ class LayoutEngine:
             id='main'
         )
 
-        template = PageTemplate(id='AllPages', frames=[frame], onPage=self._on_page)
+        template = PageTemplate(id='AllPages', frames=[frame], onPage=self._on_page,
+                                pagesize=pagesize)
+        # Landscape pages for content the planner marks as too wide for portrait
+        lw, lh = (h, w) if h > w else (w, h)
+        land_frame = Frame(left_m, bot_m, lw - left_m - right_m, lh - top_m - bot_m, id='land')
+        land_template = PageTemplate(id='Landscape', frames=[land_frame], onPage=self._on_page,
+                                     pagesize=(lw, lh))
+        land_width = lw - left_m - right_m
 
         meta = self.document.meta
         limits = self.policy.limits
@@ -744,7 +756,7 @@ class LayoutEngine:
         )
         if hasattr(doc_template, 'lang'):
             doc_template.lang = meta.language
-        doc_template.addPageTemplates([template])
+        doc_template.addPageTemplates([template, land_template])
 
         # Create thread-safe render context
         ctx = RenderContext(
@@ -764,12 +776,29 @@ class LayoutEngine:
                     width = max([len(block.headers or [])] + [len(r) for r in block.rows] + [1])
                     _policy.check_limit("Table cells", (len(block.rows) + 1) * width,
                                         limits.max_table_cells)
+                hints = getattr(block, "hints", None) or {}
+                if hints.get("landscape") and lw > w:
+                    from reportlab.platypus import NextPageTemplate, PageBreak
+                    portrait_w = ctx.available_width
+                    ctx.available_width = land_width
+                    try:
+                        result = create_flowables(block, theme, ctx)
+                    finally:
+                        ctx.available_width = portrait_w
+                    flowables += [NextPageTemplate('Landscape'), PageBreak()] + (result or []) + [
+                        NextPageTemplate('AllPages'), PageBreak()]
+                    continue
                 result = create_flowables(block, theme, ctx)
                 if result:
                     flowables.extend(result)
             self.diagnostics.block_index = None
             self.diagnostics.block_type = None
 
+            # no trailing page break after a final landscape section
+            from reportlab.platypus import PageBreak as _PB
+            if len(flowables) >= 2 and isinstance(flowables[-1], _PB) and \
+                    type(flowables[-2]).__name__ == "NextPageTemplate":
+                flowables.pop()
             if len(flowables) == 1:
                 flowables.append(Spacer(1, 1))
 

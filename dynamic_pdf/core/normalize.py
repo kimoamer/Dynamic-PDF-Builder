@@ -34,7 +34,7 @@ _NON_TEXT_FIELDS = {
     "border_color", "score_color", "style", "variant", "alignment", "src", "logo", "language",
     "format", "marker_style", "icon", "shape_type", "layout", "position", "sidebar_position",
     "chart_type", "diagram_type", "direction", "error_correction", "colors", "orientation",
-    "doi", "key", "highlight_lines", "stroke_dash", "background",
+    "doi", "key", "highlight_lines", "stroke_dash", "background", "hints",
 }
 
 _block_adapter = TypeAdapter(Block)

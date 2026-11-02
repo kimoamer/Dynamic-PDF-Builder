@@ -1148,6 +1148,7 @@ just that a file was produced:
 | `test_profiles.py` | Deterministic profile selection on the fixture corpus, recipes, brand kits |
 | `test_docx_semantics.py` | Word styles, numbering restarts, tables, fields, TOC, links, alt text, export API/CLI |
 | `test_docx_rtl.py` | Arabic bidi paragraphs/runs, complex-script fonts, bilingual tables |
+| `test_adaptive_layout.py` | Landscape for wide tables (PDF + DOCX), column widths, min type size, numeric alignment, lead, cover, no stranded headings, word preservation |
 | `test_pdf_docx_parity.py` | Same words and heading structure in AST, PDF and DOCX; LibreOffice conversion |
 
 ## Editable Word (DOCX) export & intelligent design
@@ -1186,6 +1187,14 @@ paragraphs; text watermarks use VML (shown by Word, not by every viewer).
 (`executive_report`, `proposal`, `corporate_memo`, `academic_report`, `technical_manual`,
 `data_report`, `financial_report`, `letter`, `invoice`, `general`) and applies its recipe —
 type ramp, measure, rhythm, numbering, header/footer and navigation. Content is never altered.
+
+The layout planner then measures the content with real font metrics and records every
+decision in `design_explain()["layout"]`: content-measured table column widths, tighter
+padding and smaller (never below 7.5 pt) type for dense tables, right-aligned numeric
+columns, landscape pages/sections for tables that cannot be read in portrait, short tables
+and captions kept on one page, comfortable line length for prose, heading ramps tuned to
+outline depth, a lead paragraph for reports and proposals, and a metadata-only cover for long
+titled reports. Headings are kept with their content and widows/orphans are suppressed.
 
 ## Error handling, security & limits
 

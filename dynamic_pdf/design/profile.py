@@ -71,7 +71,7 @@ _KW = {
     Profile.FINANCIAL_REPORT: r"\b(revenue|ebitda|balance sheet|income statement|cash flow|"
                               r"fiscal|earnings|profit|assets|liabilities|budget)\b|الإيرادات|الميزانية|الأرباح",
     Profile.INVOICE: r"\b(invoice|bill to|amount due|subtotal|tax|qty|quantity|unit price)\b|فاتورة",
-    Profile.CORPORATE_MEMO: r"\b(memo(randum)?|to:|from:|subject:|cc:)\b|مذكرة",
+    Profile.CORPORATE_MEMO: r"\bmemo(randum)?\b|(?m:^\s*(to|from|subject|cc|re)\s*:)|مذكرة",
     Profile.LETTER: r"\b(dear|sincerely|regards|yours (truly|faithfully))\b|المحترم|تحية طيبة|وتفضلوا",
 }
 
@@ -128,6 +128,9 @@ def select_profile(doc: SemanticDocument, requested: Optional[str] = None) -> Pr
     if re.match(r"^\s*(dear|to whom|hello|hi)\b|^\s*(السيد|السيدة|الأستاذ|عزيزي|سعادة)",
                 st.first_paragraph, re.IGNORECASE):
         add(Profile.LETTER, 2.5, "opens with a salutation")
+    memo_fields = len(re.findall(r"(?mi)^\s*(to|from|subject|cc|date|re)\s*:", st.first_paragraph))
+    if memo_fields >= 2:
+        add(Profile.CORPORATE_MEMO, 2.5, f"memo header block ({memo_fields} To/From/Subject fields)")
     if _kw_hits(Profile.LETTER, st.last_paragraphs):
         add(Profile.LETTER, 1.5, "closes with a valediction")
 

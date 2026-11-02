@@ -329,6 +329,12 @@ class DocxRenderer:
         self.headings_rendered.append(plain_text(text))
 
     def _b_paragraph(self, c, b):
+        if (b.hints or {}).get("lead"):
+            p = self._para(c, "Normal", b.text)
+            p.paragraph_format.space_after = Pt(self.tokens.paragraph_after * 1.5)
+            self._runs(p, b.text, size=self.tokens.body_size * 1.2,
+                       color=self.tokens.colors["text_secondary"])
+            return
         p = self._para(c, "Body Text", b.text)
         if is_rtl_text(b.text) or self.rtl_doc:
             p.paragraph_format.first_line_indent = None
@@ -406,6 +412,39 @@ class DocxRenderer:
     # ─── table ───
 
     def _b_table(self, c, b):
+        hints = b.hints or {}
+        landscape = bool(hints.get("landscape")) and not isinstance(c, _Cell)
+        if landscape:
+            self._switch_orientation(landscape=True)
+        try:
+            self._table(c, b, hints)
+        finally:
+            if landscape:
+                self._switch_orientation(landscape=False)
+
+    def _switch_orientation(self, landscape: bool):
+        from docx.enum.section import WD_SECTION
+        prev = self.doc.sections[-1]
+        sec = self.doc.add_section(WD_SECTION.NEW_PAGE)
+        w, h = prev.page_width, prev.page_height
+        if landscape != (w > h):
+            sec.page_width, sec.page_height = h, w
+        sec.orientation = WD_ORIENT.LANDSCAPE if landscape else WD_ORIENT.PORTRAIT
+        for attr in ("top_margin", "bottom_margin", "left_margin", "right_margin",
+                     "header_distance", "footer_distance"):
+            setattr(sec, attr, getattr(prev, attr))
+        self.content_width_pt = sec.page_width.pt - sec.left_margin.pt - sec.right_margin.pt
+
+    def _table(self, c, b, hints):
+        size = hints.get("font_size")
+        if b.caption or b.table_number:
+            label = f"Table {b.table_number}" if b.table_number else ""
+            full = f"{label}: {b.caption}" if (label and b.caption) else (b.caption or label)
+            p = self._para(c, "Caption", full)
+            p.alignment = None if (self.rtl_doc or is_rtl_text(full)) else WD_ALIGN_PARAGRAPH.LEFT
+            p.paragraph_format.keep_with_next = True
+            p.paragraph_format.space_after = Pt(3)
+            self._runs(p, full)
         headers = list(b.headers or [])
         rows = [list(r) for r in b.rows]
         ncols = max([len(headers)] + [len(r) for r in rows] + [1])
@@ -417,7 +456,7 @@ class DocxRenderer:
         F.set_table_width_pct(t, 100)
         F.set_table_borders(t, color=self.tokens.colors["border"], size=4,
                             inside_v=b.style in ("grid", "bordered"))
-        F.set_table_cell_margins(t, 50, 50, 90, 90)
+        F.set_table_cell_margins(t, 50, 50, int(hints.get("cell_padding", 6) * 20), int(hints.get("cell_padding", 6) * 20))
         # Column order follows the table's own language, not the document's
         sample = [plain_text(str(x)) for x in (headers or (rows[0] if rows else [])) if str(x).strip()]
         if sample and sum(is_rtl_text(x) for x in sample) * 2 > len(sample):
@@ -441,7 +480,8 @@ class DocxRenderer:
                 p = self._para(cell, "Table Text", str(h))
                 if ci in numeric_cols:
                     p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-                self._runs(p, str(h), bold=True, color=hdr_fg)
+                p.paragraph_format.keep_with_next = True
+                self._runs(p, str(h), bold=True, color=hdr_fg, size=size)
             r0 = 1
         alt = self.tokens.colors.get("table_row_alt", "#F7F9FC")
         all_rows = rows + ([list(b.footer_row)] if b.footer_row else [])
@@ -457,18 +497,23 @@ class DocxRenderer:
                 p = self._para(cell, "Table Text", val)
                 if ci in numeric_cols:
                     p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-                self._runs(p, val, bold=True if is_footer else None)
+                if hints.get("keep_together") and ri < len(all_rows) - 1:
+                    p.paragraph_format.keep_with_next = True
+                self._runs(p, val, bold=True if is_footer else None, size=size)
+        widths = None
         if b.column_widths and len(b.column_widths) == ncols:
-            total = sum(b.column_widths) or 1
-            for ci, wv in enumerate(b.column_widths):
+            # v0.3 semantics: points; scaled down if wider than the text block
+            scale = min(1.0, self.content_width_pt / (sum(b.column_widths) or 1))
+            widths = [w * scale for w in b.column_widths]
+        elif hints.get("col_fractions") and len(hints["col_fractions"]) == ncols:
+            widths = [f * self.content_width_pt for f in hints["col_fractions"]]
+        if widths:
+            F.set_table_layout_fixed(t)
+            for ci, wv in enumerate(widths):
+                t.columns[ci].width = Pt(wv)
                 for row in t.rows:
-                    row.cells[ci].width = Pt(self.content_width_pt * wv / total)
-        if b.caption or b.table_number:
-            self.table_no += 1
-            label = f"Table {b.table_number or self.table_no}"
-            self._caption(c, label, b.caption)
-        else:
-            self._spacer_after(c)
+                    row.cells[ci].width = Pt(wv)
+        self._spacer_after(c)
 
     # ─── code / quote / callout ───
 

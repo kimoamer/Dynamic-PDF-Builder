@@ -118,6 +118,8 @@ class DocumentBuilder:
         plan = plan_design(sem, None if self._design_mode in (None, "auto") else self._design_mode,
                            self._brand)
         sem = apply_plan(sem, plan)
+        from .design.planner import plan_layout
+        plan.layout = plan_layout(sem, plan)
         self.last_design = plan
         return sem.to_document(), plan.theme
 

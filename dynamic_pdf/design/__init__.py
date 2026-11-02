@@ -24,6 +24,7 @@ class DesignPlan(BaseModel):
     section_numbering: bool
     toc_inserted: bool = False
     notes: List[str] = Field(default_factory=list)
+    layout: Optional[object] = None          # planner.LayoutPlan
 
     def explain(self) -> dict:
         return {
@@ -41,6 +42,9 @@ class DesignPlan(BaseModel):
             "section_numbering": self.section_numbering,
             "toc_inserted": self.toc_inserted,
             "notes": self.recipe.notes + self.notes,
+            "layout": ([f"{d.target}: {d.decision}" for d in self.layout.decisions]
+                       if self.layout is not None else []),
+            "estimated_pages": getattr(self.layout, "estimated_pages", None),
             "warnings": self.tokens.warnings,
         }
 

@@ -719,6 +719,8 @@ def _body_style(theme: Theme, indent: bool = True) -> ParagraphStyle:
         spaceBefore=sp.paragraph_spacing_before,
         spaceAfter=sp.paragraph_spacing_after,
         firstLineIndent=sp.first_line_indent if indent else 0,
+        allowWidows=0,      # no single last line at the top of a page
+        allowOrphans=0,     # no single first line at the bottom of a page
     )
 
 
@@ -809,6 +811,15 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
         return [hf]
 
     # ─── Paragraph ───
+    if btype == "paragraph" and (block.hints or {}).get("lead"):
+        ctx.apply_drop_cap_next = False
+        size = theme.typography.base_size * 1.2
+        lead = ParagraphStyle('Lead', parent=bs, fontSize=size,
+                              leading=size * theme.typography.line_height,
+                              firstLineIndent=0, spaceAfter=sp.paragraph_spacing_after * 1.5,
+                              textColor=_safe_color(theme.colors.text_secondary),
+                              alignment=2 if _is_rtl(block.text) else 0)
+        return [Paragraph(_md_inline(block.text), lead)]
     if btype == "paragraph":
         raw = block.text
         is_rtl = _is_rtl(raw)
@@ -906,7 +917,7 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
 
     # ─── Table ───
     if btype == "table":
-        return _render_table(block, theme, bs_no_indent)
+        return _render_table(block, theme, bs_no_indent, ctx)
 
     # ─── Code ───
     if btype == "code":
@@ -1105,10 +1116,18 @@ def _render_rtl_list(items, list_type, theme, bs, sp, start=1):
     return [t]
 
 
-def _render_table(block, theme, bs):
-    # Detect if any cell content is RTL to decide font usage
-    all_text = " ".join(block.headers) + " ".join(str(c) for r in block.rows for c in r)
-    tbl_rtl = _is_rtl(all_text)
+def _render_table(block, theme, bs, ctx=None):
+    hints = block.hints or {}
+    # Column order follows the table's own language (majority of header cells),
+    # so bilingual tables led by English are not mirrored.
+    sample = [str(x) for x in (block.headers or (block.rows[0] if block.rows else [])) if str(x).strip()]
+    tbl_rtl = bool(sample) and sum(_is_rtl(x) for x in sample) * 2 > len(sample)
+    if hints.get("font_size"):
+        bs = ParagraphStyle('TBase', parent=bs, fontSize=hints["font_size"],
+                            leading=hints["font_size"] * 1.3)
+    ncols = max([len(block.headers or [])] + [len(r) for r in block.rows] + [1])
+    numeric = set(hints.get("numeric_cols") or [])
+    pad = float(hints.get("cell_padding", 10))
     body_font = _arabic_font(theme, bold=True) if tbl_rtl else get_font_name(theme.typography.body_family, bold=True)
     cell_font = _arabic_font(theme) if tbl_rtl else get_font_name(theme.typography.body_family)
     tbl_align = 2 if tbl_rtl else 0
@@ -1118,28 +1137,32 @@ def _render_table(block, theme, bs):
                            textColor=_safe_color(block.header_text_color or theme.colors.text_on_primary),
                            alignment=tbl_align)
     c_sty = ParagraphStyle('TD', parent=bs, firstLineIndent=0, fontName=cell_font, alignment=tbl_align)
-    # For RTL tables, reverse column order so rightmost column appears first
-    headers = list(reversed(block.headers)) if tbl_rtl else list(block.headers)
-    data = [[Paragraph(_md_inline(h), h_sty) for h in headers]]
+    h_num = ParagraphStyle('THn', parent=h_sty, alignment=2)
+    c_num = ParagraphStyle('TDn', parent=c_sty, alignment=2)
+
+    def _row(cells, sty, num_sty):
+        cells = list(cells) + [""] * (ncols - len(cells))
+        out = [Paragraph(_md_inline(str(c)), num_sty if ci in numeric else sty)
+               for ci, c in enumerate(cells)]
+        return list(reversed(out)) if tbl_rtl else out
+    data = [_row(block.headers or [], h_sty, h_num)] if block.headers else []
     for row in block.rows:
-        cells = list(reversed(row)) if tbl_rtl else list(row)
-        data.append([Paragraph(_md_inline(str(c)), c_sty) for c in cells])
+        data.append(_row(row, c_sty, c_num))
     # Footer row (summary/totals)
     if block.footer_row:
         f_sty = ParagraphStyle('TF', parent=bs, firstLineIndent=0,
                                fontName=body_font, alignment=tbl_align)
-        footer = list(reversed(block.footer_row)) if tbl_rtl else list(block.footer_row)
-        data.append([Paragraph(_md_inline(str(c)), f_sty) for c in footer])
+        data.append(_row(block.footer_row, f_sty, ParagraphStyle('TFn', parent=f_sty, alignment=2)))
     hbg = _safe_color(block.header_bg or theme.colors.primary)
     cmds = [
         ('BACKGROUND', (0, 0), (-1, 0), hbg),
         ('TEXTCOLOR', (0, 0), (-1, 0), _safe_color(block.header_text_color or theme.colors.text_on_primary)),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
-        ('TOPPADDING', (0, 0), (-1, -1), 7),
-        ('LEFTPADDING', (0, 0), (-1, -1), 10),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 7 if pad >= 9 else 4),
+        ('TOPPADDING', (0, 0), (-1, -1), 7 if pad >= 9 else 4),
+        ('LEFTPADDING', (0, 0), (-1, -1), pad),
+        ('RIGHTPADDING', (0, 0), (-1, -1), pad),
         ('GRID', (0, 0), (-1, -1), 0.5, _safe_color(theme.colors.border)),
     ]
     if theme.decorations.table_row_alternating:
@@ -1149,8 +1172,16 @@ def _render_table(block, theme, bs):
     if block.footer_row:
         cmds.append(('BACKGROUND', (0, -1), (-1, -1), _safe_color(theme.colors.surface)))
         cmds.append(('LINEABOVE', (0, -1), (-1, -1), 1.5, _safe_color(theme.colors.text_primary)))
-    col_widths = list(reversed(block.column_widths)) if (tbl_rtl and block.column_widths) else block.column_widths
-    t = Table(data, colWidths=col_widths, style=TableStyle(cmds), repeatRows=1)
+    avail = ctx.available_width if ctx else None
+    col_widths = block.column_widths
+    if not col_widths and hints.get("col_fractions") and avail:
+        col_widths = [f * avail for f in hints["col_fractions"]]
+    elif col_widths and avail and sum(col_widths) > avail:
+        col_widths = [w * avail / sum(col_widths) for w in col_widths]   # never overflow the frame
+    if col_widths and tbl_rtl:
+        col_widths = list(reversed(col_widths))
+    t = Table(data, colWidths=col_widths, style=TableStyle(cmds),
+              repeatRows=1 if block.headers else 0)
     t.hAlign = 'RIGHT' if tbl_rtl else 'LEFT'
     t.spaceAfter = theme.spacing.block_gap
     flowables = []
@@ -1166,8 +1197,12 @@ def _render_table(block, theme, bs):
                                  fontSize=theme.typography.base_size * theme.typography.caption_size_ratio,
                                  textColor=_safe_color(theme.colors.text_muted), spaceAfter=4,
                                  fontName=cap_font, alignment=cap_align)
-        flowables.append(Paragraph(_md_inline(label), cap_sty))
+        cap = Paragraph(_md_inline(label), cap_sty)
+        cap.keepWithNext = 1          # caption never separated from its table
+        flowables.append(cap)
     flowables.append(t)
+    if hints.get("keep_together"):
+        return [KeepTogether(flowables)]
     return flowables
 
 
