@@ -118,7 +118,11 @@ def test_docx_structural_checks_detect_corruption():
 def test_export_with_qa_attaches_reports(tmp_path):
     res = DocumentBuilder.from_markdown(fixture_text("invoice.md")).design().export_both(
         str(tmp_path), qa=True)
-    assert res.qa["pdf"].passed and res.qa["docx"].passed
+    assert res.qa["pdf"].passed
+    # without LibreOffice the DOCX layout cannot be inspected: UNVERIFIED, never PASS
+    expected = "pass" if shutil.which("soffice") else "unverified"
+    assert res.qa["docx"].status == expected and not res.qa["docx"].errors
+    assert res.status == ("ok" if expected == "pass" else "unverified")
     assert res.qa["pdf"].sha256 and len(res.qa["pdf"].sha256) == 64
 
 
