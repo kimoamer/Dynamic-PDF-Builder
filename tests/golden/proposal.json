@@ -1,9 +1,8 @@
 {
  "profile": "proposal",
  "direction": "ltr",
- "pdf_pages": 2,
+ "pdf_pages": 1,
  "pdf_orientations": [
-  "P",
   "P"
  ],
  "pdf_outline": [
@@ -35,7 +34,7 @@
   [
    1,
    "Next Steps",
-   2
+   1
   ]
  ],
  "pdf_fonts": [
@@ -86,6 +85,7 @@
   "headings: shallow outline: stronger H1 contrast",
   "measure: 83 chars/line",
   "tables: table 5: 2 cols, 2 rows; 10pt; kept on one page",
-  "lead: opening paragraph set as a lead (larger, no indent)"
+  "lead: opening paragraph set as a lead (larger, no indent)",
+  "pagination: tightened vertical rhythm (step 1): 2→1 pages (last page was 16% full)"
  ]
 }

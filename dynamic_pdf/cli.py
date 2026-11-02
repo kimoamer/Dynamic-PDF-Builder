@@ -28,8 +28,9 @@ def main():
                           help="Output path; .pdf or .docx (default: <input>.<format>)")
     render_p.add_argument("-f", "--format", choices=["pdf", "docx", "both"], default=None,
                           help="Output format (default: from --output extension, else pdf)")
-    render_p.add_argument("--design", default=None, metavar="PROFILE",
-                          help='Intelligent design: "auto" or a profile (executive_report, proposal, ...)')
+    render_p.add_argument("--design", default="auto", metavar="PROFILE",
+                          help='"auto" (default), a profile (executive_report, proposal, ...) '
+                               'or "none" for classic theme rendering')
     render_p.add_argument("-t", "--theme", default="claude", help="Theme name (default: claude)")
     render_p.add_argument("--section-numbers", action="store_true", help="Enable section numbering")
     render_p.add_argument("--permissive", action="store_true",
@@ -116,8 +117,7 @@ def _cmd_render(args):
         builder = DocumentBuilder.from_markdown(content, theme=args.theme, policy=policy)
     if args.section_numbers:
         builder.section_numbering(True)
-    if args.design:
-        builder.design(args.design)
+    builder.design(None if args.design == "none" else args.design)
 
     targets = ["pdf", "docx"] if fmt == "both" else [fmt]
     diagnostics = []

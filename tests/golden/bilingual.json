@@ -1,6 +1,6 @@
 {
  "profile": "executive_report",
- "direction": "rtl",
+ "direction": "ltr",
  "pdf_pages": 1,
  "pdf_orientations": [
   "P"
@@ -20,7 +20,8 @@
  "pdf_fonts": [
   "Amiri-Bold",
   "Amiri-Regular",
-  "Helvetica"
+  "Helvetica",
+  "Helvetica-Bold"
  ],
  "pdf_qa_errors": [],
  "tables": [
@@ -48,7 +49,7 @@
  "docx_sections": 1,
  "layout": [
   "headings: shallow outline: stronger H1 contrast",
-  "measure: 97 chars/line",
+  "measure: 91 chars/line",
   "tables: table 4: 3 cols, 2 rows; 9.5pt; kept on one page; numeric columns [2] right-aligned"
  ]
 }

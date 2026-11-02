@@ -107,9 +107,17 @@ RECIPES = {
 }
 
 
-def recipe_for(decision: ProfileDecision) -> DesignRecipe:
+def recipe_for(decision: ProfileDecision, bilingual: bool = False) -> DesignRecipe:
     r = RECIPES[decision.profile].model_copy(deep=True)
-    if decision.direction == "rtl":
+    if bilingual:
+        # Mixed documents keep the Latin text face; Arabic paragraphs/runs switch
+        # to the Arabic face individually, each aligned to its own direction.
+        r.first_line_indent = 0
+        r.drop_cap = False
+        r.line_height = max(r.line_height, 1.55)
+        r.notes.append("bilingual: Latin face for English, Amiri per Arabic paragraph/run, "
+                       "per-paragraph alignment, no indents")
+    elif decision.direction == "rtl":
         # Amiri is bundled with full Arabic coverage; Latin runs still render.
         r.body_family = "Amiri"
         r.heading_family = "Amiri"

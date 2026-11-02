@@ -53,7 +53,7 @@ def plan_design(doc: SemanticDocument, requested: Optional[str] = None,
                 brand: Optional[BrandKit] = None, base_theme: Optional[Theme] = None) -> DesignPlan:
     """Select profile → recipe → theme (+brand) → tokens. Pure; content untouched."""
     decision = select_profile(doc, requested)
-    recipe = recipe_for(decision)
+    recipe = recipe_for(decision, bilingual=doc.stats.bilingual and doc.direction == "ltr")
     theme = apply_recipe(recipe, base_theme)
     notes: List[str] = []
     if brand:
@@ -75,7 +75,13 @@ def apply_plan(doc: SemanticDocument, plan: DesignPlan) -> SemanticDocument:
         pos = 0
         while pos < len(out.blocks) and out.blocks[pos].type in ("cover_page", "watermark"):
             pos += 1
-        out.blocks.insert(pos, TOCBlock(depth=2 if doc.stats.headings > 20 else 3))
+        # deepest level that keeps the TOC to about one page (≤ 28 entries)
+        depth = 1
+        for d in (3, 2):
+            if sum(1 for o in doc.outline if o.level <= d) <= 28:
+                depth = d
+                break
+        out.blocks.insert(pos, TOCBlock(depth=depth))
         plan.toc_inserted = True
     return out
 

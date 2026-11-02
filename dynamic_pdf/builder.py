@@ -42,7 +42,16 @@ class ExportResult:
 
     @property
     def status(self) -> str:
-        return "degraded" if any(d.get("level") == "error" for d in self.diagnostics) else "ok"
+        """"failed" (QA errors) > "degraded" (render errors) > "unverified"
+        (a requested QA check could not run) > "ok"."""
+        states = [r.status for r in self.qa.values()]
+        if "fail" in states:
+            return "failed"
+        if any(d.get("level") == "error" for d in self.diagnostics):
+            return "degraded"
+        if "unverified" in states:
+            return "unverified"
+        return "ok"
 
     def __repr__(self):
         return (f"ExportResult(pdf={self.pdf_path!r}, docx={self.docx_path!r}, "
@@ -61,19 +70,22 @@ class DocumentBuilder:
             .render("report.pdf"))
     """
 
-    def __init__(self, theme: str = "claude", policy: Optional[RenderPolicy] = None):
-        self._theme = theme
+    def __init__(self, theme: Optional[str] = None, policy: Optional[RenderPolicy] = None):
+        self._theme_explicit = theme is not None
+        self._theme = theme or "claude"
         self._meta = Meta()
         self._blocks: list = []
         self._policy = policy or RenderPolicy()
         self.last_render = None   # LayoutEngine of the most recent render (diagnostics, page_count)
         self._design_mode: Optional[str] = None   # None = classic theme rendering (v0.3)
+        self._design_explicit = False             # export()/CLI default to design("auto")
         self._brand = None
         self._source_kind = "api"
         self._source_text: Optional[str] = None
         self.front_matter: dict = {}
         self.last_design = None
         self._qa_hints: dict = {}        # block index -> layout hints from the QA loop
+        self._fit_cache: dict = {}
 
     # ─── Semantic / design layer ───────────────────────────────────
 
@@ -97,6 +109,10 @@ class DocumentBuilder:
         content; a profile name forces it. ``brand`` is a ``BrandKit`` or dict.
         Content is never altered — only typography, layout and navigation."""
         from .design import BrandKit, resolve_profile_name
+        self._design_explicit = True
+        if mode is None or mode == "none":
+            self._design_mode = None       # explicit opt-out: classic theme rendering
+            return self
         if mode != "auto":
             resolve_profile_name(mode)   # validate early
         self._design_mode = mode
@@ -128,11 +144,21 @@ class DocumentBuilder:
             return self.build(), None
         from .design import plan_design, apply_plan
         sem = self.semantic()
+        from .themes import get_theme as _gt
         plan = plan_design(sem, None if self._design_mode in (None, "auto") else self._design_mode,
-                           self._brand)
+                           self._brand, base_theme=_gt(self._theme) if self._theme_explicit else None)
         sem = apply_plan(sem, plan)
-        from .design.planner import plan_layout
+        from .design.planner import plan_layout, fit_pages
         plan.layout = plan_layout(sem, plan)
+        key = (sem.provenance.content_sha256, plan.decision.profile.value, plan.theme.model_dump_json())
+        cached = self._fit_cache.get(key)
+        if cached is None:
+            fit_pages(sem, plan, self._policy)
+            self._fit_cache = {key: (plan.theme, plan.layout)}
+        else:
+            plan.theme, plan.layout = cached
+            from .design.tokens import compile_tokens
+            plan.tokens = compile_tokens(plan.theme)
         self.last_design = plan
         return sem.to_document(), plan.theme
 
@@ -591,7 +617,7 @@ class DocumentBuilder:
         from .utils.errors import QualityError
         data, report = render_with_qa(self, fmt, max_attempts=max_attempts, visual_docx=visual)
         self.last_qa = report
-        if not report.passed and self._policy.strict:
+        if report.errors and self._policy.strict:
             raise QualityError(report.summary() + ": " + "; ".join(
                 f.message for f in report.errors[:5]), report)
         return data, report
@@ -605,6 +631,14 @@ class DocumentBuilder:
         fmt = (format or os.path.splitext(path)[1].lstrip(".") or "pdf").lower()
         if fmt not in ("pdf", "docx"):
             raise ValueError(f"Unsupported export format {fmt!r}; use 'pdf' or 'docx'")
+        if not self._design_explicit and self._design_mode is None:
+            # export() is a new-style API: intelligent design unless opted out
+            # with design(None). Legacy render()/render_bytes() are unchanged.
+            self._design_mode = "auto"
+            try:
+                return self.export(path, format=fmt, qa=qa)
+            finally:
+                self._design_mode = None
         result = ExportResult()
         if qa:
             from .layout.engine import _write_output
@@ -657,7 +691,7 @@ class DocumentBuilder:
         return base64.b64encode(self.render_bytes()).decode("utf-8")
 
     @classmethod
-    def from_markdown(cls, markdown: str, theme: str = "claude",
+    def from_markdown(cls, markdown: str, theme: Optional[str] = None,
                       policy: Optional[RenderPolicy] = None) -> 'DocumentBuilder':
         """Create a DocumentBuilder pre-populated from a Markdown string.
 
@@ -679,8 +713,9 @@ class DocumentBuilder:
             kw["keywords"] = [k.strip() for k in fm["keywords"].split(",") if k.strip()]
         lang = fm.get("language") or fm.get("lang")
         builder.meta(language=lang if isinstance(lang, str) and lang else "en", **kw)
-        if isinstance(fm.get("theme"), str) and theme == "claude":
+        if isinstance(fm.get("theme"), str) and theme is None:
             builder._theme = fm["theme"]
+            builder._theme_explicit = True
         if isinstance(fm.get("document_type"), str) and fm["document_type"]:
             builder.document_type(fm["document_type"])
         if fm.get("direction") in ("ltr", "rtl"):

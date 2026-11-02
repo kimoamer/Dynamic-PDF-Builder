@@ -70,6 +70,8 @@ class Diagnostic:
 class DiagnosticCollector:
     """Collects diagnostics for one render; status is derived from contents."""
 
+    language = "en"          # document language for engine-generated labels
+
     def __init__(self, policy: RenderPolicy):
         self.policy = policy
         self.items: List[Diagnostic] = []

@@ -122,6 +122,8 @@ def select_profile(doc: SemanticDocument, requested: Optional[str] = None) -> Pr
     add(Profile.LETTER, 2 * (short and st.has_signature), "short document with signature")
     add(Profile.CORPORATE_MEMO, 1 * (short and not st.has_cover), "short, no cover")
     fin_hits = _kw_hits(Profile.FINANCIAL_REPORT, st.table_headers)
+    row_hits = _kw_hits(Profile.FINANCIAL_REPORT, st.row_labels)
+    add(Profile.FINANCIAL_REPORT, min(3, row_hits / 4), f"{row_hits} financial line items")
     add(Profile.FINANCIAL_REPORT, min(3, fin_hits * 1.0), f"{fin_hits} financial table columns")
     inv_hits = _kw_hits(Profile.INVOICE, st.table_headers)
     add(Profile.INVOICE, min(3, inv_hits * 1.0), f"{inv_hits} invoice table columns")

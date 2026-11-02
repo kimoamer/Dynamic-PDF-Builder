@@ -28,6 +28,8 @@ class QAReport(BaseModel):
     fixes_applied: List[str] = Field(default_factory=list)
     sha256: Optional[str] = None
     page_images: List[str] = Field(default_factory=list)
+    unverified: List[str] = Field(default_factory=list)   # checks that could not run
+    page_fill: List[float] = Field(default_factory=list)
 
     @property
     def errors(self) -> List[Finding]:
@@ -35,15 +37,26 @@ class QAReport(BaseModel):
 
     @property
     def passed(self) -> bool:
-        return not self.errors
+        """No errors *and* every requested check actually ran."""
+        return not self.errors and not self.unverified
+
+    @property
+    def status(self) -> str:
+        """"pass" | "fail" | "unverified" (no errors found, but checks were skipped)."""
+        if self.errors:
+            return "fail"
+        if self.unverified:
+            return "unverified"
+        return "pass"
 
     def summary(self) -> str:
         counts = {}
         for f in self.findings:
             counts[f.code] = counts.get(f.code, 0) + 1
-        state = "PASS" if self.passed else "FAIL"
+        state = self.status.upper()
         detail = ", ".join(f"{k}×{v}" for k, v in sorted(counts.items())) or "no findings"
-        return f"{self.format.upper()} QA {state}: {self.pages} pages; {detail}; attempts={self.attempts}"
+        extra = f"; unverified: {', '.join(self.unverified)}" if self.unverified else ""
+        return f"{self.format.upper()} QA {state}: {self.pages} pages; {detail}; attempts={self.attempts}{extra}"
 
 
 def sha256(data: bytes) -> str:

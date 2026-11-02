@@ -51,6 +51,7 @@ class LayoutDecision(BaseModel):
 class LayoutPlan(BaseModel):
     decisions: List[LayoutDecision] = Field(default_factory=list)
     estimated_pages: float = 0.0
+    measured_pages: Optional[int] = None
 
     def log(self, target: str, decision: str):
         self.decisions.append(LayoutDecision(target=target, decision=decision))
@@ -201,3 +202,60 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
         sem.blocks.insert(0, cover)
         lp.log("cover", f"~{lp.estimated_pages:.1f} pages with a title: cover built from metadata")
     return lp
+
+
+# ─────────────────────────── page fit ───────────────────────────
+
+def _tighten(theme, spacing: float, margins: float, leading_cut: float):
+    sp, ty = theme.spacing, theme.typography
+    sp.paragraph_spacing_after = round(sp.paragraph_spacing_after * spacing, 1)
+    sp.block_gap = round(sp.block_gap * spacing, 1)
+    sp.heading_spacing_before = [round(v * spacing, 1) for v in sp.heading_spacing_before]
+    sp.heading_spacing_after = [round(v * spacing, 1) for v in sp.heading_spacing_after]
+    sp.page_margin_top = max(42.0, round(sp.page_margin_top * margins, 1))
+    sp.page_margin_bottom = max(42.0, round(sp.page_margin_bottom * margins, 1))
+    ty.line_height = max(1.3, round(ty.line_height - leading_cut, 2))
+
+
+def fit_pages(sem: SemanticDocument, plan: DesignPlan, policy=None, max_trials: int = 2) -> None:
+    """Avoid a near-empty final page by tightening vertical rhythm (bounded).
+
+    Measures a real PDF layout; accepts a tighter rhythm only if it removes
+    the trailing page. Type size, content and order never change. Logs the
+    outcome in the layout plan.
+    """
+    import io
+    import warnings
+    from ..layout.engine import LayoutEngine
+    from .tokens import compile_tokens
+
+    def trial(theme):
+        eng = LayoutEngine(sem.to_document(), policy=policy, theme=theme)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            eng.render(io.BytesIO())
+        return eng.page_count, eng.last_page_fill
+
+    pages, fill = trial(plan.theme)
+    lp = plan.layout
+    if lp is not None:
+        lp.measured_pages = pages
+    # long documents: only a near-empty final page is worth fixing; short ones
+    # (≤ 3 pages) are also tried because slack often sits before a kept group
+    if pages < 2 or pages > 12 or fill is None or (fill > 0.3 and pages > 3):
+        return
+    for i, (s, m, lh) in enumerate([(0.8, 0.9, 0.05), (0.65, 0.8, 0.12)][:max_trials]):
+        t = plan.theme.model_copy(deep=True)
+        _tighten(t, s, m, lh)
+        p2, _ = trial(t)
+        if p2 < pages:
+            plan.theme = t
+            plan.tokens = compile_tokens(t)
+            if lp is not None:
+                lp.log("pagination", f"tightened vertical rhythm (step {i + 1}): {pages}→{p2} pages "
+                                     f"(last page was {fill:.0%} full)")
+                lp.measured_pages = p2
+            return
+    if lp is not None:
+        lp.log("pagination", f"{pages} pages, last {fill:.0%} full; kept rhythm (tightening within "
+                             "limits would not save a page)")

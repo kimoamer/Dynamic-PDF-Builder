@@ -1150,6 +1150,8 @@ just that a file was produced:
 | `test_docx_rtl.py` | Arabic bidi paragraphs/runs, complex-script fonts, bilingual tables |
 | `test_adaptive_layout.py` | Landscape for wide tables (PDF + DOCX), column widths, min type size, numeric alignment, lead, cover, no stranded headings, word preservation |
 | `test_visual_qa.py` | QA on every fixture, synthetic defect detection, auto-fix loop, glyph coverage, DOCX integrity, golden fingerprints |
+| `test_m5_quality.py` | Regression tests for confirmed layout/typography/QA defects (whitespace, kept groups, RTL/bilingual, QA states, defaults) |
+| `test_stress_documents.py` | 20–50 page Arabic report, bilingual report, proposal, multi-page financial tables, academic paper, manual: page QA + word preservation in PDF and DOCX |
 | `test_pdf_docx_parity.py` | Same words and heading structure in AST, PDF and DOCX; LibreOffice conversion |
 
 ## Editable Word (DOCX) export & intelligent design
@@ -1184,6 +1186,10 @@ images with alt text (Word has no native equivalent). Known differences: page br
 computed by Word, so page counts can differ from the PDF; footnotes are rendered as notes
 paragraphs; text watermarks use VML (shown by Word, not by every viewer).
 
+`export()`, `export_both()` and the CLI apply intelligent design by default (opt out with
+`design(None)` or `--design none`); an explicitly chosen theme becomes the design's base. The
+legacy `render()`, `render_bytes()` and `render_from_json()` calls keep classic theme rendering.
+
 `design("auto")` selects a profile deterministically from metadata and content signals
 (`executive_report`, `proposal`, `corporate_memo`, `academic_report`, `technical_manual`,
 `data_report`, `financial_report`, `letter`, `invoice`, `general`) and applies its recipe —
@@ -1211,7 +1217,11 @@ inspects every page and fixes measurable layout defects with bounded retries (3 
 | Missing glyphs | font coverage of every character | bundled fallback face for symbols; otherwise reported |
 | Broken links, numbering, bookmarks, tables, XML, alt text | PDF links; DOCX package/XML | — (reported) |
 
-Strict mode raises `QualityError` if errors remain; permissive mode returns the report.
+Every report has a `status` of **`pass`**, **`fail`** or **`unverified`**. A check that could not run
+(e.g. DOCX layout without LibreOffice) is never reported as a pass, and `ExportResult.status`
+reflects it (`failed` > `degraded` > `unverified` > `ok`). Strict mode raises `QualityError` only
+for real errors; permissive mode returns the report. Additional page checks flag wasted space
+before continuing content, detached captions, oversized headings and low page density.
 `python -m dynamic_pdf.qa.golden tests/fixtures tests/golden [--update] [--sheets]` verifies
 structural fingerprints of the fixture corpus and writes page contact sheets for review; CI
 uploads them as the `page-contact-sheets` artifact. QA needs `pip install "dynamic-pdf-builder[qa]"`

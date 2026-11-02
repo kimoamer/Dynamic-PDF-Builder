@@ -72,9 +72,11 @@ class ContentStats(BaseModel):
     has_abstract: bool = False
     has_signature: bool = False
     rtl_ratio: float = 0.0
-    numeric_ratio: float = 0.0          # share of numeric tokens in table cells + metrics
+    numeric_ratio: float = 0.0
+    bilingual: bool = False             # substantial Latin *and* RTL-script text          # share of numeric tokens in table cells + metrics
     heading_texts: List[str] = Field(default_factory=list)
     table_headers: List[str] = Field(default_factory=list)
+    row_labels: List[str] = Field(default_factory=list)     # first-column cells (line items)
     first_paragraph: str = ""
     last_paragraphs: List[str] = Field(default_factory=list)
 
@@ -133,13 +135,16 @@ def block_text(block: Any) -> List[str]:
 # ─────────────────────────── helpers ───────────────────────────
 
 def is_rtl_text(text: str) -> bool:
-    rtl = total = 0
-    for ch in text:
-        if ch.isalpha():
-            total += 1
-            if unicodedata.bidirectional(ch) in ("R", "AL"):
-                rtl += 1
-    return total > 0 and rtl / total > 0.3
+    """Paragraph direction by the Unicode first-strong-character rule (UAX #9
+    P2/P3, as Word and HTML ``dir=auto`` do): mixed text such as
+    "Revenue / الإيرادات" stays LTR, "الإيرادات (SAR 4.2bn)" is RTL."""
+    for ch in text or "":
+        d = unicodedata.bidirectional(ch)
+        if d == "L":
+            return False
+        if d in ("R", "AL"):
+            return True
+    return False
 
 
 def _slug(text: str) -> str:
@@ -234,6 +239,8 @@ def normalize(document: Document, *, source_kind: str = "api",
         elif t == "table":
             stats.tables += 1
             stats.table_headers.extend(plain_text(h) for h in (b.headers or []))
+            stats.row_labels.extend(plain_text(str(r[c])) for r in b.rows[:200]
+                                    for c in range(min(2, len(r))))
             stats.table_rows += len(b.rows)
             stats.max_table_cols = max(stats.max_table_cols, len(b.headers or []),
                                        *(len(r) for r in b.rows)) if b.rows else max(
@@ -280,13 +287,14 @@ def normalize(document: Document, *, source_kind: str = "api",
     stats.words = words
     stats.rtl_ratio = round(rtl_chars / alpha_chars, 3) if alpha_chars else 0.0
     stats.numeric_ratio = round(numeric / cells, 3) if cells else 0.0
+    stats.bilingual = 0.12 <= stats.rtl_ratio <= 0.88
 
     meta = document.meta.model_copy(deep=True)
     lang = (meta.language or "en").split("-")[0].lower()
     explicit = getattr(meta, "direction", None)
     if explicit in ("ltr", "rtl"):
         direction = explicit
-    elif meta.rtl or lang in RTL_LANGS or stats.rtl_ratio > 0.5:
+    elif meta.rtl or lang in RTL_LANGS or stats.rtl_ratio > 0.7:
         direction = "rtl"
     else:
         direction = "ltr"

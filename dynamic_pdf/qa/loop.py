@@ -73,6 +73,25 @@ def _propose_fixes(blocks, report: QAReport, current: Dict[int, dict]) -> List[T
     return fixes
 
 
+def qa_context(doc, theme) -> dict:
+    """Captions, level-1 headings and body size used by the PDF checks."""
+    caps, majors = [], []
+    for b in doc.blocks:
+        if b.type in ("table", "image") and getattr(b, "caption", None):
+            label = ""
+            num = getattr(b, "table_number", None) or getattr(b, "figure_number", None)
+            if num:
+                label = ("Table " if b.type == "table" else "Figure ") + str(num) + ": "
+            caps.append(plain_text(label + b.caption))
+        elif b.type == "heading" and b.level == 1:
+            majors.append(plain_text(b.text))
+        elif b.type in ("cover_page", "table_of_contents"):
+            majors.append(plain_text(getattr(b, "title", "") or "Table of Contents"))
+    from ..i18n import LABELS
+    majors += [v["toc"] for v in LABELS.values()]
+    return {"captions": caps, "major_headings": majors, "body_size": theme.typography.base_size}
+
+
 def glyph_findings(sem, theme) -> List[Finding]:
     texts = []
     for b in sem.blocks:
@@ -102,7 +121,8 @@ def render_with_qa(builder, fmt: str, max_attempts: int = MAX_ATTEMPTS, visual_d
             sem_doc = builder.last_render.document
             sp = theme.spacing
             report = check_pdf(data, margins={"left": sp.page_margin_left, "right": sp.page_margin_right},
-                               heading_texts=[o.text for o in builder.semantic().outline])
+                               heading_texts=[o.text for o in builder.semantic().outline],
+                               **qa_context(sem_doc, theme))
         else:
             data = builder.render_docx()
             from ..themes import get_theme
@@ -115,7 +135,7 @@ def render_with_qa(builder, fmt: str, max_attempts: int = MAX_ATTEMPTS, visual_d
         report.findings += glyph_findings(normalize(sem_doc), theme)
         report.attempts = attempt
         report.fixes_applied = list(applied)
-        if report.passed or attempt == max_attempts:
+        if not report.errors or attempt == max_attempts:
             break
         # map findings onto the *unfiltered* prepared document (indices of _qa_hints)
         base_doc, _ = builder._prepared_inner()

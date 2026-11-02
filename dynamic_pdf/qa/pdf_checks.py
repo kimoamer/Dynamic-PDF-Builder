@@ -21,6 +21,19 @@ def _require_pymupdf():
         raise DynamicPDFError('Visual QA requires PyMuPDF: pip install "dynamic-pdf-builder[qa]"') from e
 
 
+def _key(text: str) -> frozenset:
+    """Order/shape-insensitive word key: extracted RTL text is in visual order
+    and Arabic presentation forms, so compare NFKC words up to reversal."""
+    import re
+    import unicodedata
+    words = re.findall(r"[^\W_]+", unicodedata.normalize("NFKC", text or "").lower())
+    return frozenset(min(w, w[::-1]) for w in words if not w.isdigit())
+
+
+def _matches(line: str, target_key: frozenset) -> bool:
+    return bool(target_key) and target_key <= _key(line)
+
+
 def _overlap(a, b) -> float:
     x0, y0 = max(a[0], b[0]), max(a[1], b[1])
     x1, y1 = min(a[2], b[2]), min(a[3], b[3])
@@ -32,11 +45,17 @@ def _overlap(a, b) -> float:
 
 
 def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Optional[List[str]] = None,
-              tolerance: float = 2.0, fmt: str = "pdf") -> QAReport:
+              tolerance: float = 2.0, fmt: str = "pdf", captions: Optional[List[str]] = None,
+              major_headings: Optional[List[str]] = None, body_size: Optional[float] = None) -> QAReport:
     pymupdf = _require_pymupdf()
     doc = pymupdf.open(stream=data, filetype="pdf")
     rep = QAReport(format=fmt, pages=doc.page_count, sha256=sha256(data))
-    headings = {h.strip() for h in (heading_texts or []) if h.strip()}
+    caps = [_key(c) for c in (captions or []) if c.strip()]
+    majors = [_key(h) for h in (major_headings or []) if _key(h)]
+    head_keys = [_key(h) for h in (heading_texts or []) if _key(h)]
+    page_firsts = []          # first body line text of each page
+    page_texts = []
+    image_bottoms = {}
     margins = margins or {}
 
     for pno, page in enumerate(doc, start=1):
@@ -49,6 +68,7 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
         for bl in d["blocks"]:
             if bl.get("type") == 1:
                 has_image = True
+                image_bottoms[pno] = max(image_bottoms.get(pno, 0), bl["bbox"][3])
                 x0, y0, x1, y1 = bl["bbox"]
                 if x0 < -tolerance or y0 < -tolerance or x1 > W + tolerance or y1 > H + tolerance:
                     rep.findings.append(Finding(severity=ERROR, code="clipped_image", page=pno,
@@ -87,12 +107,34 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
                         text=lines[i][1].strip()[:80],
                         message=f"text overlaps: {lines[i][1].strip()[:30]!r} / {lines[j][1].strip()[:30]!r}"))
         body = [ln for ln in lines if 40 < ln[0][1] < H - 50]
+        # page fill: how far down the text block the content reaches
+        top = min([ln[0][1] for ln in body], default=72)
+        bottom = max([ln[0][3] for ln in body] + [image_bottoms.get(pno, 0)], default=0)
+        area = (H - 50) - min(top, 90)
+        rep.page_fill.append(round(max(0.0, (bottom - min(top, 90)) / area), 2) if bottom else 0.0)
+        page_firsts.append(" ".join(min(body, key=lambda ln: ln[0][1])[1].split()) if body else "")
+        page_texts.append([ln[1] for ln in body])
+        sizes = sorted(sz for _, _, sz in body)
+        if sizes and body_size:
+            biggest = sizes[-1]
+            if biggest > body_size * 3.4 and pno > 1:
+                rep.findings.append(Finding(severity=WARNING, code="oversized_heading", page=pno, format=fmt,
+                                            message=f"{biggest:.0f}pt text is {biggest / body_size:.1f}× body size"))
+        if body and pno < doc.page_count and caps:
+            last = max(body, key=lambda ln: ln[0][3])
+            lt = " ".join(last[1].split())
+            if any(_matches(lt, c) or (_key(lt) and _key(lt) <= c and len(_key(lt)) >= 2) for c in caps):
+                rep.findings.append(Finding(severity=ERROR, code="detached_caption", page=pno, bbox=last[0],
+                                            text=lt, format=fmt,
+                                            message=f"caption {lt[:40]!r} is separated from its table/figure"))
         if not body and not has_image and doc.page_count > 1:
             rep.findings.append(Finding(severity=ERROR, code="blank_page", page=pno, format=fmt,
                                         fixable=True, message="page has no content"))
         if body and pno < doc.page_count:
             last = max(body, key=lambda ln: ln[0][3])
-            if last[1].strip() in headings or any(last[1].strip().endswith(h) for h in headings if len(h) > 3):
+            lk = _key(last[1])
+            if lk and any(hk == lk or (len(hk) >= 2 and hk <= lk and len(lk) <= len(hk) + 1)
+                          for hk in head_keys):
                 rep.findings.append(Finding(severity=ERROR, code="stranded_heading", page=pno,
                                             bbox=last[0], text=last[1].strip(), format=fmt, fixable=True,
                                             message=f"heading {last[1].strip()[:40]!r} is the last line on its page"))
@@ -100,4 +142,19 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
             if link.get("kind") == 1 and not (0 <= link.get("page", -1) < doc.page_count):
                 rep.findings.append(Finding(severity=ERROR, code="broken_link", page=pno, format=fmt,
                                             message="internal link points to a missing page"))
+    # wasted space: a short non-final page followed by ordinary continuing content
+    orient = [p.rect.width > p.rect.height for p in doc]
+    for i in range(len(rep.page_fill) - 1):
+        nxt = page_firsts[i + 1]
+        intentional = (orient[i] != orient[i + 1] or i == 0
+                       or any(_matches(nxt, m) for m in majors)                 # next page opens a section
+                       or any(_matches(page_firsts[i], m) for m in majors))     # e.g. a TOC page
+        if rep.page_fill[i] < 0.45 and not intentional:
+            rep.findings.append(Finding(severity=WARNING, code="wasted_space", page=i + 1, format=fmt,
+                                        message=f"page {i + 1} is only {rep.page_fill[i]:.0%} full before "
+                                                "ordinary continuing content"))
+    inner = rep.page_fill[1:-1]
+    if len(inner) >= 3 and sum(inner) / len(inner) < 0.55:
+        rep.findings.append(Finding(severity=WARNING, code="low_density", format=fmt,
+                                    message=f"inner pages average {sum(inner) / len(inner):.0%} full"))
     return rep

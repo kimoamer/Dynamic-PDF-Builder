@@ -73,6 +73,17 @@ def register_fonts():
         # Arabic
         _try_register("Amiri", "Amiri-Regular.ttf")
         _try_register("Amiri-Bold", "Amiri-Bold.ttf")
+        if {"Amiri", "Amiri-Bold"} <= _available_fonts:
+            # lets <font name="Amiri"> inside bold text pick Amiri-Bold
+            from reportlab.lib.fonts import addMapping
+            addMapping("Amiri", 0, 0, "Amiri")
+            addMapping("Amiri", 1, 0, "Amiri-Bold")
+            addMapping("Amiri", 0, 1, "Amiri")
+            addMapping("Amiri", 1, 1, "Amiri-Bold")
+            addMapping("Amiri-Bold", 0, 0, "Amiri")
+            addMapping("Amiri-Bold", 1, 0, "Amiri-Bold")
+            addMapping("Amiri-Bold", 0, 1, "Amiri")
+            addMapping("Amiri-Bold", 1, 1, "Amiri-Bold")
 
         # Auto-register any manually placed fonts in the bundled dir
         for fname in os.listdir(BUNDLED_DIR):

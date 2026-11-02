@@ -38,23 +38,24 @@ CHECK_OFF = '<font name="JetBrains Mono">\u25a1</font>'
 # ═══════════════════════ RTL Detection ═══════════════════════
 
 def _is_rtl(text: str) -> bool:
-    """Detect if text is predominantly Arabic/Hebrew (RTL)."""
-    rtl_count = 0
-    total_alpha = 0
-    for ch in text:
-        if ch.isalpha():
-            total_alpha += 1
-            if unicodedata.bidirectional(ch) in ('R', 'AL'):
-                rtl_count += 1
-    return total_alpha > 0 and (rtl_count / total_alpha) > 0.3
+    """Paragraph direction: first strong character (UAX #9), see core.normalize."""
+    from ..core.normalize import is_rtl_text
+    return is_rtl_text(re.sub(r"\]\([^)]*\)", "]", text or ""))   # ignore link targets
 
 
-def _apply_rtl(text: str) -> str:
-    """Apply Arabic reshaping + bidi if available."""
+_ARABIC_RE = re.compile("[\u0600-\u06FF\u0750-\u077F]")
+# base letters + presentation forms produced by reshaping
+_ARABIC_SCRIPT_RE = re.compile("[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]")
+_AMIRI = "Amiri"
+
+
+def _apply_rtl(text: str, base_dir: Optional[str] = None) -> str:
+    """Apply Arabic reshaping + bidi (visual order) for the given base direction."""
     try:
         import arabic_reshaper
         from bidi.algorithm import get_display
-        return get_display(arabic_reshaper.reshape(text))
+        shaped = arabic_reshaper.reshape(text)
+        return get_display(shaped, base_dir=base_dir) if base_dir else get_display(shaped)
     except ImportError:
         return text
 
@@ -87,6 +88,16 @@ def _link_sub(m) -> str:
     return f'<a href="{href}" color="#1a73e8">{label}</a>'
 
 
+def _i18n_label(key, lang="en"):
+    from ..i18n import label
+    return label(key, lang)
+
+
+def _label(key):
+    from .. import policy as _p
+    return _i18n_label(key, getattr(_p.current(), "language", "en"))
+
+
 def _glyph_fallback(text: str) -> str:
     from ..qa.glyphs import needs_fallback
     out, run_font, buf = [], None, []
@@ -94,8 +105,14 @@ def _glyph_fallback(text: str) -> str:
     for ch in text:
         if ch == "<":
             in_tag = True
-        font = None if (in_tag or ch.isascii() or unicodedata.bidirectional(ch) in ("R", "AL", "AN")) \
-            else needs_fallback(ch)
+        if in_tag or ch.isascii():
+            font = None
+        elif _ARABIC_SCRIPT_RE.match(ch):
+            font = _AMIRI          # Arabic runs always get the Arabic face
+        elif unicodedata.bidirectional(ch) in ("R", "AL", "AN"):
+            font = None
+        else:
+            font = needs_fallback(ch)
         if ch == ">":
             in_tag = False
         if font != run_font:
@@ -122,8 +139,10 @@ def _md_inline(text: str) -> str:
     if not text:
         return ""
     # Apply RTL reshaping if Arabic characters detected
-    if _is_rtl(text):
-        text = _apply_rtl(text)
+    if _ARABIC_RE.search(text):
+        # shape any Arabic, ordered for the paragraph's own base direction
+        # (an English sentence with an Arabic term keeps LTR order)
+        text = _apply_rtl(text, "R" if _is_rtl(text) else "L")   # first-strong base direction
     text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     text = _restore_safe_tags(text)
     # Inline code spans are protected from further inline processing
@@ -684,7 +703,9 @@ class RenderContext:
 
     def __init__(self, available_width: float = 460.0,
                  section_numbering: bool = False,
-                 available_height: Optional[float] = None):
+                 available_height: Optional[float] = None,
+                 language: str = "en"):
+        self.language = language
         self.available_width = available_width
         self.available_height = available_height
         self.apply_drop_cap_next = False
@@ -1291,13 +1312,17 @@ def _render_code(block, theme):
                                 fontSize=theme.typography.base_size * theme.typography.caption_size_ratio,
                                 textColor=_safe_color("#A0AEC0"),
                                 backColor=_safe_color("#2D2D3F"), borderPadding=6, spaceAfter=0)
-        flowables.append(Paragraph(block.filename, fn_sty))
+        fn = Paragraph(html_mod.escape(block.filename), fn_sty)
+        fn.keepWithNext = 1           # the filename label never ends a page alone
+        flowables.append(fn)
     elif block.caption:
         cap_sty = ParagraphStyle('CCap', fontName=get_font_name(theme.typography.mono_family),
                                  fontSize=theme.typography.base_size * theme.typography.caption_size_ratio,
                                  textColor=_safe_color("#A0AEC0"),
                                  backColor=_safe_color("#2D2D3F"), borderPadding=6, spaceAfter=0)
-        flowables.append(Paragraph(_md_inline(block.caption), cap_sty))
+        cap = Paragraph(_md_inline(block.caption), cap_sty)
+        cap.keepWithNext = 1
+        flowables.append(cap)
     code_size = (block.hints or {}).get("font_size") or theme.typography.base_size * 0.85
     code_sty = ParagraphStyle(
         'Code', fontName=get_font_name(theme.typography.mono_family),
@@ -1305,7 +1330,8 @@ def _render_code(block, theme):
         leading=code_size * 1.4,
         textColor=_safe_color(theme.colors.code_text),
         backColor=_safe_color(theme.colors.code_bg),
-        borderPadding=12, spaceAfter=theme.spacing.block_gap, wordWrap='CJK',
+        borderPadding=12, spaceAfter=theme.spacing.block_gap + 6, wordWrap='CJK',
+        spaceBefore=12,     # the background box extends 12pt above; keep it off the heading
     )
     flowables.append(Paragraph(html_code, code_sty))
     return flowables
@@ -1482,22 +1508,36 @@ def _render_quote(block, theme):
 
 
 def _render_metrics(block, theme, available_width=460):
-    lbl_sty = ParagraphStyle('ML', fontName=get_font_name(theme.typography.body_family),
-                             fontSize=theme.typography.base_size * theme.typography.caption_size_ratio,
-                             textColor=_safe_color(theme.colors.text_muted))
-    val_sty = ParagraphStyle('MV', fontName=get_font_name(theme.typography.heading_family, bold=True),
-                             fontSize=theme.typography.base_size * 2.2,
-                             textColor=_safe_color(theme.colors.text_primary),
-                             leading=theme.typography.base_size * 2.6)
+    base = theme.typography.base_size
+    arabic_face = _arabic_font(theme) != get_font_name(theme.typography.body_family)
+
+    def face(text, bold=False, heading=False):
+        if _is_rtl(text) or _ARABIC_RE.search(text or ""):
+            return _arabic_font(theme, bold=bold)
+        fam = theme.typography.heading_family if heading else theme.typography.body_family
+        return get_font_name(fam, bold=bold)
+
     cells = []
     for m in block.metrics:
-        parts = [Paragraph(m.label.upper(), lbl_sty), Paragraph(m.value, val_sty)]
+        lbl_sty = ParagraphStyle('ML', fontName=face(m.label), fontSize=base * theme.typography.caption_size_ratio,
+                                 leading=base * theme.typography.caption_size_ratio * 1.5,
+                                 textColor=_safe_color(theme.colors.text_muted),
+                                 alignment=2 if _diag.current().language == "ar" else 0)
+        vsize = base * 2.2
+        val_sty = ParagraphStyle('MV', fontName=face(m.value, bold=True, heading=True), fontSize=vsize,
+                                 textColor=_safe_color(theme.colors.text_primary),
+                                 leading=vsize * (1.85 if face(m.value).startswith("Amiri") else 1.2),
+                                 spaceBefore=2, spaceAfter=2,
+                                 alignment=2 if _diag.current().language == "ar" else 0)
+        label = m.label if _ARABIC_RE.search(m.label) else m.label.upper()
+        parts = [Paragraph(_md_inline(label), lbl_sty), Paragraph(_md_inline(m.value), val_sty)]
         if m.delta:
-            is_pos = "+" in m.delta
-            dc = theme.colors.success if is_pos else theme.colors.error
-            d_sty = ParagraphStyle('MD', fontName=get_font_name(theme.typography.body_family, bold=True),
-                                   textColor=_safe_color(dc), fontSize=theme.typography.base_size * 0.8)
-            parts.append(Paragraph(m.delta, d_sty))
+            neg = m.delta.strip().startswith(("-", "\u2212", "\u25bc"))
+            dc = theme.colors.error if neg else theme.colors.success
+            d_sty = ParagraphStyle('MD', fontName=face(m.delta, bold=True), textColor=_safe_color(dc),
+                                   fontSize=base * 0.8, leading=base * 1.2,
+                                   alignment=2 if _diag.current().language == "ar" else 0)
+            parts.append(Paragraph(_md_inline(m.delta), d_sty))
         cells.append(parts)
     w = available_width / max(len(cells), 1)
     t = Table([cells], colWidths=[w] * len(cells), style=TableStyle([
@@ -1579,7 +1619,7 @@ def _render_cover(block, theme):
         a_sty = ParagraphStyle('CoverAuthor', fontName=get_font_name(theme.typography.body_family),
                                fontSize=theme.typography.base_size,
                                textColor=_safe_color(theme.colors.text_muted))
-        flowables.append(Paragraph(f"Prepared by {_md_inline(block.author)}", a_sty))
+        flowables.append(Paragraph(f"{_label('prepared_by')} {_md_inline(block.author)}", a_sty))
     if block.date:
         d_sty = ParagraphStyle('CoverDate', fontName=get_font_name(theme.typography.body_family),
                                fontSize=theme.typography.base_size,
@@ -1687,7 +1727,7 @@ def _render_abstract(block, theme, bs):
                                fontName=get_font_name(theme.typography.heading_family, bold=True),
                                fontSize=theme.typography.base_size * 1.3,
                                spaceBefore=4, spaceAfter=8)
-    flowables.append(Paragraph("Abstract", title_sty))
+    flowables.append(Paragraph(_md_inline(_label("abstract")), title_sty))
     for field in block.fields:
         label_sty = ParagraphStyle('AbsLabel', parent=bs, firstLineIndent=0,
                                    fontName=get_font_name(theme.typography.body_family, bold=True),
@@ -1701,7 +1741,8 @@ def _render_abstract(block, theme, bs):
                                 fontName=get_font_name(theme.typography.body_family, italic=True),
                                 fontSize=theme.typography.base_size * 0.9,
                                 spaceBefore=6)
-        flowables.append(Paragraph(f"<b>Keywords:</b> {', '.join(block.keywords)}", kw_sty))
+        flowables.append(Paragraph(f"<b>{_md_inline(_label('keywords'))}:</b> "
+                                   f"{_md_inline(', '.join(block.keywords))}", kw_sty))
     # Wrap in a bordered table; each flowable is its own row so ReportLab can
     # split long abstracts across pages (a single KeepTogether would overflow).
     pad = theme.spacing.callout_padding
@@ -1727,7 +1768,7 @@ def _render_bibliography(block, theme, bs):
                                fontName=get_font_name(theme.typography.heading_family, bold=True),
                                fontSize=theme.typography.base_size * 1.3,
                                spaceBefore=12, spaceAfter=8)
-    flowables.append(Paragraph("References", title_sty))
+    flowables.append(Paragraph(_md_inline(_label("references")), title_sty))
     ref_sty = ParagraphStyle('BibEntry', parent=bs, firstLineIndent=-24,
                              leftIndent=24,
                              fontSize=theme.typography.base_size * 0.9,
@@ -1952,8 +1993,9 @@ def _build_list_flowable(items, bullet_type, theme, bs, sp, start=1, depth=0):
         bulletOffsetY=0,
     )
     if bullet_type == '1':
-        kwargs['bulletType'] = '1'
-        kwargs['start'] = start
+        # 1. → a. → i. for nested ordered levels (matches the DOCX numbering)
+        kwargs['bulletType'] = ['1', 'a', 'i'][depth % 3]
+        kwargs['start'] = start if depth == 0 else 1
         kwargs['bulletFormat'] = '%s.'
     else:
         kwargs['bulletType'] = 'bullet'
@@ -1970,9 +2012,33 @@ class DocumentTOC(_RLTableOfContents):
     and every entry links to its heading destination.
     """
 
-    def __init__(self, depth: int = 3, **kw):
+    def __init__(self, depth: int = 3, rtl: bool = False, number_style=None, **kw):
         super().__init__(**kw)
         self.depth = depth
+        self.rtl = rtl
+        self.number_style = number_style
+
+    def wrap(self, availWidth, availHeight):
+        if not self.rtl:
+            return super().wrap(availWidth, availHeight)
+        # Right-to-left TOC: title flush right, page number on the left (start of
+        # the reading line's end), dotted leader between, every cell linked.
+        rows = []
+        for level, text, page, key in (self._lastEntries or [(0, "", 0, None)]):
+            sty = ParagraphStyle(f'TOCR{level}', parent=self.getLevelStyle(level), alignment=2,
+                                 leftIndent=0, firstLineIndent=0, rightIndent=level * 18)
+            link = (lambda t: f'<a href="#{key}">{t}</a>') if key else (lambda t: t)
+            rows.append([Paragraph(link(str(page)), self.number_style or sty),
+                         Paragraph(link(text), sty)])
+        self._table = Table(rows, colWidths=[36, availWidth - 36], style=TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'BOTTOM'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('LINEBELOW', (0, 0), (-1, -1), 0.25, HexColor("#D5D9DF")),
+            ('TOPPADDING', (0, 0), (-1, -1), 3), ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ]))
+        self._table.hAlign = 'RIGHT'
+        self.width, self.height = self._table.wrapOn(self.canv, availWidth, availHeight)
+        return self.width, self.height
 
     def notify(self, kind, stuff):
         if kind == 'TOCEntry' and stuff[0] >= self.depth:
@@ -1994,7 +2060,12 @@ def _render_toc_placeholder(block, theme, ctx):
         textColor=_safe_color(theme.colors.text_primary),
         spaceBefore=0, spaceAfter=12,
     )
-    flowables.append(Paragraph("Table of Contents", title_sty))
+    lang = getattr(ctx, "language", "en") if ctx else "en"
+    toc_title = _i18n_label("toc", lang)
+    if _is_rtl(toc_title):
+        title_sty = ParagraphStyle('TOCTitleRTL', parent=title_sty, alignment=2,
+                                   fontName=_arabic_font(theme, bold=True))
+    flowables.append(Paragraph(_md_inline(toc_title), title_sty))
     flowables.append(HRFlowable(
         width="100%", thickness=1,
         color=_safe_color(theme.colors.accent), spaceAfter=8))
@@ -2014,7 +2085,11 @@ def _render_toc_placeholder(block, theme, ctx):
             textColor=_safe_color(theme.colors.text_primary if lvl <= 1
                                   else theme.colors.text_secondary),
         ))
-    toc = DocumentTOC(depth=depth_limit, levelStyles=level_styles,
+    rtl = lang == "ar"
+    num_sty = ParagraphStyle('TOCNum', fontName=get_font_name(theme.typography.body_family),
+                             fontSize=theme.typography.base_size * 0.9,
+                             textColor=_safe_color(theme.colors.text_secondary), alignment=0)
+    toc = DocumentTOC(depth=depth_limit, rtl=rtl, number_style=num_sty, levelStyles=level_styles,
                       dotsMinLevel=0, rightColumnWidth=48)
     flowables.append(toc)
     flowables.append(Spacer(1, 8))
