@@ -10,6 +10,8 @@ from pydantic import BaseModel, Field
 class BaseBlock(BaseModel):
     id: Optional[str] = None          # Anchor ID for cross-references
     lang: Optional[str] = None        # Per-block language override (PDF/UA)
+    # Layout hints set by the design planner (renderer-agnostic, never content)
+    hints: Optional[Dict[str, Any]] = None
 
 # ─────────────────────── Text Primitives ───────────────────────
 
@@ -44,6 +46,7 @@ class ListItemModel(BaseModel):
     text: str
     children: List["ListItemModel"] = Field(default_factory=list)
     checked: Optional[bool] = None        # for mixed checklist/bullet
+    children_ordered: Optional[bool] = None  # children form an ordered list (None = inherit)
 
 ListItemModel.model_rebuild()  # resolve forward reference
 

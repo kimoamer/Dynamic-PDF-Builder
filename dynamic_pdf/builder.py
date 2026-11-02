@@ -23,6 +23,30 @@ from .schema.blocks import (
     TwoColumnBlock, ThreeColumnBlock, SidebarBlock,
 )
 from .layout.engine import LayoutEngine
+from .policy import RenderPolicy, ResourceLimits, STRICT
+from .assets import AssetPolicy
+from .utils.errors import ResourceLimitError
+
+
+class ExportResult:
+    """Paths and diagnostics produced by ``export`` / ``export_both``."""
+
+    def __init__(self, pdf_path=None, docx_path=None, page_count=None, profile=None,
+                 diagnostics=None):
+        self.pdf_path = pdf_path
+        self.docx_path = docx_path
+        self.page_count = page_count
+        self.profile = profile
+        self.diagnostics = diagnostics or []
+        self.qa = {}             # format -> QAReport (when exported with qa=True)
+
+    @property
+    def status(self) -> str:
+        return "degraded" if any(d.get("level") == "error" for d in self.diagnostics) else "ok"
+
+    def __repr__(self):
+        return (f"ExportResult(pdf={self.pdf_path!r}, docx={self.docx_path!r}, "
+                f"profile={self.profile!r}, status={self.status!r})")
 
 
 class DocumentBuilder:
@@ -37,10 +61,118 @@ class DocumentBuilder:
             .render("report.pdf"))
     """
 
-    def __init__(self, theme: str = "claude"):
+    def __init__(self, theme: str = "claude", policy: Optional[RenderPolicy] = None):
         self._theme = theme
         self._meta = Meta()
         self._blocks: list = []
+        self._policy = policy or RenderPolicy()
+        self.last_render = None   # LayoutEngine of the most recent render (diagnostics, page_count)
+        self._design_mode: Optional[str] = None   # None = classic theme rendering (v0.3)
+        self._brand = None
+        self._source_kind = "api"
+        self._source_text: Optional[str] = None
+        self.front_matter: dict = {}
+        self.last_design = None
+        self._qa_hints: dict = {}        # block index -> layout hints from the QA loop
+
+    # ─── Semantic / design layer ───────────────────────────────────
+
+    def document_type(self, doc_type: str) -> 'DocumentBuilder':
+        """Declare the document type (e.g. ``executive_report``, ``proposal``,
+        ``academic_report``, ``technical_manual``, ``data_report``, ``letter``)."""
+        from .design import resolve_profile_name
+        self._meta.document_type = (None if doc_type in (None, "", "auto")
+                                    else resolve_profile_name(doc_type).value)
+        return self
+
+    def direction(self, direction: str) -> 'DocumentBuilder':
+        if direction not in ("ltr", "rtl", "auto"):
+            raise ValueError("direction must be 'ltr', 'rtl' or 'auto'")
+        self._meta.direction = None if direction == "auto" else direction
+        self._meta.rtl = direction == "rtl"
+        return self
+
+    def design(self, mode: str = "auto", brand=None) -> 'DocumentBuilder':
+        """Enable intelligent design: ``"auto"`` selects a profile from the
+        content; a profile name forces it. ``brand`` is a ``BrandKit`` or dict.
+        Content is never altered — only typography, layout and navigation."""
+        from .design import BrandKit, resolve_profile_name
+        if mode != "auto":
+            resolve_profile_name(mode)   # validate early
+        self._design_mode = mode
+        if brand is not None:
+            self._brand = brand if isinstance(brand, BrandKit) else BrandKit(**brand)
+        return self
+
+    def semantic(self):
+        """The canonical, renderer-independent ``SemanticDocument``."""
+        from .core.normalize import normalize
+        return normalize(self.build(), source_kind=self._source_kind,
+                         source_text=self._source_text, front_matter=self.front_matter)
+
+    def _prepared(self):
+        """(Document, Theme | None) ready for a renderer, applying the design plan."""
+        doc, theme = self._prepared_inner()
+        if self._qa_hints:
+            doc = doc.model_copy(deep=True)
+            for idx, hint in self._qa_hints.items():
+                if 0 <= idx < len(doc.blocks):
+                    b = doc.blocks[idx]
+                    b.hints = {**(b.hints or {}), **hint}
+            doc.blocks = [b for b in doc.blocks if not (b.hints or {}).get("skip")]
+        return doc, theme
+
+    def _prepared_inner(self):
+        if self._design_mode is None and self._brand is None:
+            self.last_design = None
+            return self.build(), None
+        from .design import plan_design, apply_plan
+        sem = self.semantic()
+        plan = plan_design(sem, None if self._design_mode in (None, "auto") else self._design_mode,
+                           self._brand)
+        sem = apply_plan(sem, plan)
+        from .design.planner import plan_layout
+        plan.layout = plan_layout(sem, plan)
+        self.last_design = plan
+        return sem.to_document(), plan.theme
+
+    def design_explain(self) -> dict:
+        """Why each style/layout decision was made (profile, reasons, recipe)."""
+        if self._design_mode is None and self._brand is None:
+            return {"profile": None, "reasons": ["design() not enabled; using theme "
+                                                 f"'{self._theme}' as-is"]}
+        self._prepared()
+        return self.last_design.explain()
+
+    # ─── Render policy (caller-owned; never taken from document payloads) ───
+
+    def quality(self, mode: str = STRICT) -> 'DocumentBuilder':
+        """Error semantics: ``"strict"`` (raise typed errors, default) or
+        ``"permissive"`` (visible markers + ``error`` diagnostics)."""
+        self._policy = RenderPolicy(error_mode=mode, assets=self._policy.assets,
+                                    limits=self._policy.limits)
+        return self
+
+    def asset_policy(self, policy: Optional[AssetPolicy] = None, **kwargs) -> 'DocumentBuilder':
+        """Configure image/logo loading (e.g. ``allow_remote=True,
+        allowed_hosts=("cdn.example.com",)`` or ``base_dir="/srv/assets"``)."""
+        assets = policy or AssetPolicy(**kwargs)
+        self._policy = RenderPolicy(error_mode=self._policy.error_mode, assets=assets,
+                                    limits=self._policy.limits)
+        return self
+
+    def limits(self, limits: Optional[ResourceLimits] = None, **kwargs) -> 'DocumentBuilder':
+        self._policy = RenderPolicy(error_mode=self._policy.error_mode,
+                                    assets=self._policy.assets,
+                                    limits=limits or ResourceLimits(**kwargs))
+        return self
+
+    @property
+    def diagnostics(self) -> list:
+        """Diagnostics of the most recent render (list of dicts)."""
+        if self.last_render is None:
+            return []
+        return [d.to_dict() for d in self.last_render.diagnostics.items]
 
     # ─── Meta ───────────────────────────────────────────────────────
 
@@ -412,21 +544,112 @@ class DocumentBuilder:
     def build(self) -> Document:
         return Document(meta=self._meta, theme=self._theme, blocks=self._blocks)
 
+    def _engine(self) -> LayoutEngine:
+        doc, theme = self._prepared()
+        self.last_render = LayoutEngine(doc, policy=self._policy, theme=theme)
+        return self.last_render
+
     def render(self, output=None) -> Optional[bytes]:
-        """Render to a file path (str), file-like object, or return bytes (if output is None)."""
-        doc = self.build()
+        """Render to a file path (str), file-like object, or return bytes (if output is None).
+
+        Nothing is written to ``output`` unless rendering (and encryption, if
+        requested) succeeded.
+        """
+        engine = self._engine()
         if output is None:
             buffer = io.BytesIO()
-            LayoutEngine(doc).render(buffer)
+            engine.render(buffer)
             return buffer.getvalue()
-        LayoutEngine(doc).render(output)
+        engine.render(output)
         return None
+
+    # ─── Multi-format export ───────────────────────────────────────
+
+    def render_docx(self, output=None) -> Optional[bytes]:
+        """Render an editable Word document (same semantic model and design as PDF)."""
+        from .core.normalize import normalize
+        from .renderers.docx_renderer import render_docx
+        from .themes import get_theme as _get_theme
+        doc, theme = self._prepared()
+        sem = normalize(doc, source_kind=self._source_kind, source_text=self._source_text,
+                        front_matter=self.front_matter)
+        data, col = render_docx(sem, theme or _get_theme(doc.theme), self._policy)
+        self.last_docx_diagnostics = col
+        if output is None:
+            return data
+        from .layout.engine import _write_output
+        _write_output(output, data)
+        return None
+
+    def qa(self, fmt: str = "pdf", max_attempts: int = 3, visual: bool = True):
+        """Render with visual/structural QA and bounded auto-fix. Returns (bytes, QAReport).
+
+        In strict mode remaining errors raise ``QualityError``; in permissive
+        mode the report is returned with ``passed == False``.
+        """
+        from .qa.loop import render_with_qa
+        from .utils.errors import QualityError
+        data, report = render_with_qa(self, fmt, max_attempts=max_attempts, visual_docx=visual)
+        self.last_qa = report
+        if not report.passed and self._policy.strict:
+            raise QualityError(report.summary() + ": " + "; ".join(
+                f.message for f in report.errors[:5]), report)
+        return data, report
+
+    def export(self, path: str, format: Optional[str] = None, qa: bool = False) -> 'ExportResult':
+        """Export to ``path``; format inferred from the extension (``.pdf``/``.docx``)
+        unless given as ``"pdf"`` or ``"docx"``. ``qa=True`` inspects the rendered
+        pages, auto-fixes measurable layout defects (bounded retries) and attaches
+        the QA report."""
+        import os
+        fmt = (format or os.path.splitext(path)[1].lstrip(".") or "pdf").lower()
+        if fmt not in ("pdf", "docx"):
+            raise ValueError(f"Unsupported export format {fmt!r}; use 'pdf' or 'docx'")
+        result = ExportResult()
+        if qa:
+            from .layout.engine import _write_output
+            data, report = self.qa(fmt)
+            _write_output(path, data)
+            result.qa[fmt] = report
+            if fmt == "pdf":
+                result.pdf_path, result.page_count = path, report.pages
+                result.diagnostics = self.diagnostics
+            else:
+                result.docx_path = path
+                result.diagnostics = [d.to_dict() for d in self.last_docx_diagnostics.items]
+            result.profile = self.last_design.decision.profile.value if self.last_design else None
+            return result
+        if fmt == "pdf":
+            self.render(path)
+            result.pdf_path = path
+            result.page_count = self.last_render.page_count
+            result.diagnostics = self.diagnostics
+        else:
+            self.render_docx(path)
+            result.docx_path = path
+            result.diagnostics = [d.to_dict() for d in self.last_docx_diagnostics.items]
+        result.profile = self.last_design.decision.profile.value if self.last_design else None
+        return result
+
+    def export_both(self, directory: str, basename: Optional[str] = None,
+                    qa: bool = False) -> 'ExportResult':
+        """Export PDF and DOCX from the same semantic document into ``directory``."""
+        import os
+        import re as _re
+        os.makedirs(directory, exist_ok=True)
+        stem = basename or _re.sub(r"[^\w.-]+", "_", (self._meta.title or "document")).strip("_") or "document"
+        pdf = self.export(os.path.join(directory, stem + ".pdf"), qa=qa)
+        docx = self.export(os.path.join(directory, stem + ".docx"), qa=qa)
+        res = ExportResult(pdf_path=pdf.pdf_path, docx_path=docx.docx_path,
+                           page_count=pdf.page_count, profile=pdf.profile,
+                           diagnostics=pdf.diagnostics + [dict(d, format="docx") for d in docx.diagnostics])
+        res.qa = {**pdf.qa, **docx.qa}
+        return res
 
     def render_bytes(self) -> bytes:
         """Render and return raw PDF bytes."""
         buffer = io.BytesIO()
-        doc = self.build()
-        LayoutEngine(doc).render(buffer)
+        self._engine().render(buffer)
         return buffer.getvalue()
 
     def render_base64(self) -> str:
@@ -434,28 +657,62 @@ class DocumentBuilder:
         return base64.b64encode(self.render_bytes()).decode("utf-8")
 
     @classmethod
-    def from_markdown(cls, markdown: str, theme: str = "claude") -> 'DocumentBuilder':
-        """Create a DocumentBuilder pre-populated from a Markdown string."""
+    def from_markdown(cls, markdown: str, theme: str = "claude",
+                      policy: Optional[RenderPolicy] = None) -> 'DocumentBuilder':
+        """Create a DocumentBuilder pre-populated from a Markdown string.
+
+        Front matter keys ``title``, ``author``, ``subject``, ``description``,
+        ``keywords`` and ``language``/``lang`` populate document metadata.
+        """
         from .markdown.preprocessors import preprocess_markdown
-        from .markdown.parser import markdown_to_blocks
-        builder = cls(theme=theme)
-        builder._blocks.extend(markdown_to_blocks(preprocess_markdown(markdown)))
+        from .markdown.parser import parse_markdown
+        builder = cls(theme=theme, policy=policy)
+        max_chars = builder._policy.limits.max_input_chars
+        if len(markdown) > max_chars:
+            raise ResourceLimitError(
+                f"Markdown input length ({len(markdown)}) exceeds limit ({max_chars})")
+        fm, blocks = parse_markdown(preprocess_markdown(markdown))
+        kw = {k: fm[k] for k in ("title", "author", "subject", "description") if isinstance(fm.get(k), str)}
+        if isinstance(fm.get("keywords"), list):
+            kw["keywords"] = fm["keywords"]
+        elif isinstance(fm.get("keywords"), str) and fm["keywords"]:
+            kw["keywords"] = [k.strip() for k in fm["keywords"].split(",") if k.strip()]
+        lang = fm.get("language") or fm.get("lang")
+        builder.meta(language=lang if isinstance(lang, str) and lang else "en", **kw)
+        if isinstance(fm.get("theme"), str) and theme == "claude":
+            builder._theme = fm["theme"]
+        if isinstance(fm.get("document_type"), str) and fm["document_type"]:
+            builder.document_type(fm["document_type"])
+        if fm.get("direction") in ("ltr", "rtl"):
+            builder.direction(fm["direction"])
+        builder.front_matter = fm
+        builder._source_kind = "markdown"
+        builder._source_text = markdown
+        builder._blocks.extend(blocks)
         return builder
 
 
 # ─── Standalone helpers ───────────────────────────────────────────────────────
 
-def render_from_json(payload: dict) -> dict:
-    """Render a PDF from a Document dict. Returns {success, pdf_base64, metadata}."""
+def render_from_json(payload: dict, policy: Optional[RenderPolicy] = None) -> dict:
+    """Render a PDF from a Document dict.
+
+    Returns ``{success, status, pdf_base64, metadata, diagnostics}``. In strict
+    mode (default) failures raise typed ``DynamicPDFError`` subclasses; in
+    permissive mode ``status`` is ``"degraded"`` when any block failed.
+    """
     from .schema.document import Document
     doc = Document.model_validate(payload)
     buffer = io.BytesIO()
-    LayoutEngine(doc).render(buffer)
+    engine = LayoutEngine(doc, policy=policy)
+    engine.render(buffer)
     pdf_bytes = buffer.getvalue()
     return {
         "success": True,
+        "status": engine.diagnostics.status,
         "pdf_base64": base64.b64encode(pdf_bytes).decode("utf-8"),
-        "metadata": {"file_size_bytes": len(pdf_bytes)},
+        "metadata": {"file_size_bytes": len(pdf_bytes), "page_count": engine.page_count},
+        "diagnostics": [d.to_dict() for d in engine.diagnostics.items],
     }
 
 

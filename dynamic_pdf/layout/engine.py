@@ -13,43 +13,90 @@ from reportlab.lib.pagesizes import A4, LETTER, LEGAL, landscape
 from reportlab.lib.colors import HexColor, Color
 from reportlab.lib.units import inch
 from reportlab.pdfgen.canvas import Canvas
+from reportlab.platypus.flowables import Flowable
+from xml.sax.saxutils import escape as xml_escape
 from ..schema.document import Document
 from ..schema.enums import PageSize, Orientation
 from ..schema.theme import Theme
 from ..themes import get_theme
 from ..fonts import register_fonts, get_font_name
 from .factory import create_flowables, RenderContext
+from .. import policy as _policy
+from ..policy import RenderPolicy, DiagnosticCollector
+from ..assets import load_image
+from ..utils.errors import EncryptionError, DynamicPDFError
 
 import os
 import math
 
 
-# ═══════════════════════ Numbered Canvas (two-pass) ═══════════════════════
+# ═══════════════════════ Page-count + TOC aware doc template ═══════════════════════
 
 class NumberedCanvas(Canvas):
-    """Two-pass canvas that supports {total} page count.
+    """Kept for backward compatibility (import path). Page totals are now
+    resolved by ``_PageCounter`` + ``multiBuild``; this canvas adds nothing."""
 
-    Pass 1: Every page is recorded (saved).  
-    Pass 2: Pages are replayed with the real total injected.
-    """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._page_data: list = []   # list of page buffers
+class _PageCounter(Flowable):
+    """Zero-size indexing flowable that makes ``multiBuild`` re-run until the
+    page total used while drawing headers/footers equals the real total."""
 
-    def showPage(self):
-        """Save the current page state and start a new one."""
-        self._page_data.append(dict(
-            page_content=self._code[:],
-        ))
-        super().showPage()
+    def __init__(self, doc):
+        super().__init__()
+        self._doc = doc
+        self.total = None      # total from the previous completed pass
+        self._prev = None
+        self.width = self.height = 0
 
-    def save(self):
-        """Re-draw every page with the correct total, then save PDF."""
-        total = len(self._page_data)
-        # Inject total into any deferred footer/header calls
-        self._total_pages = total
-        super().save()
+    def isIndexing(self):
+        return 1
+
+    def isSatisfied(self):
+        return self.total is not None and self.total == self._prev
+
+    def beforeBuild(self):
+        self._prev = self.total
+
+    def afterBuild(self):
+        self.total = self._doc.page
+
+    def notify(self, kind, stuff):
+        pass
+
+    def wrap(self, aw, ah):
+        return 0, 0
+
+    def draw(self):
+        pass
+
+
+class _EngineDocTemplate(BaseDocTemplate):
+    """Registers heading destinations, PDF outline entries and TOC entries."""
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        self._heading_seq = 0
+        self._outline_level = -1
+
+    def handle_documentBegin(self):
+        self._heading_seq = 0
+        self._outline_level = -1
+        super().handle_documentBegin()
+
+    def afterFlowable(self, flowable):
+        entry = getattr(flowable, "_toc_entry", None)
+        if not entry:
+            return
+        level, text, explicit_id = entry
+        self._heading_seq += 1
+        key = explicit_id or f"h{self._heading_seq}"
+        c = self.canv
+        c.bookmarkPage(key)
+        # PDF outline levels may not skip (H1 -> H3); clamp to parent+1
+        olevel = min(level - 1, self._outline_level + 1)
+        self._outline_level = olevel
+        c.addOutlineEntry(text, key, level=olevel, closed=olevel >= 1)
+        self.notify('TOCEntry', (level - 1, xml_escape(text), self.page, key))
 
 
 # ═══════════════════════ Colour Helpers ═══════════════════════
@@ -86,48 +133,38 @@ def _draw_gradient(canvas, x, y, w, h, c1, c2, direction="horizontal", steps=60)
 
 
 def _draw_image(canvas, path, x, y, max_w, max_h, align="left"):
-    """Draw an image, scaling to fit. Returns (drawn_width, drawn_height)."""
+    """Draw an image (validated through the AssetPolicy), scaled to fit.
+
+    Returns (drawn_width, drawn_height). Asset failures follow the active
+    error policy: raise in strict mode, diagnostic + skip in permissive mode.
+    """
+    from reportlab.lib.utils import ImageReader
+    col = _policy.current()
     try:
-        from reportlab.lib.utils import ImageReader
-        if path and os.path.exists(path):
-            ir = ImageReader(path)
-            iw, ih = ir.getSize()
-            scale = min(max_w / iw, max_h / ih)
-            dw, dh = iw * scale, ih * scale
-            if align == "center":
-                x = x + (max_w - dw) / 2
-            elif align == "right":
-                x = x + max_w - dw
-            canvas.drawImage(path, x, y, width=dw, height=dh, mask='auto')
-            return dw, dh
-        # Try as URL
-        if path and (path.startswith("http://") or path.startswith("https://")):
-            import urllib.request, tempfile
-            tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
-            urllib.request.urlretrieve(path, tmp.name)
-            ir = ImageReader(tmp.name)
-            iw, ih = ir.getSize()
-            scale = min(max_w / iw, max_h / ih)
-            dw, dh = iw * scale, ih * scale
-            if align == "center":
-                x = x + (max_w - dw) / 2
-            elif align == "right":
-                x = x + max_w - dw
-            canvas.drawImage(tmp.name, x, y, width=dw, height=dh, mask='auto')
-            os.unlink(tmp.name)
-            return dw, dh
-    except Exception:
-        pass
-    return 0, 0
+        buf, (iw, ih) = load_image(path, col.policy.assets)
+    except DynamicPDFError as e:
+        col.fail("asset_failed", f"Header/footer image: {e}", e)
+        return 0, 0
+    scale = min(max_w / iw, max_h / ih)
+    dw, dh = iw * scale, ih * scale
+    if align == "center":
+        x = x + (max_w - dw) / 2
+    elif align == "right":
+        x = x + max_w - dw
+    canvas.drawImage(ImageReader(buf), x, y, width=dw, height=dh, mask='auto')
+    return dw, dh
 
 
 # ═══════════════════════ Layout Engine ═══════════════════════
 
 class LayoutEngine:
-    def __init__(self, document: Document):
+    def __init__(self, document: Document, policy: RenderPolicy = None, theme: Theme = None):
         self.document = document
-        self.theme = get_theme(document.theme)
-        self._page_count = 0
+        self.theme = theme.model_copy(deep=True) if theme is not None else get_theme(document.theme)
+        self.policy = policy or RenderPolicy()
+        self.diagnostics = DiagnosticCollector(self.policy)
+        self.page_count = 0
+        self._page_counter = None
 
     # ─── Page Size ───
 
@@ -168,11 +205,13 @@ class LayoutEngine:
         hf = self.theme.header_footer
         if not hf.enabled:
             return
-        if hf.skip_first_page_header and self._page_count == 1:
+        if hf.skip_first_page_header and doc.page == 1:
             return
 
         style = hf.header_style.lower().replace("-", "_").replace(" ", "_")
-        w, h = self._get_pagesize()
+        if style == "none":
+            return
+        w, h = self._page_wh(canvas)
         bar_h = hf.height
         canvas.saveState()
 
@@ -357,14 +396,12 @@ class LayoutEngine:
 
         # Logo
         if hf.logo:
-            try:
-                max_lh = min(hf.logo_max_height, bar_h - 16)
-                dw, dh = _draw_image(c, hf.logo, x,
-                                     h - bar_h + (bar_h - max_lh) / 2 - y_offset,
-                                     hf.logo_max_height * 4, max_lh)
+            max_lh = min(hf.logo_max_height, bar_h - 16)
+            dw, dh = _draw_image(c, hf.logo, x,
+                                 h - bar_h + (bar_h - max_lh) / 2 - y_offset,
+                                 hf.logo_max_height * 4, max_lh)
+            if dw:
                 x += dw + 14
-            except Exception:
-                pass
 
         # Title
         title = hf.title or self.document.meta.title or ""
@@ -388,11 +425,13 @@ class LayoutEngine:
         hf = self.theme.header_footer
         if not hf.enabled:
             return
-        if hf.skip_first_page_footer and self._page_count == 1:
+        if hf.skip_first_page_footer and doc.page == 1:
             return
 
         style = hf.footer_style.lower().replace("-", "_").replace(" ", "_")
-        w, h = self._get_pagesize()
+        if style == "none":
+            return
+        w, h = self._page_wh(canvas)
         bar_h = hf.footer_height
         canvas.saveState()
 
@@ -575,10 +614,11 @@ class LayoutEngine:
 
     def _fmt_page(self, hf, doc):
         fmt = hf.page_number_format
-        # Try to get real total from NumberedCanvas
-        canvas = getattr(doc, 'canv', None)
-        total = str(getattr(canvas, '_total_pages', 0) or "?")
-        return fmt.replace("{n}", str(doc.page)).replace("{total}", total)
+        counter = self._page_counter
+        # During the first multiBuild pass the total is unknown; that pass is
+        # always re-run (see _PageCounter), so a provisional value never ships.
+        total = counter.total if counter is not None and counter.total else doc.page
+        return fmt.replace("{n}", str(doc.page)).replace("{total}", str(total))
 
     def _resolve_slot(self, slot, hf, doc):
         """Resolve a slot value: 'page', 'date', 'text:Foo', etc."""
@@ -599,7 +639,6 @@ class LayoutEngine:
     # ─── Combined Page Handler ──────────────────────────────────────
 
     def _on_page(self, canvas, doc):
-        self._page_count += 1
         self._draw_header(canvas, doc)
         self._draw_footer(canvas, doc)
         # Draw sidebar for sidebar style (full page height)
@@ -607,10 +646,15 @@ class LayoutEngine:
         if hf.header_style == "sidebar" or hf.footer_style == "sidebar":
             self._draw_sidebar_strip(canvas)
 
+    def _page_wh(self, canvas):
+        """Actual size of the page being drawn (landscape pages differ)."""
+        ps = getattr(canvas, "_pagesize", None)
+        return tuple(ps) if ps else self._get_pagesize()
+
     def _draw_sidebar_strip(self, canvas):
         """Vertical strip for sidebar style (drawn on every page)."""
         hf = self.theme.header_footer
-        w, h = self._get_pagesize()
+        w, h = self._page_wh(canvas)
         sw = hf.sidebar_width
         sc = hf.sidebar_color or self.theme.colors.accent
         canvas.saveState()
@@ -673,18 +717,36 @@ class LayoutEngine:
             id='main'
         )
 
-        template = PageTemplate(id='AllPages', frames=[frame], onPage=self._on_page)
+        template = PageTemplate(id='AllPages', frames=[frame], onPage=self._on_page,
+                                pagesize=pagesize)
+        # Landscape pages for content the planner marks as too wide for portrait
+        lw, lh = (h, w) if h > w else (w, h)
+        land_frame = Frame(left_m, bot_m, lw - left_m - right_m, lh - top_m - bot_m, id='land')
+        land_template = PageTemplate(id='Landscape', frames=[land_frame], onPage=self._on_page,
+                                     pagesize=(lw, lh))
+        land_width = lw - left_m - right_m
 
         meta = self.document.meta
+        limits = self.policy.limits
+        _policy.check_limit("Block count", len(self.document.blocks), limits.max_blocks)
 
-        # Determine output target (may need temp buffer for encryption)
-        needs_encrypt = meta.encrypt and meta.owner_password
+        # Fail closed: refuse *before* rendering if encryption cannot be honoured
+        needs_encrypt = bool(meta.encrypt)
         if needs_encrypt:
-            render_target = BytesIO()
-        else:
-            render_target = output
+            if not (meta.owner_password or meta.user_password):
+                raise EncryptionError("encrypt=True requires owner_password and/or user_password")
+            try:
+                import pikepdf  # noqa: F401
+            except ImportError as e:
+                raise EncryptionError(
+                    "PDF encryption was requested but pikepdf is not installed; "
+                    "refusing to write an unencrypted file. Install with: "
+                    'pip install "dynamic-pdf-builder[pdf]"') from e
 
-        doc_template = BaseDocTemplate(
+        # Always render to memory: nothing is written unless rendering succeeds
+        render_target = BytesIO()
+
+        doc_template = _EngineDocTemplate(
             render_target, pagesize=pagesize,
             title=meta.title or "",
             author=meta.author or "",
@@ -694,71 +756,89 @@ class LayoutEngine:
         )
         if hasattr(doc_template, 'lang'):
             doc_template.lang = meta.language
-        doc_template.addPageTemplates([template])
+        doc_template.addPageTemplates([template, land_template])
 
         # Create thread-safe render context
         ctx = RenderContext(
             available_width=frame_width,
             section_numbering=meta.section_numbering,
+            available_height=h - top_m - bot_m,
         )
 
-        flowables = []
-        for block in self.document.blocks:
-            try:
+        token = _policy.activate(self.diagnostics)
+        try:
+            self._page_counter = _PageCounter(doc_template)
+            flowables = [self._page_counter]
+            for i, block in enumerate(self.document.blocks):
+                self.diagnostics.block_index = i
+                self.diagnostics.block_type = getattr(block, "type", None)
+                if getattr(block, "type", None) == "table":
+                    width = max([len(block.headers or [])] + [len(r) for r in block.rows] + [1])
+                    _policy.check_limit("Table cells", (len(block.rows) + 1) * width,
+                                        limits.max_table_cells)
+                hints = getattr(block, "hints", None) or {}
+                if hints.get("landscape") and lw > w:
+                    from reportlab.platypus import NextPageTemplate, PageBreak
+                    portrait_w = ctx.available_width
+                    ctx.available_width = land_width
+                    try:
+                        result = create_flowables(block, theme, ctx)
+                    finally:
+                        ctx.available_width = portrait_w
+                    flowables += [NextPageTemplate('Landscape'), PageBreak()] + (result or []) + [
+                        NextPageTemplate('AllPages'), PageBreak()]
+                    continue
                 result = create_flowables(block, theme, ctx)
                 if result:
                     flowables.extend(result)
-            except Exception as e:
-                from reportlab.platypus import Paragraph
-                from reportlab.lib.styles import ParagraphStyle
-                err = ParagraphStyle('Err', fontSize=8, textColor=HexColor(theme.colors.error))
-                flowables.append(Paragraph(f"[Render Error: {type(e).__name__}: {e}]", err))
+            self.diagnostics.block_index = None
+            self.diagnostics.block_type = None
 
-        if not flowables:
-            flowables.append(Spacer(1, 1))
+            # no trailing page break after a final landscape section
+            from reportlab.platypus import PageBreak as _PB
+            if len(flowables) >= 2 and isinstance(flowables[-1], _PB) and \
+                    type(flowables[-2]).__name__ == "NextPageTemplate":
+                flowables.pop()
+            if len(flowables) == 1:
+                flowables.append(Spacer(1, 1))
 
-        # Use multiBuild with NumberedCanvas for two-pass {total} support
-        needs_total = "{total}" in (theme.header_footer.page_number_format or "")
-        if needs_total:
-            doc_template.multiBuild(flowables, canvasmaker=NumberedCanvas)
-        else:
-            doc_template.build(flowables)
+            doc_template.multiBuild(flowables)
+            self.page_count = self._page_counter.total
+        finally:
+            _policy.deactivate(token)
 
-        # PDF encryption post-processing
+        pdf_bytes = render_target.getvalue()
         if needs_encrypt:
-            self._apply_encryption(render_target, output, meta)
+            pdf_bytes = self._encrypt_bytes(pdf_bytes, meta)
+        _write_output(output, pdf_bytes)
 
-    def _apply_encryption(self, source_buffer, output, meta):
-        """Apply PDF encryption using pikepdf (optional dependency)."""
+    def _encrypt_bytes(self, pdf_bytes: bytes, meta) -> bytes:
+        """Encrypt with pikepdf (AES-256). Raises EncryptionError on any failure."""
         try:
             import pikepdf
-            source_buffer.seek(0)
-            pdf = pikepdf.open(source_buffer)
             permissions = pikepdf.Permissions(
                 extract=False, modify_annotation=False,
                 modify_form=False, modify_other=False,
             )
-            pdf.save(
-                output,
-                encryption=pikepdf.Encryption(
-                    owner=meta.owner_password or "",
-                    user=meta.user_password or "",
-                    R=6,  # AES-256
-                    allow=permissions,
-                ),
-            )
-            pdf.close()
-        except ImportError:
-            import warnings
-            warnings.warn(
-                "PDF encryption requires pikepdf. Install with: "
-                'pip install "dynamic-pdf-builder[pdf]"',
-                stacklevel=3,
-            )
-            # Fall back to unencrypted output
-            source_buffer.seek(0)
-            if hasattr(output, 'write'):
-                output.write(source_buffer.read())
-            else:
-                with open(output, 'wb') as f:
-                    f.write(source_buffer.read())
+            out = BytesIO()
+            with pikepdf.open(BytesIO(pdf_bytes)) as pdf:
+                pdf.save(
+                    out,
+                    encryption=pikepdf.Encryption(
+                        owner=meta.owner_password or meta.user_password or "",
+                        user=meta.user_password or "",
+                        R=6,  # AES-256
+                        allow=permissions,
+                    ),
+                )
+            return out.getvalue()
+        except Exception as e:
+            raise EncryptionError(f"PDF encryption failed: {e}") from e
+
+
+def _write_output(output, data: bytes) -> None:
+    if hasattr(output, 'write'):
+        output.write(data)
+    else:
+        with open(output, 'wb') as f:
+            f.write(data)

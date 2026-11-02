@@ -6,8 +6,10 @@ callout admonitions, task lists (- [ ] / - [x]), definition lists,
 footnote references, and YAML front matter.
 """
 import re
+from typing import Dict, List, Tuple
 from markdown_it import MarkdownIt
 from ..schema.blocks import (
+    ListItemModel,
     HeadingBlock, ParagraphBlock, CodeBlock, BulletListBlock, NumberedListBlock,
     ImageBlock, MathBlock, MermaidBlock, TableBlock, QuoteBlock, DividerBlock,
     CalloutBlock, ChecklistBlock, ChecklistItem, DefinitionListBlock, DefinitionItem,
@@ -15,20 +17,48 @@ from ..schema.blocks import (
 )
 
 
+_FN_DEF_SENTINEL = "\u2063FNDEF\u2063"
+
+
+def split_front_matter(md_text: str) -> Tuple[Dict[str, object], str]:
+    """Split a leading ``---`` YAML-like front matter block.
+
+    Supports ``key: value``, quoted values and ``[a, b]`` inline lists.
+    """
+    front_matter: Dict[str, object] = {}
+    fm_match = re.match(r'^\ufeff?---[ \t]*\r?\n(.*?)\r?\n---[ \t]*(?:\r?\n|$)', md_text, re.DOTALL)
+    if not fm_match:
+        return front_matter, md_text
+    for line in fm_match.group(1).splitlines():
+        if ':' not in line or line.lstrip().startswith('#'):
+            continue
+        k, v = line.split(':', 1)
+        v = v.strip()
+        if len(v) >= 2 and v[0] == v[-1] and v[0] in "'\"":
+            v = v[1:-1]
+        elif v.startswith('[') and v.endswith(']'):
+            v = [x.strip().strip('"\'') for x in v[1:-1].split(',') if x.strip()]
+        front_matter[k.strip()] = v
+    return front_matter, md_text[fm_match.end():]
+
+
+def parse_markdown(md_text: str) -> Tuple[Dict[str, object], list]:
+    """Parse Markdown into ``(front_matter, blocks)``."""
+    front_matter, body = split_front_matter(md_text)
+    return front_matter, _parse_body(body)
+
+
 def markdown_to_blocks(md_text: str) -> list:
     """Parse a markdown string into a list of typed Block objects."""
-    # Extract YAML front matter (---\n...\n---)
-    front_matter = {}
-    fm_match = re.match(r'^---\s*\n(.*?)\n---\s*\n', md_text, re.DOTALL)
-    if fm_match:
-        md_text = md_text[fm_match.end():]
-        # Simple YAML key: value parsing
-        for line in fm_match.group(1).split('\n'):
-            if ':' in line:
-                k, v = line.split(':', 1)
-                front_matter[k.strip()] = v.strip()
+    return parse_markdown(md_text)[1]
 
-    md = MarkdownIt("commonmark", {"html": False}).enable(["table"])
+
+def _parse_body(md_text: str) -> list:
+    # Footnote definitions ("[^1]: text") would otherwise be consumed by
+    # CommonMark as link reference definitions and silently disappear.
+    md_text = re.sub(r'(?m)^\[\^(\w+)\]:', _FN_DEF_SENTINEL + r'\1:', md_text)
+
+    md = MarkdownIt("commonmark", {"html": False}).enable(["table", "strikethrough"])
     tokens = md.parse(md_text)
     blocks = []
     footnotes = {}
@@ -50,9 +80,10 @@ def markdown_to_blocks(md_text: str) -> list:
             idx += 1
             content = _collect_inline(tokens, idx)
 
-            # Image-only paragraph
+            # Image-only paragraph (the *whole* paragraph must be the image,
+            # otherwise surrounding text would be lost)
             if content.startswith("!["):
-                img_match = re.match(r'!\[([^\]]*)\]\(([^)]+?)(?:\s+"([^"]*)")?\)', content)
+                img_match = re.fullmatch(r'\s*!\[([^\]]*)\]\(([^)\s]+?)(?:\s+"([^"]*)")?\)\s*', content)
                 if img_match:
                     blocks.append(ImageBlock(
                         src=img_match.group(2),
@@ -62,21 +93,35 @@ def markdown_to_blocks(md_text: str) -> list:
                     idx += 2
                     continue
 
-            # Callout admonition (:::variant)
-            if content.startswith(":::"):
+            # Callout admonition (:::variant ... :::), may span paragraphs
+            if content.startswith(":::") and content.strip() != ":::":
                 parts = content.split("\n", 1)
                 variant = parts[0].replace(":::", "").strip() or "info"
-                body = parts[1] if len(parts) > 1 else ""
-                blocks.append(CalloutBlock(text=body, variant=variant))
+                body_parts = [parts[1] if len(parts) > 1 else ""]
                 idx += 2
+                closed = body_parts[0].rstrip().endswith(":::")
+                while not closed and idx < len(tokens):
+                    nt = tokens[idx]
+                    if nt.type == "paragraph_open":
+                        txt = _collect_inline(tokens, idx + 1)
+                        body_parts.append(txt)
+                        idx += 3
+                        closed = txt.rstrip().endswith(":::")
+                    else:
+                        break
+                body = "\n\n".join(body_parts).rstrip()
+                if body.endswith(":::"):
+                    body = body[:-3].rstrip()
+                blocks.append(CalloutBlock(text=body, variant=variant))
                 continue
 
             # Footnote definition: [^N]: text
-            fn_match = re.match(r'^\[\^(\w+)\]:\s*(.+)', content)
+            fn_match = re.match('^' + _FN_DEF_SENTINEL + r'(\w+):\s*(.*)', content, re.DOTALL)
             if fn_match:
                 blocks.append(FootnoteBlock(marker=fn_match.group(1), text=fn_match.group(2)))
                 idx += 2
                 continue
+            content = content.replace(_FN_DEF_SENTINEL, "[^")
 
             # Definition list: term\n: definition
             if '\n: ' in content or content.startswith(': '):
@@ -100,22 +145,28 @@ def markdown_to_blocks(md_text: str) -> list:
             else:
                 blocks.append(CodeBlock(language=lang, code=code))
 
+        # ─── Indented code ───
+        elif t.type == "code_block":
+            blocks.append(CodeBlock(language="text", code=(t.content or "").rstrip("\n")))
+
         # ─── Bullet Lists ───
         elif t.type == "bullet_list_open":
-            items, is_checklist, idx = _collect_list_items(tokens, idx)
-            if is_checklist:
+            items, idx = _collect_list(tokens, idx)
+            flat_tasks = all(it.checked is not None and not it.children for it in items)
+            if items and flat_tasks:
+                # Flat GFM task list → dedicated checklist block (v0.3 behaviour)
                 blocks.append(ChecklistBlock(items=[
-                    ChecklistItem(text=txt, checked=checked)
-                    for txt, checked in items
-                ]))
+                    ChecklistItem(text=it.text, checked=it.checked) for it in items]))
             else:
-                blocks.append(BulletListBlock(items=[i[0] for i in items]))
+                blocks.append(BulletListBlock(items=_simplify_items(items),
+                                              nested=any(it.children for it in items)))
             continue
 
         # ─── Ordered Lists ───
         elif t.type == "ordered_list_open":
-            items, _, idx = _collect_list_items(tokens, idx)
-            blocks.append(NumberedListBlock(items=[i[0] for i in items]))
+            start = int(t.attrGet("start") or 1)
+            items, idx = _collect_list(tokens, idx)
+            blocks.append(NumberedListBlock(items=_simplify_items(items), start=start))
             continue
 
         # ─── Tables ───
@@ -145,32 +196,85 @@ def _collect_inline(tokens, idx) -> str:
     return ""
 
 
-def _collect_list_items(tokens, start_idx):
-    """Walk tokens from list_open to list_close. Detect checklist items."""
-    items = []
-    is_checklist = False
+_TASK_RE = re.compile(r'^\[([ xX])\]\s+(.*)', re.DOTALL)
+
+
+def _collect_list(tokens, start_idx) -> Tuple[List[ListItemModel], int]:
+    """Recursively walk ``*_list_open … *_list_close`` preserving hierarchy.
+
+    Every list item keeps all of its text (multiple paragraphs, code) and its
+    nested lists become ``children``; task markers become ``checked``.
+    Returns (items, index after the matching close token).
+    """
+    open_type = tokens[start_idx].type
+    close_type = open_type.replace("_open", "_close")
+    items: List[ListItemModel] = []
     idx = start_idx + 1
     while idx < len(tokens):
         t = tokens[idx]
-        if t.type in ("bullet_list_close", "ordered_list_close"):
+        if t.type == close_type and t.level == tokens[start_idx].level:
+            return items, idx + 1
+        if t.type == "list_item_open":
+            item, idx = _collect_list_item(tokens, idx)
+            items.append(item)
+            continue
+        idx += 1
+    return items, idx
+
+
+def _collect_list_item(tokens, start_idx) -> Tuple[ListItemModel, int]:
+    level = tokens[start_idx].level
+    texts: List[str] = []
+    children: List[ListItemModel] = []
+    children_ordered = None
+    idx = start_idx + 1
+    while idx < len(tokens):
+        t = tokens[idx]
+        if t.type == "list_item_close" and t.level == level:
             idx += 1
             break
-        if t.type == "list_item_open":
-            idx += 1
-            while idx < len(tokens) and tokens[idx].type != "list_item_close":
-                if tokens[idx].type == "inline":
-                    text = tokens[idx].content or ""
-                    # Check for GFM task list
-                    check_match = re.match(r'^\[([ xX])\]\s*(.*)', text)
-                    if check_match:
-                        is_checklist = True
-                        checked = check_match.group(1).lower() == 'x'
-                        items.append((check_match.group(2), checked))
-                    else:
-                        items.append((text, False))
-                idx += 1
+        if t.type in ("bullet_list_open", "ordered_list_open"):
+            sub, idx = _collect_list(tokens, idx)
+            if children and children_ordered != (t.type == "ordered_list_open"):
+                # a second, differently-typed sub-list: keep items, mark mixed
+                children_ordered = None
+            else:
+                children_ordered = t.type == "ordered_list_open"
+            children.extend(sub)
+            continue
+        if t.type == "inline":
+            texts.append(t.content or "")
+        elif t.type in ("fence", "code_block"):
+            texts.append((t.content or "").rstrip("\n"))
         idx += 1
-    return items, is_checklist, idx
+    text = "\n".join(texts)
+    checked = None
+    m = _TASK_RE.match(text) or (re.match(r'^\[([ xX])\]$', text))
+    if m:
+        checked = m.group(1).lower() == "x"
+        text = m.group(2) if m.lastindex and m.lastindex >= 2 else ""
+    return ListItemModel(text=text, children=children, checked=checked,
+                         children_ordered=children_ordered), idx
+
+
+def _simplify_items(items: List[ListItemModel]) -> list:
+    """Plain strings for simple items (v0.3 shape), models when structure matters."""
+    if all(not it.children and it.checked is None and it.children_ordered is None for it in items):
+        return [it.text for it in items]
+    return items
+
+
+def _collect_list_items(tokens, start_idx):
+    """Deprecated flat API kept for compatibility: ([(text, checked)], is_checklist, idx)."""
+    items, idx = _collect_list(tokens, start_idx)
+    flat = []
+
+    def walk(its):
+        for it in its:
+            flat.append((it.text, bool(it.checked)))
+            walk(it.children)
+    walk(items)
+    return flat, any(it.checked is not None for it in items), idx
 
 
 def _collect_table(tokens, start_idx):
@@ -213,6 +317,8 @@ def _collect_blockquote(tokens, start_idx):
             break
         if tokens[idx].type == "inline":
             parts.append(tokens[idx].content or "")
+        elif tokens[idx].type in ("fence", "code_block"):
+            parts.append((tokens[idx].content or "").rstrip("\n"))
         idx += 1
     return parts, idx
 

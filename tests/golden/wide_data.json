@@ -1,0 +1,54 @@
+{
+ "profile": "data_report",
+ "direction": "ltr",
+ "pdf_pages": 2,
+ "pdf_orientations": [
+  "P",
+  "P"
+ ],
+ "pdf_outline": [
+  [
+   1,
+   "1  Pipeline by Region",
+   1
+  ],
+  [
+   1,
+   "2  Notes",
+   2
+  ]
+ ],
+ "pdf_fonts": [
+  "Helvetica",
+  "Helvetica-Bold"
+ ],
+ "pdf_qa_errors": [],
+ "tables": [
+  [
+   30,
+   9
+  ]
+ ],
+ "docx_headings": [
+  [
+   "Heading 1",
+   "1  Pipeline by Region"
+  ],
+  [
+   "Heading 1",
+   "2  Notes"
+  ]
+ ],
+ "docx_tables": [
+  [
+   31,
+   9
+  ]
+ ],
+ "docx_sections": 1,
+ "layout": [
+  "headings: shallow outline: stronger H1 contrast",
+  "measure: 107 chars/line",
+  "tables: table 2: 9 cols, 30 rows; 8.5pt; splits across pages with repeated header; numeric columns [2, 3, 4, 5, 6, 8] right-aligned"
+ ]
+}

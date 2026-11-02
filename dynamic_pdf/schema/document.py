@@ -16,6 +16,9 @@ class Meta(BaseModel):
     page_number_start: int = 1                  # Offset start
     section_numbering: bool = False             # Auto-number headings 1, 1.1, 1.1.2
     rtl: bool = False                           # Document-level RTL
+    direction: Optional[str] = None             # "ltr" | "rtl" | None (auto-detect)
+    document_type: Optional[str] = None         # e.g. executive_report, proposal, academic_report
+    audience: Optional[str] = None              # free text, e.g. "board", "engineers"
     encrypt: bool = False                       # Password-protect
     owner_password: Optional[str] = None
     user_password: Optional[str] = None

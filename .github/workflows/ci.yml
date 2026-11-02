@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install LibreOffice (DOCX round-trip tests)
+        if: matrix.python-version == '3.12'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-writer
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,qrcode]"
+      - name: Test
+        run: python -m pytest -q --junitxml=test-results.xml
+      - name: Golden fixtures + page contact sheets
+        if: matrix.python-version == '3.12'
+        run: |
+          python -m dynamic_pdf.qa.golden tests/fixtures tests/golden
+          python -m dynamic_pdf.qa.golden tests/fixtures review --update --sheets
+      - name: Upload contact sheets for visual review
+        if: matrix.python-version == '3.12' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: page-contact-sheets
+          path: review/sheets/*.png
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.python-version }}
+          path: test-results.xml

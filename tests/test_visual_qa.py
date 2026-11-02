@@ -1,0 +1,141 @@
+"""M4: visual/structural QA on real output, bounded auto-fix, golden fixtures."""
+import io
+import json
+import os
+import shutil
+import zipfile
+import pytest
+import pymupdf
+from dynamic_pdf import DocumentBuilder, QualityError
+from dynamic_pdf.qa import check_pdf, check_docx, rasterize_pdf, contact_sheet
+from conftest import fixture_text, all_fixtures
+
+HERE = os.path.dirname(__file__)
+
+
+@pytest.mark.parametrize("name", all_fixtures())
+def test_all_fixtures_pass_pdf_qa(name):
+    b = DocumentBuilder.from_markdown(fixture_text(name)).design()
+    data, rep = b.qa("pdf")
+    assert rep.passed, rep.summary()
+    assert rep.pages == pymupdf.open(stream=data, filetype="pdf").page_count
+
+
+@pytest.mark.parametrize("name", ["executive.md", "arabic_report.md", "wide_data.md"])
+def test_docx_structural_and_visual_qa(name):
+    b = DocumentBuilder.from_markdown(fixture_text(name)).design()
+    data, rep = b.qa("docx", visual=bool(shutil.which("soffice")))
+    assert rep.passed, rep.summary() + str([f.message for f in rep.errors])
+
+
+def _synthetic_pdf(draw):
+    doc = pymupdf.open()
+    page = doc.new_page(width=595, height=842)
+    draw(page)
+    return doc.tobytes()
+
+
+def test_detects_clipping_overflow_and_overlap():
+    def draw(p):
+        p.insert_text((72, 100), "Normal line of body text", fontsize=11)
+        p.insert_text((540, 200), "This line runs off the right edge of the page", fontsize=11)
+        p.insert_text((300, 300), "into the margin", fontsize=11)
+        p.insert_text((72, 400), "Overlapping text one", fontsize=11)
+        p.insert_text((74, 401), "Overlapping text two", fontsize=11)
+    rep = check_pdf(_synthetic_pdf(draw), margins={"left": 72, "right": 300})
+    codes = {f.code for f in rep.findings}
+    assert {"clipped_text", "overflow", "overlap"} <= codes
+    assert not rep.passed
+
+
+def test_detects_blank_page_and_stranded_heading():
+    doc = pymupdf.open()
+    p1 = doc.new_page(width=595, height=842)
+    p1.insert_text((72, 100), "Body text", fontsize=11)
+    p1.insert_text((72, 780), "Results", fontsize=16)
+    doc.new_page(width=595, height=842)
+    p3 = doc.new_page(width=595, height=842)
+    p3.insert_text((72, 100), "More", fontsize=11)
+    rep = check_pdf(doc.tobytes(), heading_texts=["Results"])
+    codes = [f.code for f in rep.findings]
+    assert "stranded_heading" in codes and "blank_page" in codes
+
+
+def test_autofix_collapses_redundant_page_break():
+    b = DocumentBuilder().cover_page("Title").page_break().heading("Body").paragraph("text")
+    data, rep = b.qa("pdf")
+    assert rep.passed and rep.attempts == 2
+    assert any("page break" in f for f in rep.fixes_applied)
+    assert "Body" in pymupdf.open(stream=data, filetype="pdf")[1].get_text()
+
+
+def test_autofix_moves_stranded_heading():
+    b = DocumentBuilder()
+    for _ in range(12):
+        b.paragraph("filler " * 52)
+    b.heading("Lonely Heading").page_break().paragraph("Next page content.")
+    data, rep = b.qa("pdf")
+    assert rep.passed, rep.summary()
+    assert any("heading" in f for f in rep.fixes_applied)
+    doc = pymupdf.open(stream=data, filetype="pdf")
+    page = next(p for p in doc if "Lonely Heading" in p.get_text())
+    assert page.get_text().strip().startswith("Lonely Heading") or \
+        "filler" not in page.get_text()
+
+
+def test_missing_glyphs_fail_strict_and_report_permissive():
+    with pytest.raises(QualityError) as ei:
+        DocumentBuilder().paragraph("Stars ★ and 你好").qa("pdf")
+    assert "missing_glyph" in str(ei.value) or "no installed font" in str(ei.value)
+    data, rep = DocumentBuilder().quality("permissive").paragraph("Stars ★").qa("pdf")
+    assert not rep.passed and rep.errors[0].code == "missing_glyph"
+
+
+def test_glyph_fallback_draws_symbols_with_bundled_font():
+    data = DocumentBuilder().paragraph("Check ✓ arrow → ≥").render()
+    spans = [(s["font"], s["text"]) for p in pymupdf.open(stream=data, filetype="pdf")
+             for bl in p.get_text("dict")["blocks"] for ln in bl.get("lines", []) for s in ln["spans"]]
+    assert ("JetBrainsMono-Regular", "✓") in spans
+    assert not any(f in ("ZapfDingbats", "Symbol") for f, _ in spans)
+
+
+def test_docx_structural_checks_detect_corruption():
+    rep = check_docx(b"not a zip", visual=False)
+    assert rep.errors[0].code == "corrupt_package"
+    good = DocumentBuilder().heading("H").paragraph("p").render_docx()
+    buf = io.BytesIO()
+    with zipfile.ZipFile(io.BytesIO(good)) as zin, zipfile.ZipFile(buf, "w") as zout:
+        for item in zin.infolist():
+            data = zin.read(item.filename)
+            if item.filename == "word/document.xml":
+                data = data.replace(b'w:anchor', b'w:anchor', 1)
+                data = data.replace(b"</w:body>", b'<w:p><w:hyperlink w:anchor="_nope"/></w:p></w:body>')
+            zout.writestr(item, data)
+    rep = check_docx(buf.getvalue(), visual=False)
+    assert "broken_link" in [f.code for f in rep.errors]
+
+
+def test_export_with_qa_attaches_reports(tmp_path):
+    res = DocumentBuilder.from_markdown(fixture_text("invoice.md")).design().export_both(
+        str(tmp_path), qa=True)
+    assert res.qa["pdf"].passed and res.qa["docx"].passed
+    assert res.qa["pdf"].sha256 and len(res.qa["pdf"].sha256) == 64
+
+
+def test_rasterize_and_contact_sheet(tmp_path):
+    data = DocumentBuilder.from_markdown(fixture_text("financial.md")).design().render()
+    imgs = rasterize_pdf(data, str(tmp_path / "pages"), dpi=40)
+    assert len(imgs) == pymupdf.open(stream=data, filetype="pdf").page_count
+    out = contact_sheet(imgs, str(tmp_path / "sheet.png"))
+    from PIL import Image
+    assert Image.open(out).width > 300
+
+
+@pytest.mark.parametrize("name", all_fixtures())
+def test_golden_fingerprints(name):
+    from dynamic_pdf.qa.golden import fingerprint
+    path = os.path.join(HERE, "golden", name[:-3] + ".json")
+    with open(path, encoding="utf-8") as f:
+        want = json.load(f)
+    got = json.loads(json.dumps(fingerprint(fixture_text(name)), ensure_ascii=False))
+    assert got == want, {k: (want.get(k), got.get(k)) for k in want if want.get(k) != got.get(k)}

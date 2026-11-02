@@ -1,0 +1,91 @@
+{
+ "profile": "proposal",
+ "direction": "ltr",
+ "pdf_pages": 2,
+ "pdf_orientations": [
+  "P",
+  "P"
+ ],
+ "pdf_outline": [
+  [
+   1,
+   "Our Approach",
+   1
+  ],
+  [
+   1,
+   "Scope of Work",
+   1
+  ],
+  [
+   1,
+   "Deliverables",
+   1
+  ],
+  [
+   1,
+   "Timeline and Milestones",
+   1
+  ],
+  [
+   1,
+   "Investment",
+   1
+  ],
+  [
+   1,
+   "Next Steps",
+   2
+  ]
+ ],
+ "pdf_fonts": [
+  "Helvetica",
+  "Helvetica-Bold"
+ ],
+ "pdf_qa_errors": [],
+ "tables": [
+  [
+   2,
+   2
+  ]
+ ],
+ "docx_headings": [
+  [
+   "Heading 1",
+   "Our Approach"
+  ],
+  [
+   "Heading 1",
+   "Scope of Work"
+  ],
+  [
+   "Heading 1",
+   "Deliverables"
+  ],
+  [
+   "Heading 1",
+   "Timeline and Milestones"
+  ],
+  [
+   "Heading 1",
+   "Investment"
+  ],
+  [
+   "Heading 1",
+   "Next Steps"
+  ]
+ ],
+ "docx_tables": [
+  [
+   3,
+   2
+  ]
+ ],
+ "docx_sections": 1,
+ "layout": [
+  "headings: shallow outline: stronger H1 contrast",
+  "measure: 83 chars/line",
+  "tables: table 5: 2 cols, 2 rows; 10pt; kept on one page",
+  "lead: opening paragraph set as a lead (larger, no indent)"
+ ]
+}

@@ -1,0 +1,21 @@
+{
+ "profile": "corporate_memo",
+ "direction": "ltr",
+ "pdf_pages": 1,
+ "pdf_orientations": [
+  "P"
+ ],
+ "pdf_outline": [],
+ "pdf_fonts": [
+  "Helvetica",
+  "Helvetica-Bold"
+ ],
+ "pdf_qa_errors": [],
+ "tables": [],
+ "docx_headings": [],
+ "docx_tables": [],
+ "docx_sections": 1,
+ "layout": [
+  "measure: 93 chars/line too long for reading; margins widened by 12pt each side (≈88 chars/line)"
+ ]
+}

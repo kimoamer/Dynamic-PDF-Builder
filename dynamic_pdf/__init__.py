@@ -6,6 +6,7 @@ Version 0.3.0
 """
 from .builder import (
     DocumentBuilder,
+    ExportResult,
     render_from_json,
     markdown_to_pdf,
     render_to_bytes,
@@ -15,6 +16,12 @@ from .schema.blocks import Block
 from .streaming import stream
 from .fonts.manager import register_custom_font, list_available_fonts
 from .themes.registry import list_themes, register_theme, get_theme
+from .policy import RenderPolicy, ResourceLimits, Diagnostic
+from .assets import AssetPolicy
+from .utils.errors import (
+    DynamicPDFError, BlockRenderError, EncryptionError, AssetError,
+    ResourceLimitError, RenderError, QualityError,
+)
 
 
 def render(blocks: list, output: str, theme: str = "claude") -> None:
@@ -28,7 +35,7 @@ __version__ = "0.3.0"
 
 __all__ = [
     # Core
-    "DocumentBuilder", "Block", "render",
+    "DocumentBuilder", "ExportResult", "Block", "render",
     # Helpers
     "markdown_to_pdf", "render_from_json", "render_to_bytes", "render_to_base64",
     # Streaming
@@ -37,6 +44,10 @@ __all__ = [
     "register_custom_font", "list_available_fonts",
     # Themes
     "list_themes", "register_theme", "get_theme",
+    # Policy & errors
+    "RenderPolicy", "ResourceLimits", "AssetPolicy", "Diagnostic",
+    "DynamicPDFError", "BlockRenderError", "EncryptionError", "AssetError",
+    "ResourceLimitError", "RenderError", "QualityError",
     # Version
     "__version__",
 ]

@@ -50,8 +50,22 @@ _EDGE_STYLES = {
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
+import contextvars as _cv
+
+_PNG_MODE = _cv.ContextVar("dpb_diagram_png", default=False)
+
+
 def _fig_to_drawing(fig, width_inches, height_inches):
-    """Serialize fig -> SVG -> ReportLab Drawing, scaled to fit width and max height."""
+    """Serialize fig -> SVG -> ReportLab Drawing, scaled to fit width and max height.
+
+    In PNG mode (see ``diagram_png``) returns PNG bytes instead (DOCX path).
+    """
+    if _PNG_MODE.get():
+        out = io.BytesIO()
+        fig.savefig(out, format="png", bbox_inches="tight",
+                    facecolor=fig.get_facecolor(), dpi=200)
+        plt.close(fig)
+        return out.getvalue()
     buf = io.BytesIO()
     fig.savefig(buf, format="svg", bbox_inches="tight",
                 facecolor=fig.get_facecolor(), dpi=100)
@@ -720,11 +734,9 @@ def render_diagram(block, theme=None):
     diagram_type = block.diagram_type.lower()
     renderer = _RENDERERS.get(diagram_type)
     if renderer is None:
-        from reportlab.platypus import Paragraph
-        return [Paragraph(
-            f'<i>Unsupported diagram type: {diagram_type}</i>',
-            None
-        )]
+        from ..utils.errors import BlockRenderError
+        raise BlockRenderError(
+            "diagram", f"Unsupported diagram type {diagram_type!r}; supported: {', '.join(_RENDERERS)}")
 
     drawing = renderer(block, theme)
     if not drawing:
@@ -733,3 +745,17 @@ def render_diagram(block, theme=None):
     from reportlab.platypus import Spacer
     gap = getattr(getattr(theme, "spacing", None), "block_gap", 8)
     return [drawing, Spacer(1, gap)]
+
+
+def diagram_png(block, theme=None) -> bytes:
+    """Render a DiagramBlock to PNG bytes (used by the DOCX renderer)."""
+    from ..utils.errors import BlockRenderError
+    renderer = _RENDERERS.get(block.diagram_type.lower())
+    if renderer is None:
+        raise BlockRenderError(
+            "diagram", f"Unsupported diagram type {block.diagram_type!r}; supported: {', '.join(_RENDERERS)}")
+    token = _PNG_MODE.set(True)
+    try:
+        return renderer(block, theme)
+    finally:
+        _PNG_MODE.reset(token)

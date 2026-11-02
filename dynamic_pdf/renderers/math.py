@@ -1,34 +1,24 @@
-import latex2mathml.converter
-from reportlab.platypus import Paragraph
-from reportlab.lib.styles import ParagraphStyle
-from ..fonts import get_font_name
-import tempfile
-import matplotlib.pyplot as plt
-from svglib.svglib import svg2rlg
-import os
+"""Legacy math renderer entry point — delegates to the factory renderer
+(which records a ``math_fallback`` diagnostic when it falls back to source)."""
+
 
 def render_math(block, theme):
+    from ..layout.factory import _render_math
+    return _render_math(block, theme)
+
+
+def math_png(latex: str, dpi: int = 220) -> bytes:
+    """Render LaTeX (matplotlib mathtext subset) to a tight PNG."""
+    import io
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    fig = plt.figure(figsize=(7, 1.2))
+    fig.patch.set_alpha(0)
+    fig.text(0.5, 0.5, f"${latex}$", fontsize=15, ha="center", va="center")
+    buf = io.BytesIO()
     try:
-        # We can render Math formulas via matplotlib's mathtext
-        fig = plt.figure(figsize=(0.01, 0.01))
-        fig.text(0, 0, f"${block.latex}$", fontsize=12)
-        
-        with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as tf:
-            fig.savefig(tf.name, format="svg", bbox_inches="tight", transparent=True)
-            tf_name = tf.name
-            
+        fig.savefig(buf, format="png", bbox_inches="tight", dpi=dpi, transparent=True)
+    finally:
         plt.close(fig)
-        drawing = svg2rlg(tf_name)
-        drawing.hAlign = 'CENTER'
-        drawing.spaceAfter = theme.spacing.block_gap
-        os.unlink(tf_name)
-        
-        return [drawing]
-        
-    except Exception as e:
-        style = ParagraphStyle(
-            'MathFallback',
-            fontName=get_font_name(theme.typography.mono_family),
-            textColor=theme.colors.error
-        )
-        return [Paragraph(f"[Math Render Failed: {block.latex}]", style)]
+    return buf.getvalue()
