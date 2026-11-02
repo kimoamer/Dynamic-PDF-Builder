@@ -1,3 +1,4 @@
+import io
 import pytest
 
 pymupdf = pytest.importorskip("pymupdf")
@@ -46,3 +47,27 @@ def fixture_text(name: str) -> str:
 
 def all_fixtures():
     return sorted(f for f in os.listdir(FIXTURES) if f.endswith(".md"))
+
+
+def open_docx(data: bytes):
+    import docx
+    return docx.Document(io.BytesIO(data))
+
+
+def docx_text(data: bytes) -> str:
+    """All visible text: body paragraphs, tables (recursively), headers/footers."""
+    d = open_docx(data)
+    out = []
+
+    def walk(container):
+        for p in container.paragraphs:
+            out.append(p.text)
+        for t in container.tables:
+            for row in t.rows:
+                for cell in row.cells:
+                    walk(cell)
+    walk(d)
+    for s in d.sections:
+        walk(s.header)
+        walk(s.footer)
+    return "\n".join(out)

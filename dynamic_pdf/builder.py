@@ -28,6 +28,26 @@ from .assets import AssetPolicy
 from .utils.errors import ResourceLimitError
 
 
+class ExportResult:
+    """Paths and diagnostics produced by ``export`` / ``export_both``."""
+
+    def __init__(self, pdf_path=None, docx_path=None, page_count=None, profile=None,
+                 diagnostics=None):
+        self.pdf_path = pdf_path
+        self.docx_path = docx_path
+        self.page_count = page_count
+        self.profile = profile
+        self.diagnostics = diagnostics or []
+
+    @property
+    def status(self) -> str:
+        return "degraded" if any(d.get("level") == "error" for d in self.diagnostics) else "ok"
+
+    def __repr__(self):
+        return (f"ExportResult(pdf={self.pdf_path!r}, docx={self.docx_path!r}, "
+                f"profile={self.profile!r}, status={self.status!r})")
+
+
 class DocumentBuilder:
     """Fluent API for building PDF documents.
 
@@ -527,6 +547,56 @@ class DocumentBuilder:
             return buffer.getvalue()
         engine.render(output)
         return None
+
+    # ─── Multi-format export ───────────────────────────────────────
+
+    def render_docx(self, output=None) -> Optional[bytes]:
+        """Render an editable Word document (same semantic model and design as PDF)."""
+        from .core.normalize import normalize
+        from .renderers.docx_renderer import render_docx
+        from .themes import get_theme as _get_theme
+        doc, theme = self._prepared()
+        sem = normalize(doc, source_kind=self._source_kind, source_text=self._source_text,
+                        front_matter=self.front_matter)
+        data, col = render_docx(sem, theme or _get_theme(doc.theme), self._policy)
+        self.last_docx_diagnostics = col
+        if output is None:
+            return data
+        from .layout.engine import _write_output
+        _write_output(output, data)
+        return None
+
+    def export(self, path: str, format: Optional[str] = None) -> 'ExportResult':
+        """Export to ``path``; format inferred from the extension (``.pdf``/``.docx``)
+        unless given as ``"pdf"`` or ``"docx"``."""
+        import os
+        fmt = (format or os.path.splitext(path)[1].lstrip(".") or "pdf").lower()
+        if fmt not in ("pdf", "docx"):
+            raise ValueError(f"Unsupported export format {fmt!r}; use 'pdf' or 'docx'")
+        result = ExportResult()
+        if fmt == "pdf":
+            self.render(path)
+            result.pdf_path = path
+            result.page_count = self.last_render.page_count
+            result.diagnostics = self.diagnostics
+        else:
+            self.render_docx(path)
+            result.docx_path = path
+            result.diagnostics = [d.to_dict() for d in self.last_docx_diagnostics.items]
+        result.profile = self.last_design.decision.profile.value if self.last_design else None
+        return result
+
+    def export_both(self, directory: str, basename: Optional[str] = None) -> 'ExportResult':
+        """Export PDF and DOCX from the same semantic document into ``directory``."""
+        import os
+        import re as _re
+        os.makedirs(directory, exist_ok=True)
+        stem = basename or _re.sub(r"[^\w.-]+", "_", (self._meta.title or "document")).strip("_") or "document"
+        pdf = self.export(os.path.join(directory, stem + ".pdf"))
+        docx = self.export(os.path.join(directory, stem + ".docx"))
+        return ExportResult(pdf_path=pdf.pdf_path, docx_path=docx.docx_path,
+                            page_count=pdf.page_count, profile=pdf.profile,
+                            diagnostics=pdf.diagnostics + [dict(d, format="docx") for d in docx.diagnostics])
 
     def render_bytes(self) -> bytes:
         """Render and return raw PDF bytes."""

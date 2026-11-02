@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "dynamic-pdf-builder"
 version = "0.3.0"
-description = "A powerful Python package for generating beautiful PDF reports from Markdown, JSON, or a fluent API"
+description = "Generate beautifully designed PDF and fully editable DOCX documents from Markdown, JSON, or a fluent API"
 authors = [
     { name = "Dynamic PDF Builder Contributors" }
 ]
@@ -36,6 +36,7 @@ dependencies = [
     "pyphen>=0.14",
     "arabic-reshaper>=3.0",
     "python-bidi>=0.6",
+    "python-docx>=1.1",
 ]
 
 [project.optional-dependencies]

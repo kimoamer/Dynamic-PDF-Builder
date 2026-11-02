@@ -725,11 +725,8 @@ def render_chart(block, theme):
         key = block.chart_type.lower().replace("-", "_").replace(" ", "_")
         renderer = _RENDERERS.get(key)
         if renderer is None:
-            return [Paragraph(
-                f'[Chart: unsupported type "{block.chart_type}". '
-                f'Supported: {", ".join(_RENDERERS)}]',
-                ParagraphStyle("warn", fontSize=9),
-            )]
+            raise BlockRenderError(
+                "chart", f'unsupported type "{block.chart_type}"; supported: {", ".join(_RENDERERS)}')
 
         fig = renderer(block, theme)
         drawing = _fig_to_drawing(fig, block, theme)
@@ -747,4 +744,25 @@ def render_chart(block, theme):
     except Exception as exc:
         # Surface through the caller's error policy (strict → raise,
         # permissive → diagnostic + visible marker); never silently swallow.
+        raise BlockRenderError("chart", f"{block.chart_type}: {type(exc).__name__}: {exc}", exc) from exc
+
+
+def chart_png(block, theme, dpi: int = 200) -> bytes:
+    """Render a ChartBlock to PNG bytes (used by the DOCX renderer)."""
+    import io
+    key = block.chart_type.lower().replace("-", "_").replace(" ", "_")
+    renderer = _RENDERERS.get(key)
+    if renderer is None:
+        raise BlockRenderError(
+            "chart", f'unsupported type "{block.chart_type}"; supported: {", ".join(_RENDERERS)}')
+    try:
+        fig = renderer(block, theme)
+        buf = io.BytesIO()
+        fig.savefig(buf, format="png", bbox_inches="tight", dpi=dpi,
+                    facecolor=fig.get_facecolor())
+        plt.close(fig)
+        return buf.getvalue()
+    except BlockRenderError:
+        raise
+    except Exception as exc:
         raise BlockRenderError("chart", f"{block.chart_type}: {type(exc).__name__}: {exc}", exc) from exc

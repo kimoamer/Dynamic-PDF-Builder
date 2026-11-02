@@ -1144,6 +1144,48 @@ just that a file was produced:
 | `test_mermaid_security.py` | Diagram passed as data, no CDN, network aborted, fallback warning, size limit |
 | `test_regression_blocks.py` | Every fluent block × every theme in strict mode, all header/footer styles, v0.3 helpers |
 | `test_cli.py` | CLI exit codes, no output on strict failure |
+| `test_ast_contract.py` | Markdown → semantic AST is lossless, typed inline runs, IDs, provenance |
+| `test_profiles.py` | Deterministic profile selection on the fixture corpus, recipes, brand kits |
+| `test_docx_semantics.py` | Word styles, numbering restarts, tables, fields, TOC, links, alt text, export API/CLI |
+| `test_docx_rtl.py` | Arabic bidi paragraphs/runs, complex-script fonts, bilingual tables |
+| `test_pdf_docx_parity.py` | Same words and heading structure in AST, PDF and DOCX; LibreOffice conversion |
+
+## Editable Word (DOCX) export & intelligent design
+
+PDF and DOCX are produced from the **same semantic document** (`builder.semantic()`)
+and the same design tokens, so content and structure match across formats.
+
+```python
+from dynamic_pdf import DocumentBuilder, BrandKit  # BrandKit: dynamic_pdf.design.BrandKit
+
+b = (DocumentBuilder.from_markdown(md)
+     .design("auto", brand={"name": "Acme", "primary": "#0B5FFF", "logo": "logo.png"})
+     .quality("strict"))
+b.design_explain()        # {'profile': 'executive_report', 'reasons': [...], ...}
+b.export("report.docx")   # editable Word
+b.export("report.pdf")
+res = b.export_both("./out")   # res.pdf_path, res.docx_path, res.profile, res.diagnostics
+```
+
+```bash
+dynamic-pdf render report.md -o report.docx --design auto
+dynamic-pdf render report.md --format both
+```
+
+The DOCX uses real Word structures: named styles (Normal, Body Text, Title, Heading 1–6,
+Caption, Quote, Code, TOC n), multi-level list numbering that restarts per list, tables with
+repeating header rows and right-aligned numeric columns, hyperlinks and bookmarks, a TOC
+field (refreshed when Word opens the file), header/footer with `PAGE`/`NUMPAGES` fields,
+core properties, Arabic bidi paragraphs/runs with complex-script fonts, and per-table
+column order for bilingual documents. Charts, diagrams, math and QR codes are embedded as
+images with alt text (Word has no native equivalent). Known differences: page breaks are
+computed by Word, so page counts can differ from the PDF; footnotes are rendered as notes
+paragraphs; text watermarks use VML (shown by Word, not by every viewer).
+
+`design("auto")` selects a profile deterministically from metadata and content signals
+(`executive_report`, `proposal`, `corporate_memo`, `academic_report`, `technical_manual`,
+`data_report`, `financial_report`, `letter`, `invoice`, `general`) and applies its recipe —
+type ramp, measure, rhythm, numbering, header/footer and navigation. Content is never altered.
 
 ## Error handling, security & limits
 

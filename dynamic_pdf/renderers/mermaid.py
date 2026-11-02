@@ -56,20 +56,23 @@ def _fallback(block, theme, reason: str):
     return render_code_block(CodeBlock(language="mermaid", code=block.diagram), theme)
 
 
-def render_mermaid(block, theme):
+class MermaidUnavailable(Exception):
+    """Browser renderer or local Mermaid bundle not available (content-preserving fallback)."""
+
+
+def mermaid_png(block) -> bytes:
+    """Render a MermaidBlock to PNG bytes offline. Raises MermaidUnavailable or BlockRenderError."""
     col = _diag.current()
     limits = col.policy.limits
     _diag.check_limit("Mermaid source length", len(block.diagram), limits.max_mermaid_chars)
-
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
-        return _fallback(block, theme, 'Playwright not installed (pip install "dynamic-pdf-builder[diagrams]")')
-
+        raise MermaidUnavailable('Playwright not installed (pip install "dynamic-pdf-builder[diagrams]")')
     script_path = _mermaid_script_path()
     if not script_path:
-        return _fallback(block, theme,
-                         f"no local Mermaid bundle; set {MERMAID_JS_ENV}=/path/to/mermaid.min.js")
+        raise MermaidUnavailable(
+            f"no local Mermaid bundle; set {MERMAID_JS_ENV}=/path/to/mermaid.min.js")
     with open(script_path, "r", encoding="utf-8") as f:
         script = f.read()
 
@@ -90,6 +93,14 @@ def render_mermaid(block, theme):
                 browser.close()
     except Exception as e:
         raise BlockRenderError("mermaid", f"Mermaid render failed: {type(e).__name__}: {e}", e) from e
+    return png
+
+
+def render_mermaid(block, theme):
+    try:
+        png = mermaid_png(block)
+    except MermaidUnavailable as e:
+        return _fallback(block, theme, str(e))
 
     from reportlab.platypus import Image
     from reportlab.lib.utils import ImageReader

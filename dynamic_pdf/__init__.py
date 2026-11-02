@@ -6,6 +6,7 @@ Version 0.3.0
 """
 from .builder import (
     DocumentBuilder,
+    ExportResult,
     render_from_json,
     markdown_to_pdf,
     render_to_bytes,
@@ -34,7 +35,7 @@ __version__ = "0.3.0"
 
 __all__ = [
     # Core
-    "DocumentBuilder", "Block", "render",
+    "DocumentBuilder", "ExportResult", "Block", "render",
     # Helpers
     "markdown_to_pdf", "render_from_json", "render_to_bytes", "render_to_base64",
     # Streaming

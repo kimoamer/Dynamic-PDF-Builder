@@ -3,6 +3,8 @@ dynamic-pdf CLI — render Markdown or JSON to PDF from the command line.
 
 Usage:
     dynamic-pdf render input.md -o output.pdf --theme claude
+    dynamic-pdf render input.md -o output.docx --design auto
+    dynamic-pdf render input.md --format both
     dynamic-pdf render input.json -o output.pdf
     dynamic-pdf themes
     dynamic-pdf version
@@ -22,7 +24,12 @@ def main():
     # ─── render ───
     render_p = sub.add_parser("render", help="Render a Markdown or JSON file to PDF")
     render_p.add_argument("input", help="Input file (.md or .json)")
-    render_p.add_argument("-o", "--output", default=None, help="Output PDF path (default: <input>.pdf)")
+    render_p.add_argument("-o", "--output", default=None,
+                          help="Output path; .pdf or .docx (default: <input>.<format>)")
+    render_p.add_argument("-f", "--format", choices=["pdf", "docx", "both"], default=None,
+                          help="Output format (default: from --output extension, else pdf)")
+    render_p.add_argument("--design", default=None, metavar="PROFILE",
+                          help='Intelligent design: "auto" or a profile (executive_report, proposal, ...)')
     render_p.add_argument("-t", "--theme", default="claude", help="Theme name (default: claude)")
     render_p.add_argument("--section-numbers", action="store_true", help="Enable section numbering")
     render_p.add_argument("--permissive", action="store_true",
@@ -62,13 +69,14 @@ def _policy_from_args(args):
     )
 
 
-def _report(output_path, diagnostics):
+def _report(paths, diagnostics):
     for d in diagnostics:
         print(f"{d['level']}: [{d['code']}] {d['message']}", file=sys.stderr)
-    size_kb = os.path.getsize(output_path) / 1024
     degraded = any(d["level"] == "error" for d in diagnostics)
     mark = "⚠ Rendered (degraded)" if degraded else "✓ Rendered"
-    print(f"{mark} {output_path} ({size_kb:.1f} KB)")
+    for path in paths:
+        size_kb = os.path.getsize(path) / 1024
+        print(f"{mark} {path} ({size_kb:.1f} KB)")
     if degraded:
         sys.exit(3)
 
@@ -81,7 +89,9 @@ def _cmd_render(args):
         print(f"Error: File not found: {input_path}", file=sys.stderr)
         sys.exit(1)
 
-    output_path = args.output or os.path.splitext(input_path)[0] + ".pdf"
+    out_ext = os.path.splitext(args.output)[1].lower().lstrip(".") if args.output else ""
+    fmt = args.format or (out_ext if out_ext in ("pdf", "docx") else "pdf")
+    stem = os.path.splitext(args.output)[0] if args.output else os.path.splitext(input_path)[0]
     ext = os.path.splitext(input_path)[1].lower()
     policy = _policy_from_args(args)
 
@@ -90,24 +100,32 @@ def _cmd_render(args):
 
     if ext == ".json":
         import json
-        import base64
-        from . import render_from_json
+        from .schema.document import Document
         payload = json.loads(content)
         if args.theme != "claude":
             payload["theme"] = args.theme
-        if args.section_numbers:
-            payload.setdefault("meta", {})["section_numbering"] = True
-        result = render_from_json(payload, policy=policy)
-        with open(output_path, "wb") as out:
-            out.write(base64.b64decode(result["pdf_base64"]))
-        _report(output_path, result["diagnostics"])
+        doc = Document.model_validate(payload)
+        builder = DocumentBuilder(theme=doc.theme, policy=policy)
+        builder._meta = doc.meta
+        builder._blocks = list(doc.blocks)
+        builder._source_kind = "json"
+        builder._source_text = content
     else:
-        # Treat as Markdown
         builder = DocumentBuilder.from_markdown(content, theme=args.theme, policy=policy)
-        if args.section_numbers:
-            builder.section_numbering(True)
-        builder.render(output_path)
-        _report(output_path, builder.diagnostics)
+    if args.section_numbers:
+        builder.section_numbering(True)
+    if args.design:
+        builder.design(args.design)
+
+    targets = ["pdf", "docx"] if fmt == "both" else [fmt]
+    diagnostics = []
+    paths = []
+    for target in targets:
+        path = args.output if (args.output and fmt != "both") else f"{stem}.{target}"
+        res = builder.export(path, format=target)
+        diagnostics += res.diagnostics
+        paths.append(path)
+    _report(paths, diagnostics)
 
 
 def _cmd_themes():
