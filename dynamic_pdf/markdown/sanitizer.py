@@ -20,9 +20,11 @@ def sanitize_markdown(md_text: str, *, max_length: int = MAX_INPUT_LENGTH) -> st
     if not md_text:
         return ""
 
-    # Cap input length
+    # Refuse oversize input instead of silently truncating author content
     if len(md_text) > max_length:
-        md_text = md_text[:max_length]
+        from ..utils.errors import ResourceLimitError
+        raise ResourceLimitError(
+            f"Markdown input length ({len(md_text)}) exceeds limit ({max_length})")
 
     # Strip javascript: and data: URIs from links and images
     md_text = _DANGEROUS_URI_RE.sub("BLOCKED", md_text)
@@ -46,9 +48,9 @@ def sanitize_markdown(md_text: str, *, max_length: int = MAX_INPUT_LENGTH) -> st
 
 
 def validate_block_count(blocks: list, max_count: int = MAX_BLOCK_COUNT) -> list:
-    """Truncate blocks list if it exceeds maximum count."""
+    """Raise ResourceLimitError if the block list exceeds ``max_count``
+    (content is never silently dropped)."""
     if len(blocks) > max_count:
-        import warnings
-        warnings.warn(f"Block count ({len(blocks)}) exceeds maximum ({max_count}), truncating.")
-        return blocks[:max_count]
+        from ..utils.errors import ResourceLimitError
+        raise ResourceLimitError(f"Block count ({len(blocks)}) exceeds limit ({max_count})")
     return blocks

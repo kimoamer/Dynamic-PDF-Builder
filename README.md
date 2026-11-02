@@ -4,7 +4,7 @@
 
 [![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)](https://pypi.org/project/dynamic-pdf-builder/)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/tests-100%25_passing-brightgreen.svg)](#testing)
+[![CI](https://github.com/kimoamer/Dynamic-PDF-Builder/actions/workflows/ci.yml/badge.svg)](https://github.com/kimoamer/Dynamic-PDF-Builder/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ---
@@ -815,29 +815,26 @@ dynamic-pdf render report.md --section-numbers
 
 ## Table of Contents (TOC)
 
-The TOC auto-populates from all headings in the document. Place it **after** your headings for full population, or anywhere as a structural placeholder:
+The TOC lists **every** heading in the document (before or after it) with its final page number, and each entry is a clickable link. Headings are also exported as PDF bookmarks (outline). Place it wherever it belongs — typically right after the cover:
 
 ```python
+builder.table_of_contents(depth=3)  # include H1–H3 only
 builder.heading("Introduction")
 builder.paragraph("...")
 builder.heading("Methods", level=2)
 builder.paragraph("...")
 builder.heading("Results", level=2)
 builder.paragraph("...")
-
-# TOC auto-collects all headings defined before this call
-builder.table_of_contents(depth=3)  # include H1–H3 only
-# or use the alias:
-builder.toc()
+# builder.toc() is an alias of table_of_contents()
 ```
 
 Combine with section numbering for numbered TOC entries:
 
 ```python
 builder.section_numbering(True)
+builder.toc()  # renders: "1  Introduction ..... 2", "2  Methods ..... 3"
 builder.heading("Introduction")
 builder.heading("Methods")
-builder.toc()  # renders: "1  Introduction", "2  Methods", ...
 ```
 
 ---
@@ -958,7 +955,7 @@ Password-protect PDFs with AES-256 (requires `pikepdf`):
 pip install "dynamic-pdf-builder[pdf]"
 ```
 
-If `pikepdf` is not installed, a warning is issued and an unencrypted PDF is saved.
+If `pikepdf` is not installed (or no password is given), `EncryptionError` is raised and **no file is written** — encryption never silently degrades.
 
 ---
 
@@ -1084,16 +1081,15 @@ dynamic_pdf/
 │   ├── metric.py
 │   └── dividers.py
 ├── fonts/
-│   ├── manager.py          #  Thread-safe download, register, fallback
-│   └── bundled/            #  JetBrains Mono + Amiri (auto-downloaded)
+│   ├── manager.py          #  Thread-safe register + deterministic fallback (no network)
+│   └── bundled/            #  JetBrains Mono + Amiri (shipped, OFL licences in LICENSES/)
 ├── markdown/
 │   ├── parser.py           #  CommonMark + GFM → Block tree
 │   └── preprocessors.py    #  Math/Mermaid fence extraction
 └── rtl/
     └── processor.py        #  Arabic BiDi reshaping
 
-tests/
-└── test_basic.py           #  ~120 test cases, 30 classes, 100% passing
+tests/                      #  pytest suite run by GitHub Actions (see Testing)
 ```
 
 ---
@@ -1129,50 +1125,50 @@ tests/
 ## Testing
 
 ```bash
-# Run all tests
-py -m pytest tests/test_basic.py -v
-
-# Run a specific class
-py -m pytest tests/test_basic.py::TestBlockTypes -v
-
-# Run with short traceback
-py -m pytest tests/test_basic.py --tb=short
+pip install -e ".[dev]"
+python -m pytest -q
 ```
 
-The test suite covers:
+CI (`.github/workflows/ci.yml`) runs the suite on Python 3.9–3.13 for every push
+and pull request; the CI badge above reflects the actual latest result. Tests
+inspect the generated PDFs (text, outline, links, page totals via PyMuPDF), not
+just that a file was produced:
 
-| Class | What's tested |
-|-------|---------------|
-| `TestPackage` | Version, public exports |
-| `TestBuilderCore` | All render modes, chaining, file/bytes/base64 output |
-| `TestMeta` | Page size (case-insensitive), orientation, section numbering, encryption flag |
-| `TestTextBlocks` | All heading levels, paragraph, rich_text, note |
-| `TestListBlocks` | Bullet, numbered, checklist, definition list |
-| `TestTableBlock` | All table options, empty rows |
-| `TestCodeBlock` | Languages, filename/caption, line numbers, highlight lines |
-| `TestCalloutsQuotes` | All 5 callout variants, quote with/without attribution |
-| `TestMetrics` | Metric rows, scores, progress bars, legends, badges |
-| `TestAcademicBlocks` | Abstract, footnote, citation, bibliography (3 styles), signature |
-| `TestLayout` | All divider styles, spacer, page break, cover page, watermark, TOC, intro page |
-| `TestShapes` | All 8 shape types |
-| `TestTimeline` | Basic + full with descriptions & colors |
-| `TestCharts` | Bar, line, pie + label options |
-| `TestThemes` | All 7 built-in themes, custom theme, invalid theme |
-| `TestHeaderFooterStyles` | Every header style + every footer style (parametrized) |
-| `TestMarkdown` | All parsed block types, inline formatting, full document |
-| `TestJsonAPI` | Basic, with meta, multiple block types |
-| `TestStandaloneHelpers` | render_to_bytes, render_to_base64, render shortcut |
-| `TestStreaming` | Context manager stream |
-| `TestInlineMarkdown` | Every inline syntax token |
-| `TestRTL` | Arabic detection, paragraph & heading render |
-| `TestSectionNumbering` | Counter logic, reset, full render |
-| `TestTableOfContents` | Entry collection, depth filtering |
-| `TestDropCap` | Enabled, RTL skip |
-| `TestRenderContext` | Thread isolation, independent state |
-| `TestExceptions` | Exception hierarchy, attributes |
-| `TestFonts` | Available list, thread-safe registration |
-| `TestEdgeCases` | Long paragraphs, Unicode, empty/huge tables, full mixed-content doc |
-| `TestEnums` | Case-insensitive page sizes, invalid value |
+| File | What's verified |
+|------|-----------------|
+| `test_pagination.py` | `Page n of N` totals on 1/2/10+ page docs, linked TOC with final page numbers, heading keep-with-next, PDF outline |
+| `test_markdown_nested.py` | Nested/mixed lists, start numbers, task lists, footnotes, callouts, indented code, front matter, inline-markup escaping |
+| `test_encryption.py` | Fail-closed encryption (missing pikepdf / missing password), AES-256 positive case |
+| `test_error_policy.py` | Strict vs permissive error semantics, diagnostics, resource limits |
+| `test_safe_assets.py` | No network by default, host allowlist, private-IP/scheme blocking, base_dir confinement, size/pixel caps |
+| `test_mermaid_security.py` | Diagram passed as data, no CDN, network aborted, fallback warning, size limit |
+| `test_regression_blocks.py` | Every fluent block × every theme in strict mode, all header/footer styles, v0.3 helpers |
+| `test_cli.py` | CLI exit codes, no output on strict failure |
+
+## Error handling, security & limits
+
+Rendering is **strict by default**: a block, asset or encryption failure raises a
+typed `DynamicPDFError` subclass (`BlockRenderError`, `AssetError`,
+`EncryptionError`, `ResourceLimitError`) and **no output file is written**.
+
+```python
+from dynamic_pdf import DocumentBuilder, RenderPolicy, AssetPolicy
+
+b = DocumentBuilder.from_markdown(md).quality("permissive")   # visible markers instead of raising
+b.render("out.pdf")
+b.diagnostics            # [{'level': 'error', 'code': 'block_render_failed', ...}]
+b.last_render.diagnostics.status   # "ok" | "degraded"
+
+# Images/logos: local files and data: URIs by default, no network.
+b.asset_policy(allow_remote=True, allowed_hosts=("cdn.example.com",), max_bytes=5_000_000)
+b.asset_policy(base_dir="/srv/assets")       # confine local paths
+```
+
+- **Encryption fails closed**: if `pikepdf` is missing or no password is set, `EncryptionError` is raised and nothing is written.
+- **Untrusted input**: inline text is escaped before ReportLab markup is applied (no `<img>`/`<a>` injection, links limited to http(s)/mailto/#anchors); remote fetches are limited to public IPs, re-validated on redirect, time- and size-bounded.
+- **Mermaid** renders offline only: set `DYNAMIC_PDF_MERMAID_JS=/path/to/mermaid.min.js`; the diagram is passed as data (never HTML), all page network requests are aborted. Without Playwright or the bundle the source is shown as code and a `mermaid_fallback` warning is recorded.
+- **Limits** (`ResourceLimits`): input characters, block count, table cells, Mermaid source size, renderer timeout.
+- **Fonts** are never downloaded during rendering.
 
 ---
 

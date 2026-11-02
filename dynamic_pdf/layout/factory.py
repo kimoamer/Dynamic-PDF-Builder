@@ -10,6 +10,7 @@ Applies professional report typography standards:
 import re
 import unicodedata
 import html as html_mod
+from typing import Optional
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.platypus import (
     Paragraph, ListFlowable, ListItem, Spacer, PageBreak,
@@ -18,9 +19,13 @@ from reportlab.platypus import (
 from reportlab.lib.colors import HexColor
 from reportlab.lib.units import inch
 from reportlab.platypus.flowables import Flowable
+from reportlab.platypus.tableofcontents import TableOfContents as _RLTableOfContents
 
 from ..schema.theme import Theme
 from ..fonts import get_font_name
+from ..utils.errors import BlockRenderError, DynamicPDFError
+from .. import policy as _diag
+from ..assets import load_image as _load_image
 
 
 # ═══════════════════════ RTL Detection ═══════════════════════
@@ -49,41 +54,81 @@ def _apply_rtl(text: str) -> str:
 
 # ═══════════════════════ Inline Markdown ═══════════════════════
 
+_SAFE_TAGS = ("b", "i", "u", "strike", "sup", "sub", "super", "br")
+_SAFE_LINK_SCHEMES = ("http://", "https://", "mailto:", "#")
+
+
+def _restore_safe_tags(text: str) -> str:
+    """Re-enable a small allowlist of attribute-free inline tags after escaping."""
+    for tag in _SAFE_TAGS:
+        text = re.sub(rf'&lt;(/?){tag}\s*(/?)&gt;', rf'<\1{tag}\2>', text, flags=re.IGNORECASE)
+    return text
+
+
+def _safe_href(url: str) -> Optional[str]:
+    u = html_mod.unescape(url).strip()
+    if u.lower().startswith(_SAFE_LINK_SCHEMES):
+        return html_mod.escape(u, quote=True)
+    return None
+
+
+def _link_sub(m) -> str:
+    label, url = m.group(1), m.group(2)
+    href = _safe_href(url)
+    if href is None:
+        return label  # keep the text, drop the unsafe target
+    return f'<a href="{href}" color="#1a73e8">{label}</a>'
+
+
 def _md_inline(text: str) -> str:
     """Convert Markdown inline syntax to ReportLab Paragraph XML.
     Handles: **bold**, *italic*, `code`, ~~strike~~, [link](url),
     ==highlight==, <sup>, <sub>, smart quotes, em-dash, footnote refs.
     Automatically applies RTL reshaping for Arabic text.
+
+    All input is escaped first, so author text can never inject ReportLab
+    markup (e.g. ``<img src=...>`` or ``<a href="javascript:...">``); only a
+    small allowlist of attribute-free tags is re-enabled and link targets are
+    restricted to http(s)/mailto/anchors.
     """
     if not text:
         return ""
     # Apply RTL reshaping if Arabic characters detected
     if _is_rtl(text):
         text = _apply_rtl(text)
-    text = text.replace("&", "&amp;")
+    text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    text = _restore_safe_tags(text)
+    # Inline code spans are protected from further inline processing
+    codes: list = []
+
+    def _stash(m):
+        codes.append(m.group(1))
+        return f"\x00{len(codes) - 1}\x00"
+    text = re.sub(r'`([^`]+?)`', _stash, text)
     # Smart typography
     text = text.replace('---', '\u2014')    # em-dash
     text = text.replace('--', '\u2013')     # en-dash
     text = text.replace('...', '\u2026')    # ellipsis
     # Bold: **text**
     text = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', text)
+    text = re.sub(r'(?<![\w_])__(.+?)__(?![\w_])', r'<b>\1</b>', text)
     # Italic: *text*
     text = re.sub(r'(?<!\*)\*([^*]+?)\*(?!\*)', r'<i>\1</i>', text)
-    # Inline code: `text`
-    text = re.sub(r'`([^`]+?)`', r'<font face="Courier" size="9" backColor="#E8E8E8">\1</font>', text)
     # Strikethrough: ~~text~~
     text = re.sub(r'~~(.+?)~~', r'<strike>\1</strike>', text)
-    # Links: [text](url)
-    text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2" color="#1a73e8">\1</a>', text)
+    # Links: [text](url)  (footnote refs [^N] are handled below)
+    text = re.sub(r'\[([^\]^][^\]]*)\]\(([^)\s]+)(?:\s+&quot;[^&]*&quot;)?\)', _link_sub, text)
     # Highlight: ==text==
     text = re.sub(r'==(.+?)==', r'<font backColor="#FEF3CD">\1</font>', text)
     # Superscript: <sup>text</sup> or ^text^
     text = re.sub(r'<sup>(.+?)</sup>', r'<super>\1</super>', text)
-    text = re.sub(r'\^([^\^]+?)\^', r'<super>\1</super>', text)
-    # Subscript: <sub>text</sub>
-    text = re.sub(r'<sub>(.+?)</sub>', r'<sub>\1</sub>', text)
+    text = re.sub(r'(?<!\[)\^([^\^\s][^\^]*?)\^', r'<super>\1</super>', text)
     # Footnote ref: [^N]
     text = re.sub(r'\[\^(\w+)\]', r'<super>\1</super>', text)
+    # Restore code spans
+    text = re.sub(r'\x00(\d+)\x00',
+                  lambda m: f'<font face="Courier" size="9" backColor="#E8E8E8">{codes[int(m.group(1))]}</font>',
+                  text)
     return text
 
 
@@ -119,8 +164,9 @@ class DropCapParagraph(Flowable):
 
     def __init__(self, first_char, rest_text, cap_font, cap_size, cap_color,
                  body_font, body_size, body_leading, body_color,
-                 cap_lines=3, space_after=6.0):
+                 cap_lines=3, space_after=6.0, cont_style=None):
         super().__init__()
+        self.cont_style = cont_style
         self.first_char = first_char
         self.rest_text = rest_text        # plain text (no XML)
         self.cap_font = cap_font
@@ -189,6 +235,32 @@ class DropCapParagraph(Flowable):
         self.height = max(text_h, cap_visual_h) + self.space_after + 2
         self.width = availWidth
         return (self.width, self.height)
+
+    def split(self, availWidth, availHeight):
+        """Split across pages: keep the cap + as many lines as fit, continue
+        the remaining words as a normal paragraph (no text is dropped)."""
+        self.wrap(availWidth, availHeight)
+        if self.height <= availHeight:
+            return [self]
+        fit = int((availHeight - self.space_after - 2) // self.body_leading)
+        if fit <= self.cap_lines:
+            return []   # not even the cap block fits; move to next page
+        lines = self._lines_narrow + self._lines_full
+        n_full = fit - max(len(self._lines_narrow), self.cap_lines)
+        keep_words = len(" ".join(self._lines_narrow + self._lines_full[:n_full]).split())
+        words = self.rest_text.split()
+        head = DropCapParagraph(
+            self.first_char, " ".join(words[:keep_words]), self.cap_font, self.cap_size,
+            self.cap_color, self.body_font, self.body_size, self.body_leading,
+            self.body_color, self.cap_lines, self.space_after, self.cont_style)
+        tail_text = " ".join(words[keep_words:])
+        if not tail_text or not lines:
+            return [self]
+        style = self.cont_style or ParagraphStyle(
+            'DropCapCont', fontName=self.body_font, fontSize=self.body_size,
+            leading=self.body_leading, textColor=_safe_color(self.body_color))
+        cont = ParagraphStyle('DropCapCont', parent=style, firstLineIndent=0, spaceBefore=0)
+        return [head, Paragraph(html_mod.escape(tail_text), cont)]
 
     def draw(self):
         c = self.canv
@@ -580,8 +652,10 @@ class RenderContext:
     """
 
     def __init__(self, available_width: float = 460.0,
-                 section_numbering: bool = False):
+                 section_numbering: bool = False,
+                 available_height: Optional[float] = None):
         self.available_width = available_width
+        self.available_height = available_height
         self.apply_drop_cap_next = False
         self.section_numbering = section_numbering
         self.heading_counters = [0, 0, 0, 0, 0, 0]  # H1–H6
@@ -604,13 +678,27 @@ class RenderContext:
 # ═══════════════════════ Main Factory ═══════════════════════
 
 def create_flowables(block, theme: Theme, ctx: RenderContext = None) -> list:
+    """Build flowables for one block.
+
+    Strict mode (default): any failure raises ``BlockRenderError``.
+    Permissive mode: failure is recorded as an ``error`` diagnostic and a
+    visible marker is rendered in place of the block.
+    """
     if ctx is None:
         ctx = RenderContext()  # backward-compat fallback
     try:
         return _create_inner(block, theme, ctx)
     except Exception as e:
+        btype = getattr(block, "type", type(block).__name__)
+        if isinstance(e, BlockRenderError):
+            err_obj = e
+        elif isinstance(e, DynamicPDFError):
+            err_obj = BlockRenderError(btype, f"{type(e).__name__}: {e}", e)
+        else:
+            err_obj = BlockRenderError(btype, f"{type(e).__name__}: {e}", e)
+        _diag.current().fail("block_render_failed", str(err_obj), err_obj)
         err = ParagraphStyle('Err', fontSize=8, textColor=HexColor(theme.colors.error))
-        return [Paragraph(f"[Block Error ({block.type}): {type(e).__name__}: {e}]", err)]
+        return [Paragraph(html_mod.escape(f"[Block Error ({btype}): {type(e).__name__}: {e}]"), err)]
 
 
 def _body_style(theme: Theme, indent: bool = True) -> ParagraphStyle:
@@ -686,9 +774,10 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
         # Collect for TOC
         ctx.toc_entries.append((block.level, block.text))
 
+        toc_entry = (block.level, _strip_markdown(display_text), block.id)
         if theme.decorations.heading_accent_bar and block.level <= 3:
             anchor_text = (_apply_rtl(display_text) if is_rtl_heading else display_text)
-            return [AccentHeading(
+            hf = AccentHeading(
                 text=anchor_text,
                 font_name=head_font,
                 font_size=fs, text_color=text_color, accent_color=accent_color,
@@ -696,7 +785,7 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
                 accent_gap=theme.decorations.heading_accent_bar_gap,
                 space_before=h_before, space_after=h_after,
                 rtl=is_rtl_heading,
-            )]
+            )
         else:
             sty = ParagraphStyle(
                 f'H{block.level}',
@@ -705,8 +794,12 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
                 textColor=text_color,
                 spaceBefore=h_before, spaceAfter=h_after,
                 alignment=2 if is_rtl_heading else 0,
+                keepWithNext=1,
             )
-            return [Paragraph(_md_inline(display_text), sty)]
+            hf = Paragraph(_md_inline(display_text), sty)
+        hf.keepWithNext = 1          # never strand a heading at a page bottom
+        hf._toc_entry = toc_entry    # consumed by the doc template (TOC/outline/links)
+        return [hf]
 
     # ─── Paragraph ───
     if btype == "paragraph":
@@ -721,7 +814,11 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
         if ctx.apply_drop_cap_next and theme.decorations.drop_cap_enabled and not is_rtl:
             ctx.apply_drop_cap_next = False
             plain = _strip_markdown(raw)
-            if len(plain) > 1:
+            # Drop caps draw plain text; only use them when no inline
+            # semantics (links, emphasis, code) would be lost.
+            has_markup = (_md_inline(raw) != html_mod.escape(raw, quote=False)
+                          or "&" in raw or "<" in raw)
+            if len(plain) > 1 and not has_markup:
                 dec = theme.decorations
                 first_char = plain[0]
                 rest_text  = plain[1:]
@@ -740,6 +837,7 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
                     body_color=theme.colors.text_primary,
                     cap_lines=dec.drop_cap_lines,
                     space_after=sp.paragraph_spacing_after,
+                    cont_style=bs,
                 )]
 
         # ── RTL alignment ──
@@ -782,8 +880,7 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
         from ..schema.blocks import ListItemModel as LIM
         items = [LIM(text=i) if isinstance(i, str) else i for i in block.items]
         if list_rtl:
-            return _render_rtl_list(
-                [i.text for i in items], 'bullet', theme, bs_no_indent, sp)
+            return _render_rtl_list(items, 'bullet', theme, bs_no_indent, sp)
         return [_build_list_flowable(items, 'bullet', theme, bs_no_indent, sp)]
 
     # ─── Numbered List ───
@@ -795,9 +892,8 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
         from ..schema.blocks import ListItemModel as LIM
         items = [LIM(text=i) if isinstance(i, str) else i for i in block.items]
         if list_rtl:
-            return _render_rtl_list(
-                [i.text for i in items], 'numbered', theme, bs_no_indent, sp,
-                start=block.start)
+            return _render_rtl_list(items, 'numbered', theme, bs_no_indent, sp,
+                                    start=block.start)
         return [_build_list_flowable(items, '1', theme, bs_no_indent, sp,
                                      start=block.start)]
 
@@ -811,7 +907,7 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
 
     # ─── Image ───
     if btype == "image":
-        return _render_image(block, theme, ctx.available_width)
+        return _render_image(block, theme, ctx.available_width, ctx.available_height)
 
     # ─── Chart ───
     if btype == "chart":
@@ -953,21 +1049,39 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
 # ═══════════════════════ Renderer Helpers ═══════════════════════
 
 
+def _flatten_list(items, list_type, start=1, depth=0):
+    """Flatten nested ListItemModels into (text, marker, depth) rows."""
+    rows = []
+    for idx, item in enumerate(items):
+        if isinstance(item, str):
+            text, children, checked = item, [], None
+        else:
+            text, children, checked = item.text, item.children, item.checked
+        if checked is not None:
+            marker = "\u2611" if checked else "\u2610"
+        elif list_type == 'bullet':
+            marker = ["\u2022", "\u25e6", "\u25aa", "\u2013"][min(depth, 3)]
+        else:
+            marker = str((start if depth == 0 else 1) + idx)
+        rows.append((text, marker, depth))
+        if children:
+            rows.extend(_flatten_list(children, list_type, 1, depth + 1))
+    return rows
+
+
 def _render_rtl_list(items, list_type, theme, bs, sp, start=1):
     """Render a bullet/numbered list with RTL layout (marker on right)."""
-    item_style = ParagraphStyle('RTL_LI', parent=bs, firstLineIndent=0,
-                                fontName=_arabic_font(theme),
-                                alignment=2)  # RIGHT aligned
     marker_style = ParagraphStyle('RTL_Marker', parent=bs, firstLineIndent=0,
                                   fontName=_arabic_font(theme),
                                   alignment=1)  # CENTER aligned
     rows = []
-    for idx, item_text in enumerate(items):
+    for item_text, marker_text, depth in _flatten_list(items, list_type, start):
+        item_style = ParagraphStyle(f'RTL_LI_{depth}', parent=bs, firstLineIndent=0,
+                                    fontName=_arabic_font(theme),
+                                    rightIndent=depth * sp.list_indent,
+                                    alignment=2)  # RIGHT aligned
         text_para = Paragraph(_md_inline(item_text), item_style)
-        if list_type == 'bullet':
-            marker = Paragraph("\u2022", marker_style)
-        else:
-            marker = Paragraph(str(start + idx), marker_style)
+        marker = Paragraph(marker_text, marker_style)
         # RTL: text on LEFT, marker on RIGHT
         rows.append([text_para, marker])
 
@@ -1126,36 +1240,39 @@ def _render_code(block, theme):
     return flowables
 
 
-def _render_image(block, theme, available_width=460):
-    try:
-        from reportlab.lib.utils import ImageReader
-        ir = ImageReader(block.src)
-        w, h = ir.getSize()
-        max_w = block.width or available_width
-        if w > max_w:
-            h = h * (max_w / w)
-            w = max_w
-        if block.height and h > block.height:
-            w = w * (block.height / h)
-            h = block.height
-        img = Image(block.src, width=w, height=h)
-        img.hAlign = block.alignment.upper()
-        img.spaceAfter = theme.spacing.block_gap
-        flowables = [img]
-        label = ""
-        if block.figure_number:
-            label = f"Figure {block.figure_number}"
-        if block.caption:
-            label = f"{label}: {block.caption}" if label else block.caption
-        if label:
-            cap_sty = ParagraphStyle('ImgCap',
-                                     fontSize=theme.typography.base_size * theme.typography.caption_size_ratio,
-                                     textColor=_safe_color(theme.colors.text_muted),
-                                     alignment=1, spaceAfter=theme.spacing.block_gap)
-            flowables.append(Paragraph(f"<i>{_md_inline(label)}</i>", cap_sty))
-        return flowables
-    except Exception as e:
-        return [Paragraph(f"[Image: {e}]", _body_style(theme, indent=False))]
+def _render_image(block, theme, available_width=460, available_height=None):
+    policy = _diag.current().policy.assets
+    buf, (w, h) = _load_image(block.src, policy)
+    max_w = min(block.width or available_width, available_width)
+    if w > max_w:
+        h = h * (max_w / w)
+        w = max_w
+    max_h = block.height
+    if available_height:
+        # leave room for a caption so figure + caption fit on one page
+        frame_cap = available_height * (0.85 if (block.caption or block.figure_number) else 0.98)
+        max_h = min(max_h, frame_cap) if max_h else frame_cap
+    if max_h and h > max_h:
+        w = w * (max_h / h)
+        h = max_h
+    img = Image(buf, width=w, height=h)
+    img.hAlign = block.alignment.upper()
+    img.spaceAfter = theme.spacing.block_gap
+    flowables = [img]
+    label = ""
+    if block.figure_number:
+        label = f"Figure {block.figure_number}"
+    if block.caption:
+        label = f"{label}: {block.caption}" if label else block.caption
+    if label:
+        cap_sty = ParagraphStyle('ImgCap',
+                                 fontSize=theme.typography.base_size * theme.typography.caption_size_ratio,
+                                 textColor=_safe_color(theme.colors.text_muted),
+                                 alignment=1, spaceAfter=theme.spacing.block_gap)
+        flowables.append(Paragraph(f"<i>{_md_inline(label)}</i>", cap_sty))
+        # keep figure and caption on the same page
+        return [KeepTogether(flowables)]
+    return flowables
 
 
 def _render_chart(block, theme):
@@ -1202,7 +1319,9 @@ def _render_math(block, theme):
             drawing.hAlign = 'CENTER'
             return [drawing, Spacer(1, theme.spacing.block_gap)]
         return []
-    except Exception:
+    except Exception as e:
+        _diag.current().warn("math_fallback",
+                             f"Math rendered as source text ({type(e).__name__}: {e})")
         # Fallback: render as styled monospace text (no raw $ signs)
         mono = ParagraphStyle('MathFallback',
                               fontName=get_font_name(theme.typography.mono_family),
@@ -1360,44 +1479,54 @@ def _render_cover(block, theme):
     flowables = [Spacer(1, 80)]
     if block.logo:
         try:
-            import os
-            from reportlab.lib.utils import ImageReader
-            if os.path.exists(block.logo):
-                ir = ImageReader(block.logo)
-                w, h = ir.getSize()
-                if w > 200:
-                    h = h * (200 / w)
-                    w = 200
-                img = Image(block.logo, width=w, height=h)
-                img.hAlign = 'LEFT'
-                flowables.append(img)
-                flowables.append(Spacer(1, 30))
-        except Exception:
-            pass
+            buf, (w, h) = _load_image(block.logo, _diag.current().policy.assets)
+        except DynamicPDFError as e:
+            _diag.current().fail("asset_failed", f"Cover logo: {e}", e)
+            buf = None
+        if buf is not None:
+            if w > 200:
+                h = h * (200 / w)
+                w = 200
+            img = Image(buf, width=w, height=h)
+            img.hAlign = 'LEFT'
+            flowables.append(img)
+            flowables.append(Spacer(1, 30))
     ts = ParagraphStyle('CoverTitle',
                         fontName=get_font_name(theme.typography.heading_family, bold=True),
                         fontSize=theme.typography.base_size * theme.typography.heading_scale[0] * 1.4,
                         leading=theme.typography.base_size * theme.typography.heading_scale[0] * 1.7,
                         textColor=_safe_color(theme.colors.text_primary), spaceAfter=8)
-    flowables.append(Paragraph(block.title, ts))
+    flowables.append(Paragraph(_md_inline(block.title), ts))
     if block.subtitle:
         ss = ParagraphStyle('CoverSub', fontName=get_font_name(theme.typography.body_family),
                             fontSize=theme.typography.base_size * 1.3,
                             textColor=_safe_color(theme.colors.text_secondary), spaceAfter=30)
-        flowables.append(Paragraph(block.subtitle, ss))
+        flowables.append(Paragraph(_md_inline(block.subtitle), ss))
     if block.author:
         a_sty = ParagraphStyle('CoverAuthor', fontName=get_font_name(theme.typography.body_family),
                                fontSize=theme.typography.base_size,
                                textColor=_safe_color(theme.colors.text_muted))
-        flowables.append(Paragraph(f"Prepared by {block.author}", a_sty))
+        flowables.append(Paragraph(f"Prepared by {_md_inline(block.author)}", a_sty))
     if block.date:
         d_sty = ParagraphStyle('CoverDate', fontName=get_font_name(theme.typography.body_family),
                                fontSize=theme.typography.base_size,
                                textColor=_safe_color(theme.colors.text_muted))
         flowables.append(Spacer(1, 60))
-        flowables.append(Paragraph(block.date, d_sty))
+        flowables.append(Paragraph(_md_inline(block.date), d_sty))
     flowables.append(PageBreak())
     return flowables
+
+
+def _coerce_child(b):
+    """Nested layout children may be Blocks, plain strings or JSON dicts."""
+    if isinstance(b, str):
+        from ..schema.blocks import ParagraphBlock
+        return ParagraphBlock(text=b)
+    if isinstance(b, dict):
+        from pydantic import TypeAdapter
+        from ..schema.blocks import Block
+        return TypeAdapter(Block).validate_python(b)
+    return b
 
 
 def _render_columns(block, theme, count, ctx=None):
@@ -1409,10 +1538,7 @@ def _render_columns(block, theme, count, ctx=None):
     for col in col_lists:
         cf = []
         for b in col:
-            try:
-                cf.extend(create_flowables(b, theme, ctx))
-            except Exception:
-                pass
+            cf.extend(create_flowables(_coerce_child(b), theme, ctx))
         rendered.append(cf)
     t = Table([rendered], colWidths=col_widths, style=TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
@@ -1676,27 +1802,21 @@ def _render_qrcode(block, theme):
             flowables.append(Paragraph(f"<i>{_md_inline(block.caption)}</i>", cap_sty))
         return flowables
     except ImportError:
+        _diag.current().warn(
+            "qrcode_unavailable",
+            'QR code rendered as text: install "dynamic-pdf-builder[qrcode]"')
         bs = _body_style(theme, indent=False)
         return [Paragraph(
-            f'[QR Code: install <font face="Courier">qrcode[pil]</font> — '
-            f'pip install "dynamic-pdf-builder[qrcode]"]', bs)]
-    except Exception as e:
-        return [Paragraph(f"[QR Code Error: {e}]", _body_style(theme, indent=False))]
+            f'[QR Code: {html_mod.escape(block.data)}]', bs)]
 
 
 def _render_sidebar(block, theme, ctx=None):
     """Main content + floating sidebar via 2-column table."""
     main_f, side_f = [], []
     for b in block.main_content:
-        try:
-            main_f.extend(create_flowables(b, theme, ctx))
-        except Exception:
-            pass
+        main_f.extend(create_flowables(_coerce_child(b), theme, ctx))
     for b in block.sidebar_content:
-        try:
-            side_f.extend(create_flowables(b, theme, ctx))
-        except Exception:
-            pass
+        side_f.extend(create_flowables(_coerce_child(b), theme, ctx))
     total_w = ctx.available_width if ctx else 460
     side_w = total_w * block.sidebar_ratio
     main_w = total_w - side_w - 10
@@ -1732,11 +1852,17 @@ def _build_list_flowable(items, bullet_type, theme, bs, sp, start=1, depth=0):
             firstLineIndent=0,
             fontSize=max(theme.typography.base_size - depth * 0.5, 8),
         )
-        para = Paragraph(_md_inline(item.text), item_sty)
+        text = _md_inline(item.text).replace("\n", "<br/>")
+        if item.checked is not None:
+            text = ("\u2611 " if item.checked else "\u2610 ") + text
+        para = Paragraph(text, item_sty)
 
         if item.children:
-            # Nested sub-list, same or next bullet type
-            child_type = '1' if bullet_type == '1' else 'bullet'
+            # Nested sub-list: explicit ordered-ness wins, else inherit parent's
+            if item.children_ordered is not None:
+                child_type = '1' if item.children_ordered else 'bullet'
+            else:
+                child_type = '1' if bullet_type == '1' else 'bullet'
             child_flow = _build_list_flowable(
                 item.children, child_type, theme, bs, sp, depth=depth + 1)
             li_list.append(ListItem([para, child_flow],
@@ -1759,17 +1885,35 @@ def _build_list_flowable(items, bullet_type, theme, bs, sp, start=1, depth=0):
     return ListFlowable(li_list, **kwargs)
 
 
+class DocumentTOC(_RLTableOfContents):
+    """Page-aware, linked table of contents.
+
+    Entries are collected for *all* headings in the document (before or after
+    the TOC) during ReportLab ``multiBuild`` passes, so page numbers are final
+    and every entry links to its heading destination.
+    """
+
+    def __init__(self, depth: int = 3, **kw):
+        super().__init__(**kw)
+        self.depth = depth
+
+    def notify(self, kind, stuff):
+        if kind == 'TOCEntry' and stuff[0] >= self.depth:
+            return
+        super().notify(kind, stuff)
+
+
 def _render_toc_placeholder(block, theme, ctx):
-    """Render table of contents with proper dot-leaders using a Table layout."""
+    """Real table of contents (final page numbers, clickable entries)."""
     from reportlab.platypus import HRFlowable
 
     flowables = []
 
-    # ─ Title
     title_sty = ParagraphStyle(
         'TOCTitle',
         fontName=get_font_name(theme.typography.heading_family, bold=True),
         fontSize=theme.typography.base_size * 1.4,
+        leading=theme.typography.base_size * 1.8,
         textColor=_safe_color(theme.colors.text_primary),
         spaceBefore=0, spaceAfter=12,
     )
@@ -1778,72 +1922,24 @@ def _render_toc_placeholder(block, theme, ctx):
         width="100%", thickness=1,
         color=_safe_color(theme.colors.accent), spaceAfter=8))
 
-    if not ctx.toc_entries:
-        note_sty = ParagraphStyle(
-            'TOCNote',
-            fontName=get_font_name(theme.typography.body_family, italic=True),
-            fontSize=theme.typography.base_size * 0.9,
-            textColor=_safe_color(theme.colors.text_muted),
-        )
-        flowables.append(Paragraph(
-            "Place this block <i>after</i> your headings to auto-populate.",
-            note_sty,
+    depth_limit = max(1, min(6, getattr(block, 'depth', 3) or 3))
+    level_styles = []
+    for lvl in range(6):
+        fs = theme.typography.base_size * (1.0 if lvl == 0 else 0.9)
+        level_styles.append(ParagraphStyle(
+            f'TOC_L{lvl + 1}',
+            fontName=get_font_name(theme.typography.body_family, bold=lvl <= 1),
+            fontSize=fs,
+            leading=fs * 1.45,
+            leftIndent=lvl * 18 + 18,
+            firstLineIndent=-18,
+            spaceBefore=5 if lvl == 0 else 1,
+            textColor=_safe_color(theme.colors.text_primary if lvl <= 1
+                                  else theme.colors.text_secondary),
         ))
-        flowables.append(PageBreak())
-        return flowables
-
-    depth_limit = getattr(block, 'depth', 3)
-
-    for level, text in ctx.toc_entries:
-        if level > depth_limit:
-            continue
-
-        indent = (level - 1) * 20
-        fs = theme.typography.base_size * (1.0 if level == 1 else 0.88)
-        is_bold = level <= 2
-        fg = theme.colors.text_primary if level <= 2 else theme.colors.text_secondary
-        muted = theme.colors.text_muted
-
-        # Left cell: indented heading text
-        title_sty = ParagraphStyle(
-            f'TOC_L{level}_title',
-            fontName=get_font_name(theme.typography.body_family, bold=is_bold),
-            fontSize=fs,
-            leading=fs * 1.4,
-            leftIndent=indent,
-            spaceBefore=5 if level == 1 else 2,
-            spaceAfter=1,
-            textColor=_safe_color(fg),
-        )
-
-        # Right cell: dot-leaders (muted colour)
-        dots_sty = ParagraphStyle(
-            f'TOC_L{level}_dots',
-            fontName=get_font_name(theme.typography.body_family),
-            fontSize=fs,
-            leading=fs * 1.4,
-            alignment=2,   # right-align
-            textColor=_safe_color(muted),
-        )
-
-        title_cell = Paragraph(_md_inline(text), title_sty)
-        dots_cell  = Paragraph("." * 60, dots_sty)
-
-        row_tbl = Table(
-            [[title_cell, dots_cell]],
-            colWidths=[None, 80],
-            style=TableStyle([
-                ('VALIGN',       (0, 0), (-1, -1), 'BOTTOM'),
-                ('LEFTPADDING',  (0, 0), (-1, -1), 0),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                ('TOPPADDING',   (0, 0), (-1, -1), 0),
-                ('BOTTOMPADDING',(0, 0), (-1, -1), 0),
-                ('FONTSIZE',     (1, 0), (1, 0), fs * 0.85),
-            ]),
-        )
-        row_tbl.hAlign = 'LEFT'
-        flowables.append(row_tbl)
-
+    toc = DocumentTOC(depth=depth_limit, levelStyles=level_styles,
+                      dotsMinLevel=0, rightColumnWidth=48)
+    flowables.append(toc)
     flowables.append(Spacer(1, 8))
     flowables.append(PageBreak())
     return flowables

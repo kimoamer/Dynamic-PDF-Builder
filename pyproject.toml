@@ -45,7 +45,17 @@ pdf      = ["pikepdf>=8.0"]
 qrcode   = ["qrcode[pil]>=7.4"]
 rtl      = ["arabic-reshaper>=3.0", "python-bidi>=0.6"]  # already in core; kept for compatibility
 all      = ["dynamic-pdf-builder[diagrams,plotly,pdf,qrcode,rtl]"]
-dev      = ["pytest>=8.0", "ruff>=0.3", "mypy>=1.8"]
+dev      = ["pytest>=8.0", "pymupdf>=1.23", "pikepdf>=8.0", "ruff>=0.3", "mypy>=1.8"]
+
+[tool.setuptools.packages.find]
+include = ["dynamic_pdf*"]
+
+[tool.setuptools.package-data]
+dynamic_pdf = ["fonts/bundled/*.ttf", "fonts/bundled/LICENSES/*.txt"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
 
 [project.scripts]
 dynamic-pdf = "dynamic_pdf.cli:main"

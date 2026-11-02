@@ -15,6 +15,12 @@ from .schema.blocks import Block
 from .streaming import stream
 from .fonts.manager import register_custom_font, list_available_fonts
 from .themes.registry import list_themes, register_theme, get_theme
+from .policy import RenderPolicy, ResourceLimits, Diagnostic
+from .assets import AssetPolicy
+from .utils.errors import (
+    DynamicPDFError, BlockRenderError, EncryptionError, AssetError,
+    ResourceLimitError, RenderError,
+)
 
 
 def render(blocks: list, output: str, theme: str = "claude") -> None:
@@ -37,6 +43,10 @@ __all__ = [
     "register_custom_font", "list_available_fonts",
     # Themes
     "list_themes", "register_theme", "get_theme",
+    # Policy & errors
+    "RenderPolicy", "ResourceLimits", "AssetPolicy", "Diagnostic",
+    "DynamicPDFError", "BlockRenderError", "EncryptionError", "AssetError",
+    "ResourceLimitError", "RenderError",
     # Version
     "__version__",
 ]

@@ -1,6 +1,6 @@
 """
-Font Manager — handles downloading, registering, and fallback resolution.
-Thread-safe: only registers once. NEVER crashes on download failure — falls back to Helvetica.
+Font Manager — registers bundled fonts and resolves deterministic fallbacks.
+Thread-safe: only registers once. Rendering never downloads fonts.
 """
 import os
 import logging
@@ -27,7 +27,11 @@ _available_fonts: set = set()
 
 
 def ensure_fonts_downloaded():
-    """Download bundled fonts if not present. Never raises."""
+    """Explicitly download missing bundled fonts (network). Never raises.
+
+    This is NOT called during rendering: rendering is offline and
+    deterministic. Fonts ship inside the package (see ``bundled/LICENSES``).
+    """
     os.makedirs(BUNDLED_DIR, exist_ok=True)
     for filename, url in FONT_URLS.items():
         path = os.path.join(BUNDLED_DIR, filename)
@@ -60,7 +64,7 @@ def register_fonts():
     with _lock:
         if _registered:
             return
-        ensure_fonts_downloaded()
+        # No network access here: only fonts shipped in bundled/ are used.
 
         # Monospace
         _try_register("JetBrains Mono", "JetBrainsMono-Regular.ttf")

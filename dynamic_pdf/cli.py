@@ -25,6 +25,10 @@ def main():
     render_p.add_argument("-o", "--output", default=None, help="Output PDF path (default: <input>.pdf)")
     render_p.add_argument("-t", "--theme", default="claude", help="Theme name (default: claude)")
     render_p.add_argument("--section-numbers", action="store_true", help="Enable section numbering")
+    render_p.add_argument("--permissive", action="store_true",
+                          help="Render failed blocks as visible markers instead of failing (exit code 3 if degraded)")
+    render_p.add_argument("--allow-remote-assets", action="store_true",
+                          help="Allow fetching http(s) images (public hosts only)")
 
     # ─── themes ───
     sub.add_parser("themes", help="List available themes")
@@ -35,13 +39,38 @@ def main():
     args = parser.parse_args()
 
     if args.command == "render":
-        _cmd_render(args)
+        from .utils.errors import DynamicPDFError
+        try:
+            _cmd_render(args)
+        except DynamicPDFError as e:
+            print(f"Error: {type(e).__name__}: {e}", file=sys.stderr)
+            sys.exit(2)
     elif args.command == "themes":
         _cmd_themes()
     elif args.command == "version":
         _cmd_version()
     else:
         parser.print_help()
+
+
+def _policy_from_args(args):
+    from .policy import RenderPolicy
+    from .assets import AssetPolicy
+    return RenderPolicy(
+        error_mode="permissive" if args.permissive else "strict",
+        assets=AssetPolicy(allow_remote=bool(args.allow_remote_assets)),
+    )
+
+
+def _report(output_path, diagnostics):
+    for d in diagnostics:
+        print(f"{d['level']}: [{d['code']}] {d['message']}", file=sys.stderr)
+    size_kb = os.path.getsize(output_path) / 1024
+    degraded = any(d["level"] == "error" for d in diagnostics)
+    mark = "⚠ Rendered (degraded)" if degraded else "✓ Rendered"
+    print(f"{mark} {output_path} ({size_kb:.1f} KB)")
+    if degraded:
+        sys.exit(3)
 
 
 def _cmd_render(args):
@@ -54,34 +83,31 @@ def _cmd_render(args):
 
     output_path = args.output or os.path.splitext(input_path)[0] + ".pdf"
     ext = os.path.splitext(input_path)[1].lower()
+    policy = _policy_from_args(args)
 
     with open(input_path, "r", encoding="utf-8") as f:
         content = f.read()
 
     if ext == ".json":
         import json
+        import base64
         from . import render_from_json
         payload = json.loads(content)
         if args.theme != "claude":
             payload["theme"] = args.theme
-        result = render_from_json(payload)
-        if result["success"]:
-            import base64
-            with open(output_path, "wb") as out:
-                out.write(base64.b64decode(result["pdf_base64"]))
-            size_kb = result["metadata"]["file_size_bytes"] / 1024
-            print(f"✓ Rendered {output_path} ({size_kb:.1f} KB)")
-        else:
-            print("Error: Rendering failed", file=sys.stderr)
-            sys.exit(1)
+        if args.section_numbers:
+            payload.setdefault("meta", {})["section_numbering"] = True
+        result = render_from_json(payload, policy=policy)
+        with open(output_path, "wb") as out:
+            out.write(base64.b64decode(result["pdf_base64"]))
+        _report(output_path, result["diagnostics"])
     else:
         # Treat as Markdown
-        builder = DocumentBuilder.from_markdown(content, theme=args.theme)
+        builder = DocumentBuilder.from_markdown(content, theme=args.theme, policy=policy)
         if args.section_numbers:
             builder.section_numbering(True)
         builder.render(output_path)
-        size_kb = os.path.getsize(output_path) / 1024
-        print(f"✓ Rendered {output_path} ({size_kb:.1f} KB)")
+        _report(output_path, builder.diagnostics)
 
 
 def _cmd_themes():

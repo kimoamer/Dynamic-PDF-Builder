@@ -28,3 +28,19 @@ class ValidationError(DynamicPDFError):
 
 class EncryptionError(DynamicPDFError):
     """PDF encryption failed."""
+
+
+class AssetError(DynamicPDFError):
+    """An external asset (image, logo, script) was refused or could not be loaded."""
+
+
+class ResourceLimitError(DynamicPDFError):
+    """Input exceeded a configured resource limit (size, count, pixels...)."""
+
+
+class RenderError(DynamicPDFError):
+    """Rendering failed as a whole (wraps the collected diagnostics)."""
+
+    def __init__(self, message: str, diagnostics=None):
+        self.diagnostics = list(diagnostics or [])
+        super().__init__(message)

@@ -23,6 +23,9 @@ from .schema.blocks import (
     TwoColumnBlock, ThreeColumnBlock, SidebarBlock,
 )
 from .layout.engine import LayoutEngine
+from .policy import RenderPolicy, ResourceLimits, STRICT
+from .assets import AssetPolicy
+from .utils.errors import ResourceLimitError
 
 
 class DocumentBuilder:
@@ -37,10 +40,42 @@ class DocumentBuilder:
             .render("report.pdf"))
     """
 
-    def __init__(self, theme: str = "claude"):
+    def __init__(self, theme: str = "claude", policy: Optional[RenderPolicy] = None):
         self._theme = theme
         self._meta = Meta()
         self._blocks: list = []
+        self._policy = policy or RenderPolicy()
+        self.last_render = None   # LayoutEngine of the most recent render (diagnostics, page_count)
+
+    # ─── Render policy (caller-owned; never taken from document payloads) ───
+
+    def quality(self, mode: str = STRICT) -> 'DocumentBuilder':
+        """Error semantics: ``"strict"`` (raise typed errors, default) or
+        ``"permissive"`` (visible markers + ``error`` diagnostics)."""
+        self._policy = RenderPolicy(error_mode=mode, assets=self._policy.assets,
+                                    limits=self._policy.limits)
+        return self
+
+    def asset_policy(self, policy: Optional[AssetPolicy] = None, **kwargs) -> 'DocumentBuilder':
+        """Configure image/logo loading (e.g. ``allow_remote=True,
+        allowed_hosts=("cdn.example.com",)`` or ``base_dir="/srv/assets"``)."""
+        assets = policy or AssetPolicy(**kwargs)
+        self._policy = RenderPolicy(error_mode=self._policy.error_mode, assets=assets,
+                                    limits=self._policy.limits)
+        return self
+
+    def limits(self, limits: Optional[ResourceLimits] = None, **kwargs) -> 'DocumentBuilder':
+        self._policy = RenderPolicy(error_mode=self._policy.error_mode,
+                                    assets=self._policy.assets,
+                                    limits=limits or ResourceLimits(**kwargs))
+        return self
+
+    @property
+    def diagnostics(self) -> list:
+        """Diagnostics of the most recent render (list of dicts)."""
+        if self.last_render is None:
+            return []
+        return [d.to_dict() for d in self.last_render.diagnostics.items]
 
     # ─── Meta ───────────────────────────────────────────────────────
 
@@ -412,21 +447,28 @@ class DocumentBuilder:
     def build(self) -> Document:
         return Document(meta=self._meta, theme=self._theme, blocks=self._blocks)
 
+    def _engine(self) -> LayoutEngine:
+        self.last_render = LayoutEngine(self.build(), policy=self._policy)
+        return self.last_render
+
     def render(self, output=None) -> Optional[bytes]:
-        """Render to a file path (str), file-like object, or return bytes (if output is None)."""
-        doc = self.build()
+        """Render to a file path (str), file-like object, or return bytes (if output is None).
+
+        Nothing is written to ``output`` unless rendering (and encryption, if
+        requested) succeeded.
+        """
+        engine = self._engine()
         if output is None:
             buffer = io.BytesIO()
-            LayoutEngine(doc).render(buffer)
+            engine.render(buffer)
             return buffer.getvalue()
-        LayoutEngine(doc).render(output)
+        engine.render(output)
         return None
 
     def render_bytes(self) -> bytes:
         """Render and return raw PDF bytes."""
         buffer = io.BytesIO()
-        doc = self.build()
-        LayoutEngine(doc).render(buffer)
+        self._engine().render(buffer)
         return buffer.getvalue()
 
     def render_base64(self) -> str:
@@ -434,28 +476,56 @@ class DocumentBuilder:
         return base64.b64encode(self.render_bytes()).decode("utf-8")
 
     @classmethod
-    def from_markdown(cls, markdown: str, theme: str = "claude") -> 'DocumentBuilder':
-        """Create a DocumentBuilder pre-populated from a Markdown string."""
+    def from_markdown(cls, markdown: str, theme: str = "claude",
+                      policy: Optional[RenderPolicy] = None) -> 'DocumentBuilder':
+        """Create a DocumentBuilder pre-populated from a Markdown string.
+
+        Front matter keys ``title``, ``author``, ``subject``, ``description``,
+        ``keywords`` and ``language``/``lang`` populate document metadata.
+        """
         from .markdown.preprocessors import preprocess_markdown
-        from .markdown.parser import markdown_to_blocks
-        builder = cls(theme=theme)
-        builder._blocks.extend(markdown_to_blocks(preprocess_markdown(markdown)))
+        from .markdown.parser import parse_markdown
+        builder = cls(theme=theme, policy=policy)
+        max_chars = builder._policy.limits.max_input_chars
+        if len(markdown) > max_chars:
+            raise ResourceLimitError(
+                f"Markdown input length ({len(markdown)}) exceeds limit ({max_chars})")
+        fm, blocks = parse_markdown(preprocess_markdown(markdown))
+        kw = {k: fm[k] for k in ("title", "author", "subject", "description") if isinstance(fm.get(k), str)}
+        if isinstance(fm.get("keywords"), list):
+            kw["keywords"] = fm["keywords"]
+        elif isinstance(fm.get("keywords"), str) and fm["keywords"]:
+            kw["keywords"] = [k.strip() for k in fm["keywords"].split(",") if k.strip()]
+        lang = fm.get("language") or fm.get("lang")
+        builder.meta(language=lang if isinstance(lang, str) and lang else "en", **kw)
+        if isinstance(fm.get("theme"), str) and theme == "claude":
+            builder._theme = fm["theme"]
+        builder.front_matter = fm
+        builder._blocks.extend(blocks)
         return builder
 
 
 # ─── Standalone helpers ───────────────────────────────────────────────────────
 
-def render_from_json(payload: dict) -> dict:
-    """Render a PDF from a Document dict. Returns {success, pdf_base64, metadata}."""
+def render_from_json(payload: dict, policy: Optional[RenderPolicy] = None) -> dict:
+    """Render a PDF from a Document dict.
+
+    Returns ``{success, status, pdf_base64, metadata, diagnostics}``. In strict
+    mode (default) failures raise typed ``DynamicPDFError`` subclasses; in
+    permissive mode ``status`` is ``"degraded"`` when any block failed.
+    """
     from .schema.document import Document
     doc = Document.model_validate(payload)
     buffer = io.BytesIO()
-    LayoutEngine(doc).render(buffer)
+    engine = LayoutEngine(doc, policy=policy)
+    engine.render(buffer)
     pdf_bytes = buffer.getvalue()
     return {
         "success": True,
+        "status": engine.diagnostics.status,
         "pdf_base64": base64.b64encode(pdf_bytes).decode("utf-8"),
-        "metadata": {"file_size_bytes": len(pdf_bytes)},
+        "metadata": {"file_size_bytes": len(pdf_bytes), "page_count": engine.page_count},
+        "diagnostics": [d.to_dict() for d in engine.diagnostics.items],
     }
 
 

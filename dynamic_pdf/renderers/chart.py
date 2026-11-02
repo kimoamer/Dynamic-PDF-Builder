@@ -14,6 +14,7 @@ Supported chart types:
     sparkline
     treemap
 """
+from ..utils.errors import BlockRenderError
 
 import io
 import os
@@ -739,10 +740,11 @@ def render_chart(block, theme):
             flowables = [drawing, Spacer(1, gap)]
             return flowables
 
-        return [Paragraph("[Chart: SVG conversion failed]",
-                          ParagraphStyle("err", fontSize=9))]
+        raise BlockRenderError("chart", f"{block.chart_type}: SVG conversion failed")
 
+    except BlockRenderError:
+        raise
     except Exception as exc:
-        err_style = ParagraphStyle("err", fontSize=9,
-                                   textColor=rl_colors.red)
-        return [Paragraph(f"[Chart Error ({block.chart_type}): {exc}]", err_style)]
+        # Surface through the caller's error policy (strict → raise,
+        # permissive → diagnostic + visible marker); never silently swallow.
+        raise BlockRenderError("chart", f"{block.chart_type}: {type(exc).__name__}: {exc}", exc) from exc
