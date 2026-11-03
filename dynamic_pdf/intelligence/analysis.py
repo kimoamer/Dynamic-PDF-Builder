@@ -137,8 +137,8 @@ def measure_blocks(doc, theme, policy=None, cache=None) -> Tuple[List[BlockMeasu
             keep = any(getattr(f, "keepWithNext", 0) for f in flows[:1]) or b.type == "heading"
             # a block is one item in the simulation: its role is that of its main
             # flowable (a caption travels with its table/figure via keep-with-next)
-            main_role = next((r for r in roles if r not in ("caption", "other", "structure")),
-                             roles[0] if roles else "other")
+            main_role = next((r for r in roles if r not in ("caption", "other", "structure", "space")),
+                             next((r for r in roles if r != "space"), "space"))
             out.append(BlockMeasure(i, b.type, main_role, total, piece, splittable,
                                     bool(keep), level, is_land,
                                     bool((b.hints or {}).get("break_before"))))

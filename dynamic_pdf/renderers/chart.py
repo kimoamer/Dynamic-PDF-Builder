@@ -716,7 +716,18 @@ _RENDERERS = {
 }
 
 
+def _sized(block):
+    """Apply a composer ``figure_size`` hint (inches): the chart is *re-drawn* at
+    that size, so its text keeps its native point size (unlike scaling)."""
+    size = (getattr(block, "hints", None) or {}).get("figure_size")
+    if not size:
+        return block
+    w, h = size
+    return block.model_copy(update={"width": float(w), "height": float(h)})
+
+
 def render_chart(block, theme):
+    block = _sized(block)
     from reportlab.platypus import Paragraph
     from reportlab.lib.styles import ParagraphStyle
     from reportlab.lib import colors as rl_colors
@@ -750,6 +761,7 @@ def render_chart(block, theme):
 def chart_png(block, theme, dpi: int = 200) -> bytes:
     """Render a ChartBlock to PNG bytes (used by the DOCX renderer)."""
     import io
+    block = _sized(block)
     key = block.chart_type.lower().replace("-", "_").replace(" ", "_")
     renderer = _RENDERERS.get(key)
     if renderer is None:

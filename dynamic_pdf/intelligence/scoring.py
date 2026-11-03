@@ -28,12 +28,15 @@ WEIGHTS = {"utilization": 0.22, "balance": 0.12, "efficiency": 0.20, "readabilit
 MIN_BODY_PT = 9.0
 MIN_TABLE_PT = 7.5
 MIN_LEADING = 1.25
+DENSE_CAP = 0.85               # area occupancy above this earns no extra utilization
 
 
 class PageMetric(BaseModel):
     page: int
-    occupancy: float           # occupied region height / frame height
-    intentional: bool          # short by design (forced break follows, last page…)
+    occupancy: float           # union area of content rectangles / frame area
+    fill: float = 0.0          # union of occupied vertical intervals / frame height
+    role: str = "body"         # cover | toc | body | section_end | final
+    intentional: bool          # short by design (not a body page)
     wasted: float              # accidental unused share (0 when intentional)
 
 
@@ -121,33 +124,56 @@ def score_layout(geo: Geometry, doc, theme, *, typography_errors: Optional[List[
     forced = forced_starts(doc)
     types = {i: b.type for i, b in enumerate(doc.blocks)}
 
-    # ── per-page geometry ──
+    # ── per-page geometry (role-aware) ──
+    from .geometry import union_area, union_length
     page_metrics: List[PageMetric] = []
-    occs, wasted_total = [], 0.0
+    util_pages, fills, wasted_total = [], [], 0.0
+    content_pages = []
     for idx, p in enumerate(pages):
         info = geo.pages[p]
         rs = by_page.get(p, [])
-        occ = min(1.0, sum(r.height for r in rs) / max(1.0, info.frame_height))
         for r in rs:
             if r.bottom < info.frame_bottom - 1.5 or r.top > info.frame_top + 1.5:
                 errors.append(f"region of block {r.block} clipped on page {p}")
+        dense = [r for r in rs if r.role not in ("space",)]
+        # vertical fill: union of occupied y-intervals (no double counting)
+        fill = min(1.0, union_length([(r.bottom, r.top) for r in dense]) / max(1.0, info.frame_height))
+        # area occupancy: union of real content rectangles over the frame area
+        frame_area = max(1.0, info.frame_height * info.frame_width)
+        occ = min(1.0, union_area([(r.x0, r.x1, r.bottom, r.top) for r in dense]) / frame_area)
+        kinds = {types.get(r.block) for r in dense}
         nxt = by_page.get(pages[idx + 1], []) if idx + 1 < len(pages) else []
         first_next = nxt[0] if nxt else None
         is_last = idx == len(pages) - 1
-        intentional = (is_last or first_next is None or first_next.block in forced
-                       or any(types.get(r.block) in FORCED_BREAK_AFTER for r in rs)
-                       or (first_next.role == "heading" and first_next.level <= 1
-                           and first_next.block is not None and first_next.block in forced)
-                       or geo.pages[pages[idx + 1]].landscape != info.landscape)
-        wasted = 0.0 if intentional else max(0.0, 0.62 - occ)
+        if "cover_page" in kinds and kinds <= {"cover_page", "watermark", None}:
+            role = "cover"
+        elif "table_of_contents" in kinds and kinds <= {"table_of_contents", "page_break", None}:
+            role = "toc"
+        elif is_last:
+            role = "final"
+        elif (first_next is None or first_next.block in forced
+              or any(types.get(r.block) in FORCED_BREAK_AFTER for r in rs)
+              or geo.pages[pages[idx + 1]].landscape != info.landscape):
+            role = "section_end"      # the author's structure ends this page early
+        else:
+            role = "body"
+        wasted = 0.0
+        if role == "body":
+            wasted = max(0.0, 0.62 - fill)
+            util_pages.append(occ)
+            fills.append(fill)
+        elif role == "final" and len(pages) > 1 and fill < 0.15:
+            # a spill page holding only a few lines: partly accidental
+            wasted = 0.15 - fill
+        if role in ("final", "section_end", "body"):
+            content_pages.append(occ)
         wasted_total += wasted
-        page_metrics.append(PageMetric(page=p, occupancy=round(occ, 3), intentional=intentional,
-                                       wasted=round(wasted, 3)))
-        if not intentional:
-            occs.append(occ)
+        page_metrics.append(PageMetric(page=p, occupancy=round(occ, 3), fill=round(fill, 3), role=role,
+                                       intentional=role != "body", wasted=round(wasted, 3)))
         # hard: stranded heading / detached caption at the bottom of a non-final page
         if rs and not is_last:
-            tail = rs[-1]
+            tail = [r for r in rs if r.role != "space"][-1:] or rs[-1:]
+            tail = tail[0]
             cont = [r for r in nxt if r.block == tail.block]
             if tail.role == "heading" and not cont:
                 errors.append(f"heading (block {tail.block}) stranded at bottom of page {p}")
@@ -155,8 +181,12 @@ def score_layout(geo: Geometry, doc, theme, *, typography_errors: Optional[List[
                 errors.append(f"caption of block {tail.block} detached on page {p}")
 
     # ── soft metrics ──
-    utilization = statistics.mean(occs) if occs else 1.0
-    balance = 1.0 - min(1.0, statistics.pstdev(occs) * 2) if len(occs) > 1 else 1.0
+    # Utilization counts body pages; a document without body pages (single page,
+    # or cover + TOC + one page) is judged on its content pages — never a free 1.0.
+    # Density beyond DENSE_CAP earns nothing: cramming is not rewarded.
+    basis = util_pages or content_pages
+    utilization = (statistics.mean(min(o, DENSE_CAP) for o in basis) / DENSE_CAP) if basis else 0.0
+    balance = 1.0 - min(1.0, statistics.pstdev(fills) * 2) if len(fills) > 1 else 1.0
     frame_h = statistics.mean(geo.pages[p].frame_height for p in pages)
     # lower bound on pages: content between forced starts packed perfectly
     segments: Dict[int, float] = {}
@@ -164,7 +194,8 @@ def score_layout(geo: Geometry, doc, theme, *, typography_errors: Optional[List[
     for r in regs:
         if r.block in forced and r.block is not None:
             seg = max(seg, r.block)
-        segments[seg] = segments.get(seg, 0.0) + r.height
+        if r.role != "space":
+            segments[seg] = segments.get(seg, 0.0) + r.height
     lower = sum(max(1, math.ceil(h / frame_h - 0.02)) for h in segments.values())
     efficiency = min(1.0, lower / len(pages))
     portrait = [geo.pages[p].frame_width for p in pages if not geo.pages[p].landscape]

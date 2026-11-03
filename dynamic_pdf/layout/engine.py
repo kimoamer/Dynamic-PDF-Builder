@@ -323,6 +323,8 @@ def _role_for(block):
             f._dpb_level = entry[0]
             return "heading"
         name = type(f).__name__
+        if name in ("Spacer", "CondPageBreak", "HRFlowable"):
+            return "space"            # intentional whitespace / rules: not content density
         if t == "table":
             return "table" if name in ("Table", "LongTable") else (
                 "caption" if name == "Paragraph" else "other")

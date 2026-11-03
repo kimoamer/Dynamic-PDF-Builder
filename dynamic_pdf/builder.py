@@ -169,7 +169,23 @@ class DocumentBuilder:
         sem = normalize(doc)
         profile = self.last_design.decision.profile.value if self.last_design else "general"
         composer = Composer(self._compose_options, self._policy)
-        d, t, pdf, eng = composer.compose(doc, theme, profile, sem.stats)
+        layout = getattr(self.last_design, "layout", None) if self.last_design else None
+        composer.report.design_trial_renders = getattr(layout, "trial_renders", 0) or 0
+        try:
+            d, t, pdf, eng = composer.compose(doc, theme, profile, sem.stats)
+        except Exception as e:
+            from .utils.errors import DynamicPDFError
+            if isinstance(e, DynamicPDFError):
+                raise                   # the document's own error, exactly as without compose()
+            # optimizer bug: never let it break an otherwise valid designed render
+            eng = LayoutEngine(doc, policy=self._policy, theme=theme)
+            buf = io.BytesIO()
+            eng.render(buf)
+            d, t, pdf = doc, theme, buf.getvalue()
+            r = composer.report
+            r.strategy, r.status = "baseline", "fallback"
+            r.fallbacks.append(f"composition failed ({type(e).__name__}: {e}); designed layout rendered")
+            r.page_count = eng.page_count
         result = (d, t, pdf, eng, composer)
         self._composition = (key, result)
         self.last_composition = composer.report
