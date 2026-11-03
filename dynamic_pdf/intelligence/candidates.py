@@ -10,6 +10,9 @@ are never touched; only spacing, measure, grouping and break policy change.
                limits), short list items set in two columns.
 * editorial  — generous measure and rhythm; long top-level sections open on
                a new page.
+* grouped    — the designed theme unchanged; only related blocks are kept
+               together (offered when a figure/table is predicted apart from
+               its lead-in text).
 * data       — wider text block for tables/charts, denser tables, figures
                allowed to shrink, short lists in two columns.
 """
@@ -137,7 +140,7 @@ def apply(name: str, doc, theme, page_w: float, measures: List[BlockMeasure]) ->
 
     def group_intros():
         """Keep a section's short intro with the figure/table it introduces."""
-        n = 0
+        n = tails = 0
         blocks = d.blocks
         for i, b in enumerate(blocks):
             if b.type not in ("image", "chart", "diagram", "mermaid", "table"):
@@ -152,8 +155,15 @@ def apply(name: str, doc, theme, page_w: float, measures: List[BlockMeasure]) ->
                 for k in intro:
                     _hint(blocks[k], keep_with_next=True)
                 n += 1
+            elif i > 0 and blocks[i - 1].type == "paragraph":
+                # a long lead-in paragraph: only its last lines travel with the
+                # table/figure, so the block never opens a page detached from its text
+                _hint(blocks[i - 1], keep_tail_with_next=2)
+                tails += 1
         if n:
             changes.append(f"{n} section intro(s) kept with the figure/table they introduce")
+        if tails:
+            changes.append(f"{tails} lead-in paragraph(s) keep their last lines with the next figure/table")
 
     def compact_charts():
         """Chart-heavy documents: re-draw charts natively at a size that lets a
@@ -215,6 +225,8 @@ def apply(name: str, doc, theme, page_w: float, measures: List[BlockMeasure]) ->
             changes.append(f"{len(long_sections) - 1} long section(s) open on a new page")
         else:
             section_breaks(0.25)
+    elif name == "grouped":
+        pass                    # designed theme untouched: grouping hints only
     elif name == "data":
         sp = t.spacing
         sp.page_margin_left = sp.page_margin_right = max(46.0, min(sp.page_margin_left, 54.0))
@@ -228,9 +240,14 @@ def apply(name: str, doc, theme, page_w: float, measures: List[BlockMeasure]) ->
     return d, t, [c for c in changes if c]
 
 
-def choose(sem_stats, profile: str, est_pages: float, max_candidates: int = 4) -> List[Candidate]:
+def choose(sem_stats, profile: str, est_pages: float, max_candidates: int = 4,
+           separated: int = 0) -> List[Candidate]:
     """Pick candidates from document structure and purpose (deterministic)."""
-    out = [Candidate(name="balanced", reason="baseline-preserving refinement for every document")]
+    out = []
+    if separated:
+        out.append(Candidate(name="grouped", reason=f"{separated} figure(s)/table(s) predicted apart from "
+                                                    "their lead-in text; designed theme kept"))
+    out.append(Candidate(name="balanced", reason="baseline-preserving refinement for every document"))
     data_heavy = (sem_stats.tables >= 2 or sem_stats.table_rows >= 30 or sem_stats.charts >= 2
                   or profile in ("data_report", "financial_report", "invoice"))
     prose_led = (profile in ("proposal", "academic_report", "letter", "executive_report", "general")

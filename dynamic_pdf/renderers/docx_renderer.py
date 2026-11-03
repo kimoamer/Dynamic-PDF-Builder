@@ -348,7 +348,9 @@ class DocxRenderer:
                        color=self.tokens.colors["text_secondary"])
             return
         p = self._para(c, "Body Text", b.text)
-        if (b.hints or {}).get("keep_with_next"):
+        # keep-tail maps to Word's keep-with-next: without "keep lines together"
+        # Word may still break inside the paragraph, carrying its last lines on
+        if (b.hints or {}).get("keep_with_next") or (b.hints or {}).get("keep_tail_with_next"):
             p.paragraph_format.keep_with_next = True
         if is_rtl_text(b.text) or self.rtl_doc:
             p.paragraph_format.first_line_indent = None

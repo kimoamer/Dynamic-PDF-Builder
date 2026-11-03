@@ -187,8 +187,38 @@ class _FlowKeep(KeepTogether):
                 h0 = real[0].wrapOn(self.canv, aW, rest)[1] + real[0].getSpaceBefore()
                 fits_part = h0 <= rest and not isinstance(last, KeepTogether)
         if not fits_part and not at_top:
+            tail = self._split_tail(S, aW, aH)
+            if tail is not None:
+                return tail
             S.insert(0, self.FrameBreak())
         return S
+
+    def _split_tail(self, S, aW, aH):
+        """An intro paragraph marked keep-tail (composer hint) does not drag its
+        whole body to the next page: it is split so that ≥ 2 lines stay here and
+        its last lines move on with the block(s) it introduces."""
+        k = max((i for i, f in enumerate(S[:-1]) if getattr(f, "_dpb_keep_tail", 0)), default=None)
+        if k is None or not hasattr(S[k], "blPara"):
+            return None
+        p = S[k]
+        above = 0.0
+        for f in S[:k]:
+            above += f.wrapOn(self.canv, aW, aH)[1] + f.getSpaceBefore() + f.getSpaceAfter()
+        p.wrapOn(self.canv, aW, aH)
+        leading = p.style.leading
+        n_lines = len(getattr(p.blPara, "lines", []) or [])
+        keep = n_lines - p._dpb_keep_tail
+        h = min(aH - above - p.getSpaceBefore(), keep * leading + 0.01)
+        if keep < 2 or h < 2 * leading:
+            return None
+        parts = p.split(aW, h)
+        if len(parts) != 2:
+            return None
+        for part in parts:              # geometry tags travel with the pieces
+            for a in ("_dpb_block", "_dpb_role", "_dpb_level"):
+                if hasattr(p, a) and not hasattr(part, a):
+                    setattr(part, a, getattr(p, a))
+        return list(S[:k]) + [parts[0], self.__class__([parts[1]] + list(S[k + 1:]))]
 
 
 class _EngineDocTemplate(BaseDocTemplate):

@@ -37,6 +37,7 @@ class BlockMeasure:
     level: int = 0
     landscape: bool = False
     break_before: bool = False
+    tail: float = 0.0        # height of the last lines kept with the next block (keep-tail hint)
 
 
 @dataclass
@@ -128,6 +129,14 @@ def measure_blocks(doc, theme, policy=None, cache=None) -> Tuple[List[BlockMeasu
             total = sum(heights)
             roles = [role_of(f) for f in flows]
             level = next((getattr(f, "_dpb_level", 0) for f in flows if getattr(f, "_toc_entry", None)), 0)
+            tail_h = 0.0
+            last = flows[-1] if flows else None    # (before split probes alter it)
+            if getattr(last, "_dpb_keep_tail", 0) and hasattr(last, "blPara"):
+                n_lines = len(getattr(last.blPara, "lines", []) or [])
+                if n_lines - last._dpb_keep_tail >= 2:
+                    tail_h = last._dpb_keep_tail * last.style.leading + last.getSpaceAfter()
+                else:                       # too short to split: it moves whole
+                    tail_h = heights[-1]
             splittable, piece = (False, total)
             if flows and b.type not in ("heading",):
                 big = flows[-1]
@@ -141,7 +150,7 @@ def measure_blocks(doc, theme, policy=None, cache=None) -> Tuple[List[BlockMeasu
                              next((r for r in roles if r != "space"), "space"))
             out.append(BlockMeasure(i, b.type, main_role, total, piece, splittable,
                                     bool(keep), level, is_land,
-                                    bool((b.hints or {}).get("break_before"))))
+                                    bool((b.hints or {}).get("break_before")), tail_h))
     finally:
         _policy.deactivate(token)
     return out, fg
@@ -165,6 +174,17 @@ def simulate(measures: List[BlockMeasure], fg: FrameGeometry) -> Geometry:
     open_page(page, land)
     used = 0.0
     forced_next = False
+
+    def _tail_moves(mj, j, used, remaining, H):
+        """Mirror of the engine's keep-tail split: the whole intro fits here but the
+        block it introduces (its first acceptable piece) does not."""
+        if not mj.tail or used <= 0 or j + 1 >= n or mj.type in FORCED_BREAK_AFTER:
+            return False
+        nx = measures[j + 1]
+        if nx.landscape != land or nx.break_before:
+            return False
+        need = nx.min_piece if nx.splittable else nx.height
+        return used + remaining + need > H and min(mj.tail, remaining) + need <= H
     i, n = 0, len(measures)
     while i < n:
         m = measures[i]
@@ -203,6 +223,17 @@ def simulate(measures: List[BlockMeasure], fg: FrameGeometry) -> Geometry:
         while remaining > 0:
             H = frame_h()
             room = H - used
+            if remaining <= room + 0.5 and _tail_moves(mj, j, used, remaining, H):
+                # keep-tail intro: its last lines move on with the block it introduces
+                head = remaining - mj.tail
+                if head > 0.5:
+                    geo.regions.append(Region(page, "sim", top_of(used), top_of(used + head), fg.left,
+                                              fg.left + fg.width, mj.index, mj.role, mj.level))
+                page += 1
+                used = 0.0
+                open_page(page, land)
+                remaining = min(remaining, mj.tail)
+                continue
             if remaining <= room + 0.5:
                 geo.regions.append(Region(page, "sim", top_of(used), top_of(used + remaining), fg.left,
                                           fg.left + fg.width, mj.index, mj.role, mj.level))

@@ -741,8 +741,14 @@ def create_flowables(block, theme: Theme, ctx: RenderContext = None) -> list:
         ctx = RenderContext()  # backward-compat fallback
     try:
         out = _create_inner(block, theme, ctx)
-        if out and (getattr(block, "hints", None) or {}).get("keep_with_next"):
+        hints = getattr(block, "hints", None) or {}
+        if out and hints.get("keep_with_next"):
             out[-1].keepWithNext = 1      # composer grouping (e.g. intro + its figure)
+        elif out and hints.get("keep_tail_with_next") and isinstance(out[-1], Paragraph):
+            # only the paragraph's last lines travel with the next block (the
+            # page-break logic in the engine splits the paragraph if needed)
+            out[-1].keepWithNext = 1
+            out[-1]._dpb_keep_tail = int(hints["keep_tail_with_next"])
         return out
     except Exception as e:
         btype = getattr(block, "type", type(block).__name__)
