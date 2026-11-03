@@ -1,0 +1,209 @@
+{
+ "name": "policy_handbook",
+ "variant": "smart",
+ "category": "Long policy handbook",
+ "size": "long",
+ "pages": 20,
+ "pdf_sha256": "b7ab83a6b771b8e7f2c31a20792c11186c276fee61e9b914f7ea0f90f0216a35",
+ "layout_id": "12660beca07c9b24",
+ "timing": {
+  "pdf_cold_s": 2.344,
+  "pdf_cold_cpu_s": 2.326,
+  "docx_cold_s": 0.78,
+  "pdf_warm_s": 2.316,
+  "docx_warm_s": 0.748,
+  "engine_import_s": 0.271
+ },
+ "memory": {
+  "rss_before_mb": 44.5,
+  "rss_peak_mb": 108.1
+ },
+ "renders": 3,
+ "composition": {
+  "strategy": "balanced",
+  "status": "ok",
+  "preflight": "wasted space 0.095; readability 0.953",
+  "candidates_considered": 4,
+  "candidates_rendered": 1,
+  "render_attempts": 2,
+  "repair_renders": 0,
+  "design_trial_renders": 1,
+  "fallbacks": []
+ },
+ "score": {
+  "value": 85.92,
+  "valid": true,
+  "hard_errors": [],
+  "utilization": 0.773,
+  "wasted": 0.122,
+  "readability": 1.0,
+  "cpl": 85.0,
+  "separated_figures": 0.0,
+  "efficiency": 0.8,
+  "placement": 1.0
+ },
+ "page_roles": [
+  [
+   1,
+   "cover",
+   0.096
+  ],
+  [
+   2,
+   "toc",
+   0.947
+  ],
+  [
+   3,
+   "toc",
+   0.976
+  ],
+  [
+   4,
+   "toc",
+   0.144
+  ],
+  [
+   5,
+   "body",
+   0.766
+  ],
+  [
+   6,
+   "body",
+   0.773
+  ],
+  [
+   7,
+   "body",
+   0.73
+  ],
+  [
+   8,
+   "body",
+   0.794
+  ],
+  [
+   9,
+   "body",
+   0.498
+  ],
+  [
+   10,
+   "body",
+   0.794
+  ],
+  [
+   11,
+   "body",
+   0.812
+  ],
+  [
+   12,
+   "body",
+   0.746
+  ],
+  [
+   13,
+   "body",
+   0.746
+  ],
+  [
+   14,
+   "body",
+   0.746
+  ],
+  [
+   15,
+   "body",
+   0.722
+  ],
+  [
+   16,
+   "body",
+   0.722
+  ],
+  [
+   17,
+   "body",
+   0.722
+  ],
+  [
+   18,
+   "body",
+   0.896
+  ],
+  [
+   19,
+   "body",
+   0.639
+  ],
+  [
+   20,
+   "final",
+   0.741
+  ]
+ ],
+ "layout": {
+  "underfilled_body_pages": [
+   9
+  ],
+  "geometry_duplicates": [],
+  "oversize_figures": [],
+  "figures_after_gap": [],
+  "rtl_right_aligned_share": null
+ },
+ "rtl": {
+  "arabic_paragraphs_checked": 0,
+  "line_order_defects": [],
+  "symbol_font_text_spans": 0,
+  "harakat_source": 0,
+  "harakat_pdf": 0,
+  "harakat_docx": 0
+ },
+ "pdf_qa": {
+  "status": "pass",
+  "errors": [],
+  "warnings": []
+ },
+ "docx_qa": {
+  "status": "pass",
+  "pages": 18,
+  "unverified": [],
+  "errors": [],
+  "warnings": []
+ },
+ "content": {
+  "source_words": 454,
+  "pdf_missing_words": [],
+  "docx_missing_words": [],
+  "pdf_sequence": {
+   "checked": 63,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  },
+  "docx_sequence": {
+   "checked": 63,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  }
+ },
+ "docx_editability": {
+  "word_tables": 27,
+  "source_tables": 16,
+  "source_tables_editable": 16,
+  "heading_styles": 53,
+  "source_headings": 53,
+  "images": 0,
+  "figure_blocks": 0,
+  "text_chars": 24706
+ },
+ "diagnostics": [],
+ "network_attempts": [],
+ "sheets": {
+  "pdf": "img/policy_handbook-smart-pdf.jpg",
+  "docx": "img/policy_handbook-smart-docx.jpg"
+ }
+}

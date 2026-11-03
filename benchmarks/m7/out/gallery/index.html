@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Layout Review Gallery</title>
+<style>
+:root { --bg:#f6f7f9; --card:#fff; --ink:#1d232b; --muted:#5d6774; --line:#d9dee5; --accent:#2f5bd3; --ok:#1f7a4d; --bad:#b3261e; }
+@media (prefers-color-scheme: dark) { :root { --bg:#14171c; --card:#1d2128; --ink:#e7eaee; --muted:#a3acb8; --line:#333a44; --accent:#7ea2ff; --ok:#5bc58d; --bad:#ff8a80; } }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+header { position:sticky; top:0; z-index:2; background:var(--card); border-bottom:1px solid var(--line); padding:12px 16px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+header h1 { font-size:17px; margin:0 12px 0 0; }
+header input[type=text] { padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--ink); }
+button { padding:6px 12px; border-radius:6px; border:1px solid var(--line); background:var(--bg); color:var(--ink); cursor:pointer; }
+button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+main { max-width:1500px; margin:0 auto; padding:16px; }
+.intro { color:var(--muted); max-width:900px; }
+section.doc { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; margin:18px 0; }
+section.doc h2 { margin:0; font-size:18px; }
+.meta { color:var(--muted); font-size:13px; }
+.pair { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:12px; }
+@media (max-width: 800px) { .pair { grid-template-columns:1fr; } }
+figure { margin:0; }
+figure img { width:100%; height:auto; border:1px solid var(--line); border-radius:6px; background:#fff; }
+figcaption { font-weight:600; margin-bottom:4px; }
+.fmt { margin-top:14px; font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+.review { margin-top:14px; padding:12px; border:1px dashed var(--line); border-radius:8px; display:grid; gap:8px; }
+.review .choices label { margin-right:16px; }
+.review .tags label { display:inline-block; margin:0 12px 4px 0; font-size:13px; }
+textarea { width:100%; min-height:48px; border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--ink); padding:6px; }
+details { margin-top:10px; }
+table { border-collapse:collapse; font-size:13px; margin-top:6px; }
+td, th { border:1px solid var(--line); padding:3px 8px; text-align:left; }
+.done { color:var(--ok); font-weight:600; }
+.missing { color:var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Layout Review Gallery</h1>
+  <label>Reviewer <input id="reviewer" type="text" placeholder="name or initials"></label>
+  <span id="progress"></span>
+  <button class="primary" id="export">Export judgments (JSON)</button>
+  <label><button id="importBtn" type="button">Import JSON</button><input id="import" type="file" accept="application/json" hidden></label>
+  <button id="clear">Clear my judgments</button>
+</header>
+<main>
+<p class="intro">Each document was rendered twice from identical input. The two versions are shown blind as
+<b>A</b> and <b>B</b> (the assignment is fixed per document and stored in the export); documents whose
+two layouts are identical are marked and need no judgment. Compare the full-page
+contact sheets for the PDF and for the DOCX (rendered independently by LibreOffice), then choose A, B or Tie and
+optionally tick reasons. Judgments stay in this browser until you export them. Automated metrics are hidden
+under “Automated metrics” — open them only after judging. No rating is pre-filled.</p>
+<div id="docs"></div>
+</main>
+<script>
+const DATA = {"docs": [{"name": "academic_paper", "category": "Academic paper with citations", "size": "medium", "A": "smart", "B": "baseline", "sheets": {"baseline": {"pdf": "img/academic_paper-baseline-pdf.jpg", "docx": "img/academic_paper-baseline-docx.jpg"}, "smart": {"pdf": "img/academic_paper-smart-pdf.jpg", "docx": "img/academic_paper-smart-docx.jpg"}}, "pages": {"baseline": 3, "smart": 3}, "docx_pages": {"baseline": 4, "smart": 4}, "layout_id": {"baseline": "efa30f78e5204e17", "smart": "efa30f78e5204e17"}, "facts": {"baseline": {"pages": 3, "underfilled_pages": 0, "separated_figures": 0, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 0, "docx_qa_errors": 0, "missing_words": 1, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 0, "symbol_font_spans": 0, "cpl_over_90": 0.0}, "smart": {"pages": 3, "underfilled_pages": 0, "separated_figures": 0, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 0, "docx_qa_errors": 0, "missing_words": 1, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 0, "symbol_font_spans": 0, "cpl_over_90": 0.0}}, "score": {"baseline": 89.73, "smart": 89.73}, "qa": {"baseline": ["pass", "pass"], "smart": ["pass", "pass"]}, "strategy": "baseline", "verdict": "unchanged (designed layout kept)", "notes": [], "findings": {"baseline": [], "smart": []}}, {"name": "ar_annual_report", "category": "Arabic corporate report", "size": "long", "A": "baseline", "B": "smart", "sheets": {"baseline": {"pdf": "img/ar_annual_report-baseline-pdf.jpg", "docx": "img/ar_annual_report-baseline-docx.jpg"}, "smart": {"pdf": "img/ar_annual_report-smart-pdf.jpg", "docx": "img/ar_annual_report-smart-docx.jpg"}}, "pages": {"baseline": 20, "smart": 20}, "docx_pages": {"baseline": 20, "smart": 20}, "layout_id": {"baseline": "a3cb95565086a1be", "smart": "a3cb95565086a1be"}, "facts": {"baseline": {"pages": 20, "underfilled_pages": 1, "separated_figures": 12, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 2, "docx_qa_errors": 0, "missing_words": 0, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 42, "symbol_font_spans": 0, "cpl_over_90": 24.1}, "smart": {"pages": 20, "underfilled_pages": 1, "separated_figures": 12, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 2, "docx_qa_errors": 0, "missing_words": 0, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 42, "symbol_font_spans": 0, "cpl_over_90": 24.1}}, "score": {"baseline": 73.76, "smart": 73.76}, "qa": {"baseline": ["fail", "pass"], "smart": ["fail", "pass"]}, "strategy": "baseline", "verdict": "unchanged (designed layout kept)", "notes": [], "findings": {"baseline": ["overflow: text overflows into the margin by 0pt: '١٫٢ ﻣﻠﻴﻮﻥ'", "overflow: text overflows into the margin by 0pt: '+٥٪'"], "smart": ["overflow: text overflows into the margin by 0pt: '١٫٢ ﻣﻠﻴﻮﻥ'", "overflow: text overflows into the margin by 0pt: '+٥٪'"]}}, {"name": "ar_financial_statements", "category": "Arabic financial statements", "size": "medium", "A": "baseline", "B": "smart", "sheets": {"baseline": {"pdf": "img/ar_financial_statements-baseline-pdf.jpg", "docx": "img/ar_financial_statements-baseline-docx.jpg"}, "smart": {"pdf": "img/ar_financial_statements-smart-pdf.jpg", "docx": "img/ar_financial_statements-smart-docx.jpg"}}, "pages": {"baseline": 2, "smart": 2}, "docx_pages": {"baseline": 2, "smart": 2}, "layout_id": {"baseline": "1ca72a2c2a6ce713", "smart": "6d7f4693eae22022"}, "facts": {"baseline": {"pages": 2, "underfilled_pages": 0, "separated_figures": 0, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 0, "docx_qa_errors": 1, "missing_words": 0, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 0, "symbol_font_spans": 0, "cpl_over_90": 24.1}, "smart": {"pages": 2, "underfilled_pages": 0, "separated_figures": 0, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 0, "docx_qa_errors": 0, "missing_words": 0, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 1, "symbol_font_spans": 0, "cpl_over_90": 2.0}}, "score": {"baseline": 92.32, "smart": 96.37}, "qa": {"baseline": ["pass", "fail"], "smart": ["pass", "pass"]}, "strategy": "compact", "verdict": "mixed", "notes": ["docx_qa_errors 1→0", "cpl_over_90 24.1→2.0", "rtl_line_order_defects 0→1"], "findings": {"baseline": ["overflow: text overflows into the margin by 2pt: '1  القوائم المالية األولية الموجزة للفتر'"], "smart": []}}, {"name": "ar_memo", "category": "Arabic internal memo", "size": "small", "A": "baseline", "B": "smart", "sheets": {"baseline": {"pdf": "img/ar_memo-baseline-pdf.jpg", "docx": "img/ar_memo-baseline-docx.jpg"}, "smart": {"pdf": "img/ar_memo-smart-pdf.jpg", "docx": "img/ar_memo-smart-docx.jpg"}}, "pages": {"baseline": 1, "smart": 1}, "docx_pages": {"baseline": 1, "smart": 1}, "layout_id": {"baseline": "402424acb161ee77", "smart": "402424acb161ee77"}, "facts": {"baseline": {"pages": 1, "underfilled_pages": 0, "separated_figures": 0, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 0, "docx_qa_errors": 0, "missing_words": 0, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 1, "symbol_font_spans": 0, "cpl_over_90": 7.3}, "smart": {"pages": 1, "underfilled_pages": 0, "separated_figures": 0, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 0, "docx_qa_errors": 0, "missing_words": 0, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 0, "symbol_font_spans": 0, "cpl_over_90": 0.0}}, "score": {"baseline": 83.6, "smart": 84.97}, "qa": {"baseline": ["pass", "pass"], "smart": ["pass", "pass"]}, "strategy": "balanced", "verdict": "improved", "notes": ["rtl_line_order_defects 1→0", "cpl_over_90 7.3→0.0"], "findings": {"baseline": [], "smart": []}}, {"name": "bilingual_board_report", "category": "Bilingual executive report", "size": "medium", "A": "smart", "B": "baseline", "sheets": {"baseline": {"pdf": "img/bilingual_board_report-baseline-pdf.jpg", "docx": "img/bilingual_board_report-baseline-docx.jpg"}, "smart": {"pdf": "img/bilingual_board_report-smart-pdf.jpg", "docx": "img/bilingual_board_report-smart-docx.jpg"}}, "pages": {"baseline": 3, "smart": 3}, "docx_pages": {"baseline": 3, "smart": 3}, "layout_id": {"baseline": "f9b0b26ccbbe9aed", "smart": "f9b0b26ccbbe9aed"}, "facts": {"baseline": {"pages": 3, "underfilled_pages": 0, "separated_figures": 0, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 2, "docx_qa_errors": 0, "missing_words": 9, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 3, "symbol_font_spans": 9, "cpl_over_90": 1.1}, "smart": {"pages": 3, "underfilled_pages": 0, "separated_figures": 0, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 2, "docx_qa_errors": 0, "missing_words": 9, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 3, "symbol_font_spans": 9, "cpl_over_90": 1.1}}, "score": {"baseline": 98.24, "smart": 98.24}, "qa": {"baseline": ["fail", "pass"], "smart": ["fail", "pass"]}, "strategy": "baseline", "verdict": "unchanged (designed layout kept)", "notes": [], "findings": {"baseline": ["overflow: text overflows into the margin by 66pt: '1  Performance Overview | IIII IIII III '", "overflow: text overflows into the margin by 40pt: '3  Safety and People | IIIIIII IIIIIIIII'"], "smart": ["overflow: text overflows into the margin by 66pt: '1  Performance Overview | IIII IIII III '", "overflow: text overflows into the margin by 40pt: '3  Safety and People | IIIIIII IIIIIIIII'"]}}, {"name": "business_memo", "category": "Business memo", "size": "small", "A": "baseline", "B": "smart", "sheets": {"baseline": {"pdf": "img/business_memo-baseline-pdf.jpg", "docx": "img/business_memo-baseline-docx.jpg"}, "smart": {"pdf": "img/business_memo-smart-pdf.jpg", "docx": "img/business_memo-smart-docx.jpg"}}, "pages": {"baseline": 1, "smart": 1}, "docx_pages": {"baseline": 1, "smart": 1}, "layout_id": {"baseline": "aedcc1ad07d1cec9", "smart": "aedcc1ad07d1cec9"}, "facts": {"baseline": {"pages": 1, "underfilled_pages": 0, "separated_figures": 0, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 0, "docx_qa_errors": 0, "missing_words": 0, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 0, "symbol_font_spans": 0, "cpl_over_90": 0.0}, "smart": {"pages": 1, "underfilled_pages": 0, "separated_figures": 0, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 0, "docx_qa_errors": 0, "missing_words": 0, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 0, "symbol_font_spans": 0, "cpl_over_90": 0.0}}, "score": {"baseline": 83.02, "smart": 83.02}, "qa": {"baseline": ["pass", "pass"], "smart": ["pass", "pass"]}, "strategy": "baseline", "verdict": "unchanged (designed layout kept)", "notes": [], "findings": {"baseline": [], "smart": []}}, {"name": "chart_analytics_report", "category": "Chart-heavy analytical report", "size": "medium", "A": "smart", "B": "baseline", "sheets": {"baseline": {"pdf": "img/chart_analytics_report-baseline-pdf.jpg", "docx": "img/chart_analytics_report-baseline-docx.jpg"}, "smart": {"pdf": "img/chart_analytics_report-smart-pdf.jpg", "docx": "img/chart_analytics_report-smart-docx.jpg"}}, "pages": {"baseline": 7, "smart": 7}, "docx_pages": {"baseline": 7, "smart": 7}, "layout_id": {"baseline": "2bfbdca33187e4d0", "smart": "2bfbdca33187e4d0"}, "facts": {"baseline": {"pages": 7, "underfilled_pages": 0, "separated_figures": 1, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 0, "docx_qa_errors": 0, "missing_words": 0, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 0, "symbol_font_spans": 0, "cpl_over_90": 1.1}, "smart": {"pages": 7, "underfilled_pages": 0, "separated_figures": 1, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 0, "docx_qa_errors": 0, "missing_words": 0, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 0, "symbol_font_spans": 0, "cpl_over_90": 1.1}}, "score": {"baseline": 96.96, "smart": 96.96}, "qa": {"baseline": ["pass", "pass"], "smart": ["pass", "pass"]}, "strategy": "baseline", "verdict": "unchanged (designed layout kept)", "notes": [], "findings": {"baseline": [], "smart": []}}, {"name": "en_executive_report", "category": "English executive report", "size": "medium", "A": "baseline", "B": "smart", "sheets": {"baseline": {"pdf": "img/en_executive_report-baseline-pdf.jpg", "docx": "img/en_executive_report-baseline-docx.jpg"}, "smart": {"pdf": "img/en_executive_report-smart-pdf.jpg", "docx": "img/en_executive_report-smart-docx.jpg"}}, "pages": {"baseline": 2, "smart": 2}, "docx_pages": {"baseline": 2, "smart": 2}, "layout_id": {"baseline": "875666f93bbe21e0", "smart": "875666f93bbe21e0"}, "facts": {"baseline": {"pages": 2, "underfilled_pages": 0, "separated_figures": 1, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 0, "docx_qa_errors": 0, "missing_words": 0, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 0, "symbol_font_spans": 0, "cpl_over_90": 16.8}, "smart": {"pages": 2, "underfilled_pages": 0, "separated_figures": 1, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 0, "docx_qa_errors": 0, "missing_words": 0, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 0, "symbol_font_spans": 0, "cpl_over_90": 16.8}}, "score": {"baseline": 88.85, "smart": 88.85}, "qa": {"baseline": ["pass", "pass"], "smart": ["pass", "pass"]}, "strategy": "baseline", "verdict": "unchanged (designed layout kept)", "notes": [], "findings": {"baseline": [], "smart": []}}, {"name": "financial_statements", "category": "Financial statements (complex tables)", "size": "medium", "A": "baseline", "B": "smart", "sheets": {"baseline": {"pdf": "img/financial_statements-baseline-pdf.jpg", "docx": "img/financial_statements-baseline-docx.jpg"}, "smart": {"pdf": "img/financial_statements-smart-pdf.jpg", "docx": "img/financial_statements-smart-docx.jpg"}}, "pages": {"baseline": 5, "smart": 5}, "docx_pages": {"baseline": 5, "smart": 5}, "layout_id": {"baseline": "a3745a832f156e25", "smart": "a3745a832f156e25"}, "facts": {"baseline": {"pages": 5, "underfilled_pages": 0, "separated_figures": 0, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 0, "docx_qa_errors": 0, "missing_words": 0, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 0, "symbol_font_spans": 0, "cpl_over_90": 9.0}, "smart": {"pages": 5, "underfilled_pages": 0, "separated_figures": 0, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 0, "docx_qa_errors": 0, "missing_words": 0, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 0, "symbol_font_spans": 0, "cpl_over_90": 9.0}}, "score": {"baseline": 97.76, "smart": 97.76}, "qa": {"baseline": ["pass", "pass"], "smart": ["pass", "pass"]}, "strategy": "baseline", "verdict": "unchanged (designed layout kept)", "notes": [], "findings": {"baseline": [], "smart": []}}, {"name": "invoice", "category": "Invoice", "size": "small", "A": "baseline", "B": "smart", "sheets": {"baseline": {"pdf": "img/invoice-baseline-pdf.jpg", "docx": "img/invoice-baseline-docx.jpg"}, "smart": {"pdf": "img/invoice-smart-pdf.jpg", "docx": "img/invoice-smart-docx.jpg"}}, "pages": {"baseline": 1, "smart": 1}, "docx_pages": {"baseline": 1, "smart": 1}, "layout_id": {"baseline": "e4ee9e359230b4bc", "smart": "e4ee9e359230b4bc"}, "facts": {"baseline": {"pages": 1, "underfilled_pages": 0, "separated_figures": 0, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 0, "docx_qa_errors": 0, "missing_words": 0, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 0, "symbol_font_spans": 0, "cpl_over_90": 5.6}, "smart": {"pages": 1, "underfilled_pages": 0, "separated_figures": 0, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 0, "docx_qa_errors": 0, "missing_words": 0, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 0, "symbol_font_spans": 0, "cpl_over_90": 5.6}}, "score": {"baseline": 87.95, "smart": 87.95}, "qa": {"baseline": ["pass", "pass"], "smart": ["pass", "pass"]}, "strategy": "baseline", "verdict": "unchanged (designed layout kept)", "notes": [], "findings": {"baseline": [], "smart": []}}, {"name": "letter", "category": "Formal letter", "size": "small", "A": "smart", "B": "baseline", "sheets": {"baseline": {"pdf": "img/letter-baseline-pdf.jpg", "docx": "img/letter-baseline-docx.jpg"}, "smart": {"pdf": "img/letter-smart-pdf.jpg", "docx": "img/letter-smart-docx.jpg"}}, "pages": {"baseline": 1, "smart": 1}, "docx_pages": {"baseline": 1, "smart": 1}, "layout_id": {"baseline": "2284aaaf69d19792", "smart": "2284aaaf69d19792"}, "facts": {"baseline": {"pages": 1, "underfilled_pages": 0, "separated_figures": 0, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 0, "docx_qa_errors": 0, "missing_words": 0, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 0, "symbol_font_spans": 0, "cpl_over_90": 0.0}, "smart": {"pages": 1, "underfilled_pages": 0, "separated_figures": 0, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 0, "docx_qa_errors": 0, "missing_words": 0, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 0, "symbol_font_spans": 0, "cpl_over_90": 0.0}}, "score": {"baseline": 85.28, "smart": 85.28}, "qa": {"baseline": ["pass", "pass"], "smart": ["pass", "pass"]}, "strategy": "baseline", "verdict": "unchanged (designed layout kept)", "notes": [], "findings": {"baseline": [], "smart": []}}, {"name": "policy_handbook", "category": "Long policy handbook", "size": "long", "A": "smart", "B": "baseline", "sheets": {"baseline": {"pdf": "img/policy_handbook-baseline-pdf.jpg", "docx": "img/policy_handbook-baseline-docx.jpg"}, "smart": {"pdf": "img/policy_handbook-smart-pdf.jpg", "docx": "img/policy_handbook-smart-docx.jpg"}}, "pages": {"baseline": 20, "smart": 20}, "docx_pages": {"baseline": 17, "smart": 18}, "layout_id": {"baseline": "ccefa5109c6022ea", "smart": "12660beca07c9b24"}, "facts": {"baseline": {"pages": 20, "underfilled_pages": 1, "separated_figures": 0, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 0, "docx_qa_errors": 0, "missing_words": 0, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 0, "symbol_font_spans": 0, "cpl_over_90": 5.6}, "smart": {"pages": 20, "underfilled_pages": 1, "separated_figures": 0, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 0, "docx_qa_errors": 0, "missing_words": 0, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 0, "symbol_font_spans": 0, "cpl_over_90": 0.0}}, "score": {"baseline": 81.07, "smart": 85.92}, "qa": {"baseline": ["pass", "pass"], "smart": ["pass", "pass"]}, "strategy": "balanced", "verdict": "improved", "notes": ["cpl_over_90 5.6→0.0"], "findings": {"baseline": [], "smart": []}}, {"name": "proposal", "category": "Business proposal", "size": "medium", "A": "smart", "B": "baseline", "sheets": {"baseline": {"pdf": "img/proposal-baseline-pdf.jpg", "docx": "img/proposal-baseline-docx.jpg"}, "smart": {"pdf": "img/proposal-smart-pdf.jpg", "docx": "img/proposal-smart-docx.jpg"}}, "pages": {"baseline": 3, "smart": 3}, "docx_pages": {"baseline": 3, "smart": 3}, "layout_id": {"baseline": "6dc12fbf01bfec36", "smart": "6dc12fbf01bfec36"}, "facts": {"baseline": {"pages": 3, "underfilled_pages": 0, "separated_figures": 0, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 0, "docx_qa_errors": 0, "missing_words": 0, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 0, "symbol_font_spans": 0, "cpl_over_90": 1.1}, "smart": {"pages": 3, "underfilled_pages": 0, "separated_figures": 0, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 0, "docx_qa_errors": 0, "missing_words": 0, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 0, "symbol_font_spans": 0, "cpl_over_90": 1.1}}, "score": {"baseline": 99.82, "smart": 99.82}, "qa": {"baseline": ["pass", "pass"], "smart": ["pass", "pass"]}, "strategy": "baseline", "verdict": "unchanged (designed layout kept)", "notes": [], "findings": {"baseline": [], "smart": []}}, {"name": "technical_manual", "category": "Technical manual (code, diagram)", "size": "medium", "A": "smart", "B": "baseline", "sheets": {"baseline": {"pdf": "img/technical_manual-baseline-pdf.jpg", "docx": "img/technical_manual-baseline-docx.jpg"}, "smart": {"pdf": "img/technical_manual-smart-pdf.jpg", "docx": "img/technical_manual-smart-docx.jpg"}}, "pages": {"baseline": 5, "smart": 5}, "docx_pages": {"baseline": 5, "smart": 5}, "layout_id": {"baseline": "cd60f39418cab6b4", "smart": "8ca573f7f03febeb"}, "facts": {"baseline": {"pages": 5, "underfilled_pages": 0, "separated_figures": 0, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 0, "docx_qa_errors": 0, "missing_words": 0, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 0, "symbol_font_spans": 0, "cpl_over_90": 5.6}, "smart": {"pages": 5, "underfilled_pages": 0, "separated_figures": 0, "figures_after_gap": 0, "oversize_figures": 0, "hard_errors": 0, "pdf_qa_errors": 0, "docx_qa_errors": 1, "missing_words": 1, "sequence_defects": 0, "geometry_duplicates": 0, "rtl_line_order_defects": 0, "symbol_font_spans": 0, "cpl_over_90": 0.0}}, "score": {"baseline": 85.27, "smart": 89.03}, "qa": {"baseline": ["pass", "pass"], "smart": ["pass", "fail"]}, "strategy": "balanced", "verdict": "mixed", "notes": ["cpl_over_90 5.6→0.0", "docx_qa_errors 0→1", "missing_words 0→1"], "findings": {"baseline": [], "smart": ["overflow: text overflows into the margin by 1pt: 'Retry only idempotent requests, and alwa'"]}}], "reasons": ["whitespace", "page breaks", "table grouping", "figure placement", "hierarchy", "RTL / Arabic", "readability", "density", "DOCX fidelity", "other"]};
+const KEY = "m7-layout-review-v1";
+let state = {};
+try { state = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { state = {}; }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} progress(); };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function sheet(doc, side, fmt) {
+  const v = doc[side], src = (doc.sheets[v] || {})[fmt];
+  const pages = fmt === "pdf" ? doc.pages[v] : doc.docx_pages[v];
+  return `<figure><figcaption>${side} — ${pages ?? "?"} page(s)</figcaption>` +
+    (src ? `<a href="${src}" target="_blank"><img loading="lazy" src="${src}" alt="${side} ${fmt} pages of ${esc(doc.name)}"></a>`
+         : `<p class="missing">not available (LibreOffice missing)</p>`) + `</figure>`;
+}
+
+function metrics(doc) {
+  const keys = Object.keys(doc.facts.baseline);
+  const row = k => `<tr><td>${k}</td><td>${doc.facts.baseline[k]}</td><td>${doc.facts.smart[k]}</td></tr>`;
+  const f = v => (doc.findings[v].length ? doc.findings[v].map(esc).join("<br>") : "none");
+  return `<details><summary>Automated metrics (open after judging)</summary>
+    <p>A = <b>${doc.A}</b>, B = <b>${doc.B}</b>. Smart strategy: <b>${esc(doc.strategy)}</b>. Automated verdict:
+    <b>${esc(doc.verdict)}</b>${doc.notes.length ? " (" + doc.notes.map(esc).join("; ") + ")" : ""}.</p>
+    <table><tr><th>fact (lower is better)</th><th>baseline</th><th>smart</th></tr>${keys.map(row).join("")}
+    <tr><td>internal score (reference only)</td><td>${doc.score.baseline}</td><td>${doc.score.smart}</td></tr>
+    <tr><td>QA PDF / DOCX</td><td>${doc.qa.baseline.join(" / ")}</td><td>${doc.qa.smart.join(" / ")}</td></tr></table>
+    <p>Findings — baseline: ${f("baseline")}<br>Findings — smart: ${f("smart")}</p></details>`;
+}
+
+const same = d => d.layout_id.baseline === d.layout_id.smart;
+
+function render() {
+  const root = document.getElementById("docs");
+  root.innerHTML = DATA.docs.map((d, i) => {
+    const s = state[d.name] || {};
+    const radio = c => `<label><input type="radio" name="c-${i}" value="${c}" ${s.choice === c ? "checked" : ""}> ${c === "tie" ? "Tie" : c}</label>`;
+    const tag = t => `<label><input type="checkbox" data-tag="${esc(t)}" ${(s.reasons || []).includes(t) ? "checked" : ""}> ${esc(t)}</label>`;
+    return `<section class="doc" data-i="${i}">
+      <h2>${esc(d.name)}</h2><div class="meta">${esc(d.category)} · ${d.size}</div>
+      <div class="fmt">PDF</div><div class="pair">${sheet(d, "A", "pdf")}${sheet(d, "B", "pdf")}</div>
+      <div class="fmt">DOCX rendered by LibreOffice</div><div class="pair">${sheet(d, "A", "docx")}${sheet(d, "B", "docx")}</div>
+      ${same(d) ? `<div class="review"><b>A and B are the same layout</b> (smart composition kept the designed layout); no judgment needed.</div>` :
+      `<div class="review"><div class="choices"><b>Preferred:</b> ${radio("A")}${radio("B")}${radio("tie")}</div>
+      <div class="tags">${DATA.reasons.map(tag).join("")}</div>
+      <textarea placeholder="Optional reason">${esc(s.note || "")}</textarea></div>`}
+      ${metrics(d)}</section>`;
+  }).join("");
+  root.querySelectorAll("section.doc").forEach(sec => {
+    const d = DATA.docs[+sec.dataset.i];
+    const upd = () => {
+      const c = sec.querySelector("input[type=radio]:checked");
+      const tags = [...sec.querySelectorAll("input[data-tag]:checked")].map(x => x.dataset.tag);
+      const note = sec.querySelector("textarea").value;
+      if (!c && !tags.length && !note) { delete state[d.name]; } else {
+        state[d.name] = { choice: c ? c.value : null, reasons: tags, note, at: new Date().toISOString() };
+      }
+      save();
+    };
+    if (same(d)) return;
+    sec.addEventListener("change", upd);
+    sec.querySelector("textarea").addEventListener("input", upd);
+  });
+  progress();
+}
+
+function progress() {
+  const todo = DATA.docs.filter(d => !same(d));
+  const n = todo.filter(d => state[d.name] && state[d.name].choice).length;
+  document.getElementById("progress").innerHTML = `<span class="${n === todo.length ? "done" : ""}">${n} / ${todo.length} judged</span>`;
+}
+
+document.getElementById("export").onclick = () => {
+  const judgments = DATA.docs.filter(d => !same(d) && state[d.name] && state[d.name].choice).map(d => {
+    const s = state[d.name];
+    return { document: d.name, shown_as: { A: d.A, B: d.B }, choice: s.choice,
+             preferred_variant: s.choice === "tie" ? "tie" : d[s.choice], reasons: s.reasons, note: s.note,
+             layout_id: d.layout_id, judged_at: s.at };
+  });
+  const out = { format: "dynamic-pdf-builder/m7-human-preferences", version: 1,
+                reviewer: document.getElementById("reviewer").value.trim(), exported_at: new Date().toISOString(),
+                judgments };
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(out, null, 1)], { type: "application/json" }));
+  a.download = `human_preferences_${(out.reviewer || "anonymous").replace(/\W+/g, "_")}.json`;
+  a.click();
+};
+document.getElementById("importBtn").onclick = () => document.getElementById("import").click();
+document.getElementById("import").onchange = async ev => {
+  const f = ev.target.files[0]; if (!f) return;
+  const j = JSON.parse(await f.text());
+  for (const x of j.judgments || []) state[x.document] = { choice: x.choice, reasons: x.reasons || [], note: x.note || "", at: x.judged_at };
+  if (j.reviewer) document.getElementById("reviewer").value = j.reviewer;
+  save(); render();
+};
+document.getElementById("clear").onclick = () => { if (confirm("Remove all judgments stored in this browser?")) { state = {}; save(); render(); } };
+try { document.getElementById("reviewer").value = localStorage.getItem(KEY + "-reviewer") || ""; } catch (e) {}
+document.getElementById("reviewer").oninput = e => { try { localStorage.setItem(KEY + "-reviewer", e.target.value); } catch (x) {} };
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+{
+ "name": "policy_handbook",
+ "variant": "baseline",
+ "category": "Long policy handbook",
+ "size": "long",
+ "pages": 20,
+ "pdf_sha256": "89488bb85a875d2f7e35320378ec1f59df2a66b0cae0803e8a8254f73397da39",
+ "layout_id": "ccefa5109c6022ea",
+ "timing": {
+  "pdf_cold_s": 0.97,
+  "pdf_cold_cpu_s": 0.965,
+  "docx_cold_s": 0.747,
+  "pdf_warm_s": 0.855,
+  "docx_warm_s": 0.691,
+  "engine_import_s": 0.273
+ },
+ "memory": {
+  "rss_before_mb": 44.3,
+  "rss_peak_mb": 72.0
+ },
+ "renders": 2,
+ "composition": null,
+ "score": {
+  "value": 81.07,
+  "valid": true,
+  "hard_errors": [],
+  "utilization": 0.744,
+  "wasted": 0.238,
+  "readability": 0.953,
+  "cpl": 95.6,
+  "separated_figures": 0.0,
+  "efficiency": 0.8,
+  "placement": 1.0
+ },
+ "page_roles": [
+  [
+   1,
+   "cover",
+   0.096
+  ],
+  [
+   2,
+   "toc",
+   0.947
+  ],
+  [
+   3,
+   "toc",
+   0.976
+  ],
+  [
+   4,
+   "toc",
+   0.144
+  ],
+  [
+   5,
+   "body",
+   0.717
+  ],
+  [
+   6,
+   "body",
+   0.733
+  ],
+  [
+   7,
+   "body",
+   0.726
+  ],
+  [
+   8,
+   "body",
+   0.782
+  ],
+  [
+   9,
+   "body",
+   0.388
+  ],
+  [
+   10,
+   "body",
+   0.782
+  ],
+  [
+   11,
+   "body",
+   0.817
+  ],
+  [
+   12,
+   "body",
+   0.746
+  ],
+  [
+   13,
+   "body",
+   0.746
+  ],
+  [
+   14,
+   "body",
+   0.746
+  ],
+  [
+   15,
+   "body",
+   0.697
+  ],
+  [
+   16,
+   "body",
+   0.766
+  ],
+  [
+   17,
+   "body",
+   0.746
+  ],
+  [
+   18,
+   "body",
+   0.807
+  ],
+  [
+   19,
+   "body",
+   0.615
+  ],
+  [
+   20,
+   "final",
+   0.602
+  ]
+ ],
+ "layout": {
+  "underfilled_body_pages": [
+   9
+  ],
+  "geometry_duplicates": [],
+  "oversize_figures": [],
+  "figures_after_gap": [],
+  "rtl_right_aligned_share": null
+ },
+ "rtl": {
+  "arabic_paragraphs_checked": 0,
+  "line_order_defects": [],
+  "symbol_font_text_spans": 0,
+  "harakat_source": 0,
+  "harakat_pdf": 0,
+  "harakat_docx": 0
+ },
+ "pdf_qa": {
+  "status": "pass",
+  "errors": [],
+  "warnings": []
+ },
+ "docx_qa": {
+  "status": "pass",
+  "pages": 17,
+  "unverified": [],
+  "errors": [],
+  "warnings": []
+ },
+ "content": {
+  "source_words": 454,
+  "pdf_missing_words": [],
+  "docx_missing_words": [],
+  "pdf_sequence": {
+   "checked": 63,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  },
+  "docx_sequence": {
+   "checked": 63,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  }
+ },
+ "docx_editability": {
+  "word_tables": 27,
+  "source_tables": 16,
+  "source_tables_editable": 16,
+  "heading_styles": 53,
+  "source_headings": 53,
+  "images": 0,
+  "figure_blocks": 0,
+  "text_chars": 24706
+ },
+ "diagnostics": [],
+ "network_attempts": [],
+ "sheets": {
+  "pdf": "img/policy_handbook-baseline-pdf.jpg",
+  "docx": "img/policy_handbook-baseline-docx.jpg"
+ }
+}

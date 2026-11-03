@@ -1,0 +1,112 @@
+{
+ "name": "proposal",
+ "variant": "baseline",
+ "category": "Business proposal",
+ "size": "medium",
+ "pages": 3,
+ "pdf_sha256": "8c3c53274ebb1183cff6ee6f270518384e0f0bb7b03d6cd942198fd7f11fe297",
+ "layout_id": "6dc12fbf01bfec36",
+ "timing": {
+  "pdf_cold_s": 0.151,
+  "pdf_cold_cpu_s": 0.151,
+  "docx_cold_s": 0.145,
+  "pdf_warm_s": 0.095,
+  "docx_warm_s": 0.103,
+  "engine_import_s": 0.24
+ },
+ "memory": {
+  "rss_before_mb": 44.5,
+  "rss_peak_mb": 66.6
+ },
+ "renders": 3,
+ "composition": null,
+ "score": {
+  "value": 99.82,
+  "valid": true,
+  "hard_errors": [],
+  "utilization": 1.0,
+  "wasted": 0.0,
+  "readability": 0.991,
+  "cpl": 91.1,
+  "separated_figures": 0.0,
+  "efficiency": 1.0,
+  "placement": 1.0
+ },
+ "page_roles": [
+  [
+   1,
+   "toc",
+   0.402
+  ],
+  [
+   2,
+   "body",
+   0.928
+  ],
+  [
+   3,
+   "final",
+   0.681
+  ]
+ ],
+ "layout": {
+  "underfilled_body_pages": [],
+  "geometry_duplicates": [],
+  "oversize_figures": [],
+  "figures_after_gap": [],
+  "rtl_right_aligned_share": null
+ },
+ "rtl": {
+  "arabic_paragraphs_checked": 0,
+  "line_order_defects": [],
+  "symbol_font_text_spans": 0,
+  "harakat_source": 0,
+  "harakat_pdf": 0,
+  "harakat_docx": 0
+ },
+ "pdf_qa": {
+  "status": "pass",
+  "errors": [],
+  "warnings": []
+ },
+ "docx_qa": {
+  "status": "pass",
+  "pages": 3,
+  "unverified": [],
+  "errors": [],
+  "warnings": []
+ },
+ "content": {
+  "source_words": 183,
+  "pdf_missing_words": [],
+  "docx_missing_words": [],
+  "pdf_sequence": {
+   "checked": 7,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  },
+  "docx_sequence": {
+   "checked": 7,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  }
+ },
+ "docx_editability": {
+  "word_tables": 2,
+  "source_tables": 2,
+  "source_tables_editable": 2,
+  "heading_styles": 9,
+  "source_headings": 9,
+  "images": 0,
+  "figure_blocks": 0,
+  "text_chars": 2468
+ },
+ "diagnostics": [],
+ "network_attempts": [],
+ "sheets": {
+  "pdf": "img/proposal-baseline-pdf.jpg",
+  "docx": "img/proposal-baseline-docx.jpg"
+ }
+}

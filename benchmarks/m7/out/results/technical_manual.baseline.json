@@ -1,0 +1,124 @@
+{
+ "name": "technical_manual",
+ "variant": "baseline",
+ "category": "Technical manual (code, diagram)",
+ "size": "medium",
+ "pages": 5,
+ "pdf_sha256": "6f03025a89fa6980400e188f90b8deda6bc70673c9a323d6cd86d244df0f0bb9",
+ "layout_id": "cd60f39418cab6b4",
+ "timing": {
+  "pdf_cold_s": 0.347,
+  "pdf_cold_cpu_s": 0.346,
+  "docx_cold_s": 0.201,
+  "pdf_warm_s": 0.186,
+  "docx_warm_s": 0.183,
+  "engine_import_s": 0.246
+ },
+ "memory": {
+  "rss_before_mb": 44.4,
+  "rss_peak_mb": 83.3
+ },
+ "renders": 2,
+ "composition": null,
+ "score": {
+  "value": 85.27,
+  "valid": true,
+  "hard_errors": [],
+  "utilization": 0.637,
+  "wasted": 0.012,
+  "readability": 0.953,
+  "cpl": 95.6,
+  "separated_figures": 0.0,
+  "efficiency": 0.8,
+  "placement": 1.0
+ },
+ "page_roles": [
+  [
+   1,
+   "cover",
+   0.107
+  ],
+  [
+   2,
+   "toc",
+   0.378
+  ],
+  [
+   3,
+   "body",
+   0.608
+  ],
+  [
+   4,
+   "body",
+   0.735
+  ],
+  [
+   5,
+   "final",
+   0.285
+  ]
+ ],
+ "layout": {
+  "underfilled_body_pages": [],
+  "geometry_duplicates": [],
+  "oversize_figures": [],
+  "figures_after_gap": [],
+  "rtl_right_aligned_share": null
+ },
+ "rtl": {
+  "arabic_paragraphs_checked": 0,
+  "line_order_defects": [],
+  "symbol_font_text_spans": 0,
+  "harakat_source": 0,
+  "harakat_pdf": 0,
+  "harakat_docx": 0
+ },
+ "pdf_qa": {
+  "status": "pass",
+  "errors": [],
+  "warnings": []
+ },
+ "docx_qa": {
+  "status": "pass",
+  "pages": 5,
+  "unverified": [],
+  "errors": [],
+  "warnings": []
+ },
+ "content": {
+  "source_words": 218,
+  "pdf_missing_words": [],
+  "docx_missing_words": [],
+  "pdf_sequence": {
+   "checked": 6,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  },
+  "docx_sequence": {
+   "checked": 6,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  }
+ },
+ "docx_editability": {
+  "word_tables": 3,
+  "source_tables": 3,
+  "source_tables_editable": 3,
+  "heading_styles": 8,
+  "source_headings": 8,
+  "images": 0,
+  "figure_blocks": 1,
+  "text_chars": 3306
+ },
+ "diagnostics": [
+  "Mermaid diagram rendered as source: Playwright not installed (pip install \"dynamic-pdf-builder[diagrams]\")"
+ ],
+ "network_attempts": [],
+ "sheets": {
+  "pdf": "img/technical_manual-baseline-pdf.jpg",
+  "docx": "img/technical_manual-baseline-docx.jpg"
+ }
+}

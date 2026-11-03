@@ -1,0 +1,119 @@
+{
+ "name": "ar_financial_statements",
+ "variant": "smart",
+ "category": "Arabic financial statements",
+ "size": "medium",
+ "pages": 2,
+ "pdf_sha256": "ee786bbcca2084de392ccf49a6be4ca27a9927ca1a7ae617d617c2a442b6a06b",
+ "layout_id": "6d7f4693eae22022",
+ "timing": {
+  "pdf_cold_s": 0.765,
+  "pdf_cold_cpu_s": 0.743,
+  "docx_cold_s": 0.209,
+  "pdf_warm_s": 0.643,
+  "docx_warm_s": 0.168,
+  "engine_import_s": 0.234
+ },
+ "memory": {
+  "rss_before_mb": 44.5,
+  "rss_peak_mb": 104.8
+ },
+ "renders": 6,
+ "composition": {
+  "strategy": "compact",
+  "status": "ok",
+  "preflight": "readability 0.716",
+  "candidates_considered": 3,
+  "candidates_rendered": 2,
+  "render_attempts": 3,
+  "repair_renders": 0,
+  "design_trial_renders": 3,
+  "fallbacks": []
+ },
+ "score": {
+  "value": 96.37,
+  "valid": true,
+  "hard_errors": [],
+  "utilization": 0.926,
+  "wasted": 0.0,
+  "readability": 0.9,
+  "cpl": 92.0,
+  "separated_figures": 0.0,
+  "efficiency": 1.0,
+  "placement": 1.0
+ },
+ "page_roles": [
+  [
+   1,
+   "body",
+   0.87
+  ],
+  [
+   2,
+   "final",
+   0.377
+  ]
+ ],
+ "layout": {
+  "underfilled_body_pages": [],
+  "geometry_duplicates": [],
+  "oversize_figures": [],
+  "figures_after_gap": [],
+  "rtl_right_aligned_share": 1.0
+ },
+ "rtl": {
+  "arabic_paragraphs_checked": 1,
+  "line_order_defects": [
+   10
+  ],
+  "symbol_font_text_spans": 0,
+  "harakat_source": 5,
+  "harakat_pdf": 0,
+  "harakat_docx": 5
+ },
+ "pdf_qa": {
+  "status": "pass",
+  "errors": [],
+  "warnings": []
+ },
+ "docx_qa": {
+  "status": "pass",
+  "pages": 2,
+  "unverified": [],
+  "errors": [],
+  "warnings": []
+ },
+ "content": {
+  "source_words": 213,
+  "pdf_missing_words": [],
+  "docx_missing_words": [],
+  "pdf_sequence": {
+   "checked": 0,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  },
+  "docx_sequence": {
+   "checked": 5,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  }
+ },
+ "docx_editability": {
+  "word_tables": 3,
+  "source_tables": 3,
+  "source_tables_editable": 3,
+  "heading_styles": 5,
+  "source_headings": 5,
+  "images": 0,
+  "figure_blocks": 0,
+  "text_chars": 1817
+ },
+ "diagnostics": [],
+ "network_attempts": [],
+ "sheets": {
+  "pdf": "img/ar_financial_statements-smart-pdf.jpg",
+  "docx": "img/ar_financial_statements-smart-docx.jpg"
+ }
+}

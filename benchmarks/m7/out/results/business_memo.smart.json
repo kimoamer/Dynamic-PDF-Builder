@@ -1,0 +1,112 @@
+{
+ "name": "business_memo",
+ "variant": "smart",
+ "category": "Business memo",
+ "size": "small",
+ "pages": 1,
+ "pdf_sha256": "ec427cba08701a62a70c8aefacc98594430ac892c1a65da6f1788d98161debb8",
+ "layout_id": "aedcc1ad07d1cec9",
+ "timing": {
+  "pdf_cold_s": 0.127,
+  "pdf_cold_cpu_s": 0.126,
+  "docx_cold_s": 0.081,
+  "pdf_warm_s": 0.022,
+  "docx_warm_s": 0.042,
+  "engine_import_s": 0.242
+ },
+ "memory": {
+  "rss_before_mb": 44.5,
+  "rss_peak_mb": 100.8
+ },
+ "renders": 2,
+ "composition": {
+  "strategy": "baseline",
+  "status": "ok",
+  "preflight": "clean: no measurable layout issue predicted",
+  "candidates_considered": 0,
+  "candidates_rendered": 0,
+  "render_attempts": 1,
+  "repair_renders": 0,
+  "design_trial_renders": 1,
+  "fallbacks": []
+ },
+ "score": {
+  "value": 83.02,
+  "valid": true,
+  "hard_errors": [],
+  "utilization": 0.228,
+  "wasted": 0.0,
+  "readability": 1.0,
+  "cpl": 88.0,
+  "separated_figures": 0.0,
+  "efficiency": 1.0,
+  "placement": 1.0
+ },
+ "page_roles": [
+  [
+   1,
+   "final",
+   0.245
+  ]
+ ],
+ "layout": {
+  "underfilled_body_pages": [],
+  "geometry_duplicates": [],
+  "oversize_figures": [],
+  "figures_after_gap": [],
+  "rtl_right_aligned_share": null
+ },
+ "rtl": {
+  "arabic_paragraphs_checked": 0,
+  "line_order_defects": [],
+  "symbol_font_text_spans": 0,
+  "harakat_source": 0,
+  "harakat_pdf": 0,
+  "harakat_docx": 0
+ },
+ "pdf_qa": {
+  "status": "pass",
+  "errors": [],
+  "warnings": []
+ },
+ "docx_qa": {
+  "status": "pass",
+  "pages": 1,
+  "unverified": [],
+  "errors": [],
+  "warnings": []
+ },
+ "content": {
+  "source_words": 64,
+  "pdf_missing_words": [],
+  "docx_missing_words": [],
+  "pdf_sequence": {
+   "checked": 3,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  },
+  "docx_sequence": {
+   "checked": 3,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  }
+ },
+ "docx_editability": {
+  "word_tables": 0,
+  "source_tables": 0,
+  "source_tables_editable": 0,
+  "heading_styles": 2,
+  "source_headings": 2,
+  "images": 0,
+  "figure_blocks": 0,
+  "text_chars": 594
+ },
+ "diagnostics": [],
+ "network_attempts": [],
+ "sheets": {
+  "pdf": "img/business_memo-smart-pdf.jpg",
+  "docx": "img/business_memo-smart-docx.jpg"
+ }
+}
