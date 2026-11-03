@@ -110,7 +110,9 @@ def test_export_both(tmp_path):
     assert res.pdf_path.endswith(".pdf") and res.docx_path.endswith(".docx")
     assert open(res.pdf_path, "rb").read(4) == b"%PDF"
     assert zipfile.is_zipfile(res.docx_path)
-    assert res.profile == "proposal" and res.status == "ok"
+    # exported without QA: neither format was inspected, so nothing is reported "ok"
+    assert res.profile == "proposal" and res.status == "unverified"
+    assert any(x.startswith("docx not verified") for x in res.status_reasons)
 
 
 def test_export_rejects_unknown_format(tmp_path):

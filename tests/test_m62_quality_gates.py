@@ -47,6 +47,8 @@ def _small_doc():
 
 def test_status_precedence_and_reasons():
     r = ExportResult(pdf_path="x.pdf")
+    assert r.status == "unverified"                        # delivered but never inspected
+    r.qa["pdf"] = _qa("pass")
     assert r.status == "ok" and r.status_reasons == []
     r.composition = {"status": "fallback", "strategy": "baseline",
                      "fallbacks": ["balanced failed final validation; designed layout restored"]}
@@ -228,3 +230,75 @@ def test_docx_keeps_lead_in_with_table_and_stays_editable(tmp_path):
     kept = [p for p in docx.paragraphs if p.paragraph_format.keep_with_next]
     assert len(docx.tables) == 12 and kept
     assert "مؤشرات" in docx_text(data)
+
+
+# ── per-format verification ─────────────────────────────────────────────
+
+def test_export_both_without_qa_reports_docx_unverified(tmp_path):
+    res = _small_doc().compose("smart").export_both(str(tmp_path))
+    assert res.qa["pdf"].status == "pass"                  # composer QA of the delivered PDF
+    assert "docx" not in res.qa
+    assert res.status == "unverified"
+    assert any(x.startswith("docx not verified") for x in res.status_reasons)
+    assert not any(x.startswith("pdf") for x in res.status_reasons)
+
+
+def test_docx_export_without_qa_is_not_ok(tmp_path):
+    res = _small_doc().export(str(tmp_path / "out.docx"))
+    assert res.status == "unverified"
+    assert any("docx not verified" in x for x in res.status_reasons)
+
+
+def test_export_both_with_qa_keeps_formats_independent(monkeypatch, tmp_path):
+    import dynamic_pdf.qa.docx_checks as dc
+    monkeypatch.setattr(dc.shutil, "which", lambda name: None)    # no LibreOffice
+    res = _small_doc().export_both(str(tmp_path), qa=True)
+    assert res.qa["pdf"].status == "pass"
+    assert res.qa["docx"].status == "unverified"
+    assert res.status == "unverified"
+    assert all(x.startswith("docx") for x in res.status_reasons)
+
+
+# ── composed bytes are rendered once and reused ─────────────────────────
+
+def _count_renders(monkeypatch):
+    calls = []
+    real = LayoutEngine.render
+
+    def render(self, *a, **k):
+        calls.append(1)
+        return real(self, *a, **k)
+    monkeypatch.setattr(LayoutEngine, "render", render)
+    return calls
+
+
+def test_all_pdf_outputs_share_the_composed_bytes(monkeypatch, tmp_path):
+    import base64
+    b = _small_doc().compose("smart")
+    first = b.render()
+    calls = _count_renders(monkeypatch)
+    raw = b.render_bytes()
+    b64 = base64.b64decode(b.render_base64())
+    path = tmp_path / "out.pdf"
+    res = b.export(str(path))
+    assert calls == []                                    # zero additional layout renders
+    digests = {_sha(first), _sha(raw), _sha(b64), _sha(path.read_bytes()), res.qa["pdf"].sha256}
+    assert len(digests) == 1
+
+
+def test_compose_cache_invalidates_on_edit(monkeypatch):
+    b = _small_doc().compose("smart")
+    before = b.render_bytes()
+    b.paragraph("An added closing paragraph.")
+    after = b.render_bytes()
+    assert _sha(before) != _sha(after)
+    assert _sha(after) == _sha(b.render())
+
+
+def test_legacy_render_bytes_unchanged(monkeypatch):
+    b = DocumentBuilder().heading("Legacy").paragraph("Classic rendering.")
+    calls = _count_renders(monkeypatch)
+    data = b.render_bytes()
+    assert data.startswith(b"%PDF") and calls == [1]       # one fresh classic render per call
+    assert b.render_base64() and calls == [1, 1]
+    assert b.last_composition is None
