@@ -150,12 +150,11 @@ def test_final_output_is_validated_after_repair(monkeypatch, tmp_path):
     from dynamic_pdf.intelligence.scoring import LayoutScore
     orig = C.Composer._repair
 
-    def broken_repair(self, d, t, pdf, eng, s, budget):
-        out = orig(self, d, t, pdf, eng, s, budget)
+    def broken_repair(self, lay, budget):
+        out = orig(self, lay, budget)
         if self.report.strategy != "baseline" and not getattr(self, "_broke", False):
             self._broke = True
-            bad = LayoutScore(valid=False, score=0.0, hard_errors=["synthetic regression"])
-            return out[0], out[1], out[2], out[3], bad, out[5]
+            out.score = LayoutScore(valid=False, score=0.0, hard_errors=["synthetic regression"])
         return out
     monkeypatch.setattr(C.Composer, "_repair", broken_repair)
     b = STRESS["chart_report"](str(tmp_path)).design().compose("smart")

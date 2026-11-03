@@ -141,6 +141,8 @@ def _cmd_render(args):
                 import json
                 with open(args.report, "w", encoding="utf-8") as fh:
                     json.dump(c, fh, ensure_ascii=False, indent=1)
+        if res.status != "ok":
+            print(f"{target} status: {res.status} — " + "; ".join(res.status_reasons), file=sys.stderr)
         for rep in res.qa.values():
             print(rep.summary())
             for fix in rep.fixes_applied:

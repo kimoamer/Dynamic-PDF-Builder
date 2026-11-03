@@ -41,18 +41,43 @@ class ExportResult:
         self.qa = {}             # format -> QAReport (when exported with qa=True)
         self.composition = None  # dict (CompositionReport) when compose() is active
 
+    _RANK = {"ok": 0, "fallback": 1, "unverified": 2, "degraded": 3, "failed": 4}
+
+    def _evaluate(self):
+        """(status, reasons) from QA reports, diagnostics and the composition."""
+        found = []
+        for fmt, rep in self.qa.items():
+            if rep.status == "fail":
+                found.append(("failed", f"{fmt} QA failed: {len(rep.errors)} error(s)"))
+            elif rep.status == "unverified":
+                found.append(("unverified", f"{fmt} QA unverified: {', '.join(rep.unverified)}"))
+        n_err = sum(1 for d in self.diagnostics if d.get("level") == "error")
+        if n_err:
+            found.append(("degraded", f"{n_err} render error(s)"))
+        c = self.composition or {}
+        cst = c.get("status")
+        if cst == "failed":
+            found.append(("failed", "composition: no valid layout ("
+                          + "; ".join(c.get("reasons", [])[-1:]) + ")"))
+        elif cst == "unverified" and "pdf" not in self.qa and self.pdf_path:
+            found.append(("unverified", "composition QA unverified: " + ", ".join(c.get("unverified", []))))
+        if cst == "fallback" or any("designed layout" in f for f in c.get("fallbacks", [])):
+            found.append(("fallback", "composition fell back to the designed layout: "
+                          + "; ".join(c.get("fallbacks", [])[:2])))
+        status = max((s for s, _ in found), key=self._RANK.__getitem__, default="ok")
+        return status, [why for _, why in found]
+
     @property
     def status(self) -> str:
-        """"failed" (QA errors) > "degraded" (render errors) > "unverified"
-        (a requested QA check could not run) > "ok"."""
-        states = [r.status for r in self.qa.values()]
-        if "fail" in states:
-            return "failed"
-        if any(d.get("level") == "error" for d in self.diagnostics):
-            return "degraded"
-        if "unverified" in states:
-            return "unverified"
-        return "ok"
+        """"failed" (QA errors or no valid composed layout) > "degraded" (render
+        errors) > "unverified" (a required check was skipped or could not run) >
+        "fallback" (composition used the designed layout) > "ok"."""
+        return self._evaluate()[0]
+
+    @property
+    def status_reasons(self) -> list:
+        """Why ``status`` is not ``"ok"`` (empty when it is)."""
+        return self._evaluate()[1]
 
     def __repr__(self):
         return (f"ExportResult(pdf={self.pdf_path!r}, docx={self.docx_path!r}, "
@@ -186,10 +211,32 @@ class DocumentBuilder:
             r.strategy, r.status = "baseline", "fallback"
             r.fallbacks.append(f"composition failed ({type(e).__name__}: {e}); designed layout rendered")
             r.page_count = eng.page_count
+            # QA must describe these bytes, never a candidate inspected before the crash
+            r.qa.pop("pdf", None)
+            try:
+                composer.pdf_qa = composer.inspect(d, t, pdf)
+            except Exception as qe:
+                composer.pdf_qa = None
+                r.unverified.append(f"pdf_visual_qa ({type(qe).__name__})")
+            if composer.pdf_qa is not None:
+                r.qa["pdf"] = composer.pdf_qa.summary()
+                if composer.pdf_qa.errors:
+                    r.status = "failed"
+            elif r.unverified:
+                r.status = "unverified"
         result = (d, t, pdf, eng, composer)
         self._composition = (key, result)
         self.last_composition = composer.report
         return result
+
+    def _composer_pdf_qa(self):
+        """QAReport of the delivered composed PDF (unverified when QA could not run)."""
+        from .qa.report import QAReport, sha256
+        _, _, data, eng, composer = self._composed()
+        if composer.pdf_qa is not None:
+            return composer.pdf_qa
+        why = [u for u in composer.report.unverified if u.startswith("pdf_")] or ["visual (composer QA unavailable)"]
+        return QAReport(format="pdf", pages=eng.page_count, sha256=sha256(data), unverified=why)
 
     def _prepared(self):
         """(Document, Theme | None) for renderers: the composed layout when
@@ -702,11 +749,7 @@ class DocumentBuilder:
             if fmt == "pdf":
                 _, _, data, eng, composer = self._composed()
                 self.last_render = eng
-                report = composer.pdf_qa
-                if report is None:
-                    from .qa.report import QAReport
-                    report = QAReport(format="pdf", pages=eng.page_count,
-                                      unverified=["visual (composer QA unavailable)"])
+                report = self._composer_pdf_qa()
             else:
                 data, report = render_with_qa(self, fmt, max_attempts=1, visual_docx=visual)
                 self.last_composition.qa["docx"] = report.summary()
@@ -757,6 +800,8 @@ class DocumentBuilder:
             result.pdf_path = path
             result.page_count = self.last_render.page_count
             result.diagnostics = self.diagnostics
+            if self._compose_active():
+                result.qa["pdf"] = self._composer_pdf_qa()
         else:
             self.render_docx(path)
             result.docx_path = path
