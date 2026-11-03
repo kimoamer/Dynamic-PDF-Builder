@@ -39,6 +39,7 @@ class ExportResult:
         self.profile = profile
         self.diagnostics = diagnostics or []
         self.qa = {}             # format -> QAReport (when exported with qa=True)
+        self.composition = None  # dict (CompositionReport) when compose() is active
 
     @property
     def status(self) -> str:
@@ -85,6 +86,9 @@ class DocumentBuilder:
         self.front_matter: dict = {}
         self.last_design = None
         self._qa_hints: dict = {}        # block index -> layout hints from the QA loop
+        self._compose_options = None     # set by compose(); None = classic single render
+        self._composition = None
+        self.last_composition = None
         self._fit_cache: dict = {}
 
     # ─── Semantic / design layer ───────────────────────────────────
@@ -126,7 +130,60 @@ class DocumentBuilder:
         return normalize(self.build(), source_kind=self._source_kind,
                          source_text=self._source_text, front_matter=self.front_matter)
 
+    # ─── Intelligent composition ───────────────────────────────────
+
+    def compose(self, mode: str = "smart", **options) -> 'DocumentBuilder':
+        """Enable CPU-only intelligent page composition.
+
+        ``mode="smart"`` evaluates up to four layout strategies (balanced,
+        compact, editorial, data) against the designed layout, renders at most
+        three, and keeps the best *valid* one by a deterministic score; the
+        designed layout is kept unless a candidate is objectively better.
+        ``mode="off"`` disables it. Options: see ``intelligence.ComposeOptions``
+        (max_candidates, max_renders, max_repairs, min_gain, time_budget_s,
+        memory_budget_mb, measure_memory, qa). The result is in
+        ``last_composition`` (and ``ExportResult.composition``).
+        """
+        from .intelligence import ComposeOptions
+        if mode not in ("smart", "off"):
+            raise ValueError("compose mode must be 'smart' or 'off'")
+        self._compose_options = None if mode == "off" else ComposeOptions(mode=mode, **options)
+        self._composition = None
+        return self
+
+    def _compose_active(self) -> bool:
+        return getattr(self, "_compose_options", None) is not None
+
+    def _composed(self):
+        """(doc, theme, pdf_bytes, engine, composer) of the selected composition (cached)."""
+        import hashlib
+        from .core.normalize import normalize
+        from .intelligence import Composer
+        from .themes import get_theme as _gt
+        doc, theme = self._prepared_base()
+        theme = theme or _gt(doc.theme)
+        key = hashlib.sha256((doc.model_dump_json() + theme.model_dump_json()
+                              + self._compose_options.model_dump_json()).encode()).hexdigest()
+        if self._composition is not None and self._composition[0] == key:
+            return self._composition[1]
+        sem = normalize(doc)
+        profile = self.last_design.decision.profile.value if self.last_design else "general"
+        composer = Composer(self._compose_options, self._policy)
+        d, t, pdf, eng = composer.compose(doc, theme, profile, sem.stats)
+        result = (d, t, pdf, eng, composer)
+        self._composition = (key, result)
+        self.last_composition = composer.report
+        return result
+
     def _prepared(self):
+        """(Document, Theme | None) for renderers: the composed layout when
+        ``compose()`` is active, otherwise the designed layout."""
+        if self._compose_active():
+            d, t, _, _, _ = self._composed()
+            return d, t
+        return self._prepared_base()
+
+    def _prepared_base(self):
         """(Document, Theme | None) ready for a renderer, applying the design plan."""
         doc, theme = self._prepared_inner()
         if self._qa_hints:
@@ -581,6 +638,14 @@ class DocumentBuilder:
         Nothing is written to ``output`` unless rendering (and encryption, if
         requested) succeeded.
         """
+        if self._compose_active():
+            from .layout.engine import _write_output
+            _, _, pdf, eng, _ = self._composed()
+            self.last_render = eng
+            if output is None:
+                return pdf
+            _write_output(output, pdf)
+            return None
         engine = self._engine()
         if output is None:
             buffer = io.BytesIO()
@@ -615,7 +680,23 @@ class DocumentBuilder:
         """
         from .qa.loop import render_with_qa
         from .utils.errors import QualityError
-        data, report = render_with_qa(self, fmt, max_attempts=max_attempts, visual_docx=visual)
+        if self._compose_active():
+            # the composer already inspected/repaired the PDF within its budget;
+            # DOCX is checked once on its own rendered output (no recomposition)
+            if fmt == "pdf":
+                _, _, data, eng, composer = self._composed()
+                self.last_render = eng
+                report = composer.pdf_qa
+                if report is None:
+                    from .qa.report import QAReport
+                    report = QAReport(format="pdf", pages=eng.page_count,
+                                      unverified=["visual (composer QA unavailable)"])
+            else:
+                data, report = render_with_qa(self, fmt, max_attempts=1, visual_docx=visual)
+                self.last_composition.qa["docx"] = report.summary()
+                self.last_composition.unverified += [f"docx_{u}" for u in report.unverified]
+        else:
+            data, report = render_with_qa(self, fmt, max_attempts=max_attempts, visual_docx=visual)
         self.last_qa = report
         if report.errors and self._policy.strict:
             raise QualityError(report.summary() + ": " + "; ".join(
@@ -652,6 +733,8 @@ class DocumentBuilder:
                 result.docx_path = path
                 result.diagnostics = [d.to_dict() for d in self.last_docx_diagnostics.items]
             result.profile = self.last_design.decision.profile.value if self.last_design else None
+            if self._compose_active():
+                result.composition = self.last_composition.model_dump()
             return result
         if fmt == "pdf":
             self.render(path)
@@ -663,6 +746,8 @@ class DocumentBuilder:
             result.docx_path = path
             result.diagnostics = [d.to_dict() for d in self.last_docx_diagnostics.items]
         result.profile = self.last_design.decision.profile.value if self.last_design else None
+        if self._compose_active():
+            result.composition = self.last_composition.model_dump()
         return result
 
     def export_both(self, directory: str, basename: Optional[str] = None,
@@ -678,6 +763,7 @@ class DocumentBuilder:
                            page_count=pdf.page_count, profile=pdf.profile,
                            diagnostics=pdf.diagnostics + [dict(d, format="docx") for d in docx.diagnostics])
         res.qa = {**pdf.qa, **docx.qa}
+        res.composition = self.last_composition.model_dump() if self._compose_active() else None
         return res
 
     def render_bytes(self) -> bytes:

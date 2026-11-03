@@ -77,7 +77,9 @@ def qa_context(doc, theme) -> dict:
     """Captions, level-1 headings and body size used by the PDF checks."""
     caps, majors = [], []
     for b in doc.blocks:
-        if b.type in ("table", "image") and getattr(b, "caption", None):
+        # only captions that *precede* their content (tables) can be detached by
+        # ending a page; figure captions follow the image, so ending a page is normal
+        if b.type == "table" and getattr(b, "caption", None):
             label = ""
             num = getattr(b, "table_number", None) or getattr(b, "figure_number", None)
             if num:

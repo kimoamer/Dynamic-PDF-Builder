@@ -348,6 +348,8 @@ class DocxRenderer:
                        color=self.tokens.colors["text_secondary"])
             return
         p = self._para(c, "Body Text", b.text)
+        if (b.hints or {}).get("keep_with_next"):
+            p.paragraph_format.keep_with_next = True
         if is_rtl_text(b.text) or self.rtl_doc:
             p.paragraph_format.first_line_indent = None
         self._runs(p, b.text)
@@ -398,10 +400,28 @@ class DocxRenderer:
             self._spacer_after(c, 2)
 
     def _b_bullet_list(self, c, b):
+        if (b.hints or {}).get("columns") == 2 and not isinstance(c, _Cell):
+            return self._list_columns(c, b.items, False, 1)
         self._list_items(c, b.items, ordered=False)
 
     def _b_numbered_list(self, c, b):
+        if (b.hints or {}).get("columns") == 2 and not isinstance(c, _Cell):
+            return self._list_columns(c, b.items, True, b.start)
         self._list_items(c, b.items, ordered=True, start=b.start)
+
+    def _list_columns(self, c, items, ordered: bool, start: int):
+        """Short items in two columns (borderless table); numbering continues."""
+        half = (len(items) + 1) // 2
+        t = c.add_table(rows=1, cols=2)
+        F.set_table_width_pct(t, 100)
+        F.set_table_borders(t, size=0)
+        F.set_cant_split(t.rows[0])
+        if self.rtl_doc:
+            F.set_table_bidi(t)
+        left, right = t.rows[0].cells
+        self._list_items(left, items[:half], ordered, start)
+        self._list_items(right, items[half:], ordered, start + half if ordered else 1)
+        self._spacer_after(c, 2)
 
     def _b_checklist(self, c, b):
         for it in b.items:
