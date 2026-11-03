@@ -51,6 +51,11 @@ class ExportResult:
                 found.append(("failed", f"{fmt} QA failed: {len(rep.errors)} error(s)"))
             elif rep.status == "unverified":
                 found.append(("unverified", f"{fmt} QA unverified: {', '.join(rep.unverified)}"))
+        # each delivered format is judged on its own QA: a format nobody inspected
+        # is unverified, whatever the other format's result
+        for fmt, path in (("pdf", self.pdf_path), ("docx", self.docx_path)):
+            if path and fmt not in self.qa:
+                found.append(("unverified", f"{fmt} not verified: QA not performed (export with qa=True)"))
         n_err = sum(1 for d in self.diagnostics if d.get("level") == "error")
         if n_err:
             found.append(("degraded", f"{n_err} render error(s)"))
@@ -59,8 +64,6 @@ class ExportResult:
         if cst == "failed":
             found.append(("failed", "composition: no valid layout ("
                           + "; ".join(c.get("reasons", [])[-1:]) + ")"))
-        elif cst == "unverified" and "pdf" not in self.qa and self.pdf_path:
-            found.append(("unverified", "composition QA unverified: " + ", ".join(c.get("unverified", []))))
         if cst == "fallback" or any("designed layout" in f for f in c.get("fallbacks", [])):
             found.append(("fallback", "composition fell back to the designed layout: "
                           + "; ".join(c.get("fallbacks", [])[:2])))
@@ -828,7 +831,10 @@ class DocumentBuilder:
         return res
 
     def render_bytes(self) -> bytes:
-        """Render and return raw PDF bytes."""
+        """Render and return raw PDF bytes (the cached composed PDF when
+        ``compose()`` is active — identical to ``render()``, no re-render)."""
+        if self._compose_active():
+            return self.render()
         buffer = io.BytesIO()
         self._engine().render(buffer)
         return buffer.getvalue()
