@@ -706,6 +706,7 @@ class RenderContext:
                  available_height: Optional[float] = None,
                  language: str = "en"):
         self.language = language
+        self.cache = None
         self.available_width = available_width
         self.available_height = available_height
         self.apply_drop_cap_next = False
@@ -739,7 +740,10 @@ def create_flowables(block, theme: Theme, ctx: RenderContext = None) -> list:
     if ctx is None:
         ctx = RenderContext()  # backward-compat fallback
     try:
-        return _create_inner(block, theme, ctx)
+        out = _create_inner(block, theme, ctx)
+        if out and (getattr(block, "hints", None) or {}).get("keep_with_next"):
+            out[-1].keepWithNext = 1      # composer grouping (e.g. intro + its figure)
+        return out
     except Exception as e:
         btype = getattr(block, "type", type(block).__name__)
         if isinstance(e, BlockRenderError):
@@ -853,8 +857,13 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
             hf = Paragraph(_md_inline(display_text), sty)
         hf.keepWithNext = 1          # never strand a heading at a page bottom
         hf._toc_entry = toc_entry    # consumed by the doc template (TOC/outline/links)
-        if (block.hints or {}).get("break_before"):
-            return [PageBreak(), hf]   # QA fix for a heading stranded at a page bottom
+        hints = block.hints or {}
+        if hints.get("break_before"):
+            return [PageBreak(), hf]   # section opens a page (editorial / QA fix)
+        if hints.get("min_space_before") and ctx.available_height:
+            from reportlab.platypus import CondPageBreak
+            # start the section on a new page when too little of this one remains
+            return [CondPageBreak(ctx.available_height * float(hints["min_space_before"])), hf]
         return [hf]
 
     # ─── Paragraph ───
@@ -946,6 +955,8 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
         items = [LIM(text=i) if isinstance(i, str) else i for i in block.items]
         if list_rtl:
             return _render_rtl_list(items, 'bullet', theme, bs_no_indent, sp)
+        if (block.hints or {}).get("columns") == 2:
+            return _two_column_list(items, 'bullet', theme, bs_no_indent, sp, ctx, 1)
         return [_build_list_flowable(items, 'bullet', theme, bs_no_indent, sp)]
 
     # ─── Numbered List ───
@@ -959,6 +970,8 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
         if list_rtl:
             return _render_rtl_list(items, 'numbered', theme, bs_no_indent, sp,
                                     start=block.start)
+        if (block.hints or {}).get("columns") == 2:
+            return _two_column_list(items, '1', theme, bs_no_indent, sp, ctx, block.start)
         return [_build_list_flowable(items, '1', theme, bs_no_indent, sp,
                                      start=block.start)]
 
@@ -972,19 +985,19 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
 
     # ─── Image ───
     if btype == "image":
-        return _render_image(block, theme, ctx.available_width, ctx.available_height)
+        return _fit_figure(_render_image(block, theme, ctx.available_width, ctx.available_height), block)
 
     # ─── Chart ───
     if btype == "chart":
-        return _render_chart(block, theme)
+        return _fit_figure(_cached_figure(ctx, block, theme, lambda: _render_chart(block, theme)), block)
 
     # ─── Diagram ───
     if btype == "diagram":
-        return _render_diagram(block, theme)
+        return _fit_figure(_cached_figure(ctx, block, theme, lambda: _render_diagram(block, theme)), block)
 
     # ─── Math ───
     if btype == "math":
-        return _render_math(block, theme)
+        return _cached_figure(ctx, block, theme, lambda: _render_math(block, theme))
 
     # ─── Callout ───
     if btype == "callout":
@@ -1372,6 +1385,116 @@ def _render_image(block, theme, available_width=460, available_height=None):
         # keep figure and caption on the same page
         return [KeepTogether(flowables)]
     return flowables
+
+
+class FitFigure(Flowable):
+    """A figure that may shrink (down to ``min_scale``) to fit the space left on
+    the page instead of jumping to the next page and leaving a gap. Captions
+    passed as ``reserve`` keep their room so figure + caption stay together."""
+
+    def __init__(self, inner, min_scale: float = 0.8, reserve=None):
+        super().__init__()
+        self.inner = inner
+        self.min_scale = max(0.5, min(1.0, float(min_scale)))
+        self.reserve = reserve or []
+        self.hAlign = getattr(inner, "hAlign", "CENTER")
+        self._scale = 1.0
+
+    def wrap(self, aW, aH):
+        w, h = self.inner.wrapOn(self.canv, aW, aH) if hasattr(self, "canv") else self.inner.wrap(aW, aH)
+        res = 0.0
+        for r in self.reserve:
+            res += r.wrap(aW, aH)[1] + r.getSpaceBefore() + r.getSpaceAfter()
+        # reserve the caption *and* this figure's own spacing (+1pt slack) so the
+        # figure group really fits in what is left of the page
+        room = aH - res - self.inner.getSpaceBefore() - self.inner.getSpaceAfter() - 1.0
+        self._scale = 1.0
+        if h > room and room >= h * self.min_scale and h > 0:
+            self._scale = room / h
+        self.width, self.height = w * self._scale, h * self._scale
+        return self.width, self.height
+
+    def min_height(self, aW):
+        w, h = self.inner.wrap(aW, 1e6)
+        return h * self.min_scale
+
+    def getSpaceBefore(self):
+        return self.inner.getSpaceBefore()
+
+    def getSpaceAfter(self):
+        return self.inner.getSpaceAfter()
+
+    def draw(self):
+        c = self.canv
+        c.saveState()
+        c.scale(self._scale, self._scale)
+        self.inner.drawOn(c, 0, 0)
+        c.restoreState()
+
+
+class FigureGroup(KeepTogether):
+    """Figure + caption kept together, measured at the *actual* remaining
+    height (ReportLab's KeepTogether measures with unlimited height, which
+    would hide a FitFigure's ability to shrink)."""
+
+    def wrap(self, aW, aH):
+        W, H, first = 0.0, 0.0, 0.0
+        for i, f in enumerate(self._content):
+            w, h = f.wrapOn(self.canv, aW, aH)
+            W = max(W, w)
+            H += h + (f.getSpaceBefore() if i else 0) + f.getSpaceAfter()
+            if i == 0:
+                first = h
+        self._H, self._H0, self._wrapInfo = H, first, (aW, aH)
+        return W, 0xffffff
+
+
+def _fit_figure(flowables, block):
+    """Wrap the figure in ``FitFigure`` when the composer allows shrinking."""
+    min_scale = (getattr(block, "hints", None) or {}).get("shrink_to_fit")
+    if not min_scale or not flowables:
+        return flowables
+    out = list(flowables)
+    target = out
+    if len(out) == 1 and isinstance(out[0], KeepTogether):
+        out[0] = FigureGroup(out[0]._content)
+        target = out[0]._content
+    for k, f in enumerate(target):
+        if not isinstance(f, (Paragraph, Spacer)):
+            captions = [c for c in target[k + 1:] if isinstance(c, Paragraph)]
+            target[k] = FitFigure(f, min_scale, captions)
+            break
+    return out
+
+
+def _two_column_list(items, bullet_type, theme, bs, sp, ctx, start=1):
+    """Short list items in two balanced columns, reading order column by column."""
+    half = (len(items) + 1) // 2
+    left = _build_list_flowable(items[:half], bullet_type, theme, bs, sp, start=start)
+    right = _build_list_flowable(items[half:], bullet_type, theme, bs, sp,
+                                 start=start + half if bullet_type == '1' else start)
+    w = (ctx.available_width if ctx else 460) / 2
+    t = Table([[left, right]], colWidths=[w, w], style=TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    t.hAlign = 'LEFT'
+    t.spaceAfter = sp.block_gap
+    return [t]
+
+
+def _cached_figure(ctx, block, theme, build):
+    """Reuse expensive figure flowables (matplotlib → drawing) across the
+    candidate renders of one composition (request-local cache)."""
+    cache = getattr(ctx, "cache", None)
+    if cache is None:
+        return build()
+    key = ("fig", block.model_dump_json(exclude={"hints"}), theme.colors.model_dump_json(),
+           theme.spacing.block_gap, (block.hints or {}).get("figure_scale"))
+    if key not in cache:
+        cache[key] = build()
+    return list(cache[key])
 
 
 def _render_chart(block, theme):

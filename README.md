@@ -1152,6 +1152,7 @@ just that a file was produced:
 | `test_visual_qa.py` | QA on every fixture, synthetic defect detection, auto-fix loop, glyph coverage, DOCX integrity, golden fingerprints |
 | `test_m5_quality.py` | Regression tests for confirmed layout/typography/QA defects (whitespace, kept groups, RTL/bilingual, QA states, defaults) |
 | `test_stress_documents.py` | 20–50 page Arabic report, bilingual report, proposal, multi-page financial tables, academic paper, manual: page QA + word preservation in PDF and DOCX |
+| `test_m6_composer.py` | Geometry capture, simulation accuracy, hard constraints, selection, budgets, determinism, thread isolation, no network, hints, API/CLI, ranker fallback |
 | `test_pdf_docx_parity.py` | Same words and heading structure in AST, PDF and DOCX; LibreOffice conversion |
 
 ## Editable Word (DOCX) export & intelligent design
@@ -1202,6 +1203,51 @@ columns, landscape pages/sections for tables that cannot be read in portrait, sh
 and captions kept on one page, comfortable line length for prose, heading ramps tuned to
 outline depth, a lead paragraph for reports and proposals, and a metadata-only cover for long
 titled reports. Headings are kept with their content and widows/orphans are suppressed.
+
+## Intelligent page composition (CPU-only)
+
+`compose("smart")` adds a deterministic layout optimizer on top of `design()`. It needs
+no AI service, model, GPU or network:
+
+```python
+result = (DocumentBuilder.from_markdown(content)
+          .design("auto")
+          .compose(mode="smart")            # optional; "off" = single classic render
+          .export_both(directory="output", qa=True))
+result.composition["strategy"]               # e.g. "balanced"
+```
+
+```bash
+dynamic-pdf render report.md --format both --compose smart --report composition.json
+```
+
+How it works (bounded — no nested loops):
+
+1. **Analyze once** — every block is measured with real font metrics at the frame width;
+   pagination is *simulated* (keep-with-next groups, split points, landscape runs).
+2. **Choose ≤ 4 candidates** from structure and purpose — `balanced`, `compact`,
+   `editorial`, `data` — each a bounded change of rhythm, measure, break policy, list
+   columns or figure scaling. Content and reading order are never changed.
+3. **Prune before rendering** — hard constraints (readable type, table text ≥ 7.5 pt,
+   predicted stranded headings / detached captions / lost or reordered content).
+4. **Render ≤ 3** (baseline + 2 best predicted) and record the region every flowable
+   actually occupies; **score** utilization, whitespace balance, pagination efficiency,
+   readability, typography, figure/table placement and accidental waste. Layout-added
+   breaks never count as intentional whitespace; adding pages costs 1.5 points each.
+5. **Select** the best *valid* layout; the designed layout is kept unless a candidate
+   wins by `min_gain`. **Repair** QA findings with ≤ 2 extra renders.
+
+Budgets (`time_budget_s`, `memory_budget_mb`) fall back to the best layout so far. All
+state is per call. `ExportResult.composition` reports the strategy, candidate scores,
+reasons, per-page occupancy, renders, wall/CPU time, memory, corrections, PDF/DOCX QA,
+fallbacks and unverified checks. DOCX uses the same decisions and is checked on its own
+LibreOffice rendering when available (`unverified` otherwise).
+
+An optional learned ranker (`pip install "dynamic-pdf-builder[ranker]"`, LightGBM, CPU)
+can re-order *valid* candidates. No model ships: collect real preferences with
+`scripts/collect_preferences.py`, train with `scripts/train_ranker.py` (refuses < 40
+labelled pairs, reports document-grouped CV accuracy, saves LightGBM's text format —
+never pickle), then pass `compose("smart", ranker_model="model.txt")`.
 
 ## Visual quality assurance
 

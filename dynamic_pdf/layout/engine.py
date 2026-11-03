@@ -157,6 +157,17 @@ class _FlowKeep(KeepTogether):
         cf = getattr(self, "_frame", None)
         at_top = bool(cf and getattr(cf, "_atTop", False))
         lead, last = S[:-1], S[-1]
+        # a figure group that may shrink (FitFigure) fits if its *minimum* does
+        inner = last._content if isinstance(last, KeepTogether) else [last]
+        if any(hasattr(f, "min_height") for f in inner):
+            lead_h0 = sum(f.wrapOn(self.canv, aW, aH)[1] + f.getSpaceBefore() + f.getSpaceAfter()
+                          for f in lead)
+            need = 0.0
+            for f in inner:
+                mh = f.min_height(aW) if hasattr(f, "min_height") else f.wrapOn(self.canv, aW, aH)[1]
+                need += mh + f.getSpaceBefore() + f.getSpaceAfter()
+            if lead_h0 + need <= aH:
+                return S
         lead_h = 0.0
         for f in lead:
             lead_h += f.wrapOn(self.canv, aW, aH)[1] + f.getSpaceBefore() + f.getSpaceAfter()
@@ -201,7 +212,7 @@ class _EngineDocTemplate(BaseDocTemplate):
             i += 1
         if not i:
             return
-        if i < n and (_ktAllow(flowables[i]) or type(flowables[i]) is KeepTogether):
+        if i < n and (_ktAllow(flowables[i]) or isinstance(flowables[i], KeepTogether)):
             i += 1
         K = self.keepTogetherClass(flowables[:i])
         mbe = getattr(self, '_multiBuildEdits', None)
@@ -218,6 +229,9 @@ class _EngineDocTemplate(BaseDocTemplate):
     def handle_documentBegin(self):
         self._heading_seq = 0
         self._outline_level = -1
+        geo = getattr(self, "_dpb_geometry", None)
+        if geo is not None:
+            geo.reset()          # keep only the final multiBuild pass
         super().handle_documentBegin()
 
     def afterFlowable(self, flowable):
@@ -299,8 +313,41 @@ def _draw_image(canvas, path, x, y, max_w, max_h, align="left"):
 
 # ═══════════════════════ Layout Engine ═══════════════════════
 
+def _role_for(block):
+    """Classify a block's flowables (heading/caption/table/figure/…) for geometry."""
+    t = getattr(block, "type", "")
+
+    def role(f):
+        entry = getattr(f, "_toc_entry", None)
+        if entry:
+            f._dpb_level = entry[0]
+            return "heading"
+        name = type(f).__name__
+        if t == "table":
+            return "table" if name in ("Table", "LongTable") else (
+                "caption" if name == "Paragraph" else "other")
+        if t in ("image", "chart", "diagram", "mermaid", "math", "qrcode"):
+            return "caption" if name == "Paragraph" else "figure"
+        if t in ("bullet_list", "numbered_list", "checklist", "definition_list"):
+            return "list"
+        if t in ("paragraph", "rich_text", "note", "quote", "callout", "abstract", "footnote",
+                 "introduction_page"):
+            return "body"
+        if t == "code":
+            return "code"
+        if t in ("page_break", "cover_page", "table_of_contents", "watermark"):
+            return "structure"
+        return "other"
+    return role
+
+
 class LayoutEngine:
-    def __init__(self, document: Document, policy: RenderPolicy = None, theme: Theme = None):
+    def __init__(self, document: Document, policy: RenderPolicy = None, theme: Theme = None,
+                 geometry=None, cache: dict = None):
+        """``geometry`` (intelligence.geometry.Geometry) records occupied regions;
+        ``cache`` is a request-local dict reused across candidate renders."""
+        self.geometry = geometry
+        self.cache = cache
         self.document = document
         self.theme = theme.model_copy(deep=True) if theme is not None else get_theme(document.theme)
         self.policy = policy or RenderPolicy()
@@ -866,18 +913,22 @@ class LayoutEngine:
 
         frame_width = w - left_m - right_m
 
-        frame = Frame(
+        from ..intelligence.geometry import GeoFrame
+        frame = GeoFrame(
             left_m, bot_m,
             frame_width,
             h - top_m - bot_m,
             id='main'
         )
+        frame.geometry = self.geometry
 
         template = PageTemplate(id='AllPages', frames=[frame], onPage=self._on_page,
                                 pagesize=pagesize)
         # Landscape pages for content the planner marks as too wide for portrait
         lw, lh = (h, w) if h > w else (w, h)
-        land_frame = Frame(left_m, bot_m, lw - left_m - right_m, lh - top_m - bot_m, id='land')
+        land_frame = GeoFrame(left_m, bot_m, lw - left_m - right_m, lh - top_m - bot_m, id='land')
+        land_frame.geometry = self.geometry
+        land_frame.landscape = True
         land_template = PageTemplate(id='Landscape', frames=[land_frame], onPage=self._on_page,
                                      pagesize=(lw, lh))
         land_width = lw - left_m - right_m
@@ -921,7 +972,9 @@ class LayoutEngine:
             available_height=h - top_m - bot_m,
             language=self._language(),
         )
+        ctx.cache = self.cache
         self.diagnostics.language = ctx.language
+        doc_template._dpb_geometry = self.geometry
 
         token = _policy.activate(self.diagnostics)
         try:
@@ -945,6 +998,9 @@ class LayoutEngine:
                                         limits.max_table_cells)
                 result = create_flowables(block, theme, ctx)
                 if result:
+                    if self.geometry is not None:
+                        from ..intelligence.geometry import tag
+                        tag(result, i, _role_for(block))
                     flowables.extend(result)
             self.diagnostics.block_index = None
             self.diagnostics.block_type = None

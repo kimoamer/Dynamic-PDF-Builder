@@ -35,6 +35,10 @@ def main():
     render_p.add_argument("--section-numbers", action="store_true", help="Enable section numbering")
     render_p.add_argument("--permissive", action="store_true",
                           help="Render failed blocks as visible markers instead of failing (exit code 3 if degraded)")
+    render_p.add_argument("--compose", choices=["off", "smart"], default="off",
+                          help="CPU-only intelligent page composition (default: off)")
+    render_p.add_argument("--report", default=None, metavar="FILE",
+                          help="Write the composition report (JSON) to FILE")
     render_p.add_argument("--qa", action="store_true",
                           help="Inspect rendered pages, auto-fix layout defects (bounded retries), report findings")
     render_p.add_argument("--allow-remote-assets", action="store_true",
@@ -118,6 +122,8 @@ def _cmd_render(args):
     if args.section_numbers:
         builder.section_numbering(True)
     builder.design(None if args.design == "none" else args.design)
+    if args.compose != "off":
+        builder.compose(args.compose)
 
     targets = ["pdf", "docx"] if fmt == "both" else [fmt]
     diagnostics = []
@@ -127,6 +133,14 @@ def _cmd_render(args):
         res = builder.export(path, format=target, qa=args.qa)
         diagnostics += res.diagnostics
         paths.append(path)
+        if res.composition and target == targets[-1]:
+            c = res.composition
+            print(f"composition: {c['strategy']} ({c['page_count']} pages, "
+                  f"{c['render_attempts']} renders + {c['repair_renders']} repairs, {c['time_s']}s)")
+            if args.report:
+                import json
+                with open(args.report, "w", encoding="utf-8") as fh:
+                    json.dump(c, fh, ensure_ascii=False, indent=1)
         for rep in res.qa.values():
             print(rep.summary())
             for fix in rep.fixes_applied:

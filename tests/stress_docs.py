@@ -207,6 +207,34 @@ def technical_manual(asset_dir):
     return b
 
 
+def chart_report():
+    rnd = random.Random(9)
+    b = DocumentBuilder().meta(title="Regional Sales Performance H2", author="Revenue Analytics")
+    b.heading("Summary")
+    b.paragraph("Sales grew in every region in the second half. The charts below compare regions, "
+                "products and channels; detailed figures follow in the appendix tables.")
+    b.metric_row([{"label": "Revenue", "value": "$84.2M", "delta": "+11%"},
+                  {"label": "Orders", "value": "212k", "delta": "+7%"},
+                  {"label": "Avg. order", "value": "$397", "delta": "+4%"}])
+    kinds = ["bar", "line", "pie", "horizontal_bar", "area", "donut"]
+    for i, kind in enumerate(kinds):
+        b.heading(f"{['Regions', 'Trend', 'Mix', 'Products', 'Channels', 'Share'][i]}", level=2)
+        b.paragraph(f"Figure {i + 1} shows the {kind.replace('_', ' ')} view for the period; "
+                    "values are in millions of dollars unless stated otherwise.")
+        if kind in ("line", "area"):
+            data = {m: round(rnd.uniform(10, 18), 1) for m in ["Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]}
+        else:
+            data = {k: round(rnd.uniform(5, 25), 1) for k in ["North", "South", "East", "West", "Central"]}
+        b.chart(kind, data=data, title=f"Figure {i + 1}")
+    b.heading("Appendix")
+    b.table(["Region", "H1 ($M)", "H2 ($M)", "Change"],
+            [[r, f"{rnd.uniform(10, 20):.1f}", f"{rnd.uniform(12, 24):.1f}", f"{rnd.uniform(-3, 18):.1f}%"]
+             for r in ["North", "South", "East", "West", "Central"]], caption="Revenue by region")
+    b.bullet_list(["North", "South", "East", "West", "Central", "Online", "Partners", "Wholesale",
+                   "Retail", "Export"])
+    return b
+
+
 STRESS = {
     "arabic_long_report": lambda d: arabic_long_report(),
     "bilingual_corporate": lambda d: bilingual_corporate(),
@@ -214,4 +242,5 @@ STRESS = {
     "financial_complex": lambda d: financial_complex(),
     "academic_paper": lambda d: academic_paper(),
     "technical_manual": technical_manual,
+    "chart_report": lambda d: chart_report(),
 }
