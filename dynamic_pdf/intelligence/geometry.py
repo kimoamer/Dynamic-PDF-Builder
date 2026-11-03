@@ -73,6 +73,68 @@ def tag(flowables, block_index: int, role_of) -> None:
             tag(inner, block_index, role_of)
 
 
+def content_extent(f, fx: float, fw: float):
+    """Horizontal extent actually covered by a placed flowable: real line widths
+    for paragraphs (respecting alignment), real widths for tables/images/drawings."""
+    from reportlab.platypus import Paragraph
+    try:
+        if isinstance(f, Paragraph):
+            widths = f.getActualLineWidths0() if hasattr(f, "blPara") else []
+            st = f.style
+            w = min(fw, (max(widths) if widths else fw) + st.leftIndent + st.rightIndent)
+            align = st.alignment
+            if align == 1:
+                return fx + (fw - w) / 2, fx + (fw + w) / 2
+            if align == 2:
+                return fx + fw - w, fx + fw
+            return fx, fx + w
+        w = getattr(f, "_width", None) or getattr(f, "drawWidth", None) or getattr(f, "width", None)
+        w = min(fw, float(w)) if w else fw
+    except (TypeError, ValueError):     # e.g. HRFlowable width "100%"
+        return fx, fx + fw
+    h = str(getattr(f, "hAlign", "LEFT")).upper()
+    off = (fw - w) / 2 if h == "CENTER" else (fw - w if h == "RIGHT" else 0.0)
+    return fx + off, fx + off + w
+
+
+def union_area(rects) -> float:
+    """Exact area of a union of axis-aligned rectangles (x0, x1, y0, y1)."""
+    rects = [r for r in rects if r[1] > r[0] and r[3] > r[2]]
+    if not rects:
+        return 0.0
+    ys = sorted({y for r in rects for y in (r[2], r[3])})
+    area = 0.0
+    for lo, hi in zip(ys, ys[1:]):
+        spans = sorted((r[0], r[1]) for r in rects if r[2] <= lo and r[3] >= hi)
+        covered, cur_s, cur_e = 0.0, None, None
+        for s0, s1 in spans:
+            if cur_e is None or s0 > cur_e:
+                if cur_e is not None:
+                    covered += cur_e - cur_s
+                cur_s, cur_e = s0, s1
+            else:
+                cur_e = max(cur_e, s1)
+        if cur_e is not None:
+            covered += cur_e - cur_s
+        area += covered * (hi - lo)
+    return area
+
+
+def union_length(intervals) -> float:
+    """Total length of a union of 1-D intervals (lo, hi)."""
+    total, cur_s, cur_e = 0.0, None, None
+    for lo, hi in sorted(i for i in intervals if i[1] > i[0]):
+        if cur_e is None or lo > cur_e:
+            if cur_e is not None:
+                total += cur_e - cur_s
+            cur_s, cur_e = lo, hi
+        else:
+            cur_e = max(cur_e, hi)
+    if cur_e is not None:
+        total += cur_e - cur_s
+    return total
+
+
 class GeoFrame(Frame):
     """A Frame that records placed regions into a shared ``Geometry``."""
 
@@ -92,12 +154,10 @@ class GeoFrame(Frame):
                                            self.landscape)
             top = y0 - (0 if at_top else flowable.getSpaceBefore())
             bottom = self._y + flowable.getSpaceAfter()
-            try:
-                width = min(self._width, float(getattr(flowable, "width", 0) or self._width))
-            except (TypeError, ValueError):      # e.g. HRFlowable width "100%"
-                width = self._width
-            geo.regions.append(Region(page, self.id, top, max(bottom, self._y1), self._x1,
-                                      self._x1 + width, flowable._dpb_block,
+            x0, x1 = content_extent(flowable, self._x1 + self._leftPadding,
+                                    self._width - self._leftPadding - self._rightPadding)
+            geo.regions.append(Region(page, self.id, top, max(bottom, self._y1), x0, x1,
+                                      flowable._dpb_block,
                                       getattr(flowable, "_dpb_role", "other"),
                                       getattr(flowable, "_dpb_level", 0)))
         return placed

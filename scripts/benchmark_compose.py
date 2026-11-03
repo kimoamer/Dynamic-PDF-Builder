@@ -84,6 +84,9 @@ def _measure(builder_factory, smart: bool, assets: str):
     docx_missing = words - _keys(docx_text(dx))
     drep = check_docx(dx, heading_texts=[o.text for o in b.semantic().outline], visual=False)
     comp = b.last_composition
+    layout = getattr(b.last_design, "layout", None) if b.last_design else None
+    fit = getattr(layout, "trial_renders", 0) or 0
+    comp_renders = (comp.render_attempts + comp.repair_renders) if comp else 1
     return {
         "pages": qa.pages, "score": s.score, "valid": s.valid, "hard_errors": len(s.hard_errors),
         "wasted": s.metrics["wasted"], "utilization": s.metrics["utilization"],
@@ -92,7 +95,11 @@ def _measure(builder_factory, smart: bool, assets: str):
         "pdf_words_missing": len(pdf_missing), "docx_words_missing": len(docx_missing),
         "docx_structural": drep.status if not drep.unverified else ("pass" if not drep.errors else "fail"),
         "wall_s": round(wall, 3), "cpu_s": round(cpu, 3), "peak_mb": round(peak, 1),
-        "renders": (comp.render_attempts + comp.repair_renders) if comp else 1,
+        "renders": fit + comp_renders, "fit_renders": fit,
+        "separated": s.metrics.get("separated_figures", 0.0),
+        "body_fill": round(sum(p.fill for p in s.pages if p.role == "body") /
+                           max(1, len([p for p in s.pages if p.role == "body"])), 3),
+        "status": comp.status if comp else "m5",
         "strategy": comp.strategy if comp else "m5", "pdf": pdf, "docx": dx,
     }
 
@@ -129,8 +136,9 @@ def main():
                                                              "qa_errors", "renders", "wall_s", "peak_mb")}))
     with open(os.path.join(out, "benchmark.json"), "w") as f:
         json.dump(rows, f, indent=1)
-    cols = ["pages", "score", "wasted", "utilization", "readability", "hard_errors", "qa_errors",
-            "pdf_words_missing", "docx_words_missing", "renders", "wall_s", "cpu_s", "peak_mb"]
+    cols = ["pages", "score", "wasted", "utilization", "body_fill", "separated", "readability",
+            "hard_errors", "qa_errors", "pdf_words_missing", "docx_words_missing", "renders",
+            "wall_s", "cpu_s", "peak_mb"]
     lines = ["| document | strategy | " + " | ".join(cols) + " |", "|---|---|" + "---|" * len(cols)]
     for name, r in rows.items():
         cells = [f"{r['m5'][c]} → {r['m6'][c]}" if r['m5'][c] != r['m6'][c] else f"{r['m6'][c]}" for c in cols]

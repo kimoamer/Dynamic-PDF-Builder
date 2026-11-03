@@ -155,7 +155,31 @@ def apply(name: str, doc, theme, page_w: float, measures: List[BlockMeasure]) ->
         if n:
             changes.append(f"{n} section intro(s) kept with the figure/table they introduce")
 
+    def compact_charts():
+        """Chart-heavy documents: re-draw charts natively at a size that lets a
+        heading + intro + chart appear twice per page. Text in the chart keeps
+        its point size; never below 2.6 in tall or the chart's own size."""
+        charts = [b for b in d.blocks if b.type == "chart"]
+        if len(charts) < 2:
+            return
+        from .analysis import frame_geometry
+        fg = frame_geometry(d, t)
+        target_h = max(2.6, min(4.0, (fg.height / 2 - 110) / 72))
+        max_w = fg.width / 72
+        n = 0
+        for b in charts:
+            if b.height > target_h + 0.05 or b.width > max_w:
+                square = b.chart_type in ("pie", "donut", "gauge")
+                h = min(b.height, target_h)
+                w = min(b.width, max_w, h * 1.25 if square else max_w)
+                _hint(b, figure_size=[round(w, 2), round(h, 2)])
+                n += 1
+        if n:
+            changes.append(f"{n} chart(s) re-drawn at {target_h:.1f} in tall (native text size kept)")
+
     group_intros()
+    if name in ("balanced", "data", "compact"):
+        compact_charts()
     if name == "balanced":
         changes.append(_set_measure(t, page_w, 55, 85))
         section_breaks(0.18)

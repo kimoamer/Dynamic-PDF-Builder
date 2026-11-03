@@ -1491,7 +1491,8 @@ def _cached_figure(ctx, block, theme, build):
     if cache is None:
         return build()
     key = ("fig", block.model_dump_json(exclude={"hints"}), theme.colors.model_dump_json(),
-           theme.spacing.block_gap, (block.hints or {}).get("figure_scale"))
+           theme.spacing.block_gap, (block.hints or {}).get("figure_scale"),
+           str((block.hints or {}).get("figure_size")))
     if key not in cache:
         cache[key] = build()
     return list(cache[key])

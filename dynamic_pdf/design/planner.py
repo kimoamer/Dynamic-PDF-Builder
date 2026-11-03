@@ -52,6 +52,7 @@ class LayoutPlan(BaseModel):
     decisions: List[LayoutDecision] = Field(default_factory=list)
     estimated_pages: float = 0.0
     measured_pages: Optional[int] = None
+    trial_renders: int = 0          # PDF renders spent by fit_pages
 
     def log(self, target: str, decision: str):
         self.decisions.append(LayoutDecision(target=target, decision=decision))
@@ -230,6 +231,8 @@ def fit_pages(sem: SemanticDocument, plan: DesignPlan, policy=None, max_trials: 
     from .tokens import compile_tokens
 
     def trial(theme):
+        if plan.layout is not None:
+            plan.layout.trial_renders += 1
         eng = LayoutEngine(sem.to_document(), policy=policy, theme=theme)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
