@@ -1,5 +1,7 @@
 """tools/reference_analyzer: extraction, metadata, repeatability, corrupt files, scans,
-Arabic/bilingual, spreads, duplicates, independence of related documents, isolation."""
+Arabic/bilingual, spreads, duplicates, independence of related documents, isolation.
+Every fixture is synthetic (sample_corpus.py): the defects found on real references
+are reproduced here, never the references themselves."""
 import hashlib
 import json
 import os
@@ -35,6 +37,14 @@ def corpus(tmp_path_factory):
 
 def _warn(corpus, file, code):
     return [w for w in corpus["res"]["warnings"] if w.get("file") == file and w["code"] == code]
+
+
+def _raw(corpus, file, index):
+    import pymupdf
+
+    from tools.reference_analyzer.measure import extract_page
+    with pymupdf.open(str(corpus["ref"] / file)) as doc:
+        return extract_page(doc[index])
 
 
 # ── measurements against ground truth ───────────────────────────────────
@@ -97,6 +107,162 @@ def test_scanned_page_has_no_text_layer(corpus):
     assert pg["fonts"]["value"] == [] and _warn(corpus, "scanned.pdf", "no_text_layer_scanned")
 
 
+# ── defects found on real references ────────────────────────────────────
+
+def test_table_detection_keeps_the_layout_model_off():
+    """PyMuPDF ≥2.1 gates find_tables with an ONNX model: tables vary with it and pages cost seconds."""
+    import inspect
+
+    from pymupdf import table
+
+    from tools.reference_analyzer.measure import _table_finder_options
+    has_option = "use_layout" in inspect.signature(table.find_tables).parameters
+    assert _table_finder_options() == ({"use_layout": False} if has_option else {})
+
+
+def test_running_elements_by_position_columns_and_leading(corpus):
+    gt, f = corpus["gt"]["long_report.pdf"], corpus["feat"]["long_report.pdf"]
+    s = f["summary"]
+    assert abs(s["margins_body_median"]["value"]["top"] - (gt["margin_top"] - 9.7)) <= 2      # head excluded
+    assert s["margins_body_median"]["value"]["bottom"] > 80                                   # footer excluded
+    assert s["margins_body_median"]["value"]["left"] == gt["margin_left"]
+    assert {r["band"] for r in s["running_elements"]["value"]} == {"top", "bottom"}
+    assert s["columns"]["value"] == {str(gt["columns"]): gt["pages"]} or s["columns"]["value"] == {gt["columns"]: gt["pages"]}
+    assert abs(s["line_spacing_body"]["value"] - gt["line_height"]) <= 0.03                   # 9.7 pt, body bin 9.5
+
+
+def test_first_body_line_at_a_fixed_position_is_no_running_element(corpus):
+    mg = corpus["feat"]["known_geometry.pdf"]["summary"]["margins_body_median"]["value"]
+    assert abs(mg["top"] - 80) <= 3
+
+
+def test_rotated_text_sets_no_margin(corpus):
+    pg = corpus["feat"]["long_report.pdf"]["pages"][0]
+    assert pg["margins_text"]["value"]["left"] == 40
+
+
+def test_margins_are_never_negative_and_frame_ignores_short_pages(corpus):
+    from tools.reference_analyzer.measure import classify_page
+    raw = _raw(corpus, "known_geometry.pdf", 0)
+    for b in raw["blocks"]:
+        for ln in b["lines"]:
+            ln["bbox"] = (-0.2, ln["bbox"][1], ln["bbox"][2], ln["bbox"][3])
+    assert classify_page(raw, 10.0)["margins_text"]["value"]["left"] == 0
+    s = corpus["feat"]["annual/northwind_annual_report_2023.pdf"]["summary"]
+    assert s["margins_body_frame"]["value"]["bottom"] <= s["margins_body_median"]["value"]["bottom"]
+
+
+def test_spread_sheets_with_a_footer_across_the_centre_are_measured_per_half(corpus):
+    gt, s = corpus["gt"]["spread_sheets.pdf"], corpus["feat"]["spread_sheets.pdf"]["summary"]
+    assert [x["page"] for x in s["spreads"]["value"]] == gt["spread_pages"]
+    fp = s["facing_pages"]["value"]
+    assert abs(fp["even"]["left"] - gt["outer"]) <= 1 and abs(fp["even"]["right"] - gt["inner"]) <= 1
+    assert abs(fp["odd"]["left"] - gt["inner"]) <= 1 and abs(fp["odd"]["right"] - gt["outer"]) <= 1
+
+
+def test_a4_landscape_pages_are_not_spreads(corpus):
+    assert corpus["feat"]["landscape_slides.pdf"]["summary"]["spreads"]["value"] == []
+
+
+def test_garbled_text_layer_is_not_reported_as_latin(corpus):
+    pg = corpus["feat"]["garbled.pdf"]["pages"][0]
+    assert pg["script"]["value"]["class"] == "undetermined" and pg["script"]["confidence"] == "low"
+    assert _warn(corpus, "garbled.pdf", "broken_text_extraction")
+    assert corpus["feat"]["known_geometry.pdf"]["pages"][0]["script"]["value"]["class"] == "latin_ltr"
+
+
+def test_font_name_hints_the_script_of_a_garbled_page(corpus):
+    from tools.reference_analyzer.measure import classify_page
+    raw = _raw(corpus, "garbled.pdf", 0)
+    for b in raw["blocks"]:
+        for ln in b["lines"]:
+            ln["font"] = "ABCDEF+TraditionalArabic"
+            ln["spans"] = [("ABCDEF+TraditionalArabic", *sp[1:]) for sp in ln["spans"]]
+    pg = classify_page(raw, 10.0)
+    assert pg["script"]["value"]["font_hint"] == "arabic"
+    assert {b["direction"] for b in pg["text_blocks"]["value"]} == {"rtl"}
+
+
+def test_low_share_of_replacement_characters_is_flagged(corpus):
+    from tools.reference_analyzer.measure import classify_page
+    raw = _raw(corpus, "known_geometry.pdf", 0)
+    assert "broken_text_extraction" not in classify_page(raw, 10.0)["extraction"]["value"]
+    line = raw["blocks"][1]["lines"][0]
+    line["text"] += "\ufffd" * 25
+    assert "broken_text_extraction" in classify_page(raw, 10.0)["extraction"]["value"]
+
+
+def test_image_tiles_are_one_placement(corpus):
+    pg = corpus["feat"]["mixed_media.pdf"]["pages"][0]
+    (im,) = pg["images"]["value"]
+    assert im["fragments"] == 30 and [round(v) for v in im["bbox"]] == [100, 340, 460, 540]
+    assert _warn(corpus, "mixed_media.pdf", "fragmented_images")
+
+
+def test_photo_openers_are_not_scans_and_their_titles_are_display_type(corpus):
+    f = corpus["feat"]["mixed_media.pdf"]
+    assert "image_only_page" in f["pages"][1]["extraction"]["value"]
+    assert not _warn(corpus, "mixed_media.pdf", "no_text_layer_scanned")
+    s = f["summary"]
+    assert [lv["size_pt"] for lv in s["heading_hierarchy"]["value"]] == [16.0]
+    assert {d["size_pt"] for d in s["display_sizes"]["value"]} == {48.0, 40.0}
+
+
+def test_caption_patterns_cite_the_pages_with_captions(corpus):
+    from tools.reference_analyzer.patterns import build_patterns
+    f = json.loads(json.dumps(corpus["feat"]["known_geometry.pdf"]))
+    f["pages"][1]["images"]["value"] = [{"nearest_text": None}]
+    f["pages"][2]["images"]["value"] = [{"nearest_text": {"position": "below", "smaller_than_body": True}}]
+    f["summary"]["images"]["value"]["caption_below"] = 1
+    (p,) = [c for c in build_patterns([f])["observations"] if c["id"] == "captions-below"]
+    assert p["evidence"][0]["pages"] == [3]
+
+
+def test_header_bands_have_no_caption(corpus):
+    pg = corpus["feat"]["mixed_media.pdf"]["pages"][2]
+    (im,) = pg["images"]["value"]
+    assert im["placement"] == "band" and im["nearest_text"] is None
+    assert corpus["feat"]["mixed_media.pdf"]["summary"]["images"]["value"]["caption_below"] == 0
+
+
+def test_tables_boxes_padding_and_fills(corpus):
+    f = corpus["feat"]["ruled_tables.pdf"]
+    p1, p2 = f["pages"][0], f["pages"][1]
+    (t,) = p1["tables"]["value"]                                     # the one-row box is not a table
+    assert (t["rows"], t["cols"]) == (6, 3) and p1["ruled_boxes"]["value"] == 1
+    assert abs(t["cell_padding_pt"]["left"] - corpus["gt"]["ruled_tables.pdf"]["padding"]) <= 1
+    assert t["header_fill"] is None and not t["banded_rows"]        # thin filled rules are not row fills
+    (t,) = p2["tables"]["value"]
+    assert t["header_fill"] and t["banded_rows"]                     # filled cell by cell
+    assert f["summary"]["tables"]["value"]["ruled_boxes"] == 1
+
+
+def test_template_refills_count_once_and_compilations_not_at_all(corpus):
+    assert _warn(corpus, "template_alpha.pdf", "possible_template_family")
+    assert _warn(corpus, "template_gamma.pdf", "possible_template_family")
+    assert corpus["docs"]["template_alpha.pdf"]["duplicates"] == []
+    pats = corpus["res"]["patterns"]["recurring"] + corpus["res"]["patterns"]["observations"]
+    small = [p for p in pats if p["id"] == "body-size-≤9.4 pt"][0]
+    assert small["evidence_files"] == 2 and small["support_docs"] == 1
+    assert _warn(corpus, "compilation.pdf", "mixed_design_system")
+    s = corpus["feat"]["compilation.pdf"]["summary"]
+    assert s["body_size"]["confidence"] == "low" and not s["design_uniformity"]["value"]["single_design"]
+    assert [p for p in pats if p["id"] == "body-size-≥11.5 pt"][0]["support_docs"] == 0
+    assert not _warn(corpus, "annual/northwind_annual_report_2023.pdf", "possible_template_family")
+
+
+def test_paragraphs_split_into_one_block_per_line_are_rejoined():
+    from tools.reference_analyzer.measure import _coalesce_line_blocks
+
+    def block(y, x0=60, x1=500, size=10):
+        ln = {"bbox": (x0, y - 9, x1, y + 2), "origin_y": y, "size": size}
+        return {"bbox": ln["bbox"], "lines": [ln]}
+    para = [block(100), block(115), block(130)]
+    assert [b["baselines"] for b in _coalesce_line_blocks(para, 595)] == [3]
+    assert len(_coalesce_line_blocks([block(100), block(130)], 595)) == 2            # paragraph gap
+    assert len(_coalesce_line_blocks([block(100, 60, 120), block(115, 60, 120)], 595)) == 2   # narrow cells
+
+
 # ── catalogue, metadata, duplicates ─────────────────────────────────────
 
 def test_catalog_records_hash_pages_metadata_and_licence(corpus):
@@ -111,6 +277,24 @@ def test_catalog_records_hash_pages_metadata_and_licence(corpus):
     s = corpus["docs"]["spread.pdf"]
     assert s["license"]["status"] == "unknown" and _warn(corpus, "spread.pdf", "license_unknown")
     assert all(not os.path.isabs(x["file"]) for x in corpus["res"]["catalog"]["documents"])
+
+
+def test_reviewed_records_for_one_pdf_are_merged(corpus):
+    """A features dump sorted first must not hide the rights index that describes the same bytes."""
+    d = corpus["docs"]["facing_pages.pdf"]
+    assert d["license"]["status"] == "study only"
+    assert d["license"]["source"] == "05-Reviewed/rights-index.csv"
+    assert d["license"]["evidence"] == "generated by sample_corpus.py"
+    assert d["reviewed_metadata"]["files"] == ["05-Reviewed/observed-features.json", "05-Reviewed/rights-index.csv"]
+    assert "sample text" not in json.dumps(d)                        # per-page text samples stay out
+    assert not _warn(corpus, "facing_pages.pdf", "reviewed_page_count_mismatch")
+
+
+def test_reviewed_records_never_match_other_bytes_or_folders(corpus):
+    assert corpus["docs"]["spread.pdf"]["license"]["status"] == "unknown"
+    assert _warn(corpus, "spread.pdf", "reviewed_sha256_mismatch")
+    assert corpus["docs"]["scanned.pdf"]["license"]["status"] == "unknown"           # archive/scanned.pdf is another file
+    assert _warn(corpus, "bilingual.pdf", "reviewed_page_count_mismatch")
 
 
 def test_related_documents_remain_independent_records(corpus):

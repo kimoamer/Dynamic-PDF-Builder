@@ -48,7 +48,7 @@ def analyze(input_dir: str, output_dir: str, reviewed: Optional[List[str]] = Non
     from .analyze import analyze_document, preview_pages
     from .catalog import (REVIEWED_DIR, assign_ids_and_duplicates, catalog_record, discover,
                           first_page_fingerprint, load_reviewed)
-    from .patterns import build_patterns
+    from .patterns import build_patterns, template_families
     from .report import render_preview, write_report
 
     input_dir = os.path.abspath(input_dir)
@@ -99,8 +99,17 @@ def analyze(input_dir: str, output_dir: str, reviewed: Optional[List[str]] = Non
                "input": {"folder": os.path.basename(input_dir.rstrip(os.sep)), "pdf_files": len(files),
                          "reviewed_metadata_records": len(rev_records)},
                "documents": records}
-    patterns = build_patterns(features, min_support=min_support,
-                              content_id={r["doc_id"]: r["sha256"] for r in records})
+    identity = {r["doc_id"]: r["sha256"] for r in records}
+    for family in template_families(features):
+        members = {identity[f["doc_id"]] for f in family}
+        if len(members) > 1:
+            for f in family:
+                identity[f["doc_id"]] = min(members)
+                others = ", ".join(o["file"] for o in family if o is not f)
+                warnings.append({"doc_id": f["doc_id"], "file": f["file"], "code": "possible_template_family",
+                                 "severity": "info", "message": f"same page count, formats, body size, fonts and "
+                                 f"margins as {others} — kept as a separate record, counted once in patterns"})
+    patterns = build_patterns(features, min_support=min_support, content_id=identity)
     order = {"error": 0, "warning": 1, "info": 2}
     warnings.sort(key=lambda w: (w.get("file", ""), w.get("page") or 0, order.get(w["severity"], 3), w["code"]))
     _dump(os.path.join(output_dir, "reference-catalog.json"), catalog)

@@ -1,27 +1,27 @@
 [
  {
-  "doc_id": "ref-bb02b5a9a7b4",
+  "doc_id": "ref-9163605b13c4",
   "file": "annual/northwind_annual_report_2023.pdf",
   "code": "previews_sampled",
   "severity": "info",
-  "message": "4 representative pages previewed of 12; all pages are measured"
+  "message": "6 representative pages previewed of 12; all pages are measured"
  },
  {
-  "doc_id": "ref-7237fd8f7b40",
+  "doc_id": "ref-cf94c704dffb",
   "file": "arabic_report.pdf",
   "code": "license_unknown",
   "severity": "warning",
   "message": "licence/reuse status unknown — treat as reference only"
  },
  {
-  "doc_id": "ref-7237fd8f7b40",
+  "doc_id": "ref-cf94c704dffb",
   "file": "arabic_report.pdf",
   "code": "reviewed_metadata_missing",
   "severity": "info",
   "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
  },
  {
-  "doc_id": "ref-7237fd8f7b40",
+  "doc_id": "ref-cf94c704dffb",
   "file": "arabic_report.pdf",
   "code": "arabic_presentation_forms",
   "severity": "info",
@@ -34,21 +34,14 @@
   "page": 1
  },
  {
-  "doc_id": "ref-16958a48b65c",
+  "doc_id": "ref-c7b38a7876de",
   "file": "bilingual.pdf",
-  "code": "license_unknown",
+  "code": "reviewed_page_count_mismatch",
   "severity": "warning",
-  "message": "licence/reuse status unknown — treat as reference only"
+  "message": "reviewed metadata says 99 pages, the PDF has 1"
  },
  {
-  "doc_id": "ref-16958a48b65c",
-  "file": "bilingual.pdf",
-  "code": "reviewed_metadata_missing",
-  "severity": "info",
-  "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
- },
- {
-  "doc_id": "ref-16958a48b65c",
+  "doc_id": "ref-c7b38a7876de",
   "file": "bilingual.pdf",
   "code": "ambiguous_alignment",
   "severity": "info",
@@ -60,7 +53,7 @@
   "page": 1
  },
  {
-  "doc_id": "ref-16958a48b65c",
+  "doc_id": "ref-c7b38a7876de",
   "file": "bilingual.pdf",
   "code": "arabic_presentation_forms",
   "severity": "info",
@@ -72,115 +65,214 @@
   "page": 1
  },
  {
-  "doc_id": "ref-d5ec6b2c942f",
+  "doc_id": "ref-981a17e13750",
+  "file": "compilation.pdf",
+  "code": "license_unknown",
+  "severity": "warning",
+  "message": "licence/reuse status unknown — treat as reference only"
+ },
+ {
+  "doc_id": "ref-981a17e13750",
+  "file": "compilation.pdf",
+  "code": "mixed_design_system",
+  "severity": "warning",
+  "page_count": 0,
+  "pages": [],
+  "message": "3 page formats each on ≥10 % of the pages: a compilation — document-level medians describe no single design and it gives no support to patterns"
+ },
+ {
+  "doc_id": "ref-981a17e13750",
+  "file": "compilation.pdf",
+  "code": "mixed_page_sizes",
+  "severity": "info",
+  "message": "3 distinct page sizes"
+ },
+ {
+  "doc_id": "ref-981a17e13750",
+  "file": "compilation.pdf",
+  "code": "reviewed_metadata_missing",
+  "severity": "info",
+  "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
+ },
+ {
+  "doc_id": "ref-d7279d19fd97",
   "file": "corrupt.pdf",
   "code": "empty_pdf",
   "severity": "error",
   "message": "no pages"
  },
  {
-  "doc_id": "ref-d5ec6b2c942f",
+  "doc_id": "ref-d7279d19fd97",
   "file": "corrupt.pdf",
   "code": "license_unknown",
   "severity": "warning",
   "message": "licence/reuse status unknown — treat as reference only"
  },
  {
-  "doc_id": "ref-d5ec6b2c942f",
+  "doc_id": "ref-d7279d19fd97",
   "file": "corrupt.pdf",
   "code": "reviewed_metadata_missing",
   "severity": "info",
   "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
  },
  {
-  "doc_id": "ref-2d5e7bf3d2f7",
-  "file": "facing_pages.pdf",
+  "doc_id": "ref-953195aea2ec",
+  "file": "garbled.pdf",
   "code": "license_unknown",
   "severity": "warning",
   "message": "licence/reuse status unknown — treat as reference only"
  },
  {
-  "doc_id": "ref-2d5e7bf3d2f7",
-  "file": "facing_pages.pdf",
-  "code": "previews_sampled",
-  "severity": "info",
-  "message": "4 representative pages previewed of 6; all pages are measured"
- },
- {
-  "doc_id": "ref-2d5e7bf3d2f7",
-  "file": "facing_pages.pdf",
+  "doc_id": "ref-953195aea2ec",
+  "file": "garbled.pdf",
   "code": "reviewed_metadata_missing",
   "severity": "info",
   "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
  },
  {
-  "doc_id": "ref-07d815dd9211",
+  "doc_id": "ref-953195aea2ec",
+  "file": "garbled.pdf",
+  "code": "broken_text_extraction",
+  "severity": "warning",
+  "message": "extracted text has replacement/private-use characters or a broken font encoding — font measurements kept, text and script unreliable",
+  "pages": [
+   1
+  ],
+  "page_count": 1,
+  "page": 1
+ },
+ {
+  "doc_id": "ref-99ebf82af396",
   "file": "known_geometry.pdf",
   "code": "duplicate_exact",
   "severity": "warning",
   "message": "identical bytes to known_geometry_copy.pdf — kept as a separate record"
  },
  {
-  "doc_id": "ref-07d815dd9211",
-  "file": "known_geometry.pdf",
-  "code": "ambiguous_alignment",
-  "severity": "info",
-  "message": "multi-line blocks with no consistent alignment",
-  "pages": [
-   2
-  ],
-  "page_count": 1,
-  "page": 2
- },
- {
-  "doc_id": "ref-07d815dd9211-2",
+  "doc_id": "ref-99ebf82af396-2",
   "file": "known_geometry_copy.pdf",
   "code": "duplicate_exact",
   "severity": "warning",
   "message": "identical bytes to known_geometry.pdf — kept as a separate record"
  },
  {
-  "doc_id": "ref-07d815dd9211-2",
+  "doc_id": "ref-99ebf82af396-2",
   "file": "known_geometry_copy.pdf",
   "code": "license_unknown",
   "severity": "warning",
   "message": "licence/reuse status unknown — treat as reference only"
  },
  {
-  "doc_id": "ref-07d815dd9211-2",
+  "doc_id": "ref-99ebf82af396-2",
   "file": "known_geometry_copy.pdf",
   "code": "reviewed_metadata_missing",
   "severity": "info",
   "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
  },
  {
-  "doc_id": "ref-07d815dd9211-2",
-  "file": "known_geometry_copy.pdf",
-  "code": "ambiguous_alignment",
+  "doc_id": "ref-3a44fd9b00eb",
+  "file": "landscape_slides.pdf",
+  "code": "license_unknown",
+  "severity": "warning",
+  "message": "licence/reuse status unknown — treat as reference only"
+ },
+ {
+  "doc_id": "ref-3a44fd9b00eb",
+  "file": "landscape_slides.pdf",
+  "code": "reviewed_metadata_missing",
   "severity": "info",
-  "message": "multi-line blocks with no consistent alignment",
+  "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
+ },
+ {
+  "doc_id": "ref-3420d01129f9",
+  "file": "long_report.pdf",
+  "code": "license_unknown",
+  "severity": "warning",
+  "message": "licence/reuse status unknown — treat as reference only"
+ },
+ {
+  "doc_id": "ref-3420d01129f9",
+  "file": "long_report.pdf",
+  "code": "reviewed_metadata_missing",
+  "severity": "info",
+  "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
+ },
+ {
+  "doc_id": "ref-2b6bb9af11ae",
+  "file": "mixed_media.pdf",
+  "code": "license_unknown",
+  "severity": "warning",
+  "message": "licence/reuse status unknown — treat as reference only"
+ },
+ {
+  "doc_id": "ref-2b6bb9af11ae",
+  "file": "mixed_media.pdf",
+  "code": "previews_sampled",
+  "severity": "info",
+  "message": "6 representative pages previewed of 7; all pages are measured"
+ },
+ {
+  "doc_id": "ref-2b6bb9af11ae",
+  "file": "mixed_media.pdf",
+  "code": "reviewed_metadata_missing",
+  "severity": "info",
+  "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
+ },
+ {
+  "doc_id": "ref-2b6bb9af11ae",
+  "file": "mixed_media.pdf",
+  "code": "fragmented_images",
+  "severity": "info",
+  "message": "many touching images merged into placements — a picture stored as tiles, or text set as image strips (not counted as text)",
   "pages": [
-   2
+   1
   ],
   "page_count": 1,
+  "page": 1
+ },
+ {
+  "doc_id": "ref-2b6bb9af11ae",
+  "file": "mixed_media.pdf",
+  "code": "image_only_page",
+  "severity": "info",
+  "message": "full-page image with almost no text, in a document with live text — a designed page, not a scan",
+  "pages": [
+   2,
+   5
+  ],
+  "page_count": 2,
   "page": 2
  },
  {
-  "doc_id": "ref-c8dfaf2f1b35",
+  "doc_id": "ref-017a5b3a4503",
+  "file": "ruled_tables.pdf",
+  "code": "license_unknown",
+  "severity": "warning",
+  "message": "licence/reuse status unknown — treat as reference only"
+ },
+ {
+  "doc_id": "ref-017a5b3a4503",
+  "file": "ruled_tables.pdf",
+  "code": "reviewed_metadata_missing",
+  "severity": "info",
+  "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
+ },
+ {
+  "doc_id": "ref-6a148a3e9805",
   "file": "scanned.pdf",
   "code": "license_unknown",
   "severity": "warning",
   "message": "licence/reuse status unknown — treat as reference only"
  },
  {
-  "doc_id": "ref-c8dfaf2f1b35",
+  "doc_id": "ref-6a148a3e9805",
   "file": "scanned.pdf",
   "code": "reviewed_metadata_missing",
   "severity": "info",
   "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
  },
  {
-  "doc_id": "ref-c8dfaf2f1b35",
+  "doc_id": "ref-6a148a3e9805",
   "file": "scanned.pdf",
   "code": "no_text_layer_scanned",
   "severity": "warning",
@@ -192,30 +284,108 @@
   "page": 1
  },
  {
-  "doc_id": "ref-fb23ae9a1592",
+  "doc_id": "ref-b9943160a1ec",
   "file": "spread.pdf",
   "code": "license_unknown",
   "severity": "warning",
   "message": "licence/reuse status unknown — treat as reference only"
  },
  {
-  "doc_id": "ref-fb23ae9a1592",
+  "doc_id": "ref-b9943160a1ec",
+  "file": "spread.pdf",
+  "code": "reviewed_sha256_mismatch",
+  "severity": "warning",
+  "message": "rights-index.csv names this file with a different SHA-256 — record ignored"
+ },
+ {
+  "doc_id": "ref-b9943160a1ec",
   "file": "spread.pdf",
   "code": "reviewed_metadata_missing",
   "severity": "info",
   "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
  },
  {
-  "doc_id": "ref-fb23ae9a1592",
+  "doc_id": "ref-b9943160a1ec",
   "file": "spread.pdf",
   "code": "spread_detected",
   "severity": "info",
-  "message": "landscape page with two halves and no text across the centre — likely a two-page spread; margins and columns are measured on the whole sheet",
+  "message": "sheet of two facing pages (size, and text on both halves with almost none across the centre) — margins and columns are measured per half",
   "pages": [
    1,
    2
   ],
   "page_count": 2,
   "page": 1
+ },
+ {
+  "doc_id": "ref-e0a205d949e3",
+  "file": "spread_sheets.pdf",
+  "code": "license_unknown",
+  "severity": "warning",
+  "message": "licence/reuse status unknown — treat as reference only"
+ },
+ {
+  "doc_id": "ref-e0a205d949e3",
+  "file": "spread_sheets.pdf",
+  "code": "reviewed_metadata_missing",
+  "severity": "info",
+  "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
+ },
+ {
+  "doc_id": "ref-e0a205d949e3",
+  "file": "spread_sheets.pdf",
+  "code": "spread_detected",
+  "severity": "info",
+  "message": "sheet of two facing pages (size, and text on both halves with almost none across the centre) — margins and columns are measured per half",
+  "pages": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "page_count": 4,
+  "page": 1
+ },
+ {
+  "doc_id": "ref-5249f019e4d8",
+  "file": "template_alpha.pdf",
+  "code": "license_unknown",
+  "severity": "warning",
+  "message": "licence/reuse status unknown — treat as reference only"
+ },
+ {
+  "doc_id": "ref-5249f019e4d8",
+  "file": "template_alpha.pdf",
+  "code": "possible_template_family",
+  "severity": "info",
+  "message": "same page count, formats, body size, fonts and margins as template_gamma.pdf — kept as a separate record, counted once in patterns"
+ },
+ {
+  "doc_id": "ref-5249f019e4d8",
+  "file": "template_alpha.pdf",
+  "code": "reviewed_metadata_missing",
+  "severity": "info",
+  "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
+ },
+ {
+  "doc_id": "ref-5a2e89d3ead6",
+  "file": "template_gamma.pdf",
+  "code": "license_unknown",
+  "severity": "warning",
+  "message": "licence/reuse status unknown — treat as reference only"
+ },
+ {
+  "doc_id": "ref-5a2e89d3ead6",
+  "file": "template_gamma.pdf",
+  "code": "possible_template_family",
+  "severity": "info",
+  "message": "same page count, formats, body size, fonts and margins as template_alpha.pdf — kept as a separate record, counted once in patterns"
+ },
+ {
+  "doc_id": "ref-5a2e89d3ead6",
+  "file": "template_gamma.pdf",
+  "code": "reviewed_metadata_missing",
+  "severity": "info",
+  "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
  }
 ]

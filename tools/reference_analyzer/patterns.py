@@ -39,8 +39,26 @@ def _group(features: List[dict], key: Callable[[dict], Optional[str]], measured:
     return groups
 
 
+def template_families(features: List[dict]) -> List[List[dict]]:
+    """Documents that are one template refilled: same page count and formats, same body size, same fonts
+    and same top and side margins (the bottom moves with the text). They are separate records but one
+    design, so they support a pattern once. Related documents of different length (a report and its
+    summary edition) stay independent."""
+    groups: Dict[tuple, List[dict]] = {}
+    for f in features:
+        fonts = sorted({x["family"] for p in f["pages"] for x in p["fonts"]["value"][:3]})
+        sizes = sorted({(p["size"]["value"]["width_pt"], p["size"]["value"]["height_pt"]) for p in f["pages"]})
+        margins = f["summary"]["margins_body_median"]["value"]
+        if fonts and margins and len(f["pages"]) >= 2:
+            key = (len(f["pages"]), tuple(sizes), f["summary"]["body_size"]["value"], tuple(fonts),
+                   tuple(round(margins[k]) for k in ("top", "left", "right")))
+            groups.setdefault(key, []).append(f)
+    return [g for _, g in sorted(groups.items(), key=lambda kv: kv[1][0]["file"]) if len(g) > 1]
+
+
 def build_patterns(features: List[dict], min_support: int = 2, content_id: Optional[Dict[str, str]] = None) -> dict:
-    """``content_id`` maps doc_id → SHA-256 so byte-identical copies count once as support."""
+    """``content_id`` maps doc_id → design identity (SHA-256, or a template family) so that copies and
+    refills of one design count once as support. Compilations show in the evidence but support nothing."""
     S = lambda f, k: f["summary"][k]["value"]          # noqa: E731
     candidates = []
 
@@ -147,8 +165,10 @@ def build_patterns(features: List[dict], min_support: int = 2, content_id: Optio
                                         "range_pt": [min(vals), max(vals)]}, "evidence": pads})
     # 9. captions
     for where in ("below", "above"):
-        ev = [_ev(f, S(f, "images"), [p["page"] for p in f["pages"] if p["images"]["value"]])
-              for f in features if S(f, "images")[f"caption_{where}"]]
+        def caption_pages(f):
+            return [p["page"] for p in f["pages"] for i in p["images"]["value"] if i["nearest_text"]
+                    and i["nearest_text"]["position"] == where and i["nearest_text"]["smaller_than_body"]]
+        ev = [_ev(f, S(f, "images"), sorted(set(caption_pages(f)))) for f in features if S(f, "images")[f"caption_{where}"]]
         if ev:
             candidates.append({"id": f"captions-{where}", "category": "figures",
                                "title": f"Image captions set {where} the image in smaller type",
@@ -167,9 +187,11 @@ def build_patterns(features: List[dict], min_support: int = 2, content_id: Optio
                                "proposal": {"layout_rule": "measured RTL block alignment per document"},
                                "evidence": ev})
 
+    compilations = {f["doc_id"] for f in features if not S(f, "design_uniformity")["single_design"]}
     recurring, observations = [], []
     for c in candidates:
-        c["support_docs"] = len({(content_id or {}).get(e["doc_id"], e["doc_id"]) for e in c["evidence"]})
+        c["support_docs"] = len({(content_id or {}).get(e["doc_id"], e["doc_id"]) for e in c["evidence"]
+                                 if e["doc_id"] not in compilations})
         c["evidence_files"] = len(c["evidence"])
         c["basis"] = "inferred"
         c["status"] = "proposal — needs human review"
