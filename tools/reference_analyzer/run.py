@@ -133,7 +133,15 @@ def main(argv=None) -> int:
     a.add_argument("--max-previews", type=int, default=6, help="preview pages per document (all pages are measured)")
     a.add_argument("--min-support", type=int, default=2, help="documents needed for a recurring pattern")
     a.add_argument("--no-previews", action="store_true")
+    r = sub.add_parser("review", help="validate the machine-readable pattern review")
+    r.add_argument("--file", default=None, help="review file (default: the committed pattern_review.json)")
+    r.add_argument("--patterns", help="design-patterns.json of a run: also check ids and support against it")
     args = ap.parse_args(argv)
+    if args.cmd == "review":
+        from .review import REVIEW_PATH, check
+        errs = check(args.file or REVIEW_PATH, args.patterns)
+        print("\n".join(errs) if errs else "pattern review OK")
+        return 1 if errs else 0
     try:
         import pymupdf  # noqa: F401
     except ImportError:

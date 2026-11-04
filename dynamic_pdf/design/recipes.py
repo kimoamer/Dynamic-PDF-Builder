@@ -7,7 +7,7 @@ never touch content: they only restyle, number and add navigation (TOC).
 """
 from __future__ import annotations
 
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, Field
 
@@ -37,6 +37,8 @@ class DesignRecipe(BaseModel):
     header_enabled: bool = True
     skip_first_page_header: bool = True
     page_number_format: str = "Page {n} of {total}"
+    heading_ramp_locked: bool = False          # the planner leaves the ramp alone
+    body_columns: int = 1                      # columns for runs of prose (planner decides where)
     notes: List[str] = Field(default_factory=list)
 
 
@@ -125,6 +127,87 @@ def recipe_for(decision: ProfileDecision, bilingual: bool = False) -> DesignReci
         r.drop_cap = False
         r.line_height = max(r.line_height, 1.6)    # Arabic needs taller line boxes
         r.notes.append("RTL: Arabic face, right-aligned blocks, taller leading, no indents")
+    return r
+
+
+class EvidenceRecipe(BaseModel):
+    """An opt-in overlay on the existing recipe, built only from accepted reference patterns.
+
+    ``evidence`` maps each change to pattern ids accepted in
+    the reviewed ``pattern_review.json`` of the offline analyzer (a test checks them).
+    ``not_applied`` records what was asked for but has no accepted evidence.
+    ``status`` comes from the baseline/proposed comparison in
+    ``benchmarks/m74``: only "active" recipes are used by default.
+    """
+    name: str
+    title: str
+    profiles: Tuple[Profile, ...]
+    scripts: Tuple[str, ...]                   # "ltr" | "rtl" | "bilingual"
+    base_size: float
+    line_height: float
+    heading_scale: Optional[List[float]] = None    # None: the existing ramp stays
+    body_columns: int = 1
+    evidence: Dict[str, Tuple[str, ...]]
+    not_applied: Dict[str, str] = Field(default_factory=dict)
+    status: str = "inconclusive"               # "active" | "inconclusive"
+    status_reason: str = ""
+
+    def applies(self, profile: Profile, script: str) -> bool:
+        return profile in self.profiles and script in self.scripts
+
+
+_H1_RAMP = "heading-ramp-H1 >2.6× body"
+_NO_MARGIN = "side-margin patterns need more evidence; recipe margins unchanged"
+_REPORTS = (Profile.EXECUTIVE_REPORT, Profile.PROPOSAL, Profile.DATA_REPORT, Profile.FINANCIAL_REPORT,
+            Profile.CORPORATE_MEMO, Profile.GENERAL, Profile.TECHNICAL_MANUAL)
+
+EVIDENCE_RECIPES: Dict[str, EvidenceRecipe] = {r.name: r for r in (
+    EvidenceRecipe(
+        name="financial_corporate", title="Financial / Corporate",
+        profiles=(Profile.FINANCIAL_REPORT, Profile.CORPORATE_MEMO), scripts=("ltr",),
+        base_size=10.0, line_height=1.25, heading_scale=[2.75, 1.6, 1.25, 1.05, 1.0, 0.95],
+        evidence={"base_size": ("body-size-9.5–10.4 pt",), "line_height": ("leading-≤1.25×",),
+                  "heading_scale": (_H1_RAMP,), "accent": ("restrained-accent",)},
+        not_applied={"margins": _NO_MARGIN,
+                     "table padding": "table-padding needs more evidence; planner padding unchanged"},
+        status_reason="no measured gain on either document: no page or table-split saved, lower readability "
+                      "score, and a heading separated from its table; no human review yet"),
+    EvidenceRecipe(
+        name="editorial_executive", title="Editorial / Executive",
+        profiles=(Profile.EXECUTIVE_REPORT, Profile.PROPOSAL, Profile.DATA_REPORT), scripts=("ltr",),
+        base_size=10.0, line_height=1.38, heading_scale=[2.75, 1.6, 1.25, 1.05, 1.0, 0.95], body_columns=2,
+        evidence={"base_size": ("body-size-9.5–10.4 pt",), "line_height": ("leading-1.26–1.40×",),
+                  "heading_scale": (_H1_RAMP,), "body_columns": ("multi-column-body",)},
+        not_applied={"whitespace": "no accepted pattern measures whitespace; " + _NO_MARGIN},
+        status_reason="safe on all three documents, but columns were used on one fictional briefing only, "
+                      "the proposal lost body size, and no human review exists yet"),
+    EvidenceRecipe(
+        name="arabic_bilingual", title="Arabic / Bilingual",
+        profiles=_REPORTS, scripts=("rtl", "bilingual"),
+        base_size=12.0, line_height=1.4,
+        evidence={"base_size": ("body-size-≥11.5 pt",), "line_height": ("leading-1.26–1.40×",),
+                  "direction": ("script-arabic_rtl", "script-bilingual")},
+        not_applied={"heading ramp": "tried and withdrawn: at 12 pt an H1 of 2.75× wrapped bilingual headings "
+                                     "mid-phrase and overlapped the Arabic cover subtitle",
+                     "facing pages": "accepted, but recipes have no signal for two-sided printing",
+                     "columns": "the column flow is left-to-right only",
+                     "spacing": "no accepted pattern measures Arabic spacing beyond leading"},
+        status_reason="larger body text is safe on three of four documents; the long Arabic report goes over "
+                      "the page limit and falls back; no human review yet"),
+)}
+
+
+def apply_evidence_recipe(recipe: DesignRecipe, evidence: EvidenceRecipe) -> DesignRecipe:
+    """The existing recipe with an evidence recipe's accepted changes on top."""
+    r = recipe.model_copy(deep=True)
+    r.base_size = evidence.base_size
+    r.line_height = evidence.line_height
+    if evidence.heading_scale:
+        r.heading_scale = list(evidence.heading_scale)
+        r.heading_ramp_locked = True
+    r.body_columns = evidence.body_columns
+    r.notes.append(f"evidence recipe {evidence.name}: {r.base_size:g}pt / {r.line_height:g}, "
+                   f"H1 {r.heading_scale[0]:g}× body")
     return r
 
 

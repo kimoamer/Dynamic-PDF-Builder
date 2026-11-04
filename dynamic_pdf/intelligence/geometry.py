@@ -25,6 +25,7 @@ class Region:
     block: Optional[int]  # index of the semantic block, None for engine flowables
     role: str             # heading | caption | table | figure | body | list | other
     level: int = 0        # heading level when role == heading
+    extra_blocks: tuple = ()   # further blocks in this region (a run set in columns)
 
     @property
     def height(self) -> float:
@@ -159,7 +160,8 @@ class GeoFrame(Frame):
             geo.regions.append(Region(page, self.id, top, max(bottom, self._y1), x0, x1,
                                       flowable._dpb_block,
                                       getattr(flowable, "_dpb_role", "other"),
-                                      getattr(flowable, "_dpb_level", 0)))
+                                      getattr(flowable, "_dpb_level", 0),
+                                      getattr(flowable, "_dpb_extra_blocks", ())))
         return placed
 
     def split(self, flowable, canv):

@@ -21,23 +21,25 @@ every page is measured), `--min-support N` (distinct documents needed for a recu
   and count once when patterns compute support. So do refills of one template (same page count and formats,
   body size, fonts, top and side margins: `possible_template_family`). A compilation (3 or more page formats
   each on ≥10 % of the pages: `mixed_design_system`) stays in the evidence but supports no pattern.
-* Reviewed metadata (licence, provenance) is read from `05-Reviewed/` inside the input folder or next to
+* Reviewed metadata (rights notes, licence, provenance) is read from `05-Reviewed/` inside the input folder or next to
   it. Supported: `*.json` (object, list, or `{"documents": [...]}`), `*.csv` (header row), `*.md`/`*.yaml`/
   `*.txt` (flat `key: value` lines). A record matches a PDF by `sha256`, by `file`/`filename`/`path`/
   `original_relative_path` (a path must equal the relative path, a bare name the file name), or as a sidecar
   named after the PDF stem. All records matching a PDF are merged, first non-empty value wins; per-page dumps
   are left out of the catalogue. A record naming the file with another SHA-256 is ignored
   (`reviewed_sha256_mismatch`); a page count that disagrees with the PDF is reported
-  (`reviewed_page_count_mismatch`). Recognised keys: licence — `license`, `licence`, `license_status`,
-  `rights_status`, `reuse`, `reuse_status`, `rights`, `usage` (`rights_evidence` is kept beside it); provenance
-  — `source`, `provenance`, `url`, `publisher`, `origin`, `downloaded_from`, `obtained`. Missing values are
-  reported as `unknown`, never guessed.
+  (`reviewed_page_count_mismatch`). Recognised keys: rights note — `rights_status`, `reuse`, `reuse_status`,
+  `rights`, `usage` (`rights_evidence` is kept beside it); legal licence — `license`, `licence`,
+  `license_status`; provenance — `source`, `provenance`, `url`, `publisher`, `origin`, `downloaded_from`,
+  `obtained`. These stay three separate facts: a reviewer's rights note never becomes a licence, and a licence
+  or provenance counts as verified only when the record says `license_verified` or `provenance_verified`.
+  Missing values are reported as `unknown`, never guessed.
 
 ## Outputs
 
 | file | content |
 |---|---|
-| `reference-catalog.json` | per file: path (relative), SHA-256, bytes, status, page count, page sizes, PDF metadata, `/PageLayout`, licence/reuse, provenance, duplicates; tool versions and dependency licences |
+| `reference-catalog.json` | per file: path (relative), SHA-256, bytes, status, page count, page sizes, PDF metadata, `/PageLayout`, rights status, licence, provenance, duplicates; tool versions and dependency licences |
 | `design-features.json` | per document: summary (body size and its share, design uniformity, heading hierarchy, display sizes, leading, margins, running headers/footers, facing pages, spreads, columns, alignment, scripts, accent colours, rules, tables, images, vector graphics), a recipe candidate mapped to `DesignRecipe` fields with the nearest existing recipe, and per-page measurements |
 | `design-patterns.json` | recurring patterns (≥ `--min-support` distinct documents) and single-document observations, each with evidence pages — all `inferred`, `proposal — needs human review` |
 | `warnings.json` | unreadable/encrypted/empty files, scans, image-only pages, fragmented images, broken text extraction, Arabic presentation forms, spreads, ambiguous alignment, duplicates, template families, compilations, missing or conflicting licence/metadata, sampled previews (page-level warnings grouped per code with their pages) |
@@ -60,7 +62,7 @@ where stated); coordinates use a top-left origin.
 | line spacing at body size | measured | high with ≥3 pages | consecutive same-size baselines in a block, sizes within 0.25 pt of the body bin |
 | body size | inferred | by share of characters | character-weighted most common size; high ≥50 %, medium ≥25 %, low below or on a compilation |
 | heading hierarchy | inferred | medium | size ≥1.15× body, ≤3 lines, ≥2 occurrences, on text pages (≥200 characters); covers, openers, numerals and type over 5× body go to `display_sizes` |
-| columns, alignment | inferred | per value | columns: most side-by-side multi-line body blocks over ≥25 % of the text height, tables and running elements excluded. 2-line blocks only report the flush edge |
+| columns, alignment | inferred | per value | columns: most side-by-side multi-line body blocks over ≥25 % of the text height, tables and running elements excluded. 2-line blocks only report the flush edge. The multi-column pattern's share is of every text page, so pages that could not be classified count against it |
 | running headers/footers | inferred | medium | lines in top/bottom 12 % repeated on ≥50 % of all, odd or even pages, by text or by position and size; lines with text at line distance towards the page centre belong to the body flow |
 | facing pages (mirrored margins), spreads | inferred | medium | spreads: sheets ≥900 pt wide, ~2 pages, text on both halves, ≤5 % of lines across the centre, plus sheets of that size when half of them qualify; margins and columns are then measured per half (right half = odd, left half = even) |
 | tables | inferred | medium/low | ruled tables of ≥2×2 cells (`find_tables(strategy="lines")`, layout model off); 1-row or 1-column grids are `ruled_boxes`; padding = nearer of the left/right cell edge to text; fills read at mid-row, whole-row or cell by cell, near-white ignored |
@@ -116,3 +118,15 @@ allows it.
 
 Open `analysis-report.html`, check each recurring pattern against its evidence pages, and record decisions
 (accept / reject / needs more evidence) before any value is used in `dynamic_pdf/design/recipes.py`.
+
+Decisions live in [`pattern_review.json`](pattern_review.json), linked to documents by doc id and SHA-256 and
+to pages by role (`supports`, `contradicts`, `unchecked`). An accepted pattern must say where it applies
+(`applies_to`); frequency alone is not accepted as a reason. `REAL_CORPUS_REVIEW.md` is the readable form.
+
+```bash
+python -m tools.reference_analyzer review
+python -m tools.reference_analyzer review --patterns RESULTS/design-patterns.json
+```
+
+The first checks the file against itself and `REAL_CORPUS_REVIEW.md`, the second also against a run. Only ids
+accepted here may be cited by `EVIDENCE_RECIPES` in `dynamic_pdf/design/recipes.py`; a test enforces it.

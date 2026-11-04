@@ -34,6 +34,10 @@ from .measure import chars_per_line, column_metrics, fit_columns, wrap_ratio
 from .profile import Profile
 
 MIN_TABLE_SIZE = 7.5
+COLUMN_GAP = 18.0
+MIN_RUN_PARAGRAPHS = 3      # a column run is continuous prose, not a sentence or two
+MIN_RUN_CHARS = 900
+MIN_COLUMN_CPL = 40
 _PAGE = {PageSize.A4: (595.28, 841.89), PageSize.LETTER: (612, 792), PageSize.LEGAL: (612, 1008)}
 _NUMERIC = re.compile(r"^[\s$€£¥%+\-−(),.\d٠-٩]+$")
 _PROSE_PROFILES = {Profile.PROPOSAL, Profile.ACADEMIC_REPORT, Profile.LETTER,
@@ -103,7 +107,9 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
     st = sem.stats
 
     # ── hierarchy: heading ramp adapts to outline depth ──
-    if st.max_heading_level >= 4:
+    if plan.recipe.heading_ramp_locked:
+        lp.log("headings", "heading ramp set by the evidence recipe")
+    elif st.max_heading_level >= 4:
         ty.heading_scale = [min(s, r) for s, r in zip(ty.heading_scale, [1.7, 1.38, 1.18, 1.06, 1.0, 0.95])]
         lp.log("headings", f"outline is {st.max_heading_level} levels deep: compressed heading ramp")
     elif 0 < st.max_heading_level <= 2 and st.headings >= 2:
@@ -118,7 +124,10 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
             mins, nats = column_metrics(b.headers or [], b.rows, ty.body_family, ty.base_size - 1)
             widest_table = max(widest_table, sum(nats))
     cpl = chars_per_line(width, ty.body_family, ty.base_size)
-    if profile in _PROSE_PROFILES and cpl > 92 and widest_table < width * 0.9 and sem.direction == "ltr":
+    runs = _column_runs(sem, plan, width)
+    if runs:
+        lp.log("measure", f"{cpl:.0f} chars/line; columns set the measure of the long prose runs")
+    elif profile in _PROSE_PROFILES and cpl > 92 and widest_table < width * 0.9 and sem.direction == "ltr":
         target_w = width * 88 / cpl
         extra = (width - target_w) / 2
         sp.page_margin_left += extra
@@ -192,6 +201,7 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
                     lp.log("lead", "opening paragraph set as a lead (larger, no indent)")
                 break
 
+    _mark_column_runs(sem, plan, runs, lp)
     lp.estimated_pages = _estimate_pages(sem, theme, width)
 
     # ── cover page from metadata (only for long, titled reports) ──
@@ -205,6 +215,41 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
     return lp
 
 
+# ─────────────────────────── column runs ───────────────────────────
+
+def _column_runs(sem: SemanticDocument, plan: DesignPlan, width: float) -> List[List[int]]:
+    """Runs of consecutive prose paragraphs long enough for columns. Left-to-right documents only."""
+    n = plan.recipe.body_columns
+    ty = plan.theme.typography
+    if n < 2 or sem.direction != "ltr" or sem.stats.bilingual:
+        return []
+    if chars_per_line((width - COLUMN_GAP * (n - 1)) / n, ty.body_family, ty.base_size) < MIN_COLUMN_CPL:
+        return []
+    runs: List[List[int]] = []
+    cur: List[int] = []
+    for i, b in enumerate(sem.blocks + [None]):
+        if b is not None and b.type == "paragraph" and not (b.hints or {}).get("keep_tail"):
+            cur.append(i)
+            continue
+        if len(cur) >= MIN_RUN_PARAGRAPHS and sum(len(plain_text(sem.blocks[j].text)) for j in cur) >= MIN_RUN_CHARS:
+            runs.append(cur)
+        cur = []
+    return runs
+
+
+def _mark_column_runs(sem: SemanticDocument, plan: DesignPlan, runs: List[List[int]], lp: LayoutPlan) -> None:
+    for k, run in enumerate(runs):
+        kept = [i for i in run if not (sem.blocks[i].hints or {}).get("lead")]   # a lead stays full width
+        if len(kept) < MIN_RUN_PARAGRAPHS:
+            continue
+        for i in kept:
+            b = sem.blocks[i]
+            b.hints = {**(b.hints or {}), "flow_run": k, "flow_columns": plan.recipe.body_columns,
+                       "flow_gap": COLUMN_GAP}
+        lp.log("columns", f"{len(kept)} paragraphs from block {kept[0]} set in "
+                          f"{plan.recipe.body_columns} balanced columns")
+
+
 # ─────────────────────────── page fit ───────────────────────────
 
 def _tighten(theme, spacing: float, margins: float, leading_cut: float):
@@ -215,7 +260,7 @@ def _tighten(theme, spacing: float, margins: float, leading_cut: float):
     sp.heading_spacing_after = [round(v * spacing, 1) for v in sp.heading_spacing_after]
     sp.page_margin_top = max(42.0, round(sp.page_margin_top * margins, 1))
     sp.page_margin_bottom = max(42.0, round(sp.page_margin_bottom * margins, 1))
-    ty.line_height = max(1.3, round(ty.line_height - leading_cut, 2))
+    ty.line_height = min(ty.line_height, max(1.3, round(ty.line_height - leading_cut, 2)))
 
 
 def fit_pages(sem: SemanticDocument, plan: DesignPlan, policy=None, max_trials: int = 2) -> None:

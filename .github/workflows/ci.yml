@@ -35,6 +35,18 @@ jobs:
         run: |
           python -m dynamic_pdf.qa.golden tests/fixtures tests/golden
           python -m dynamic_pdf.qa.golden tests/fixtures review --update --sheets
+      - name: Evidence recipe comparison (PDF and LibreOffice-rendered DOCX)
+        if: matrix.python-version == '3.12'
+        run: python benchmarks/m74/run.py m74-comparison --jobs 2
+      - name: Upload evidence recipe comparison
+        if: matrix.python-version == '3.12' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m74-comparison
+          path: |
+            m74-comparison/gallery
+            m74-comparison/results.json
+            m74-comparison/report.md
       - name: Upload contact sheets for visual review
         if: matrix.python-version == '3.12' && always()
         uses: actions/upload-artifact@v4

@@ -49,14 +49,17 @@ td, th { border:1px solid var(--line); padding:3px 8px; text-align:left; }
 <p class="intro">Each document was rendered twice from identical input. The two versions are shown blind as
 <b>A</b> and <b>B</b> (the assignment is fixed per document and stored in the export); documents whose
 two layouts are identical are marked and need no judgment. Compare the full-page
-contact sheets for the PDF and for the DOCX (rendered independently by LibreOffice), then choose A, B or Tie and
+contact sheets for the PDF and for the DOCX (rendered independently of the PDF), then choose A, B or Tie and
 optionally tick reasons. Judgments stay in this browser until you export them. Automated metrics are hidden
 under “Automated metrics” — open them only after judging. No rating is pre-filled.</p>
 <div id="docs"></div>
 </main>
 <script>
 const DATA = /*__DATA__*/null;
-const KEY = "m7-layout-review-v1";
+const V = DATA.variant || "smart";              // the variant compared with the baseline
+const FORMAT = DATA.format || "dynamic-pdf-builder/m7-human-preferences";
+const DOCX_BY = DATA.docx_renderer || "LibreOffice";
+const KEY = DATA.storage_key || "m7-layout-review-v1";
 let state = {};
 try { state = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { state = {}; }
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} progress(); };
@@ -67,23 +70,23 @@ function sheet(doc, side, fmt) {
   const pages = fmt === "pdf" ? doc.pages[v] : doc.docx_pages[v];
   return `<figure><figcaption>${side} — ${pages ?? "?"} page(s)</figcaption>` +
     (src ? `<a href="${src}" target="_blank"><img loading="lazy" src="${src}" alt="${side} ${fmt} pages of ${esc(doc.name)}"></a>`
-         : `<p class="missing">not available (LibreOffice missing)</p>`) + `</figure>`;
+         : `<p class="missing">not available (no DOCX renderer on this machine)</p>`) + `</figure>`;
 }
 
 function metrics(doc) {
   const keys = Object.keys(doc.facts.baseline);
-  const row = k => `<tr><td>${k}</td><td>${doc.facts.baseline[k]}</td><td>${doc.facts.smart[k]}</td></tr>`;
+  const row = k => `<tr><td>${k}</td><td>${doc.facts.baseline[k]}</td><td>${doc.facts[V][k]}</td></tr>`;
   const f = v => (doc.findings[v].length ? doc.findings[v].map(esc).join("<br>") : "none");
   return `<details><summary>Automated metrics (open after judging)</summary>
-    <p>A = <b>${doc.A}</b>, B = <b>${doc.B}</b>. Smart strategy: <b>${esc(doc.strategy)}</b>. Automated verdict:
+    <p>A = <b>${doc.A}</b>, B = <b>${doc.B}</b>.${doc.strategy ? ` Strategy: <b>${esc(doc.strategy)}</b>.` : ""} Automated verdict:
     <b>${esc(doc.verdict)}</b>${doc.notes.length ? " (" + doc.notes.map(esc).join("; ") + ")" : ""}.</p>
-    <table><tr><th>fact (lower is better)</th><th>baseline</th><th>smart</th></tr>${keys.map(row).join("")}
-    <tr><td>internal score (reference only)</td><td>${doc.score.baseline}</td><td>${doc.score.smart}</td></tr>
-    <tr><td>QA PDF / DOCX</td><td>${doc.qa.baseline.join(" / ")}</td><td>${doc.qa.smart.join(" / ")}</td></tr></table>
-    <p>Findings — baseline: ${f("baseline")}<br>Findings — smart: ${f("smart")}</p></details>`;
+    <table><tr><th>${esc(DATA.facts_label || "fact (lower is better)")}</th><th>baseline</th><th>${V}</th></tr>${keys.map(row).join("")}
+    <tr><td>internal score (reference only)</td><td>${doc.score.baseline}</td><td>${doc.score[V]}</td></tr>
+    <tr><td>QA PDF / DOCX</td><td>${doc.qa.baseline.join(" / ")}</td><td>${doc.qa[V].join(" / ")}</td></tr></table>
+    <p>Findings — baseline: ${f("baseline")}<br>Findings — ${V}: ${f(V)}</p></details>`;
 }
 
-const same = d => d.layout_id.baseline === d.layout_id.smart;
+const same = d => d.layout_id.baseline === d.layout_id[V];
 
 function render() {
   const root = document.getElementById("docs");
@@ -94,8 +97,8 @@ function render() {
     return `<section class="doc" data-i="${i}">
       <h2>${esc(d.name)}</h2><div class="meta">${esc(d.category)} · ${d.size}</div>
       <div class="fmt">PDF</div><div class="pair">${sheet(d, "A", "pdf")}${sheet(d, "B", "pdf")}</div>
-      <div class="fmt">DOCX rendered by LibreOffice</div><div class="pair">${sheet(d, "A", "docx")}${sheet(d, "B", "docx")}</div>
-      ${same(d) ? `<div class="review"><b>A and B are the same layout</b> (smart composition kept the designed layout); no judgment needed.</div>` :
+      <div class="fmt">DOCX rendered by ${esc(DOCX_BY)}</div><div class="pair">${sheet(d, "A", "docx")}${sheet(d, "B", "docx")}</div>
+      ${same(d) ? `<div class="review"><b>A and B are the same layout</b>; no judgment needed.</div>` :
       `<div class="review"><div class="choices"><b>Preferred:</b> ${radio("A")}${radio("B")}${radio("tie")}</div>
       <div class="tags">${DATA.reasons.map(tag).join("")}</div>
       <textarea placeholder="Optional reason">${esc(s.note || "")}</textarea></div>`}
@@ -132,7 +135,7 @@ document.getElementById("export").onclick = () => {
              preferred_variant: s.choice === "tie" ? "tie" : d[s.choice], reasons: s.reasons, note: s.note,
              layout_id: d.layout_id, judged_at: s.at };
   });
-  const out = { format: "dynamic-pdf-builder/m7-human-preferences", version: 1,
+  const out = { format: FORMAT, version: 1,
                 reviewer: document.getElementById("reviewer").value.trim(), exported_at: new Date().toISOString(),
                 judgments };
   const a = document.createElement("a");

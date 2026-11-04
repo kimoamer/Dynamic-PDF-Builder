@@ -27,11 +27,11 @@ FORMAT = "dynamic-pdf-builder/m7-human-preferences"
 VARIANTS = {"baseline", "smart"}
 
 
-def validate(data: dict) -> List[str]:
+def validate(data: dict, fmt: str = FORMAT, variants=VARIANTS) -> List[str]:
     """Problems in one preference file (empty list = valid)."""
     errs = []
-    if data.get("format") != FORMAT or data.get("version") != 1:
-        errs.append("not an M7 preference file (format/version)")
+    if data.get("format") != fmt or data.get("version") != 1:
+        errs.append("not a preference file of this benchmark (format/version)")
     js = data.get("judgments")
     if not isinstance(js, list):
         return errs + ["judgments must be a list"]
@@ -39,8 +39,8 @@ def validate(data: dict) -> List[str]:
     for k, j in enumerate(js):
         where = f"judgment {k} ({j.get('document', '?')})"
         shown = j.get("shown_as") or {}
-        if set(shown) != {"A", "B"} or set(shown.values()) != VARIANTS:
-            errs.append(f"{where}: shown_as must map A and B to baseline and smart")
+        if set(shown) != {"A", "B"} or set(shown.values()) != set(variants):
+            errs.append(f"{where}: shown_as must map A and B to {' and '.join(sorted(variants))}")
             continue
         choice = j.get("choice")
         if choice not in ("A", "B", "tie"):
