@@ -12,6 +12,9 @@ from typing import List, Optional
 from .report import ERROR, WARNING, Finding, QAReport, sha256
 
 
+_SYMBOL_FONTS = ("ZapfDingbats", "Symbol")    # never used for text by this library
+
+
 def _require_pymupdf():
     try:
         import pymupdf
@@ -84,6 +87,15 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
                     rep.findings.append(Finding(severity=ERROR, code="missing_glyph", page=pno,
                                                 format=fmt, text=txt.strip()[:80],
                                                 message="replacement character in output text"))
+                # a font lacking the characters makes ReportLab fall back to a
+                # symbol font: real letters come out as boxes/dingbats
+                bad = [s_ for s_ in ln["spans"] if s_["font"] in _SYMBOL_FONTS and s_["text"].strip()]
+                if bad:
+                    rep.findings.append(Finding(severity=ERROR, code="missing_glyph", page=pno,
+                                                format=fmt, text=txt.strip()[:80], bbox=ln["bbox"],
+                                                message=f"text drawn with the {bad[0]['font']} symbol font "
+                                                        f"(characters missing from the intended font): "
+                                                        f"{txt.strip()[:40]!r}"))
         for bbox, txt, size in lines:
             x0, y0, x1, y1 = bbox
             if x0 < -tolerance or x1 > W + tolerance or y0 < -tolerance or y1 > H + tolerance:

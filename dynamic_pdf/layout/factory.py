@@ -13,7 +13,7 @@ import html as html_mod
 from typing import Optional
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.platypus import (
-    Paragraph, ListFlowable, ListItem, Spacer, PageBreak,
+    Paragraph as _RLParagraph, ListFlowable, ListItem, Spacer, PageBreak,
     Table, TableStyle, Image, KeepTogether,
 )
 from reportlab.lib.colors import HexColor
@@ -49,15 +49,157 @@ _ARABIC_SCRIPT_RE = re.compile("[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\
 _AMIRI = "Amiri"
 
 
-def _apply_rtl(text: str, base_dir: Optional[str] = None) -> str:
-    """Apply Arabic reshaping + bidi (visual order) for the given base direction."""
+_RESHAPER = None
+
+
+def _reshape(text: str) -> str:
+    """Arabic contextual shaping in *logical* order. Diacritics (harakat) are
+    kept — they are content (arabic_reshaper deletes them by default)."""
+    global _RESHAPER
     try:
         import arabic_reshaper
-        from bidi.algorithm import get_display
-        shaped = arabic_reshaper.reshape(text)
-        return get_display(shaped, base_dir=base_dir) if base_dir else get_display(shaped)
     except ImportError:
         return text
+    if _RESHAPER is None:
+        _RESHAPER = arabic_reshaper.ArabicReshaper(configuration={"delete_harakat": False})
+    return _RESHAPER.reshape(text)
+
+
+def _apply_rtl(text: str, base_dir: Optional[str] = None) -> str:
+    """Shaping + bidi in *visual* order, for single-line text drawn directly on
+    the canvas (headers, footers, outline/TOC entries). Paragraph text must
+    stay logical — ``Paragraph`` below reorders each laid-out line."""
+    shaped = _reshape(text)
+    try:
+        from bidi.algorithm import get_display
+    except ImportError:
+        return shaped
+    return get_display(shaped, base_dir=base_dir) if base_dir else get_display(shaped)
+
+
+_BIDI_RE = re.compile("[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]")
+
+
+def _visual_order(text: str, base_dir: str):
+    """UAX #9 reordering of one line: [(logical index, displayed char)] in
+    visual (left-to-right) order, mirrored where required."""
+    from bidi import algorithm as A
+    storage = A.get_empty_storage()
+    storage["base_level"] = A.PARAGRAPH_LEVELS[base_dir]
+    storage["base_dir"] = base_dir
+    A.get_embedding_levels(text, storage)
+    for i, ch in enumerate(storage["chars"]):
+        ch["idx"] = i
+    A.explicit_embed_and_overrides(storage, False)
+    A.resolve_weak_types(storage, False)
+    A.resolve_neutral_types(storage, False)
+    A.resolve_implicit_levels(storage, False)
+    A.reorder_resolved_levels(storage, False)
+    A.apply_mirroring(storage, False)
+    return [(c["idx"], c["ch"]) for c in storage["chars"]]
+
+
+def _visual_line(line, kind: int, base: str):
+    """A laid-out paragraph line with its content in visual order. Line breaking
+    happened in logical order; only the drawing order changes."""
+    if kind == 0:
+        extra, words = line[0], line[1]
+        text = " ".join(words)
+        if not _BIDI_RE.search(text):
+            return line
+        vis = "".join(ch for _, ch in _visual_order(text, base))
+        return (extra, vis.split(" ")) + tuple(line[2:])
+    frags = list(line.words)
+    owner, chars = [], []
+    for fi, f in enumerate(frags):
+        for ch in getattr(f, "text", "") or "":
+            chars.append(ch)
+            owner.append(fi)
+    text = "".join(chars)
+    if not _BIDI_RE.search(text):
+        return line
+    lo, hi = 0, len(text)
+    while lo < hi and text[lo] == " ":       # end-of-line spaces would move to the
+        lo += 1                                # visual start and shift aligned text
+    while hi > lo and text[hi - 1] == " ":
+        hi -= 1
+    runs = []
+    for idx, ch in _visual_order(text[lo:hi], base):
+        fi = owner[lo + idx]
+        if runs and runs[-1][0] == fi:
+            runs[-1][1].append(ch)
+        else:
+            runs.append((fi, [ch]))
+    empty = [f for f in frags if not (getattr(f, "text", "") or "")]   # anchors, callbacks
+    return line.clone(words=empty + [frags[fi].clone(text="".join(cs)) for fi, cs in runs])
+
+
+class Paragraph(_RLParagraph):
+    """ReportLab ``Paragraph`` with bidirectional text drawn correctly.
+
+    Text stays in logical order for measuring, line breaking and splitting;
+    each laid-out line is reordered for display (UAX #9) only when drawn, so
+    multi-line Arabic reads top-to-bottom and right-to-left. The base
+    direction is the paragraph's first strong character and is inherited by
+    the pieces of a split paragraph. Text without RTL characters is untouched.
+    """
+
+    def __init__(self, *a, **k):
+        super().__init__(*a, **k)
+        self._bidi_base()          # decide while frags are plain fragments
+
+    @staticmethod
+    def _frags_text(frags) -> str:
+        out = []
+        for f in frags or []:
+            if isinstance(f, (list, tuple)):     # after wrap: [width, (frag, text), ...]
+                out.extend(x[1] for x in f[1:] if isinstance(x, tuple) and len(x) > 1
+                           and isinstance(x[1], str))
+                out.append(" ")
+            else:
+                out.append(getattr(f, "text", "") or "")
+        return "".join(out)
+
+    def _bidi_base(self):
+        base = self.__dict__.get("_dpb_base", False)
+        if base is False:
+            txt = self._frags_text(getattr(self, "frags", None))
+            base = None
+            if _BIDI_RE.search(txt):
+                from ..core.normalize import is_rtl_text
+                base = "R" if is_rtl_text(txt) else "L"
+            self._dpb_base = base
+        return base
+
+    def split(self, availWidth, availHeight):
+        base = self._bidi_base()
+        parts = super().split(availWidth, availHeight)
+        for p in parts:
+            if isinstance(p, Paragraph):
+                p._dpb_base = base
+        return parts
+
+    def drawPara(self, debug=0):
+        base = self._bidi_base()
+        bl = getattr(self, "blPara", None)
+        if base is None or bl is None:
+            return super().drawPara(debug)
+        logical = bl.lines
+        try:
+            bl.lines = [_visual_line(ln, bl.kind, base) for ln in logical]
+            return super().drawPara(debug)
+        finally:
+            bl.lines = logical
+
+
+def _plain_markup(text: str) -> str:
+    """Literal text (no Markdown) as Paragraph markup: shaped Arabic in logical
+    order, XML-escaped, every character routed to a font that has it."""
+    if _ARABIC_RE.search(text or ""):
+        text = _reshape(text)
+    # Paragraph collapses runs of spaces; keep literal spacing (e.g. "1  Title")
+    text = re.sub(r" {2,}", lambda m: "\u00a0" * len(m.group(0)), text or "")
+    return _glyph_fallback(html_mod.escape(text, quote=False))
 
 
 # ═══════════════════════ Inline Markdown ═══════════════════════
@@ -138,11 +280,10 @@ def _md_inline(text: str) -> str:
     """
     if not text:
         return ""
-    # Apply RTL reshaping if Arabic characters detected
+    # Arabic is shaped here in logical order; Paragraph reorders each laid-out
+    # line for display (reordering before line breaking reversed line order)
     if _ARABIC_RE.search(text):
-        # shape any Arabic, ordered for the paragraph's own base direction
-        # (an English sentence with an Arabic term keeps LTR order)
-        text = _apply_rtl(text, "R" if _is_rtl(text) else "L")   # first-strong base direction
+        text = _reshape(text)
     text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     text = _restore_safe_tags(text)
     # Inline code spans are protected from further inline processing
@@ -357,7 +498,11 @@ class DropCapParagraph(Flowable):
 # ═══════════════════════ Custom Flowables ═══════════════════════
 
 class AccentHeading(Flowable):
-    """Heading with a left accent bar. Supports RTL (Arabic) text."""
+    """Heading with an accent bar (on the right for RTL).
+
+    The text is laid out by ``Paragraph`` so mixed-script headings are shaped,
+    every character is drawn with a font that has it and long headings wrap
+    instead of running into the margin; a one-line heading keeps its height."""
     def __init__(self, text, font_name, font_size, text_color, accent_color,
                  accent_width=4, accent_gap=8, space_before=24, space_after=10,
                  rtl=False):
@@ -372,31 +517,34 @@ class AccentHeading(Flowable):
         self.space_before = space_before
         self.space_after = space_after
         self.rtl = rtl
+        self._para = Paragraph(f"<b>{_plain_markup(text)}</b>", ParagraphStyle(
+            "AccentHeadingText", fontName=font_name, fontSize=font_size, leading=font_size * 1.25,
+            textColor=text_color, alignment=2 if rtl else 0))
 
     def wrap(self, availWidth, availHeight):
         self.width = availWidth
-        self.height = self.font_size * 1.4 + self.space_before + self.space_after
+        tw = max(1.0, availWidth - self.accent_width - self.accent_gap)
+        _, ph = self._para.wrap(tw, availHeight)
+        self._text_h = ph
+        self._bar_h = max(self.font_size * 1.4, ph + self.font_size * 0.15)
+        self.height = self._bar_h + self.space_before + self.space_after
         return (self.width, self.height)
 
     def draw(self):
         c = self.canv
         c.saveState()
         y = self.space_after
-        bar_h = self.font_size * 1.4
+        bar_h = self._bar_h
         c.setFillColor(self.accent_color)
         if self.rtl:
             # Accent bar on the RIGHT for RTL
             c.rect(self.width - self.accent_width, y, self.accent_width, bar_h, fill=1, stroke=0)
+            x = 0
         else:
             c.rect(0, y, self.accent_width, bar_h, fill=1, stroke=0)
-        c.setFillColor(self.text_color)
-        c.setFont(self.font_name, self.font_size)
-        text_y = y + bar_h * 0.25
-        if self.rtl:
-            c.drawRightString(self.width - self.accent_width - self.accent_gap, text_y, self.text_str)
-        else:
-            c.drawString(self.accent_width + self.accent_gap, text_y, self.text_str)
+            x = self.accent_width + self.accent_gap
         c.restoreState()
+        self._para.drawOn(c, x, y + (bar_h - self._text_h) / 2)
 
 
 class HorizontalProgressBar(Flowable):
@@ -840,9 +988,8 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
 
         toc_entry = (block.level, _strip_markdown(display_text), block.id)
         if theme.decorations.heading_accent_bar and block.level <= 3:
-            anchor_text = (_apply_rtl(display_text) if is_rtl_heading else display_text)
             hf = AccentHeading(
-                text=anchor_text,
+                text=display_text,
                 font_name=head_font,
                 font_size=fs, text_color=text_color, accent_color=accent_color,
                 accent_width=theme.decorations.heading_accent_bar_width,
@@ -1578,8 +1725,7 @@ def _render_callout(block, theme, bs):
                                fontName=body_font, alignment=align)
     parts = []
     if block.title:
-        title_text = _apply_rtl(block.title) if is_rtl else html_mod.escape(block.title)
-        parts.append(f"<b>{title_text}</b><br/>")
+        parts.append(f"<b>{_plain_markup(block.title)}</b><br/>")
     parts.append(_md_inline(block.text))
     inner = Paragraph("".join(parts), inner_sty)
 
@@ -1629,8 +1775,7 @@ def _render_quote(block, theme):
                               textColor=_safe_color(theme.colors.text_muted),
                               fontName=attr_font, alignment=2 if attr_rtl else 0)
         if attr_rtl:
-            attr_text = _apply_rtl(block.attribution)
-            flowables.append(Paragraph(attr_text, attr))
+            flowables.append(Paragraph(_plain_markup(block.attribution), attr))
         else:
             flowables.append(Paragraph(f"\u2014 {block.attribution}", attr))
     flowables.append(Spacer(1, theme.spacing.block_gap))
@@ -2158,8 +2303,9 @@ class DocumentTOC(_RLTableOfContents):
             sty = ParagraphStyle(f'TOCR{level}', parent=self.getLevelStyle(level), alignment=2,
                                  leftIndent=0, firstLineIndent=0, rightIndent=level * 18)
             link = (lambda t: f'<a href="#{key}">{t}</a>') if key else (lambda t: t)
-            rows.append([Paragraph(link(str(page)), self.number_style or sty),
-                         Paragraph(link(text), sty)])
+            # entries arrive in visual order (engine.afterFlowable): plain Paragraph
+            rows.append([_RLParagraph(link(str(page)), self.number_style or sty),
+                         _RLParagraph(link(text), sty)])
         self._table = Table(rows, colWidths=[36, availWidth - 36], style=TableStyle([
             ('VALIGN', (0, 0), (-1, -1), 'BOTTOM'),
             ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
