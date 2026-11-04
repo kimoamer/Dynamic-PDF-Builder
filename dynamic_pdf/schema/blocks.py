@@ -408,6 +408,72 @@ class IntroductionPageBlock(BaseBlock):
     background_color: Optional[str] = None
     accent_color: Optional[str] = None
 
+# ─────────────────────── Layout Archetypes ───────────────────────
+# Opt-in page compositions. Each one fits itself to its content and, when it
+# cannot, falls back to plain blocks (design/archetypes.py): nothing is dropped.
+
+class SectionOpenerBlock(BaseBlock):
+    """Opens a chapter on its own page: a strip on the reading-start edge, text hung from it."""
+    type: Literal["section_opener"] = "section_opener"
+    title: str
+    title_alt: Optional[str] = None           # second-language title
+    label: Optional[str] = None               # chapter number or short label
+    standfirst: Optional[str] = None
+    standfirst_alt: Optional[str] = None
+    points: List[str] = Field(default_factory=list)
+    chapters: List[str] = Field(default_factory=list)   # the strip shows where this chapter sits
+    current: int = 0                          # index into ``chapters``
+
+
+class PerformanceFigure(BaseModel):
+    value: str
+    label: str
+    delta: Optional[str] = None
+    note: Optional[str] = None
+
+
+class TrendSeries(BaseModel):
+    label: str
+    periods: List[str]
+    values: List[float]                       # the last period is the current one
+    display: Optional[List[str]] = None       # formatted values; defaults to the numbers
+
+
+class PerformancePageBlock(BaseBlock):
+    """One page of results in horizontal strata: title, hero figure, tiles, trends, highlights."""
+    type: Literal["performance_page"] = "performance_page"
+    title: str
+    eyebrow: Optional[str] = None
+    standfirst: Optional[str] = None
+    hero: PerformanceFigure
+    tiles: List[PerformanceFigure] = Field(default_factory=list)
+    trends: List[TrendSeries] = Field(default_factory=list)
+    highlights: List[str] = Field(default_factory=list)
+
+
+class LedgerRow(BaseModel):
+    label: str
+    label_alt: Optional[str] = None
+    values: List[str]
+    total: bool = False
+
+
+class LedgerSection(BaseModel):
+    title: str
+    title_alt: Optional[str] = None
+    rows: List[LedgerRow]
+    note: Optional[str] = None
+
+
+class ParallelLedgerBlock(BaseBlock):
+    """Comparative figures stated once, labelled from each language's own edge."""
+    type: Literal["parallel_ledger"] = "parallel_ledger"
+    periods: List[str]
+    sections: List[LedgerSection]
+    emphasis: int = 0                         # index of the emphasised period
+    label_header: Optional[str] = None
+    label_header_alt: Optional[str] = None
+
 # ─────────────────────── Discriminated Union ───────────────────────
 
 Block = Annotated[
@@ -425,6 +491,7 @@ Block = Annotated[
         CoverPageBlock, TOCBlock, WatermarkBlock,
         TwoColumnBlock, ThreeColumnBlock, SidebarBlock,
         BadgeBlock, ShapeBlock, QRCodeBlock, IntroductionPageBlock,
+        SectionOpenerBlock, PerformancePageBlock, ParallelLedgerBlock,
     ],
     Field(discriminator="type")
 ]

@@ -174,3 +174,18 @@ labels, relations and the shortlist are recomputed from the cache. Bump `VERSION
 
 [`VISUAL_ATLAS_REVIEW.md`](VISUAL_ATLAS_REVIEW.md) records what the atlas found in the real corpus, which labels
 are weak, and what remains unverified.
+
+## AI art direction
+
+| File | Holds | Written by |
+|---|---|---|
+| `ai-design-curation.json` | 39 selected pages with scores and reasons, rejected candidates, what was viewed and how closely | AI reviewer |
+| `layout-archetypes.json` | 7 archetypes and 8 design principles drawn from the selected pages | AI reviewer |
+
+**These are AI judgements, not human decisions.** Both name their reviewer and set `human_approved: false`.
+`ai_curation.validate` refuses a record that claims otherwise, and `curation.py` refuses to load either one as
+`human-curation.json`. Nothing in the atlas or the runtime reads them.
+
+The records hold page IDs, hashes and written notes only: no page images, no extracted text. Scores are opinions about
+visual quality and are not measurements. Each page records how it was seen: `full_size`, `enlarged` or
+`contact_sheet`.

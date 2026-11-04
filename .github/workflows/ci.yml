@@ -23,7 +23,9 @@ jobs:
           cache: pip
       - name: Install LibreOffice (DOCX round-trip tests)
         if: matrix.python-version == '3.12'
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-writer
+        run: |
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-writer fonts-liberation
+          mkdir -p ~/.fonts && find dynamic_pdf/fonts/bundled -name '*.ttf' -exec cp {} ~/.fonts/ \; && fc-cache -f
       - name: Install
         run: |
           python -m pip install --upgrade pip
@@ -47,6 +49,18 @@ jobs:
             m74-comparison/gallery
             m74-comparison/results.json
             m74-comparison/report.md
+      - name: Layout archetype comparison (PDF and LibreOffice-rendered DOCX)
+        if: matrix.python-version == '3.12'
+        run: python benchmarks/m75/run.py m75-comparison
+      - name: Upload layout archetype comparison
+        if: matrix.python-version == '3.12' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m75-comparison
+          path: |
+            m75-comparison/gallery
+            m75-comparison/results.json
+            m75-comparison/report.md
       - name: Upload contact sheets for visual review
         if: matrix.python-version == '3.12' && always()
         uses: actions/upload-artifact@v4

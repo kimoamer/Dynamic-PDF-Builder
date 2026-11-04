@@ -202,6 +202,7 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
                 break
 
     _mark_column_runs(sem, plan, runs, lp)
+    _keep_intros_with_exhibits(sem, lp)
     lp.estimated_pages = _estimate_pages(sem, theme, width)
 
     # ── cover page from metadata (only for long, titled reports) ──
@@ -248,6 +249,36 @@ def _mark_column_runs(sem: SemanticDocument, plan: DesignPlan, runs: List[List[i
                        "flow_gap": COLUMN_GAP}
         lp.log("columns", f"{len(kept)} paragraphs from block {kept[0]} set in "
                           f"{plan.recipe.body_columns} balanced columns")
+
+
+# ─────────────────────────── exhibits ───────────────────────────
+
+_EXHIBITS = ("table", "chart", "image", "diagram", "mermaid")
+_INTRO_CHARS = 400       # a heading's short intro; longer text stands on its own
+
+
+def _keep_intros_with_exhibits(sem: SemanticDocument, lp: LayoutPlan) -> None:
+    """A heading already stays with the next block. When that block is a short
+    intro, the intro must also stay with the table or figure it introduces;
+    otherwise the heading ends one page and its exhibit opens the next."""
+    blocks, kept = sem.blocks, 0
+    for i, b in enumerate(blocks):
+        if b.type not in _EXHIBITS:
+            continue
+        j, chars = i - 1, 0
+        while j >= 0 and blocks[j].type == "paragraph" and chars < _INTRO_CHARS:
+            chars += len(plain_text(blocks[j].text))
+            j -= 1
+        intro = range(j + 1, i)
+        if not intro or chars >= _INTRO_CHARS or j < 0 or blocks[j].type != "heading":
+            continue
+        if any((blocks[k].hints or {}).get("flow_run") is not None for k in intro):
+            continue
+        for k in intro:
+            blocks[k].hints = {**(blocks[k].hints or {}), "keep_with_next": True}
+        kept += 1
+    if kept:
+        lp.log("exhibits", f"{kept} heading intro(s) kept with the table or figure they introduce")
 
 
 # ─────────────────────────── page fit ───────────────────────────

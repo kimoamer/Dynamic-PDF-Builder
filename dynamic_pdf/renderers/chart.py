@@ -17,6 +17,7 @@ Supported chart types:
 from ..utils.errors import BlockRenderError
 
 import io
+import re
 import os
 import math
 import tempfile
@@ -27,6 +28,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
+import matplotlib.text
 import numpy as np
 from svglib.svglib import svg2rlg
 
@@ -72,6 +74,51 @@ def _label_axes(ax, block):
     if block.title:
         ax.set_title(block.title, fontsize=11, fontweight="bold",
                      color="#222222", pad=10)
+
+
+_ARABIC_TEXT = re.compile("[؀-ۿݐ-ݿ]")
+
+
+def _arabic_face() -> str:
+    """Register the bundled Arabic face with Matplotlib once; returns its family name."""
+    from matplotlib import font_manager
+    from ..fonts.manager import BUNDLED_DIR
+    name = "Amiri"
+    if not any(f.name == name for f in font_manager.fontManager.ttflist):
+        for file in ("Amiri-Regular.ttf", "Amiri-Bold.ttf"):
+            font_manager.fontManager.addfont(os.path.join(BUNDLED_DIR, file))
+    return name
+
+
+def _visual(text: str) -> str:
+    """Matplotlib has no shaping or bidi: give it joined letters in visual order, line by line."""
+    from ..layout.factory import _apply_rtl, _is_rtl
+    return "\n".join(_apply_rtl(line, "R" if _is_rtl(line) else "L") if _ARABIC_TEXT.search(line) else line
+                     for line in text.split("\n"))
+
+
+def _shape_arabic(fig, block) -> None:
+    """Shape every piece of Arabic text in a finished figure: title, axis labels,
+    tick labels, legend entries and annotations. Figures without Arabic are untouched."""
+    if not _ARABIC_TEXT.search(str(block.data) + "".join(
+            str(getattr(block, k, "") or "") for k in ("title", "x_label", "y_label"))):
+        return
+    face = _arabic_face()
+    fig.canvas.draw()                  # tick labels only exist once the axes are laid out
+    done = set()
+    for ax in fig.axes:
+        for axis in (ax.xaxis, ax.yaxis):
+            ticks = axis.get_ticklabels()
+            if any(_ARABIC_TEXT.search(t.get_text()) for t in ticks):
+                axis.set_ticks(axis.get_ticklocs())
+                axis.set_ticklabels([_visual(t.get_text()) for t in ticks])
+                for t in axis.get_ticklabels():
+                    t.set_fontfamily(face)
+                    done.add(id(t))
+    for t in fig.findobj(matplotlib.text.Text):
+        if id(t) not in done and _ARABIC_TEXT.search(t.get_text()):
+            t.set_text(_visual(t.get_text()))
+            t.set_fontfamily(face)
 
 
 def _fig(block):
@@ -740,6 +787,7 @@ def render_chart(block, theme):
                 "chart", f'unsupported type "{block.chart_type}"; supported: {", ".join(_RENDERERS)}')
 
         fig = renderer(block, theme)
+        _shape_arabic(fig, block)
         drawing = _fig_to_drawing(fig, block, theme)
 
         if drawing:
@@ -769,6 +817,7 @@ def chart_png(block, theme, dpi: int = 200) -> bytes:
             "chart", f'unsupported type "{block.chart_type}"; supported: {", ".join(_RENDERERS)}')
     try:
         fig = renderer(block, theme)
+        _shape_arabic(fig, block)
         buf = io.BytesIO()
         fig.savefig(buf, format="png", bbox_inches="tight", dpi=dpi,
                     facecolor=fig.get_facecolor())

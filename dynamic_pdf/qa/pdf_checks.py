@@ -47,6 +47,14 @@ def _overlap(a, b) -> float:
     return inter / smaller
 
 
+def _separate_lines(a, b) -> bool:
+    """Whether two lines stand clear of each other although their boxes meet: LibreOffice
+    reports Amiri lines with the font's full extent, far taller than its ink. Lines drawn
+    on top of each other have centres well under a text size apart."""
+    centre = lambda line: (line[0][1] + line[0][3]) / 2                  # noqa: E731
+    return abs(centre(a) - centre(b)) >= 0.8 * min(a[2], b[2])
+
+
 def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Optional[List[str]] = None,
               tolerance: float = 2.0, fmt: str = "pdf", captions: Optional[List[str]] = None,
               major_headings: Optional[List[str]] = None, body_size: Optional[float] = None) -> QAReport:
@@ -113,15 +121,18 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
                 a, b = lines[i][0], lines[j][0]
                 if abs(a[1] - b[1]) < 0.5 and abs(a[0] - b[0]) < 0.5:
                     continue          # same line split into two dict lines
+                if fmt == "docx" and _separate_lines(lines[i], lines[j]):
+                    continue
                 if _overlap(a, b) > 0.35:
                     rep.findings.append(Finding(
                         severity=ERROR, code="overlap", page=pno, bbox=a, format=fmt,
                         text=lines[i][1].strip()[:80],
                         message=f"text overlaps: {lines[i][1].strip()[:30]!r} / {lines[j][1].strip()[:30]!r}"))
         body = [ln for ln in lines if 40 < ln[0][1] < H - 50]
-        # page fill: how far down the text block the content reaches
+        # page fill: how far down the text block the content reaches, charts drawn as vectors included
         top = min([ln[0][1] for ln in body], default=72)
-        bottom = max([ln[0][3] for ln in body] + [image_bottoms.get(pno, 0)], default=0)
+        drawn = [d["rect"].y1 for d in page.get_drawings() if d["rect"].y0 > 40 and d["rect"].y1 < H - 50]
+        bottom = max([ln[0][3] for ln in body] + [image_bottoms.get(pno, 0)] + drawn, default=0)
         area = (H - 50) - min(top, 90)
         rep.page_fill.append(round(max(0.0, (bottom - min(top, 90)) / area), 2) if bottom else 0.0)
         page_firsts.append(" ".join(min(body, key=lambda ln: ln[0][1])[1].split()) if body else "")

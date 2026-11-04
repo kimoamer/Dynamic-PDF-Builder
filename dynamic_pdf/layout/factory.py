@@ -10,6 +10,7 @@ Applies professional report typography standards:
 import re
 import unicodedata
 import html as html_mod
+from functools import lru_cache
 from typing import Optional
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.platypus import (
@@ -52,6 +53,7 @@ _AMIRI = "Amiri"
 _RESHAPER = None
 
 
+@lru_cache(maxsize=8192)
 def _reshape(text: str) -> str:
     """Arabic contextual shaping in *logical* order. Diacritics (harakat) are
     kept — they are content (arabic_reshaper deletes them by default)."""
@@ -859,6 +861,9 @@ class RenderContext:
         self.available_height = available_height
         self.apply_drop_cap_next = False
         self.section_numbering = section_numbering
+        self.page_size = (595.28, 841.89)
+        self.first_block = False           # the block being built opens the document
+        self.last_block = True             # nothing follows the block being built
         self.heading_counters = [0, 0, 0, 0, 0, 0]  # H1–H6
         self.toc_entries: list = []  # (level, text) for TOC
 
@@ -1159,6 +1164,11 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
     # ─── Quote ───
     if btype == "quote":
         return _render_quote(block, theme)
+
+    # ─── Layout archetypes (opt-in page compositions) ───
+    if btype in ("section_opener", "performance_page", "parallel_ledger"):
+        from ..renderers.archetypes import render_archetype
+        return render_archetype(block, theme, ctx)
 
     # ─── Metrics ───
     if btype == "metric_row":

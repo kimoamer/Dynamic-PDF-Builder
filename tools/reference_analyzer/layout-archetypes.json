@@ -1,0 +1,581 @@
+{
+ "format": "dynamic-pdf-builder/m75-layout-archetypes",
+ "version": 1,
+ "reviewer": {
+  "kind": "ai",
+  "model": "claude-opus-5-5",
+  "name": "Claude Opus 5.5",
+  "reviewed_on": "2026-11-04",
+  "method": "Looked at rendered page images. Atlas labels and distinctiveness scores only helped to find pages; they did not set any score."
+ },
+ "status": {
+  "human_approved": false,
+  "human_review": "none",
+  "note": "Derived from AI-selected pages. All archetypes are opt-in and none affects default output."
+ },
+ "design_principles": [
+  "Give one thing the whole page: a very large numeral or sentence does more than several medium ones (AR03:8, EN01:15).",
+  "Encode the current period by tone and size, so no legend is needed (EN01:18, EN01:21).",
+  "State numbers once in bilingual work, with each language reading in from its own edge (BI01:4).",
+  "Hang text from a firm vertical division instead of centring it (AR02:25, AR01:5).",
+  "Leave emptiness on purpose, above the block rather than below it (AR02:25, AR03:30); unused space at the foot reads as a run-out (EN01:136, EN02:26).",
+  "Use one heavy rule or one tint to group; hairlines and space do the rest (AR03:8, EN01:21).",
+  "Mirror the whole page for Arabic, not only its text alignment (BI05:2 and BI05:6).",
+  "Repeat a system so a long report stays legible, but keep the repetition quiet (AR02:25 across 17 sections)."
+ ],
+ "archetypes": [
+  {
+   "id": "asymmetric_opener",
+   "name": "Asymmetric section opener",
+   "implemented": true,
+   "document_types": [
+    "annual_report",
+    "executive_report",
+    "proposal",
+    "data_report",
+    "manual"
+   ],
+   "page_role": "Opens a chapter or major section on its own page.",
+   "content_requirements": {
+    "required": [
+     "title of up to about 90 characters"
+    ],
+    "optional": [
+     "section number or short label",
+     "standfirst of up to about 240 characters",
+     "up to 6 key points",
+     "list of chapter names for the position rail",
+     "image for the strip"
+    ]
+   },
+   "layout": {
+    "structure": "One vertical strip on the reading-start edge. The remaining field holds a text block hung from the strip.",
+    "proportions": {
+     "strip_width": "0.26 to 0.34 of page width",
+     "block_top": "0.30 to 0.42 of page height",
+     "text_measure": "up to 0.56 of page width"
+    },
+    "elements_in_order": [
+     "number or label",
+     "hairline",
+     "display title",
+     "standfirst",
+     "key points"
+    ]
+   },
+   "typography": {
+    "number": "about 3.5 to 4.5 times body, accent colour",
+    "title": "about 2.5 to 3.5 times body, bold, tight leading",
+    "standfirst": "about 1.2 times body",
+    "points": "body size"
+   },
+   "relationships": "Text hangs against the strip and never overlaps it. The strip is either an image or a rail that shows this chapter's position among the chapters.",
+   "whitespace_rhythm": "The upper third stays empty, and this quiet is the main feature. There is no running header or footer.",
+   "rtl_bilingual": "The strip and text swap edges as a whole page mirror. Bilingual titles stack, each aligned to its own edge of the field.",
+   "constraints_fallback": {
+    "constraints": [
+     "Title must not exceed 4 lines at display size",
+     "Text block must end above the bottom margin"
+    ],
+    "steps": [
+     "Reduce the title one step",
+     "Drop key points beyond the limit into the following content",
+     "Fall back to a normal H1 with its standfirst"
+    ]
+   },
+   "reference_pages": [
+    {
+     "label": "AR02:25",
+     "page_id": "cf936a817893:p0025",
+     "inspection_level": "full_size"
+    },
+    {
+     "label": "AR01:5",
+     "page_id": "af94892827c8:p0005",
+     "inspection_level": "full_size"
+    },
+    {
+     "label": "EN01:24",
+     "page_id": "db25596332d2:p0024",
+     "inspection_level": "enlarged"
+    },
+    {
+     "label": "EN01:56",
+     "page_id": "db25596332d2:p0056",
+     "inspection_level": "enlarged"
+    }
+   ],
+   "principle_not_copied": "No photograph, dissolving squares, colour system or goal tiles are reproduced. The position rail is original to this project.",
+   "confidence": "high",
+   "implementation": {
+    "block": "section_opener",
+    "builder": "section_opener()",
+    "status": "opt-in prototype",
+    "not_implemented": [
+     "image in the strip: only the chapter rail is built"
+    ]
+   }
+  },
+  {
+   "id": "performance_page",
+   "name": "Performance page",
+   "implemented": true,
+   "document_types": [
+    "annual_report",
+    "board_report",
+    "financial_report",
+    "impact_report"
+   ],
+   "page_role": "Single-page statement of results for a period.",
+   "content_requirements": {
+    "required": [
+     "title",
+     "one hero figure with label",
+     "at least 2 further metrics or trend groups"
+    ],
+    "optional": [
+     "standfirst",
+     "up to 8 metric tiles",
+     "up to 4 trend groups of 2 to 5 periods",
+     "up to 5 highlights"
+    ]
+   },
+   "layout": {
+    "structure": "Horizontal strata: title band, hero band, tile band, trend band, highlights band.",
+    "proportions": {
+     "hero_band": "0.18 to 0.26 of the text height",
+     "tile_columns": "2 to 4",
+     "trend_columns": "2 to 4",
+     "highlights": "up to 0.22 of the text height"
+    },
+    "elements_in_order": [
+     "eyebrow",
+     "title",
+     "standfirst",
+     "hero figure",
+     "tiles",
+     "trends",
+     "highlights"
+    ]
+   },
+   "typography": {
+    "hero": "as large as the band allows, scaled to the figure's length",
+    "tile_value": "about 2 times body, bold",
+    "labels": "about 0.85 times body",
+    "trend_values": "body size, bold for the current period"
+   },
+   "relationships": "The current period is dark and prior periods are tinted, so no legend is needed. Bars are drawn from values, never as decoration.",
+   "whitespace_rhythm": "Strata are separated by space, not boxes. Tiles are grouped with one heavy rule.",
+   "rtl_bilingual": "Reading order, bars and alignment mirror. Digits stay left to right. Bar baselines start at the reading edge.",
+   "constraints_fallback": {
+    "constraints": [
+     "All strata must fit on one page",
+     "Negative values require a shared zero axis"
+    ],
+    "steps": [
+     "Reduce the hero size",
+     "Drop to fewer tile columns",
+     "Move highlights to the following flow",
+     "Fall back to heading, metric row and table"
+    ]
+   },
+   "reference_pages": [
+    {
+     "label": "EN01:18",
+     "page_id": "db25596332d2:p0018",
+     "inspection_level": "full_size"
+    },
+    {
+     "label": "AR03:8",
+     "page_id": "4bbfe8f46cb3:p0008",
+     "inspection_level": "full_size"
+    },
+    {
+     "label": "EN01:9",
+     "page_id": "db25596332d2:p0009",
+     "inspection_level": "enlarged"
+    },
+    {
+     "label": "EN011:8",
+     "page_id": "0b2bf0ebc355:p0008",
+     "inspection_level": "enlarged"
+    },
+    {
+     "label": "BI05:6",
+     "page_id": "b7b9ddcb4981:p0006",
+     "inspection_level": "enlarged"
+    }
+   ],
+   "principle_not_copied": "No portrait, mask, rounded panel, card arrangement or brand colour is reused; the two-column composition of the reference is replaced with horizontal strata.",
+   "confidence": "high",
+   "implementation": {
+    "block": "performance_page",
+    "builder": "performance_page()",
+    "status": "opt-in prototype",
+    "not_implemented": [
+     "images or charts inside a stratum"
+    ]
+   }
+  },
+  {
+   "id": "parallel_ledger",
+   "name": "Parallel ledger",
+   "implemented": true,
+   "document_types": [
+    "financial_report",
+    "fund_report",
+    "bilingual_notice",
+    "regulatory_report"
+   ],
+   "page_role": "Comparative figures, in one or two languages, stated once.",
+   "content_requirements": {
+    "required": [
+     "at least one section with a title",
+     "rows with a label and one or more values"
+    ],
+    "optional": [
+     "second-language titles and labels",
+     "note per section",
+     "index of the emphasised period column"
+    ]
+   },
+   "layout": {
+    "structure": "Section bars, then rows. Label columns are at the outer edges, with number columns between them.",
+    "proportions": {
+     "label_columns": "0.24 to 0.34 of the width each (bilingual)",
+     "emphasis_column": "about 1.25 times a normal number column"
+    },
+    "elements_in_order": [
+     "section bar",
+     "column header",
+     "rows",
+     "note"
+    ]
+   },
+   "typography": {
+    "section": "bold, reversed on the bar",
+    "emphasis_value": "about 1.3 times body, bold, on a tint",
+    "other_values": "body size, muted",
+    "labels": "body size"
+   },
+   "relationships": "Each row belongs to both languages. Numbers appear once. The emphasised period column carries a tint from header to last row.",
+   "whitespace_rhythm": "Hairlines only and even row height. Space, not fill, separates sections.",
+   "rtl_bilingual": "English at the left edge and Arabic at the right edge in bilingual form. Monolingual Arabic mirrors the columns, with the label on the right.",
+   "constraints_fallback": {
+    "constraints": [
+     "Rows must not split",
+     "A section bar must keep with at least two rows",
+     "Column header repeats on each page"
+    ],
+    "steps": [
+     "Reduce emphasis size for long values",
+     "Reduce the number of value columns on a landscape page",
+     "Fall back to a standard table per language"
+    ]
+   },
+   "reference_pages": [
+    {
+     "label": "BI01:4",
+     "page_id": "7f52f49c5dd6:p0004",
+     "inspection_level": "full_size"
+    },
+    {
+     "label": "BI01:2",
+     "page_id": "7f52f49c5dd6:p0002",
+     "inspection_level": "full_size"
+    },
+    {
+     "label": "BI02:19",
+     "page_id": "fb5a68768723:p0019",
+     "inspection_level": "full_size"
+    },
+    {
+     "label": "EN01:21",
+     "page_id": "db25596332d2:p0021",
+     "inspection_level": "full_size"
+    },
+    {
+     "label": "EN01:37",
+     "page_id": "db25596332d2:p0037",
+     "inspection_level": "enlarged"
+    }
+   ],
+   "principle_not_copied": "No logo, footer, palette or pill shape is reused. Shared numeric columns and emphasis are general table practices.",
+   "confidence": "high",
+   "implementation": {
+    "block": "parallel_ledger",
+    "builder": "parallel_ledger()",
+    "status": "opt-in prototype",
+    "not_implemented": [
+     "a total computed from its rows: figures are stated, never derived"
+    ]
+   }
+  },
+  {
+   "id": "statement_page",
+   "name": "Statement page",
+   "implemented": false,
+   "document_types": [
+    "annual_report",
+    "proposal",
+    "impact_report"
+   ],
+   "page_role": "Gives a leadership message or key finding a full page.",
+   "content_requirements": {
+    "required": [
+     "sentence of up to about 200 characters",
+     "attribution or source"
+    ],
+    "optional": [
+     "keywords to weight",
+     "supporting image"
+    ]
+   },
+   "layout": {
+    "structure": "One large sentence on a shared left edge, with the attribution under it.",
+    "proportions": {
+     "sentence_width": "0.75 to 0.90 of the text width",
+     "sentence_top": "0.15 to 0.30 of the page height"
+    },
+    "elements_in_order": [
+     "section label",
+     "sentence",
+     "attribution"
+    ]
+   },
+   "typography": {
+    "sentence": "about 3 to 4 times body, regular with bold keywords",
+    "attribution": "about 0.85 times body"
+   },
+   "relationships": "Weight contrast inside the sentence replaces all decoration.",
+   "whitespace_rhythm": "Space under the sentence is deliberately open.",
+   "rtl_bilingual": "Mirrored. Bold Arabic must be checked per typeface, since many have a weaker bold than Latin faces.",
+   "constraints_fallback": {
+    "constraints": [
+     "At most 8 lines"
+    ],
+    "steps": [
+     "Reduce size one step",
+     "Fall back to a pull quote"
+    ]
+   },
+   "reference_pages": [
+    {
+     "label": "EN01:15",
+     "page_id": "db25596332d2:p0015",
+     "inspection_level": "full_size"
+    },
+    {
+     "label": "AR03:5",
+     "page_id": "4bbfe8f46cb3:p0005",
+     "inspection_level": "enlarged"
+    },
+    {
+     "label": "AR03:6",
+     "page_id": "4bbfe8f46cb3:p0006",
+     "inspection_level": "enlarged"
+    }
+   ],
+   "principle_not_copied": "No portrait, gradient or colour panel is reused.",
+   "confidence": "medium"
+  },
+  {
+   "id": "editorial_sink",
+   "name": "Editorial sink",
+   "implemented": false,
+   "document_types": [
+    "annual_report",
+    "magazine_report",
+    "case_study"
+   ],
+   "page_role": "Short stories or themes in columns.",
+   "content_requirements": {
+    "required": [
+     "coloured heading",
+     "3 to 6 stories of similar length"
+    ],
+    "optional": [
+     "one image per story",
+     "callout"
+    ]
+   },
+   "layout": {
+    "structure": "A heading at the top, then columns that hang from a deep sink.",
+    "proportions": {
+     "sink_depth": "0.20 to 0.35 of the page height",
+     "columns": "2 to 4"
+    },
+    "elements_in_order": [
+     "heading",
+     "standfirst",
+     "image",
+     "story heading",
+     "story text"
+    ]
+   },
+   "typography": {
+    "heading": "about 2.5 to 3 times body, two tones",
+    "story_heading": "bold, accent, underlined"
+   },
+   "relationships": "Images are locked to the column they introduce. Captions point to their image.",
+   "whitespace_rhythm": "Uneven column starts create a cascade; column feet end near a common line.",
+   "rtl_bilingual": "The cascade descends from the reading edge.",
+   "constraints_fallback": {
+    "constraints": [
+     "Stories must be of similar length"
+    ],
+    "steps": [
+     "Remove the stagger and align column tops",
+     "Fall back to normal columns"
+    ]
+   },
+   "reference_pages": [
+    {
+     "label": "AR03:7",
+     "page_id": "4bbfe8f46cb3:p0007",
+     "inspection_level": "full_size"
+    },
+    {
+     "label": "AR03:30",
+     "page_id": "4bbfe8f46cb3:p0030",
+     "inspection_level": "enlarged"
+    },
+    {
+     "label": "AR02:281",
+     "page_id": "cf936a817893:p0281",
+     "inspection_level": "enlarged"
+    }
+   ],
+   "principle_not_copied": "No photographs, watermark or pointer shape is reused.",
+   "confidence": "medium"
+  },
+  {
+   "id": "image_slab_divider",
+   "name": "Image and slab divider",
+   "implemented": false,
+   "document_types": [
+    "annual_report",
+    "brochure"
+   ],
+   "page_role": "Divider or cover with one strong image.",
+   "content_requirements": {
+    "required": [
+     "one image of suitable resolution",
+     "title"
+    ],
+    "optional": [
+     "intro text",
+     "small table"
+    ]
+   },
+   "layout": {
+    "structure": "An image field with a solid or near-solid panel beside or over it.",
+    "proportions": {
+     "panel": "0.33 to 0.55 of the width"
+    },
+    "elements_in_order": [
+     "title",
+     "intro",
+     "secondary data"
+    ]
+   },
+   "typography": {
+    "title": "about 3 times body, reversed",
+    "intro": "about 1.1 times body"
+   },
+   "relationships": "Text stays on the panel, and the panel gives a guaranteed contrast.",
+   "whitespace_rhythm": "The panel is the resting area.",
+   "rtl_bilingual": "The panel swaps edges.",
+   "constraints_fallback": {
+    "constraints": [
+     "Image must not contain important detail under the panel"
+    ],
+    "steps": [
+     "Use a solid panel only",
+     "Fall back to the asymmetric opener"
+    ]
+   },
+   "reference_pages": [
+    {
+     "label": "AR03:1",
+     "page_id": "4bbfe8f46cb3:p0001",
+     "inspection_level": "enlarged"
+    },
+    {
+     "label": "AR03:9",
+     "page_id": "4bbfe8f46cb3:p0009",
+     "inspection_level": "enlarged"
+    },
+    {
+     "label": "AR03:14",
+     "page_id": "4bbfe8f46cb3:p0014",
+     "inspection_level": "enlarged"
+    }
+   ],
+   "principle_not_copied": "No images, swirls or QR arrangements are reused.",
+   "confidence": "medium"
+  },
+  {
+   "id": "figure_matrix",
+   "name": "Figure matrix",
+   "implemented": false,
+   "document_types": [
+    "data_report",
+    "research_report"
+   ],
+   "page_role": "Compares many categories at one glance.",
+   "content_requirements": {
+    "required": [
+     "4 to 12 comparable measures",
+     "figure title"
+    ],
+    "optional": [
+     "source note",
+     "colour scale"
+    ]
+   },
+   "layout": {
+    "structure": "A tinted figure header over equal cells.",
+    "proportions": {
+     "columns": "2 to 4",
+     "header": "about 0.08 of the figure height"
+    },
+    "elements_in_order": [
+     "figure title",
+     "cells",
+     "source"
+    ]
+   },
+   "typography": {
+    "title": "bold, on the tint",
+    "cell_label": "about 0.85 times body"
+   },
+   "relationships": "All cells share one scale. A heat table is the table form of the same idea.",
+   "whitespace_rhythm": "Equal gutters.",
+   "rtl_bilingual": "Cell order mirrors. Numbers keep their direction.",
+   "constraints_fallback": {
+    "constraints": [
+     "All cells must share a scale"
+    ],
+    "steps": [
+     "Reduce columns",
+     "Fall back to one grouped chart"
+    ]
+   },
+   "reference_pages": [
+    {
+     "label": "AR02:298",
+     "page_id": "cf936a817893:p0298",
+     "inspection_level": "enlarged"
+    },
+    {
+     "label": "AR02:349",
+     "page_id": "cf936a817893:p0349",
+     "inspection_level": "enlarged"
+    }
+   ],
+   "principle_not_copied": "Small multiples and heat tables are general charting practice.",
+   "confidence": "medium"
+  }
+ ]
+}

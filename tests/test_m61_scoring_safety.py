@@ -224,7 +224,7 @@ def test_chart_report_packs_two_charts_per_page_legibly(tmp_path):
     doc = pymupdf.open(stream=b.render(), filetype="pdf")
     r = b.last_composition
     assert doc.page_count < base_pages
-    assert r.candidates[0].metrics["separated_figures"] > 0
+    assert r.candidates[0].metrics["separated_figures"] == 0   # design() already keeps intros with exhibits
     chosen = next(c for c in r.candidates if c.name == r.strategy)
     assert chosen.metrics["separated_figures"] == 0 and chosen.metrics["wasted"] == 0
     sizes = [s["size"] for p in doc for bl in p.get_text("dict")["blocks"] for ln in bl.get("lines", [])
