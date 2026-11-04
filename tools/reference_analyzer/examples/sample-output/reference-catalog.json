@@ -9,7 +9,7 @@
     "used_for": "PDF parsing, text/drawing/table extraction, page rendering"
    },
    "pillow": {
-    "version": "12.3.0",
+    "version": "12.1.0",
     "license": "MIT-CMU",
     "used_for": "preview images and overlays"
    }
@@ -17,24 +17,24 @@
   "network": "none — runs offline; nothing is uploaded"
  },
  "input": {
-  "folder": "ref2",
-  "pdf_files": 10,
-  "reviewed_metadata_records": 3
+  "folder": "samplecorpus",
+  "pdf_files": 19,
+  "reviewed_metadata_records": 8
  },
  "documents": [
   {
-   "doc_id": "ref-7237fd8f7b40",
+   "doc_id": "ref-cf94c704dffb",
    "file": "arabic_report.pdf",
-   "sha256": "7237fd8f7b40c86e4c978eb02cc86b32424bb0c8051dbe36f2a07451febd1d4d",
-   "bytes": 39369,
+   "sha256": "cf94c704dffbcc54c72e7ed00293a5fd910801931fc87b4f79a31c788d9f55e7",
+   "bytes": 39510,
    "status": "ok",
    "page_count": 2,
    "pdf_metadata": {
     "title": "تقرير تجريبي",
     "creator": "Dynamic PDF Builder",
     "producer": "ReportLab PDF Library - (opensource)",
-    "creationDate": "D:20261104040746+00'00'",
-    "modDate": "D:20261104040746+00'00'",
+    "creationDate": "D:20261104141728+02'00'",
+    "modDate": "D:20261104141728+02'00'",
     "format": "PDF 1.4"
    },
    "encrypted": false,
@@ -55,24 +55,192 @@
    "license": {
     "status": "unknown",
     "source": "not provided",
+    "evidence": null,
     "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
    },
    "duplicates": []
   },
   {
-   "doc_id": "ref-16958a48b65c",
+   "doc_id": "ref-c7b38a7876de",
    "file": "bilingual.pdf",
-   "sha256": "16958a48b65c3d9ccc24f52332c96ad2144b09f2dfe324ba093628a8896d80ef",
-   "bytes": 38684,
+   "sha256": "c7b38a7876de7908603401728ee7b30bc4b47b99587e1fc658b445937bb3332d",
+   "bytes": 38843,
    "status": "ok",
    "page_count": 1,
    "pdf_metadata": {
     "title": "Bilingual sample — عينة ثنائية اللغة",
     "creator": "Dynamic PDF Builder",
     "producer": "ReportLab PDF Library - (opensource)",
-    "creationDate": "D:20261104040746+00'00'",
-    "modDate": "D:20261104040746+00'00'",
+    "creationDate": "D:20261104141728+02'00'",
+    "modDate": "D:20261104141728+02'00'",
     "format": "PDF 1.4"
+   },
+   "encrypted": false,
+   "page_layout": null,
+   "page_sizes": [
+    {
+     "width_pt": 595.3,
+     "height_pt": 841.9,
+     "pages": 1,
+     "first_page": 1
+    }
+   ],
+   "reviewed_metadata": {
+    "files": [
+     "05-Reviewed/rights-index.csv"
+    ],
+    "fields": {
+     "id": "S-3",
+     "file": "bilingual.pdf",
+     "pages": "99",
+     "rights_status": "synthetic",
+     "rights_evidence": "",
+     "sha256": ""
+    }
+   },
+   "provenance": {
+    "source": "local reference folder (no reviewed provenance)",
+    "recorded_from": "file system"
+   },
+   "license": {
+    "status": "synthetic",
+    "source": "05-Reviewed/rights-index.csv",
+    "evidence": null,
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "duplicates": []
+  },
+  {
+   "doc_id": "ref-981a17e13750",
+   "file": "compilation.pdf",
+   "sha256": "981a17e137503dee2fc85bbf46bdf6d1d849685cbe8d71532e8bc34d05f95243",
+   "bytes": 4666,
+   "status": "ok",
+   "page_count": 6,
+   "pdf_metadata": {
+    "title": "Compilation sample",
+    "format": "PDF 1.7"
+   },
+   "encrypted": false,
+   "page_layout": null,
+   "page_sizes": [
+    {
+     "width_pt": 595.3,
+     "height_pt": 841.9,
+     "pages": 2,
+     "first_page": 1
+    },
+    {
+     "width_pt": 612.0,
+     "height_pt": 792.0,
+     "pages": 2,
+     "first_page": 2
+    },
+    {
+     "width_pt": 960.0,
+     "height_pt": 540.0,
+     "pages": 2,
+     "first_page": 3
+    }
+   ],
+   "reviewed_metadata": null,
+   "provenance": {
+    "source": "local reference folder (no reviewed provenance)",
+    "recorded_from": "file system"
+   },
+   "license": {
+    "status": "unknown",
+    "source": "not provided",
+    "evidence": null,
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "duplicates": []
+  },
+  {
+   "doc_id": "ref-d7279d19fd97",
+   "file": "corrupt.pdf",
+   "sha256": "d7279d19fd974c063a1152838e5d8d58c4540b21f306cd572c8d0d048321242a",
+   "bytes": 110,
+   "status": "empty",
+   "page_count": 0,
+   "pdf_metadata": {
+    "format": "PDF 1.7"
+   },
+   "encrypted": false,
+   "page_layout": null,
+   "page_sizes": [],
+   "reviewed_metadata": null,
+   "provenance": {
+    "source": "local reference folder (no reviewed provenance)",
+    "recorded_from": "file system"
+   },
+   "license": {
+    "status": "unknown",
+    "source": "not provided",
+    "evidence": null,
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "duplicates": []
+  },
+  {
+   "doc_id": "ref-d12693e6ee67",
+   "file": "facing_pages.pdf",
+   "sha256": "d12693e6ee67eb025bf7c8ba8f8c5a8c8796619a698efb2a562874a378fa167e",
+   "bytes": 6463,
+   "status": "ok",
+   "page_count": 6,
+   "pdf_metadata": {
+    "title": "Facing pages sample",
+    "format": "PDF 1.7"
+   },
+   "encrypted": false,
+   "page_layout": null,
+   "page_sizes": [
+    {
+     "width_pt": 595.3,
+     "height_pt": 841.9,
+     "pages": 6,
+     "first_page": 1
+    }
+   ],
+   "reviewed_metadata": {
+    "files": [
+     "05-Reviewed/observed-features.json",
+     "05-Reviewed/rights-index.csv"
+    ],
+    "fields": {
+     "id": "S-1",
+     "original_relative_path": "facing_pages.pdf",
+     "sha256": "d12693e6ee67eb025bf7c8ba8f8c5a8c8796619a698efb2a562874a378fa167e",
+     "pdf_pages": 6,
+     "file": "facing_pages.pdf",
+     "pages": "6",
+     "rights_status": "study only",
+     "rights_evidence": "generated by sample_corpus.py"
+    }
+   },
+   "provenance": {
+    "source": "local reference folder (no reviewed provenance)",
+    "recorded_from": "file system"
+   },
+   "license": {
+    "status": "study only",
+    "source": "05-Reviewed/rights-index.csv",
+    "evidence": "generated by sample_corpus.py",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "duplicates": []
+  },
+  {
+   "doc_id": "ref-953195aea2ec",
+   "file": "garbled.pdf",
+   "sha256": "953195aea2ecea134183b1d4118f1ab4fd0dcfef371be8ce8a05776e944cad6f",
+   "bytes": 1154,
+   "status": "ok",
+   "page_count": 1,
+   "pdf_metadata": {
+    "title": "Garbled text layer sample",
+    "format": "PDF 1.7"
    },
    "encrypted": false,
    "page_layout": null,
@@ -92,23 +260,94 @@
    "license": {
     "status": "unknown",
     "source": "not provided",
+    "evidence": null,
     "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
    },
    "duplicates": []
   },
   {
-   "doc_id": "ref-d5ec6b2c942f",
-   "file": "corrupt.pdf",
-   "sha256": "d5ec6b2c942f966d6ffe080282d8c91b3c2f56185110246c6a66a507d2e6c481",
-   "bytes": 110,
-   "status": "empty",
-   "page_count": 0,
+   "doc_id": "ref-99ebf82af396",
+   "file": "known_geometry.pdf",
+   "sha256": "99ebf82af3965a6bc88aaa1bb33cd247accd181325546c4b4dfb02586af62b84",
+   "bytes": 4807,
+   "status": "ok",
+   "page_count": 3,
    "pdf_metadata": {
-    "format": "PDF 1.7"
+    "title": "Known Geometry Reference",
+    "author": "reference_analyzer tests",
+    "subject": "(unspecified)",
+    "creator": "(unspecified)",
+    "producer": "ReportLab PDF Library - (opensource)",
+    "creationDate": "D:20261104141727+02'00'",
+    "modDate": "D:20261104141727+02'00'",
+    "format": "PDF 1.4"
    },
    "encrypted": false,
    "page_layout": null,
-   "page_sizes": [],
+   "page_sizes": [
+    {
+     "width_pt": 595.3,
+     "height_pt": 841.9,
+     "pages": 3,
+     "first_page": 1
+    }
+   ],
+   "reviewed_metadata": {
+    "files": [
+     "05-Reviewed/known_geometry.json"
+    ],
+    "fields": {
+     "license": "CC0 (synthetic test file)",
+     "source": "generated by sample_corpus.py",
+     "reviewer": "test"
+    }
+   },
+   "provenance": {
+    "source": "generated by sample_corpus.py",
+    "recorded_from": "05-Reviewed/known_geometry.json"
+   },
+   "license": {
+    "status": "CC0 (synthetic test file)",
+    "source": "05-Reviewed/known_geometry.json",
+    "evidence": null,
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "duplicates": [
+    {
+     "kind": "exact",
+     "with": [
+      "ref-99ebf82af396-2"
+     ]
+    }
+   ]
+  },
+  {
+   "doc_id": "ref-99ebf82af396-2",
+   "file": "known_geometry_copy.pdf",
+   "sha256": "99ebf82af3965a6bc88aaa1bb33cd247accd181325546c4b4dfb02586af62b84",
+   "bytes": 4807,
+   "status": "ok",
+   "page_count": 3,
+   "pdf_metadata": {
+    "title": "Known Geometry Reference",
+    "author": "reference_analyzer tests",
+    "subject": "(unspecified)",
+    "creator": "(unspecified)",
+    "producer": "ReportLab PDF Library - (opensource)",
+    "creationDate": "D:20261104141727+02'00'",
+    "modDate": "D:20261104141727+02'00'",
+    "format": "PDF 1.4"
+   },
+   "encrypted": false,
+   "page_layout": null,
+   "page_sizes": [
+    {
+     "width_pt": 595.3,
+     "height_pt": 841.9,
+     "pages": 3,
+     "first_page": 1
+    }
+   ],
    "reviewed_metadata": null,
    "provenance": {
     "source": "local reference folder (no reviewed provenance)",
@@ -117,19 +356,61 @@
    "license": {
     "status": "unknown",
     "source": "not provided",
+    "evidence": null,
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "duplicates": [
+    {
+     "kind": "exact",
+     "with": [
+      "ref-99ebf82af396"
+     ]
+    }
+   ]
+  },
+  {
+   "doc_id": "ref-3a44fd9b00eb",
+   "file": "landscape_slides.pdf",
+   "sha256": "3a44fd9b00eb48dfe2b2e3b72e6d6b1d3314b57069a12472f06dbc75331bcd51",
+   "bytes": 4529,
+   "status": "ok",
+   "page_count": 3,
+   "pdf_metadata": {
+    "title": "Landscape slides sample",
+    "format": "PDF 1.7"
+   },
+   "encrypted": false,
+   "page_layout": null,
+   "page_sizes": [
+    {
+     "width_pt": 841.9,
+     "height_pt": 595.3,
+     "pages": 3,
+     "first_page": 1
+    }
+   ],
+   "reviewed_metadata": null,
+   "provenance": {
+    "source": "local reference folder (no reviewed provenance)",
+    "recorded_from": "file system"
+   },
+   "license": {
+    "status": "unknown",
+    "source": "not provided",
+    "evidence": null,
     "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
    },
    "duplicates": []
   },
   {
-   "doc_id": "ref-2d5e7bf3d2f7",
-   "file": "facing_pages.pdf",
-   "sha256": "2d5e7bf3d2f792daf0abe82b4e9b24c2ecb84a0c3a38977836229b3bb0d69cb8",
-   "bytes": 6463,
+   "doc_id": "ref-3420d01129f9",
+   "file": "long_report.pdf",
+   "sha256": "3420d01129f9d04773cf9f19e73870c7de651dce11f2eca78e2fe19c3568973f",
+   "bytes": 129790,
    "status": "ok",
    "page_count": 6,
    "pdf_metadata": {
-    "title": "Facing pages sample",
+    "title": "Long report sample",
     "format": "PDF 1.7"
    },
    "encrypted": false,
@@ -150,26 +431,21 @@
    "license": {
     "status": "unknown",
     "source": "not provided",
+    "evidence": null,
     "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
    },
    "duplicates": []
   },
   {
-   "doc_id": "ref-07d815dd9211",
-   "file": "known_geometry.pdf",
-   "sha256": "07d815dd92116e281eeb0ca45ae676fe5df359533141003c1bad1337571a366d",
-   "bytes": 5298,
+   "doc_id": "ref-2b6bb9af11ae",
+   "file": "mixed_media.pdf",
+   "sha256": "2b6bb9af11ae7fa9f9e690e53d91f3ccd70bc94f0a56f053d5496e944671e4ee",
+   "bytes": 106880,
    "status": "ok",
-   "page_count": 3,
+   "page_count": 7,
    "pdf_metadata": {
-    "title": "Known Geometry Reference",
-    "author": "reference_analyzer tests",
-    "subject": "(unspecified)",
-    "creator": "(unspecified)",
-    "producer": "ReportLab PDF Library - (opensource)",
-    "creationDate": "D:20261104040746+00'00'",
-    "modDate": "D:20261104040746+00'00'",
-    "format": "PDF 1.4"
+    "title": "Mixed media sample",
+    "format": "PDF 1.7"
    },
    "encrypted": false,
    "page_layout": null,
@@ -177,52 +453,33 @@
     {
      "width_pt": 595.3,
      "height_pt": 841.9,
-     "pages": 3,
+     "pages": 7,
      "first_page": 1
     }
    ],
-   "reviewed_metadata": {
-    "file": "05-Reviewed/known_geometry.json",
-    "fields": {
-     "license": "CC0 (synthetic test file)",
-     "source": "generated by sample_corpus.py",
-     "reviewer": "test"
-    }
-   },
+   "reviewed_metadata": null,
    "provenance": {
-    "source": "generated by sample_corpus.py",
-    "recorded_from": "05-Reviewed/known_geometry.json"
+    "source": "local reference folder (no reviewed provenance)",
+    "recorded_from": "file system"
    },
    "license": {
-    "status": "CC0 (synthetic test file)",
-    "source": "05-Reviewed/known_geometry.json",
+    "status": "unknown",
+    "source": "not provided",
+    "evidence": null,
     "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
    },
-   "duplicates": [
-    {
-     "kind": "exact",
-     "with": [
-      "ref-07d815dd9211-2"
-     ]
-    }
-   ]
+   "duplicates": []
   },
   {
-   "doc_id": "ref-07d815dd9211-2",
-   "file": "known_geometry_copy.pdf",
-   "sha256": "07d815dd92116e281eeb0ca45ae676fe5df359533141003c1bad1337571a366d",
-   "bytes": 5298,
+   "doc_id": "ref-017a5b3a4503",
+   "file": "ruled_tables.pdf",
+   "sha256": "017a5b3a4503b09ced5677bc7e9f03c0affebbcf117ce4f794cfce317d0d0896",
+   "bytes": 16908,
    "status": "ok",
    "page_count": 3,
    "pdf_metadata": {
-    "title": "Known Geometry Reference",
-    "author": "reference_analyzer tests",
-    "subject": "(unspecified)",
-    "creator": "(unspecified)",
-    "producer": "ReportLab PDF Library - (opensource)",
-    "creationDate": "D:20261104040746+00'00'",
-    "modDate": "D:20261104040746+00'00'",
-    "format": "PDF 1.4"
+    "title": "Ruled tables sample",
+    "format": "PDF 1.7"
    },
    "encrypted": false,
    "page_layout": null,
@@ -242,21 +499,15 @@
    "license": {
     "status": "unknown",
     "source": "not provided",
+    "evidence": null,
     "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
    },
-   "duplicates": [
-    {
-     "kind": "exact",
-     "with": [
-      "ref-07d815dd9211"
-     ]
-    }
-   ]
+   "duplicates": []
   },
   {
-   "doc_id": "ref-c8dfaf2f1b35",
+   "doc_id": "ref-6a148a3e9805",
    "file": "scanned.pdf",
-   "sha256": "c8dfaf2f1b35decafe31fa52cd2584df66d5b9612f3ab92fd4d708b622fae371",
+   "sha256": "6a148a3e9805c2e371e014050eddb4838eb7a6f8ddb9dc6a74c9ecf7788720f1",
    "bytes": 1050346,
    "status": "ok",
    "page_count": 1,
@@ -282,14 +533,15 @@
    "license": {
     "status": "unknown",
     "source": "not provided",
+    "evidence": null,
     "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
    },
    "duplicates": []
   },
   {
-   "doc_id": "ref-fb23ae9a1592",
+   "doc_id": "ref-b9943160a1ec",
    "file": "spread.pdf",
-   "sha256": "fb23ae9a1592bd1adb5bd63977060cf0cbd025dcd268165b1d29ce50878bc0f4",
+   "sha256": "b9943160a1ecc55ffd30ded03c3b7962ee3396703dfdf83fe89d728049e4617d",
    "bytes": 3061,
    "status": "ok",
    "page_count": 2,
@@ -315,14 +567,117 @@
    "license": {
     "status": "unknown",
     "source": "not provided",
+    "evidence": null,
     "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
    },
    "duplicates": []
   },
   {
-   "doc_id": "ref-bb02b5a9a7b4",
+   "doc_id": "ref-e0a205d949e3",
+   "file": "spread_sheets.pdf",
+   "sha256": "e0a205d949e322547b8e116eae0ba334569fd876a1c380c9dd267053e661f751",
+   "bytes": 7539,
+   "status": "ok",
+   "page_count": 4,
+   "pdf_metadata": {
+    "title": "Spread sheets sample",
+    "format": "PDF 1.7"
+   },
+   "encrypted": false,
+   "page_layout": null,
+   "page_sizes": [
+    {
+     "width_pt": 1190.6,
+     "height_pt": 841.9,
+     "pages": 4,
+     "first_page": 1
+    }
+   ],
+   "reviewed_metadata": null,
+   "provenance": {
+    "source": "local reference folder (no reviewed provenance)",
+    "recorded_from": "file system"
+   },
+   "license": {
+    "status": "unknown",
+    "source": "not provided",
+    "evidence": null,
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "duplicates": []
+  },
+  {
+   "doc_id": "ref-5249f019e4d8",
+   "file": "template_alpha.pdf",
+   "sha256": "5249f019e4d899ee8472a40fb0185d26b5f3b6a3f3d5a5b621896b17ad23fe22",
+   "bytes": 3085,
+   "status": "ok",
+   "page_count": 3,
+   "pdf_metadata": {
+    "title": "Alpha Works profile",
+    "format": "PDF 1.7"
+   },
+   "encrypted": false,
+   "page_layout": null,
+   "page_sizes": [
+    {
+     "width_pt": 595.3,
+     "height_pt": 841.9,
+     "pages": 3,
+     "first_page": 1
+    }
+   ],
+   "reviewed_metadata": null,
+   "provenance": {
+    "source": "local reference folder (no reviewed provenance)",
+    "recorded_from": "file system"
+   },
+   "license": {
+    "status": "unknown",
+    "source": "not provided",
+    "evidence": null,
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "duplicates": []
+  },
+  {
+   "doc_id": "ref-5a2e89d3ead6",
+   "file": "template_gamma.pdf",
+   "sha256": "5a2e89d3ead67f62f51ced20aae4c2fdf3a464a90824dec1fca925fb311604ee",
+   "bytes": 3190,
+   "status": "ok",
+   "page_count": 3,
+   "pdf_metadata": {
+    "title": "Gamma Works profile",
+    "format": "PDF 1.7"
+   },
+   "encrypted": false,
+   "page_layout": null,
+   "page_sizes": [
+    {
+     "width_pt": 595.3,
+     "height_pt": 841.9,
+     "pages": 3,
+     "first_page": 1
+    }
+   ],
+   "reviewed_metadata": null,
+   "provenance": {
+    "source": "local reference folder (no reviewed provenance)",
+    "recorded_from": "file system"
+   },
+   "license": {
+    "status": "unknown",
+    "source": "not provided",
+    "evidence": null,
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "duplicates": []
+  },
+  {
+   "doc_id": "ref-9163605b13c4",
    "file": "annual/northwind_annual_report_2023.pdf",
-   "sha256": "bb02b5a9a7b42aed81da83f6a2f8f458aa69742ffd0ba2d9781f3e8894fc424d",
+   "sha256": "9163605b13c4321df51100b39d941aae82669f036cd77bab94ca98e12d8d28ec",
    "bytes": 13375,
    "status": "ok",
    "page_count": 12,
@@ -342,7 +697,9 @@
     }
    ],
    "reviewed_metadata": {
-    "file": "05-Reviewed/catalog.csv",
+    "files": [
+     "05-Reviewed/catalog.csv"
+    ],
     "fields": {
      "filename": "northwind_annual_report_2023.pdf",
      "license": "fictional sample — internal use",
@@ -356,14 +713,15 @@
    "license": {
     "status": "fictional sample — internal use",
     "source": "05-Reviewed/catalog.csv",
+    "evidence": null,
     "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
    },
    "duplicates": []
   },
   {
-   "doc_id": "ref-1d4eedf0013c",
+   "doc_id": "ref-d8f7c34f8902",
    "file": "annual/northwind_annual_report_2023_summary.pdf",
-   "sha256": "1d4eedf0013c17304ff1c063e3f690058190acdb024904808143e29288d46110",
+   "sha256": "d8f7c34f89024d50e63f5bf73270818c36dc720573f132758b03f7553bc3da7b",
    "bytes": 4744,
    "status": "ok",
    "page_count": 4,
@@ -383,7 +741,9 @@
     }
    ],
    "reviewed_metadata": {
-    "file": "05-Reviewed/catalog.csv",
+    "files": [
+     "05-Reviewed/catalog.csv"
+    ],
     "fields": {
      "filename": "northwind_annual_report_2023_summary.pdf",
      "license": "fictional sample — internal use",
@@ -397,6 +757,7 @@
    "license": {
     "status": "fictional sample — internal use",
     "source": "05-Reviewed/catalog.csv",
+    "evidence": null,
     "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
    },
    "duplicates": []

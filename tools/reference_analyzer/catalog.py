@@ -16,8 +16,10 @@ import re
 from typing import Dict, List, Optional, Tuple
 
 REVIEWED_DIR = "05-Reviewed"
-LICENSE_KEYS = ("license", "licence", "license_status", "reuse", "reuse_status", "rights", "usage")
+LICENSE_KEYS = ("license", "licence", "license_status", "rights_status", "reuse", "reuse_status", "rights", "usage")
 PROVENANCE_KEYS = ("source", "provenance", "url", "publisher", "origin", "downloaded_from", "obtained")
+FILE_KEYS = ("file", "filename", "file_name", "path", "pdf", "document", "original_relative_path")
+PAGE_COUNT_KEYS = ("pages", "pdf_pages", "page_count")
 
 
 def sha256_file(path: str) -> str:
@@ -96,21 +98,41 @@ def load_reviewed(dirs: List[str]) -> Tuple[List[dict], List[dict]]:
     return records, warns
 
 
-def match_reviewed(records: List[dict], rel: str, sha: str) -> Optional[dict]:
-    """Exact matches only: SHA-256, then filename/path, then sidecar stem == PDF stem."""
+def _names_pdf(record: dict, rel: str, base: str) -> bool:
+    """The record names this file: a path must equal its relative path, a bare name its base name."""
+    for key in FILE_KEYS:
+        v = str(record.get(key, "")).replace("\\", "/")
+        if v and (v == rel if "/" in v else v == base):
+            return True
+    return False
+
+
+def match_reviewed(records: List[dict], rel: str, sha: str) -> Tuple[Optional[dict], List[dict]]:
+    """(merged record, conflicts). Exact matches only: SHA-256, filename/path, or sidecar stem.
+
+    Several reviewed files can describe one PDF (a rights index and a features dump), so every match
+    is merged: the first non-empty value wins and ``_files`` lists the sources. A record that names
+    this file but carries a different SHA-256 describes other bytes: a conflict, never a match."""
     base, stem = os.path.basename(rel), os.path.splitext(os.path.basename(rel))[0]
+    hits, conflicts = [], []
     for r in records:
-        if str(r.get("sha256", "")).lower() == sha:
-            return r
-    for key in ("file", "filename", "file_name", "path", "pdf", "document"):
-        for r in records:
-            v = str(r.get(key, ""))
-            if v and (v == rel or os.path.basename(v) == base):
-                return r
-    for r in records:
-        if r["_stem"] == stem and not any(k in r for k in ("file", "filename", "sha256", "path")):
-            return r
-    return None
+        rsha = str(r.get("sha256", "")).lower()
+        if rsha == sha:
+            hits.append(r)
+        elif _names_pdf(r, rel, base):
+            (conflicts if rsha else hits).append(r)
+        elif r["_stem"] == stem and not rsha and not any(k in r for k in FILE_KEYS):
+            hits.append(r)
+    if not hits:
+        return None, conflicts
+    merged: dict = {"_files": []}
+    for r in hits:
+        if r["_file"] not in merged["_files"]:
+            merged["_files"].append(r["_file"])
+        for k, v in r.items():
+            if k not in ("_file", "_stem") and merged.get(k) in (None, ""):
+                merged[k] = v
+    return merged, conflicts
 
 
 def _first(rec: Optional[dict], keys) -> Optional[str]:
@@ -121,6 +143,19 @@ def _first(rec: Optional[dict], keys) -> Optional[str]:
         if v not in (None, ""):
             return v if isinstance(v, str) else json.dumps(v, ensure_ascii=False)
     return None
+
+
+def _source_of(records: List[dict], match: dict, keys) -> str:
+    """Reviewed file that supplied the first non-empty value of ``keys``."""
+    key = next(k for k in keys if match.get(k) not in (None, ""))
+    name = next(r["_file"] for r in records if r["_file"] in match["_files"] and r.get(key) == match[key])
+    return f"{REVIEWED_DIR}/{name}"
+
+
+def _compact(fields: dict) -> dict:
+    """Reviewer-entered values only: per-page dumps and their text samples stay out of the catalogue."""
+    return {k: v for k, v in fields.items() if not k.startswith("_")
+            and not (isinstance(v, list) and any(isinstance(x, dict) for x in v))}
 
 
 # ───────────────────────────── records ─────────────────────────────
@@ -171,17 +206,25 @@ def catalog_record(path: str, root: str, reviewed: List[dict], index: int) -> Tu
                     warns.append({"code": "empty_pdf", "severity": "error", "message": "no pages"})
         finally:
             doc.close()
-    match = match_reviewed(reviewed, rel, sha)
+    match, conflicts = match_reviewed(reviewed, rel, sha)
+    for c in conflicts:
+        warns.append({"code": "reviewed_sha256_mismatch", "severity": "warning",
+                      "message": f"{c['_file']} names this file with a different SHA-256 — record ignored"})
     if match:
-        rec["reviewed_metadata"] = {"file": f"{REVIEWED_DIR}/{match['_file']}",
-                                    "fields": {k: v for k, v in match.items() if not k.startswith("_")}}
+        rec["reviewed_metadata"] = {"files": [f"{REVIEWED_DIR}/{f}" for f in match["_files"]],
+                                    "fields": _compact(match)}
+        declared = next((match[k] for k in PAGE_COUNT_KEYS if str(match.get(k, "")).isdigit()), None)
+        if declared is not None and rec["page_count"] is not None and int(declared) != rec["page_count"]:
+            warns.append({"code": "reviewed_page_count_mismatch", "severity": "warning",
+                          "message": f"reviewed metadata says {declared} pages, the PDF has {rec['page_count']}"})
     lic, prov = _first(match, LICENSE_KEYS), _first(match, PROVENANCE_KEYS)
     rec["license"] = {"status": lic or "unknown",
-                      "source": f"{REVIEWED_DIR}/{match['_file']}" if lic else "not provided",
+                      "source": _source_of(reviewed, match, LICENSE_KEYS) if lic else "not provided",
+                      "evidence": _first(match, ("rights_evidence",)),
                       "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, "
                                       "artwork or layouts into distributed assets"}
     rec["provenance"] = {"source": prov or "local reference folder (no reviewed provenance)",
-                         "recorded_from": f"{REVIEWED_DIR}/{match['_file']}" if prov else "file system"}
+                         "recorded_from": _source_of(reviewed, match, PROVENANCE_KEYS) if prov else "file system"}
     if not match:
         warns.append({"code": "reviewed_metadata_missing", "severity": "info",
                       "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"})
