@@ -1,0 +1,405 @@
+{
+ "tool": {
+  "name": "reference_analyzer",
+  "version": "0.1.0",
+  "dependencies": {
+   "pymupdf": {
+    "version": "2.1",
+    "license": "Dual Licensed - GNU AFFERO GPL 3.0 or Artifex Commercial License",
+    "used_for": "PDF parsing, text/drawing/table extraction, page rendering"
+   },
+   "pillow": {
+    "version": "12.3.0",
+    "license": "MIT-CMU",
+    "used_for": "preview images and overlays"
+   }
+  },
+  "network": "none — runs offline; nothing is uploaded"
+ },
+ "input": {
+  "folder": "ref2",
+  "pdf_files": 10,
+  "reviewed_metadata_records": 3
+ },
+ "documents": [
+  {
+   "doc_id": "ref-7237fd8f7b40",
+   "file": "arabic_report.pdf",
+   "sha256": "7237fd8f7b40c86e4c978eb02cc86b32424bb0c8051dbe36f2a07451febd1d4d",
+   "bytes": 39369,
+   "status": "ok",
+   "page_count": 2,
+   "pdf_metadata": {
+    "title": "تقرير تجريبي",
+    "creator": "Dynamic PDF Builder",
+    "producer": "ReportLab PDF Library - (opensource)",
+    "creationDate": "D:20261104040746+00'00'",
+    "modDate": "D:20261104040746+00'00'",
+    "format": "PDF 1.4"
+   },
+   "encrypted": false,
+   "page_layout": null,
+   "page_sizes": [
+    {
+     "width_pt": 595.3,
+     "height_pt": 841.9,
+     "pages": 2,
+     "first_page": 1
+    }
+   ],
+   "reviewed_metadata": null,
+   "provenance": {
+    "source": "local reference folder (no reviewed provenance)",
+    "recorded_from": "file system"
+   },
+   "license": {
+    "status": "unknown",
+    "source": "not provided",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "duplicates": []
+  },
+  {
+   "doc_id": "ref-16958a48b65c",
+   "file": "bilingual.pdf",
+   "sha256": "16958a48b65c3d9ccc24f52332c96ad2144b09f2dfe324ba093628a8896d80ef",
+   "bytes": 38684,
+   "status": "ok",
+   "page_count": 1,
+   "pdf_metadata": {
+    "title": "Bilingual sample — عينة ثنائية اللغة",
+    "creator": "Dynamic PDF Builder",
+    "producer": "ReportLab PDF Library - (opensource)",
+    "creationDate": "D:20261104040746+00'00'",
+    "modDate": "D:20261104040746+00'00'",
+    "format": "PDF 1.4"
+   },
+   "encrypted": false,
+   "page_layout": null,
+   "page_sizes": [
+    {
+     "width_pt": 595.3,
+     "height_pt": 841.9,
+     "pages": 1,
+     "first_page": 1
+    }
+   ],
+   "reviewed_metadata": null,
+   "provenance": {
+    "source": "local reference folder (no reviewed provenance)",
+    "recorded_from": "file system"
+   },
+   "license": {
+    "status": "unknown",
+    "source": "not provided",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "duplicates": []
+  },
+  {
+   "doc_id": "ref-d5ec6b2c942f",
+   "file": "corrupt.pdf",
+   "sha256": "d5ec6b2c942f966d6ffe080282d8c91b3c2f56185110246c6a66a507d2e6c481",
+   "bytes": 110,
+   "status": "empty",
+   "page_count": 0,
+   "pdf_metadata": {
+    "format": "PDF 1.7"
+   },
+   "encrypted": false,
+   "page_layout": null,
+   "page_sizes": [],
+   "reviewed_metadata": null,
+   "provenance": {
+    "source": "local reference folder (no reviewed provenance)",
+    "recorded_from": "file system"
+   },
+   "license": {
+    "status": "unknown",
+    "source": "not provided",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "duplicates": []
+  },
+  {
+   "doc_id": "ref-2d5e7bf3d2f7",
+   "file": "facing_pages.pdf",
+   "sha256": "2d5e7bf3d2f792daf0abe82b4e9b24c2ecb84a0c3a38977836229b3bb0d69cb8",
+   "bytes": 6463,
+   "status": "ok",
+   "page_count": 6,
+   "pdf_metadata": {
+    "title": "Facing pages sample",
+    "format": "PDF 1.7"
+   },
+   "encrypted": false,
+   "page_layout": null,
+   "page_sizes": [
+    {
+     "width_pt": 595.3,
+     "height_pt": 841.9,
+     "pages": 6,
+     "first_page": 1
+    }
+   ],
+   "reviewed_metadata": null,
+   "provenance": {
+    "source": "local reference folder (no reviewed provenance)",
+    "recorded_from": "file system"
+   },
+   "license": {
+    "status": "unknown",
+    "source": "not provided",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "duplicates": []
+  },
+  {
+   "doc_id": "ref-07d815dd9211",
+   "file": "known_geometry.pdf",
+   "sha256": "07d815dd92116e281eeb0ca45ae676fe5df359533141003c1bad1337571a366d",
+   "bytes": 5298,
+   "status": "ok",
+   "page_count": 3,
+   "pdf_metadata": {
+    "title": "Known Geometry Reference",
+    "author": "reference_analyzer tests",
+    "subject": "(unspecified)",
+    "creator": "(unspecified)",
+    "producer": "ReportLab PDF Library - (opensource)",
+    "creationDate": "D:20261104040746+00'00'",
+    "modDate": "D:20261104040746+00'00'",
+    "format": "PDF 1.4"
+   },
+   "encrypted": false,
+   "page_layout": null,
+   "page_sizes": [
+    {
+     "width_pt": 595.3,
+     "height_pt": 841.9,
+     "pages": 3,
+     "first_page": 1
+    }
+   ],
+   "reviewed_metadata": {
+    "file": "05-Reviewed/known_geometry.json",
+    "fields": {
+     "license": "CC0 (synthetic test file)",
+     "source": "generated by sample_corpus.py",
+     "reviewer": "test"
+    }
+   },
+   "provenance": {
+    "source": "generated by sample_corpus.py",
+    "recorded_from": "05-Reviewed/known_geometry.json"
+   },
+   "license": {
+    "status": "CC0 (synthetic test file)",
+    "source": "05-Reviewed/known_geometry.json",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "duplicates": [
+    {
+     "kind": "exact",
+     "with": [
+      "ref-07d815dd9211-2"
+     ]
+    }
+   ]
+  },
+  {
+   "doc_id": "ref-07d815dd9211-2",
+   "file": "known_geometry_copy.pdf",
+   "sha256": "07d815dd92116e281eeb0ca45ae676fe5df359533141003c1bad1337571a366d",
+   "bytes": 5298,
+   "status": "ok",
+   "page_count": 3,
+   "pdf_metadata": {
+    "title": "Known Geometry Reference",
+    "author": "reference_analyzer tests",
+    "subject": "(unspecified)",
+    "creator": "(unspecified)",
+    "producer": "ReportLab PDF Library - (opensource)",
+    "creationDate": "D:20261104040746+00'00'",
+    "modDate": "D:20261104040746+00'00'",
+    "format": "PDF 1.4"
+   },
+   "encrypted": false,
+   "page_layout": null,
+   "page_sizes": [
+    {
+     "width_pt": 595.3,
+     "height_pt": 841.9,
+     "pages": 3,
+     "first_page": 1
+    }
+   ],
+   "reviewed_metadata": null,
+   "provenance": {
+    "source": "local reference folder (no reviewed provenance)",
+    "recorded_from": "file system"
+   },
+   "license": {
+    "status": "unknown",
+    "source": "not provided",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "duplicates": [
+    {
+     "kind": "exact",
+     "with": [
+      "ref-07d815dd9211"
+     ]
+    }
+   ]
+  },
+  {
+   "doc_id": "ref-c8dfaf2f1b35",
+   "file": "scanned.pdf",
+   "sha256": "c8dfaf2f1b35decafe31fa52cd2584df66d5b9612f3ab92fd4d708b622fae371",
+   "bytes": 1050346,
+   "status": "ok",
+   "page_count": 1,
+   "pdf_metadata": {
+    "title": "Scanned sample",
+    "format": "PDF 1.7"
+   },
+   "encrypted": false,
+   "page_layout": null,
+   "page_sizes": [
+    {
+     "width_pt": 595.3,
+     "height_pt": 841.9,
+     "pages": 1,
+     "first_page": 1
+    }
+   ],
+   "reviewed_metadata": null,
+   "provenance": {
+    "source": "local reference folder (no reviewed provenance)",
+    "recorded_from": "file system"
+   },
+   "license": {
+    "status": "unknown",
+    "source": "not provided",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "duplicates": []
+  },
+  {
+   "doc_id": "ref-fb23ae9a1592",
+   "file": "spread.pdf",
+   "sha256": "fb23ae9a1592bd1adb5bd63977060cf0cbd025dcd268165b1d29ce50878bc0f4",
+   "bytes": 3061,
+   "status": "ok",
+   "page_count": 2,
+   "pdf_metadata": {
+    "title": "Spread sample",
+    "format": "PDF 1.7"
+   },
+   "encrypted": false,
+   "page_layout": null,
+   "page_sizes": [
+    {
+     "width_pt": 1190.6,
+     "height_pt": 841.9,
+     "pages": 2,
+     "first_page": 1
+    }
+   ],
+   "reviewed_metadata": null,
+   "provenance": {
+    "source": "local reference folder (no reviewed provenance)",
+    "recorded_from": "file system"
+   },
+   "license": {
+    "status": "unknown",
+    "source": "not provided",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "duplicates": []
+  },
+  {
+   "doc_id": "ref-bb02b5a9a7b4",
+   "file": "annual/northwind_annual_report_2023.pdf",
+   "sha256": "bb02b5a9a7b42aed81da83f6a2f8f458aa69742ffd0ba2d9781f3e8894fc424d",
+   "bytes": 13375,
+   "status": "ok",
+   "page_count": 12,
+   "pdf_metadata": {
+    "title": "Northwind Annual Report 2023",
+    "author": "Northwind (fictional)",
+    "format": "PDF 1.7"
+   },
+   "encrypted": false,
+   "page_layout": null,
+   "page_sizes": [
+    {
+     "width_pt": 595.3,
+     "height_pt": 841.9,
+     "pages": 12,
+     "first_page": 1
+    }
+   ],
+   "reviewed_metadata": {
+    "file": "05-Reviewed/catalog.csv",
+    "fields": {
+     "filename": "northwind_annual_report_2023.pdf",
+     "license": "fictional sample — internal use",
+     "source": "sample_corpus.py"
+    }
+   },
+   "provenance": {
+    "source": "sample_corpus.py",
+    "recorded_from": "05-Reviewed/catalog.csv"
+   },
+   "license": {
+    "status": "fictional sample — internal use",
+    "source": "05-Reviewed/catalog.csv",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "duplicates": []
+  },
+  {
+   "doc_id": "ref-1d4eedf0013c",
+   "file": "annual/northwind_annual_report_2023_summary.pdf",
+   "sha256": "1d4eedf0013c17304ff1c063e3f690058190acdb024904808143e29288d46110",
+   "bytes": 4744,
+   "status": "ok",
+   "page_count": 4,
+   "pdf_metadata": {
+    "title": "Northwind Annual Report 2023",
+    "author": "Northwind (fictional)",
+    "format": "PDF 1.7"
+   },
+   "encrypted": false,
+   "page_layout": null,
+   "page_sizes": [
+    {
+     "width_pt": 595.3,
+     "height_pt": 841.9,
+     "pages": 4,
+     "first_page": 1
+    }
+   ],
+   "reviewed_metadata": {
+    "file": "05-Reviewed/catalog.csv",
+    "fields": {
+     "filename": "northwind_annual_report_2023_summary.pdf",
+     "license": "fictional sample — internal use",
+     "source": "sample_corpus.py"
+    }
+   },
+   "provenance": {
+    "source": "sample_corpus.py",
+    "recorded_from": "05-Reviewed/catalog.csv"
+   },
+   "license": {
+    "status": "fictional sample — internal use",
+    "source": "05-Reviewed/catalog.csv",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "duplicates": []
+  }
+ ]
+}
