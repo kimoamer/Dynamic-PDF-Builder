@@ -2,6 +2,7 @@ from pydantic import BaseModel, model_validator
 from typing import List, Optional, Any
 from .blocks import Block
 from .enums import PageSize, Orientation
+from .page_system import PageSystem
 
 class Meta(BaseModel):
     title: Optional[str] = None
@@ -22,6 +23,7 @@ class Meta(BaseModel):
     encrypt: bool = False                       # Password-protect
     owner_password: Optional[str] = None
     user_password: Optional[str] = None
+    page_system: Optional[PageSystem] = None    # slot-based bands, in place of the theme's
 
 class Document(BaseModel):
     meta: Meta = Meta()

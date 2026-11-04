@@ -155,16 +155,18 @@ def set_table_layout_fixed(table) -> None:
 # ─────────────────────────── bidi / fonts ───────────────────────────
 
 def add_page_text_box(paragraph, shape_id: int, x_pt: float, y_pt: float, w_pt: float, h_pt: float,
-                      fill_hex: str, insets=(0, 0, 0, 0), description: str = ""):
+                      fill_hex: str, insets=(0, 0, 0, 0), description: str = "", opacity: float = 1.0,
+                      z: int = 1):
     """A filled text box anchored to the page, behind the text; returns its content
     element. Unlike a floating table it may run past the margins to the page edge.
     ``insets`` are left, top, right, bottom in points."""
     emu = lambda pt: int(pt * 12700)                                     # noqa: E731
     left, top, right, bottom = (emu(v) for v in insets)
+    alpha = f'<a:alpha val="{round(opacity * 100000)}"/>' if opacity < 1 else ""
     xml = (
         f'<w:r xmlns:w="{_W}" xmlns:mc="{_MC}" xmlns:wp="{_WP}" xmlns:a="{_A}" xmlns:wps="{_WPS}">'
         '<mc:AlternateContent><mc:Choice Requires="wps"><w:drawing>'
-        '<wp:anchor distT="0" distB="0" distL="0" distR="0" simplePos="0" relativeHeight="1" behindDoc="1" '
+        f'<wp:anchor distT="0" distB="0" distL="0" distR="0" simplePos="0" relativeHeight="{z}" behindDoc="1" '
         'locked="0" layoutInCell="1" allowOverlap="1"><wp:simplePos x="0" y="0"/>'
         f'<wp:positionH relativeFrom="page"><wp:posOffset>{emu(x_pt)}</wp:posOffset></wp:positionH>'
         f'<wp:positionV relativeFrom="page"><wp:posOffset>{emu(y_pt)}</wp:posOffset></wp:positionV>'
@@ -174,7 +176,7 @@ def add_page_text_box(paragraph, shape_id: int, x_pt: float, y_pt: float, w_pt: 
         f'<a:graphic><a:graphicData uri="{_WPS}"><wps:wsp><wps:cNvSpPr txBox="1"/><wps:spPr>'
         f'<a:xfrm><a:off x="0" y="0"/><a:ext cx="{emu(w_pt)}" cy="{emu(h_pt)}"/></a:xfrm>'
         '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>'
-        f'<a:solidFill><a:srgbClr val="{fill_hex.lstrip("#").upper()}"/></a:solidFill><a:ln><a:noFill/></a:ln>'
+        f'<a:solidFill><a:srgbClr val="{fill_hex.lstrip("#").upper()}">{alpha}</a:srgbClr></a:solidFill><a:ln><a:noFill/></a:ln>'
         '</wps:spPr><wps:txbx><w:txbxContent/></wps:txbx>'
         f'<wps:bodyPr rot="0" vert="horz" wrap="square" lIns="{left}" tIns="{top}" rIns="{right}" bIns="{bottom}" '
         'anchor="t" anchorCtr="0"><a:noAutofit/></wps:bodyPr></wps:wsp></a:graphicData></a:graphic>'

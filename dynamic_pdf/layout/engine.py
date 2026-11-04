@@ -25,6 +25,8 @@ from .factory import create_flowables, RenderContext
 from .. import policy as _policy
 from ..policy import RenderPolicy, DiagnosticCollector
 from ..assets import load_image
+from ..media import PageGeometry, ingest, normal_mode, physical_side
+from .media_flow import draw_page_items, move_to_page_start, page_layer_items
 from ..utils.errors import EncryptionError, DynamicPDFError
 
 import os
@@ -69,6 +71,43 @@ class _PageCounter(Flowable):
 
     def draw(self):
         pass
+
+
+def is_rtl_document(document) -> bool:
+    """The same answer the semantic layer gives, without normalising the document."""
+    from ..core.normalize import RTL_LANGS, block_text
+    meta = document.meta
+    if meta.direction in ("ltr", "rtl"):
+        return meta.direction == "rtl"
+    if meta.rtl or (meta.language or "en").split("-")[0].lower() in RTL_LANGS:
+        return True
+    letters = rtl = 0
+    for block in document.blocks:
+        for text in block_text(block):
+            letters += sum(ch.isalpha() for ch in text)
+            rtl += len(_ARABIC_BASE.findall(text))
+    return bool(letters) and rtl / letters > 0.7
+
+
+def _uses_page_layers(blocks) -> bool:
+    """Whether any block needs the page-end pass; plain documents skip it."""
+    for b in blocks:
+        t = getattr(b, "type", None)
+        if t in ("page_media", "page_section"):
+            return True
+        if t == "cover_page" and (b.background_image or b.background_color or b.layout):
+            return True
+        if t == "image" and b.placement and b.placement.mode not in ("inline", "floating"):
+            return True
+    return False
+
+
+_MIN_ROOM_AFTER_HEADING = 60.0
+
+
+def _uses_media_model(blocks) -> bool:
+    return _uses_page_layers(blocks) or any(
+        getattr(b, "type", None) == "image" and b.placement for b in blocks)
 
 
 def _landscape_indices(blocks) -> set:
@@ -256,6 +295,31 @@ class _EngineDocTemplate(BaseDocTemplate):
         del flowables[:i]
         flowables.insert(0, K)
 
+    def handle_flowable(self, flowables):
+        self._expand_float(flowables)
+        super().handle_flowable(flowables)
+
+    def _expand_float(self, flowables):
+        """A float is laid out now that the room left on the page is known. Headings
+        kept with it count against that room."""
+        from .media_flow import FloatRegion
+        i = 0
+        while i < len(flowables) and not isinstance(flowables[i], FloatRegion):
+            if i >= 6 or not flowables[i].getKeepWithNext():
+                return
+            i += 1
+        if i >= len(flowables):
+            return
+        frame = self.frame
+        width = frame._getAvailableWidth()
+        room = frame._y - frame._y1p
+        for f in flowables[:i]:
+            room -= f.wrap(width, room)[1] + f.getSpaceBefore() + f.getSpaceAfter()
+        if i and room < _MIN_ROOM_AFTER_HEADING:
+            flowables.insert(0, PageBreak())     # a heading goes with what it introduces
+            return
+        flowables[i:i + 1] = flowables[i].expand(width, room, frame._y2 - frame._y1p - frame._topPadding)
+
     def handle_documentBegin(self):
         self._heading_seq = 0
         self._outline_level = -1
@@ -270,6 +334,7 @@ class _EngineDocTemplate(BaseDocTemplate):
             return
         level, text, explicit_id = entry
         self._heading_seq += 1
+        self.canv.__dict__.setdefault("_dpb_heads", []).append((level, text))
         key = explicit_id or f"h{self._heading_seq}"
         c = self.canv
         c.bookmarkPage(key)
@@ -883,6 +948,121 @@ class LayoutEngine:
             return
         self._on_page(canvas, doc)
 
+    def _page_begin(self, canvas, doc):
+        canvas._dpb_mark = len(canvas._code)
+        canvas._dpb_items = []
+
+    def _layer_asset(self, block):
+        key = block.src
+        if key not in self._layer_assets:
+            try:
+                self._layer_assets[key] = ingest(key, self.policy.assets)
+            except DynamicPDFError as e:
+                self._layer_assets[key] = None
+                self.diagnostics.fail("asset_failed", f"Page image: {e}", e)
+        return self._layer_assets[key]
+
+    def _page_geometry(self, canvas) -> PageGeometry:
+        w, h = self._page_wh(canvas)
+        base = self._geometry
+        return PageGeometry(w, h, base.left, base.right, base.top, base.bottom, base.rtl)
+
+    def _page_finish(self, canvas, doc):
+        """Everything page-level, now that the page's content is known: layers behind
+        the text go to the start of its content stream, bands and front layers on top."""
+        bare = getattr(canvas, "_dpb_bare", False)
+        canvas._dpb_bare = False
+        page = canvas.getPageNumber()
+        section = getattr(canvas, "_dpb_section", None)
+        items = page_layer_items(self._page_media, self._page_geometry(canvas), page, section,
+                                 self._layer_asset) + getattr(canvas, "_dpb_items", [])
+        start = len(canvas._code)
+        draw_page_items(canvas, [i for i in items if i.behind])
+        move_to_page_start(canvas, start, getattr(canvas, "_dpb_mark", 0))
+        running = self._running_titles(canvas)
+        if not bare:
+            if self.page_system is not None:
+                self._draw_bands(canvas, doc, page, section, running)
+            else:
+                self._on_page(canvas, doc)
+        draw_page_items(canvas, [i for i in items if not i.behind])
+        canvas._dpb_items = []
+
+    def _running_titles(self, canvas) -> dict:
+        """Chapter and section for this page: the first on it, else the last before it."""
+        heads = canvas.__dict__.get("_dpb_heads", [])
+        carried = canvas.__dict__.setdefault("_dpb_carry", {"chapter": "", "section": ""})
+        h1 = [t for level, t in heads if level == 1]
+        h2 = [t for level, t in heads if level == 2]
+        titles = {"chapter": h1[0] if h1 else carried["chapter"],
+                  "section": h2[0] if h2 else (h1[0] if h1 else carried["section"])}
+        if h1:
+            carried["chapter"] = h1[-1]
+        for level, text in heads:
+            if level <= 2:
+                carried["section"] = text
+        canvas._dpb_heads = []
+        return titles
+
+    def _draw_bands(self, canvas, doc, page, section, running):
+        from .page_system import draw_band, pick_bands
+        sys = self.page_system
+        w, h = self._page_wh(canvas)
+        head, foot = pick_bands(sys, page, section)
+        total = self._page_counter.total
+        shown = page + (self.document.meta.page_number_start or 1) - 1
+        values = {**running, "page": str(shown), "pages": str(total or shown)}
+        width = w - self._geometry.left - self._geometry.right
+        x = self._geometry.left
+        if head:
+            layout = self.band_maker.layout(head, width, values)
+            draw_band(canvas, layout, head, self.theme, x, h - sys.edge_distance, w, True)
+        if foot:
+            layout = self.band_maker.layout(foot, width, values)
+            draw_band(canvas, layout, foot, self.theme, x, sys.edge_distance + layout.height, w, False)
+
+    def _float_region(self, i: int, blocks, theme, ctx, frame_width: float):
+        """A float and the text that wraps it, or None to set the image inline."""
+        block = blocks[i]
+        if block.type != "image" or not block.placement or (block.hints or {}).get("flow_run") is not None:
+            return None
+        if normal_mode(block.placement) != "floating":
+            return None
+        from .media_flow import FloatRegion
+        ratio = block.placement.width_ratio or 0.42
+        fig_w = min(block.width or frame_width * ratio, frame_width * 0.62)
+        plain = block.model_copy(update={"placement": None, "width": fig_w})
+        saved = ctx.available_width, ctx.available_height
+        ctx.available_width = fig_w
+        ctx.available_height = (saved[1] or 700) * 0.6
+        try:
+            built = create_flowables(plain, theme, ctx)
+        finally:
+            ctx.available_width, ctx.available_height = saved
+        figure = list(built[0]._content) if isinstance(built[0], KeepTogether) else list(built)
+        fig_h = sum(f.wrap(fig_w, 1e6)[1] + f.getSpaceAfter() for f in figure)
+        narrow = frame_width - fig_w - block.placement.gutter
+        items, got, j = [], 0.0, i + 1
+        while j < len(blocks) and got < fig_h:
+            nxt = blocks[j]
+            if nxt.type not in ("paragraph", "bullet_list", "numbered_list") or (
+                    nxt.hints or {}).get("flow_run") is not None:
+                break
+            made = create_flowables(nxt, theme, ctx)
+            for f in made:
+                f.keepWithNext = 0
+                got += f.wrap(narrow, 1e6)[1] + f.getSpaceAfter()
+            items += made
+            j += 1
+        if got < fig_h * 0.4:
+            self.diagnostics.warn("float_fallback", "Too little text follows this floating image "
+                                  "to wrap it; it was set inline")
+            return None
+        side = physical_side(block.placement.horizontal, self._geometry.rtl)
+        if side == "center":
+            side = "right" if not self._geometry.rtl else "left"
+        return FloatRegion(figure, items, fig_w, side, block.placement.gutter), j - 1 - i
+
     def _language(self) -> str:
         meta = self.document.meta
         if meta.rtl or getattr(meta, "direction", None) == "rtl":
@@ -941,7 +1121,23 @@ class LayoutEngine:
         # Compute text frame area based on style
         top_m = sp.page_margin_top
         bot_m = sp.page_margin_bottom
-        if hf.enabled:
+        self.page_system = self.document.meta.page_system
+        if self.page_system is not None:
+            from ..schema.page_system import settled
+            self.page_system = settled(self.page_system, self.document.blocks)
+        rtl = (is_rtl_document(self.document) if self.page_system is not None
+               or _uses_media_model(self.document.blocks) else False)
+        self.band_maker = None
+        if self.page_system is not None:
+            from .page_system import BandMaker, margin_needs
+            from ..design.page_values import band_values
+            base_values, sample = band_values(self.document, hf)
+            self.band_maker = BandMaker(theme, self.page_system, rtl, self.policy.assets,
+                                        self.diagnostics, base_values)
+            need_top, need_bottom = margin_needs(
+                self.band_maker, w - sp.page_margin_left - sp.page_margin_right, sample)
+            top_m, bot_m = max(top_m, need_top), max(bot_m, need_bottom)
+        elif hf.enabled:
             # Styles that draw a bar need margin clearance
             bar_styles = {"bar", "gradient", "banner", "split", "logo_left",
                           "logo_right", "modern"}
@@ -976,9 +1172,15 @@ class LayoutEngine:
         )
         frame.geometry = self.geometry
 
+        self._geometry = PageGeometry(w, h, left_m, right_m, top_m, bot_m, rtl)
+        self._page_media = [b for b in self.document.blocks
+                            if getattr(b, "type", None) == "page_media" and b.scope != "once"]
+        self._layer_assets = {}
         hooks = {"onPage": self._on_page}
         if any(getattr(b, "type", None) == "section_opener" for b in self.document.blocks):
             hooks = {"onPageEnd": self._on_page_end}
+        if self.page_system is not None or _uses_page_layers(self.document.blocks):
+            hooks = {"onPage": self._page_begin, "onPageEnd": self._page_finish}
         template = PageTemplate(id='AllPages', frames=[frame], pagesize=pagesize, **hooks)
         # Landscape pages for content the planner marks as too wide for portrait
         lw, lh = (h, w) if h > w else (w, h)
@@ -1029,6 +1231,7 @@ class LayoutEngine:
         )
         ctx.cache = self.cache
         ctx.page_size = (w, h)
+        ctx.page_geometry = self._geometry
         self.diagnostics.language = ctx.language
         doc_template._dpb_geometry = self.geometry
 
@@ -1041,7 +1244,10 @@ class LayoutEngine:
             column_run: list = []
             from reportlab.platypus import NextPageTemplate
             from reportlab.platypus.flowables import PageBreakIfNotEmpty
+            skip_to = -1
             for i, block in enumerate(self.document.blocks):
+                if i <= skip_to:
+                    continue
                 if (i in land) != in_land:
                     in_land = i in land
                     flowables += [NextPageTemplate('Landscape' if in_land else 'AllPages'),
@@ -1062,6 +1268,12 @@ class LayoutEngine:
                         from .column_flow import column_flow
                         flowables += column_flow(column_run, block.hints["flow_columns"], block.hints["flow_gap"])
                         column_run = []
+                    continue
+                region = None if in_land else self._float_region(
+                    i, self.document.blocks, theme, ctx, ctx.available_width)
+                if region is not None:
+                    flowables.append(region[0])
+                    skip_to = i + region[1]
                     continue
                 result = create_flowables(block, theme, ctx)
                 if result:

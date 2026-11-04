@@ -706,6 +706,20 @@ class WatermarkFlowable(Flowable):
         c.restoreState()
 
 
+def _render_page_media(block, ctx):
+    """Only a ``once`` layer lives at its place in the text; the others are the
+    engine's, which draws them on every page they apply to."""
+    if block.scope != "once" or getattr(ctx, "page_geometry", None) is None:
+        return []
+    from ..media import ingest, page_box
+    from .media_flow import FlowAnchoredLayer
+    asset = ingest(block.src, _diag.current().policy.assets)
+    placement = block.placement.model_copy(
+        update={"mode": "behind_text" if block.layer == "behind" else "in_front_of_text"})
+    return [FlowAnchoredLayer(asset, placement, block.treatment, ctx.page_geometry,
+                              *page_box(ctx.page_geometry, placement))]
+
+
 class ShapeFlowable(Flowable):
     """Draws a vector shape (rect, circle, ellipse, line, arrow, polygon, arc, wedge)."""
     def __init__(self, block, theme):
@@ -862,6 +876,7 @@ class RenderContext:
         self.apply_drop_cap_next = False
         self.section_numbering = section_numbering
         self.page_size = (595.28, 841.89)
+        self.page_geometry = None          # margins and direction, for page-level media
         self.first_block = False           # the block being built opens the document
         self.last_block = True             # nothing follows the block being built
         self.heading_counters = [0, 0, 0, 0, 0, 0]  # H1–H6
@@ -1143,7 +1158,7 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
 
     # ─── Image ───
     if btype == "image":
-        return _fit_figure(_render_image(block, theme, ctx.available_width, ctx.available_height), block)
+        return _fit_figure(_render_image(block, theme, ctx.available_width, ctx.available_height, ctx), block)
 
     # ─── Chart ───
     if btype == "chart":
@@ -1213,7 +1228,7 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
 
     # ─── Cover Page ───
     if btype == "cover_page":
-        return _render_cover(block, theme)
+        return _render_cover(block, theme, ctx)
 
     # ─── Mermaid ───
     if btype == "mermaid":
@@ -1271,6 +1286,14 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
     # ─── Watermark ───
     if btype == "watermark":
         return [WatermarkFlowable(text=block.text, color=block.color, opacity=block.opacity)]
+
+    # ─── Page media and sections ───
+    if btype == "page_media":
+        return _render_page_media(block, ctx)
+    if btype == "page_section":
+        from reportlab.platypus.flowables import PageBreakIfNotEmpty
+        from .media_flow import SectionMark
+        return ([PageBreakIfNotEmpty()] if block.new_page else []) + [SectionMark(block.name)]
 
     # ─── Shape ───
     if btype == "shape":
@@ -1513,38 +1536,97 @@ def _render_code(block, theme):
     return flowables
 
 
-def _render_image(block, theme, available_width=460, available_height=None):
-    policy = _diag.current().policy.assets
-    buf, (w, h) = _load_image(block.src, policy)
-    max_w = min(block.width or available_width, available_width)
-    if w > max_w:
-        h = h * (max_w / w)
-        w = max_w
-    max_h = block.height
+def _image_treatment(block):
+    """The block's treatment, with the older ``border`` and ``shadow`` switches."""
+    from ..schema.media import ImageTreatment
+    t = block.treatment or ImageTreatment()
+    updates = {}
+    if block.border and not t.border_width:
+        updates["border_width"] = 0.75
+    if block.shadow:
+        updates["shadow"] = True
+    return t.model_copy(update=updates) if updates else t
+
+
+def _figure_text(block, theme, width=None):
+    """Caption and source lines of a figure."""
+    from ..i18n import label as _i18n
+    lang = _diag.current().language
+    size = theme.typography.base_size * theme.typography.caption_size_ratio
+    out = []
+    text = ""
+    if block.figure_number:
+        text = f"{_i18n('figure', lang)} {block.figure_number}"
+    if block.caption:
+        text = f"{text}: {block.caption}" if text else block.caption
+    if text:
+        rtl = _is_rtl(text)
+        sty = ParagraphStyle('ImgCap', fontSize=size, leading=size * (1.5 if rtl else 1.2),
+                             fontName=get_font_name(theme.typography.arabic_family or "Amiri") if rtl
+                             else "Helvetica",
+                             textColor=_safe_color(theme.colors.text_muted),
+                             alignment=2 if rtl and width else 1, spaceAfter=theme.spacing.block_gap)
+        out.append(Paragraph(_md_inline(text) if rtl else f"<i>{_md_inline(text)}</i>", sty))
+    if block.source:
+        note = f"{_i18n('source', lang)}: {block.source}"
+        rtl = _is_rtl(note)
+        sty = ParagraphStyle('ImgSrc', fontSize=size * 0.9, leading=size * (1.4 if rtl else 1.15),
+                             fontName=get_font_name(theme.typography.arabic_family or "Amiri") if rtl
+                             else "Helvetica",
+                             textColor=_safe_color(theme.colors.text_muted),
+                             alignment=2 if rtl and width else 1, spaceAfter=theme.spacing.block_gap)
+        if out:
+            out[-1].style = out[-1].style.clone('ImgCap2', spaceAfter=2)
+        out.append(Paragraph(_md_inline(note), sty))
+    return out
+
+
+def _render_image(block, theme, available_width=460, available_height=None, ctx=None):
+    from ..media import check_resolution, flow_box, ingest, normal_mode, page_box, PageGeometry
+    from .media_flow import FlowAnchoredLayer, MediaFlowable
+    collector = _diag.current()
+    asset = ingest(block.src, collector.policy.assets)
+    treatment = _image_treatment(block)
+    placement = block.placement
+    mode = normal_mode(placement) if placement else "inline"
+    geo = getattr(ctx, "page_geometry", None)
+    if mode in ("behind_text", "in_front_of_text") and geo is not None:
+        box = page_box(geo, placement)
+        if placement.relative_to == "content":
+            box = (available_width * (placement.width_ratio or 1.0),
+                   flow_box(asset, available_width * (placement.width_ratio or 1.0), None,
+                            available_width, None, None, treatment)[1])
+        elif not placement.height_ratio and treatment.fit == "contain":
+            box = (box[0], box[0] / asset.aspect)
+        return [FlowAnchoredLayer(asset, placement, treatment, geo, *box)]
+
+    avail_w = available_width
+    bleed = None
+    if placement and placement.bleed and geo is not None:
+        avail_w = geo.width
+        bleed = geo.left
+    want_w = block.width
+    if placement and placement.width_ratio:
+        want_w = avail_w * placement.width_ratio
+    want_h = block.height
+    if placement and placement.height_ratio and available_height:
+        want_h = available_height * placement.height_ratio
+    avail_h = None
     if available_height:
         # leave room for a caption so figure + caption fit on one page
         ratio = (block.hints or {}).get("max_height_ratio") or (
             0.85 if (block.caption or block.figure_number) else 0.98)
-        frame_cap = available_height * ratio
-        max_h = min(max_h, frame_cap) if max_h else frame_cap
-    if max_h and h > max_h:
-        w = w * (max_h / h)
-        h = max_h
-    img = Image(buf, width=w, height=h)
-    img.hAlign = block.alignment.upper()
+        avail_h = available_height * ratio
+    w, h = flow_box(asset, want_w, want_h, avail_w, avail_h, None, treatment)
+    side = block.alignment
+    if placement and placement.horizontal != "center":
+        from ..media import physical_side
+        side = physical_side(placement.horizontal, bool(geo and geo.rtl))
+    img = MediaFlowable(asset, w, h, treatment, side.upper(), bleed, block.alt_text or "")
+    check_resolution(asset, img.fitted, collector, f"Image {block.alt_text or ''}".strip())
     img.spaceAfter = theme.spacing.block_gap
-    flowables = [img]
-    label = ""
-    if block.figure_number:
-        label = f"Figure {block.figure_number}"
-    if block.caption:
-        label = f"{label}: {block.caption}" if label else block.caption
-    if label:
-        cap_sty = ParagraphStyle('ImgCap',
-                                 fontSize=theme.typography.base_size * theme.typography.caption_size_ratio,
-                                 textColor=_safe_color(theme.colors.text_muted),
-                                 alignment=1, spaceAfter=theme.spacing.block_gap)
-        flowables.append(Paragraph(f"<i>{_md_inline(label)}</i>", cap_sty))
+    flowables = [img, *_figure_text(block, theme)]
+    if len(flowables) > 1:
         # keep figure and caption on the same page
         return [KeepTogether(flowables)]
     return flowables
@@ -1623,7 +1705,7 @@ def _fit_figure(flowables, block):
         out[0] = FigureGroup(out[0]._content)
         target = out[0]._content
     for k, f in enumerate(target):
-        if not isinstance(f, (Paragraph, Spacer)):
+        if not isinstance(f, (Paragraph, Spacer)) and getattr(f, "bleed_left", None) is None:
             captions = [c for c in target[k + 1:] if isinstance(c, Paragraph)]
             target[k] = FitFigure(f, min_scale, captions)
             break
@@ -1873,7 +1955,11 @@ def _render_score(block, theme):
     ]
 
 
-def _render_cover(block, theme):
+def _render_cover(block, theme, ctx=None):
+    if (block.background_image or block.background_color or block.layout) and ctx is not None \
+            and getattr(ctx, "page_geometry", None) is not None:
+        from .cover import designed_cover
+        return designed_cover(block, theme, ctx)
     flowables = [Spacer(1, 80)]
     if block.logo:
         try:

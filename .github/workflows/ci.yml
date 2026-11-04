@@ -61,6 +61,18 @@ jobs:
             m75-comparison/gallery
             m75-comparison/results.json
             m75-comparison/report.md
+      - name: Media and page system comparison (PDF and LibreOffice-rendered DOCX)
+        if: matrix.python-version == '3.12'
+        run: python benchmarks/m76/run.py m76-comparison
+      - name: Upload media and page system comparison
+        if: matrix.python-version == '3.12' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m76-comparison
+          path: |
+            m76-comparison/gallery
+            m76-comparison/results.json
+            m76-comparison/report.md
       - name: Upload contact sheets for visual review
         if: matrix.python-version == '3.12' && always()
         uses: actions/upload-artifact@v4

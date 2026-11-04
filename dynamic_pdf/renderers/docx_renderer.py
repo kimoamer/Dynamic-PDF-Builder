@@ -24,6 +24,7 @@ from docx import Document as new_docx
 from docx.enum.section import WD_ORIENT
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK, WD_COLOR_INDEX
+from docx.oxml.ns import qn
 from docx.shared import Emu, Pt
 from docx.table import _Cell
 
@@ -32,10 +33,13 @@ from ..assets import load_image
 from ..core.inline import parse_inline, plain_text
 from ..core.normalize import SemanticDocument, coerce_child, is_rtl_text
 from ..design.tokens import compile_tokens
+from ..media import (LOW_RESOLUTION_DPI, check_resolution, fit_image, flow_box, ingest, normal_mode,
+                     physical_side)
 from ..schema.enums import Orientation, PageSize
 from ..schema.theme import Theme
 from ..utils.errors import BlockRenderError, DynamicPDFError
 from . import docx_fields as F
+from . import docx_media as M
 from .docx_archetypes import ArchetypeDocx
 from .docx_styles import configure_styles, rgb, word_font
 
@@ -53,6 +57,10 @@ class DocxRenderer(ArchetypeDocx):
         self.tokens = compile_tokens(theme)
         self.col = collector or _policy.current()
         self.rtl_doc = sem.direction == "rtl"
+        self.shape_seq = 4000
+        self.section_name = None
+        self.band_writer = None
+        self.page_sys = None
         self.doc = new_docx()
         self.bm = F.BookmarkCounter()
         self.lists = None
@@ -71,7 +79,7 @@ class DocxRenderer(ArchetypeDocx):
                                      bullet_font=word_font(self.tokens.fonts.body))
         self._setup_section()
         self._core_properties()
-        self._header_footer()
+        self._page_parts(doc.sections[0], None)
         from ..layout.engine import _landscape_indices
         land = _landscape_indices(self.sem.blocks)
         in_land = False
@@ -101,7 +109,8 @@ class DocxRenderer(ArchetypeDocx):
             F.enable_update_fields_on_open(doc)
         F.mirror_bidi_justification(doc.element.body)
         for sec in doc.sections:
-            for part in (sec.header, sec.footer, sec.first_page_header, sec.first_page_footer):
+            for part in (sec.header, sec.footer, sec.first_page_header, sec.first_page_footer,
+                         sec.even_page_header, sec.even_page_footer):
                 if not part.is_linked_to_previous:
                     F.mirror_bidi_justification(part._element)
         buf = io.BytesIO()
@@ -141,6 +150,20 @@ class DocxRenderer(ArchetypeDocx):
         sec.header_distance = Pt(max(18, m["top"] * 0.45))
         sec.footer_distance = Pt(max(18, m["bottom"] * 0.45))
         self.content_width_pt = w - m["left"] - m["right"]
+        system = meta.page_system
+        if system is not None:
+            from ..design.page_values import band_values
+            from ..schema.page_system import settled
+            system = self.page_sys = settled(system, self.sem.blocks)
+            from ..fonts import register_fonts
+            from ..layout.page_system import BandMaker, margin_needs
+            register_fonts()
+            values, sample = band_values(self.sem.to_document(), self.theme.header_footer)
+            maker = BandMaker(self.theme, system, self.rtl_doc, self.col.policy.assets, self.col, values)
+            top, bottom = margin_needs(maker, self.content_width_pt, sample)
+            sec.top_margin, sec.bottom_margin = Pt(max(m["top"], top)), Pt(max(m["bottom"], bottom))
+            sec.header_distance = sec.footer_distance = Pt(system.edge_distance)
+            self.band_writer = M.BandWriter(self, maker, sample)
         if self.rtl_doc:
             sectPr = sec._sectPr
             el = F._get_or_add(sectPr, "w:bidi")
@@ -157,11 +180,84 @@ class DocxRenderer(ArchetypeDocx):
         cp.language = meta.language or "en"
         cp.category = meta.document_type or ""
 
-    def _header_footer(self):
+    def next_shape(self) -> int:
+        self.shape_seq += 1
+        return self.shape_seq
+
+    def band_heading_level(self, field: str) -> int:
+        """Which heading a running title follows. Word's field reports an error on a
+        page before the first heading of its style, so ``{section}`` follows level 2
+        only in documents that have one."""
+        if field == "section" and any(
+                b.type == "heading" and b.level == 2 for b in self.sem.blocks):
+            return 2
+        return 1
+
+    def _layers_for(self, name):
+        """Document-level page layers for a section, with their assets."""
+        out = []
+        for b in self.sem.blocks:
+            if b.type != "page_media" or b.scope == "once" or b.scope == "cover":
+                continue
+            if b.scope == "sections" and name not in b.sections:
+                continue
+            try:
+                out.append((b, ingest(b.src, self.col.policy.assets)))
+            except DynamicPDFError as e:
+                self.col.fail("asset_failed", f"Page image: {e}", e)
+        return out
+
+    def _page_parts(self, sec, name):
+        """Header and footer parts of a Word section: bands or the theme's text, and
+        the page layers, which Word repeats by holding them in the header."""
+        first = name is None
+        layers = self._layers_for(name)
+        geo = M.page_geometry(self, sec)
+        system = self.page_sys
+        cover = next((b for b in self.sem.blocks[:1] if b.type == "cover_page"
+                      and (b.background_image or b.background_color or b.layout)), None)
+        if first and cover is not None:
+            sec.different_first_page_header_footer = True
+        if system is None:
+            if first or layers:
+                self._header_footer(sec)
+                if layers:
+                    host = sec.header
+                    host.is_linked_to_previous = False
+                    for b, asset in layers:
+                        M.add_layer(self, host.paragraphs[0], b, geo, asset)
+            return
+        over = system.sections.get(name) if name else None
+        head = (over.header if over else None) or system.header
+        foot = (over.footer if over else None) or system.footer
+        self._band_or_blank(sec.header, head, geo, True, layers)
+        self._band_or_blank(sec.footer, foot, geo, False)
+        if system.even_header or system.even_footer:
+            self.doc.settings.odd_and_even_pages_header_footer = True
+            self._band_or_blank(sec.even_page_header, (over.header if over else None)
+                                or system.even_header or head, geo, True, layers)
+            self._band_or_blank(sec.even_page_footer, (over.footer if over else None)
+                                or system.even_footer or foot, geo, False)
+        if first and system.first_page != "same":
+            sec.different_first_page_header_footer = True
+            custom = system.first_page == "custom"
+            self._band_or_blank(sec.first_page_header, system.first_header if custom else None,
+                                geo, True, layers)
+            self._band_or_blank(sec.first_page_footer, system.first_footer if custom else None, geo, False)
+
+    def _band_or_blank(self, part, band, geo, is_header, layers=()):
+        if band is not None:
+            self.band_writer.write(part, band, geo, is_header, layers)
+            return
+        part.is_linked_to_previous = False
+        for b, asset in layers:
+            M.add_layer(self, part.paragraphs[0], b, geo, asset)
+
+    def _header_footer(self, sec=None):
         hf = self.theme.header_footer
         if not hf.enabled:
             return
-        sec = self.doc.sections[0]
+        sec = sec or self.doc.sections[0]
         if hf.skip_first_page_header or hf.skip_first_page_footer:
             sec.different_first_page_header_footer = True
         muted = self.tokens.colors["text_muted"]
@@ -630,13 +726,136 @@ class DocxRenderer(ArchetypeDocx):
     # ─── media ───
 
     def _b_image(self, c, b):
-        buf, _ = load_image(b.src, self.col.policy.assets)
+        from ..layout.factory import _image_treatment
+        asset = ingest(b.src, self.col.policy.assets)
         self.figure_no += 1
-        self._picture(c, buf.getvalue(), b.alt_text or b.caption or "image",
-                      width_pt=b.width, align=b.alignment)
+        t = _image_treatment(b)
+        plain = not (b.placement or b.treatment or b.height or b.border or b.shadow or asset.is_vector)
+        alt = b.alt_text or b.caption or "image"
+        if plain:
+            self._picture(c, asset.data, alt, width_pt=b.width, align=b.alignment)
+            self._figure_caption(c, b)
+            return
+        mode = normal_mode(b.placement) if b.placement else "inline"
+        if mode in ("behind_text", "in_front_of_text"):
+            return self._image_on_page(c, b, asset, t, mode, alt)
+        if mode == "floating" and isinstance(c, type(self.doc)) and self._can_float(b, asset, t):
+            return self._image_float(c, b, asset, t, alt)
+        p_ = b.placement
+        geo = M.page_geometry(self, self.doc.sections[-1])
+        bleed = bool(p_ and p_.bleed)
+        avail_w = geo.width if bleed else self.content_width_pt
+        want_w = avail_w * p_.width_ratio if p_ and p_.width_ratio else b.width
+        frame_h = geo.height - geo.top - geo.bottom
+        want_h = frame_h * p_.height_ratio if p_ and p_.height_ratio else b.height
+        cap = 0.85 if (b.caption or b.figure_number) else 0.98
+        natural = asset.width * 72.0 / ((asset.dpi or (96, 96))[0])
+        w, h = flow_box(asset, want_w, want_h, avail_w, frame_h * cap, natural, t)
+        f = fit_image(asset, w, h, t)
+        check_resolution(asset, f, self.col, f"Image {b.alt_text or ''}".strip(), LOW_RESOLUTION_DPI)
+        para = self._para(c)
+        para.paragraph_format.keep_with_next = True
+        if bleed:
+            M.squeeze(para)
+            M.add_drawing(para.add_run(), asset, f, t, alt, self.next_shape(), M.Anchor(
+                h_from="page", v_from="paragraph", x=0, y=0, behind=False, wrap="top_bottom", gutter=10))
+        else:
+            side = physical_side(p_.horizontal, self.rtl_doc) if p_ and p_.horizontal != "center" else b.alignment
+            para.alignment = {"left": WD_ALIGN_PARAGRAPH.LEFT, "right": WD_ALIGN_PARAGRAPH.RIGHT}.get(
+                side, WD_ALIGN_PARAGRAPH.CENTER)
+            M.add_drawing(para.add_run(), asset, f, t, alt, self.next_shape())
+        self._figure_caption(c, b)
+
+    def _figure_caption(self, c, b):
+        from ..i18n import label as _i18n
+        lang = "ar" if self.rtl_doc else self.sem.language
         if b.caption or b.figure_number:
-            label = f"Figure {b.figure_number}" if b.figure_number else ""
+            label = f"{_i18n('figure', lang)} {b.figure_number}" if b.figure_number else ""
             self._caption(c, label, b.caption)
+        if b.source:
+            self._caption(c, "", f"{_i18n('source', lang)}: {b.source}")
+
+    def _image_on_page(self, c, b, asset, t, mode, alt):
+        """Over or under the page's text, as in the PDF: against the page or margins,
+        or at this point in the text."""
+        from ..media import page_box, page_position
+        p_ = b.placement
+        geo = M.page_geometry(self, self.doc.sections[-1])
+        host = M.tiny_paragraph(c)
+        behind = mode == "behind_text"
+        if p_.relative_to == "content":
+            w = self.content_width_pt * (p_.width_ratio or 1.0)
+            h = flow_box(asset, w, None, w, None, None, t)[1]
+            f = fit_image(asset, w, h, t)
+            anchor = M.Anchor(h_from="margin", v_from="paragraph", align="center", behind=behind,
+                              z=p_.z_index)
+        else:
+            w, h = page_box(geo, p_)
+            if not p_.height_ratio and t.fit == "contain":
+                h = w / asset.aspect
+            f = fit_image(asset, w, h, t)
+            x, y = page_position(geo, p_, w, h)
+            anchor = M.Anchor(x=x + f.x, y=y + f.y, behind=behind, z=p_.z_index)
+        M.add_drawing(host.add_run(), asset, f, t, alt, self.next_shape(), anchor)
+
+    def _float_width(self, b) -> float:
+        ratio = b.placement.width_ratio or 0.42
+        return min(b.width or self.content_width_pt * ratio, self.content_width_pt * 0.62)
+
+    def _can_float(self, b, asset, t) -> bool:
+        """The same test as the PDF: enough text must follow to wrap the image."""
+        i = self.col.block_index
+        fig_w = self._float_width(b)
+        fig_h = flow_box(asset, fig_w, None, fig_w, None, None, t)[1]
+        narrow = self.content_width_pt - fig_w - b.placement.gutter
+        base = self.theme.typography.base_size
+        got = 0.0
+        for nxt in self.sem.blocks[(i or 0) + 1:]:
+            if nxt.type not in ("paragraph", "bullet_list", "numbered_list") or got >= fig_h:
+                break
+            chars = len(getattr(nxt, "text", None) or "") or 80
+            got += (chars * base * 0.5 / narrow + 1) * base * 1.4
+        if got < fig_h * 0.4:
+            self.col.warn("float_fallback", "Too little text follows this floating image to wrap it; "
+                          "it was set inline")
+            return False
+        return True
+
+    def _image_float(self, c, b, asset, t, alt):
+        """Text wraps a floating table holding the picture and its caption. Word and
+        LibreOffice keep such a table whole on a page; a bare anchored picture can run
+        past the bottom margin, because nothing moves it with its paragraph."""
+        p_ = b.placement
+        fig_w = self._float_width(b)
+        frame_h = self.doc.sections[-1].page_height.pt * 0.5
+        w, h = flow_box(asset, fig_w, None, fig_w, frame_h, None, t)
+        f = fit_image(asset, w, h, t)
+        check_resolution(asset, f, self.col, f"Image {b.alt_text or ''}".strip(), LOW_RESOLUTION_DPI)
+        side = physical_side(p_.horizontal, self.rtl_doc)
+        side = side if side != "center" else ("left" if self.rtl_doc else "right")
+        table = M.floating_table(c, fig_w, side, p_.gutter)
+        cell = table.rows[0].cells[0]
+        para = cell.paragraphs[0]
+        para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        para.paragraph_format.space_after = Pt(3)
+        M.add_drawing(para.add_run(), asset, f, t, alt, self.next_shape())
+        self._figure_caption(cell, b)
+
+    def _b_page_media(self, c, b):
+        if b.scope not in ("once", "cover"):
+            return
+        asset = ingest(b.src, self.col.policy.assets)
+        M.add_layer(self, M.tiny_paragraph(c), b, M.page_geometry(self, self.doc.sections[-1]), asset)
+
+    def _b_page_section(self, c, b):
+        from docx.enum.section import WD_SECTION
+        sec = self.doc.add_section(WD_SECTION.NEW_PAGE if b.new_page else WD_SECTION.CONTINUOUS)
+        sec.different_first_page_header_footer = False
+        self.section_name = b.name
+        system = self.page_sys
+        has_override = system is not None and b.name in system.sections
+        if has_override or self._layers_for(b.name) != self._layers_for(None):
+            self._page_parts(sec, b.name)
 
     def _b_chart(self, c, b):
         from .chart import chart_png
@@ -897,13 +1116,70 @@ class DocxRenderer(ArchetypeDocx):
 
     # ─── structure ───
 
-    def _subtitle(self, c, text: str) -> None:
-        p = self._runs(self._para(c, "Subtitle", text), text)
+    def _subtitle(self, c, text: str, color=None):
+        p = self._runs(self._para(c, "Subtitle", text), text, color=color)
         if F.has_complex_script(text):
             for run in p.runs:
                 F.clear_style_slant_and_tracking(run)
+        return p
+
+    def _designed_cover(self, c, b):
+        """A cover with a backdrop: page-anchored drawings behind live text."""
+        from ..layout.cover import cover_plan
+        geo = M.page_geometry(self, self.doc.sections[0])
+        rtl = self.rtl_doc or is_rtl_text(b.title)
+        layout, split, layers, ink = cover_plan(b, geo, rtl, self.col)
+        host = M.tiny_paragraph(c)
+        for z, item in enumerate(sorted(layers, key=lambda i: i.z), 1):
+            top = geo.height - item.y - (item.h or item.fitted.height)
+            if item.fill:
+                F.add_page_text_box(host, self.next_shape(), item.x, top, item.w, item.h, item.fill,
+                                    description="Cover panel", opacity=item.fill_opacity, z=M._Z_BASE + z)
+            else:
+                M.add_drawing(host.add_run(), item.asset, item.fitted, item.treatment, "Cover image",
+                              self.next_shape(), M.Anchor(x=item.x, y=top, z=z))
+        align = {"centered": WD_ALIGN_PARAGRAPH.CENTER}.get(
+            layout, WD_ALIGN_PARAGRAPH.RIGHT if rtl else WD_ALIGN_PARAGRAPH.LEFT)
+        indent = geo.width * 0.46 + 24 - geo.right if split else 0
+        frame_h = geo.height - geo.top - geo.bottom
+
+        def setup(par):
+            par.alignment = align
+            if indent:
+                # w:ind left and right swap sides in a right-to-left paragraph
+                bidi = par._p.pPr is not None and par._p.pPr.find(qn("w:bidi")) is not None
+                if rtl != bidi:
+                    par.paragraph_format.left_indent = Pt(indent)
+                else:
+                    par.paragraph_format.right_indent = Pt(indent)
+            return par
+
+        used = 0.0
+        if b.logo:
+            try:
+                asset = ingest(b.logo, self.col.policy.assets)
+                w = min(170.0, 58 * asset.aspect)
+                f = fit_image(asset, w, w / asset.aspect)
+                M.add_drawing(setup(self._para(c)).add_run(), asset, f, None, "logo", self.next_shape())
+                used = f.height + 4
+            except DynamicPDFError as e:
+                self.col.fail("asset_failed", f"Cover logo: {e}", e)
+        title = setup(self._para(c, "Title", b.title))
+        title.paragraph_format.space_before = Pt(max(24, frame_h * (0.30 if layout == "centered" else 0.46) - used))
+        self._runs(title, b.title, color=ink)
+        if b.subtitle:
+            sub = setup(self._subtitle(c, b.subtitle, color=ink))
+            sub.paragraph_format.space_after = Pt(18)
+        for txt in ((f"{self._label('prepared_by')} {b.author}" if b.author else None), b.date):
+            if txt:
+                p = setup(self._para(c, "Normal", txt))
+                p.paragraph_format.space_after = Pt(2)
+                self._runs(p, txt, color=ink or self.tokens.colors["text_secondary"])
+        self._page_break(c)
 
     def _b_cover_page(self, c, b):
+        if b.background_image or b.background_color or b.layout:
+            return self._designed_cover(c, b)
         sp = self._para(c, "Normal")
         sp.paragraph_format.space_before = Pt(96)
         if b.logo:
