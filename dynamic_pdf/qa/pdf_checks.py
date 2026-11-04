@@ -106,6 +106,7 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
                                                         f"{txt.strip()[:40]!r}"))
         for bbox, txt, size in lines:
             x0, y0, x1, y1 = bbox
+            x1 -= (len(txt) - len(txt.rstrip())) * size * 0.3    # a line's trailing space hangs
             if x0 < -tolerance or x1 > W + tolerance or y0 < -tolerance or y1 > H + tolerance:
                 rep.findings.append(Finding(severity=ERROR, code="clipped_text", page=pno, bbox=bbox,
                                             text=txt.strip()[:120], format=fmt, fixable=True,

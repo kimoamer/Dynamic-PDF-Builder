@@ -35,6 +35,8 @@ _NON_TEXT_FIELDS = {
     "format", "marker_style", "icon", "shape_type", "layout", "position", "sidebar_position",
     "chart_type", "diagram_type", "direction", "error_correction", "colors", "orientation",
     "doi", "key", "highlight_lines", "stroke_dash", "background", "hints",
+    "background_image", "background_treatment", "background_color", "placement", "treatment",
+    "overlay_color", "scope", "layer",
 }
 
 _block_adapter = TypeAdapter(Block)

@@ -6,8 +6,11 @@ import io
 import base64
 from typing import Optional, List, Dict, Any, Union
 from .schema.document import Document, Meta
+from .schema.media import ImageTreatment, MediaPlacement, resolve_placement
+from .schema.page_system import PageSystem
 from .schema.enums import PageSize, Orientation
 from .schema.blocks import (
+    PageMediaBlock, PageSectionBlock,
     HeadingBlock, ParagraphBlock, RichTextBlock, BulletListBlock, NumberedListBlock,
     TableBlock, CodeBlock, ImageBlock, ChartBlock, MathBlock, MermaidBlock,
     CalloutBlock, QuoteBlock, MetricRowBlock, MetricItem,
@@ -499,11 +502,54 @@ class DocumentBuilder:
               alt_text: Optional[str] = None,
               alignment: str = "center",
               border: bool = False,
-              shadow: bool = False) -> 'DocumentBuilder':
+              shadow: bool = False,
+              placement=None,
+              treatment: Optional[ImageTreatment] = None,
+              source: Optional[str] = None) -> 'DocumentBuilder':
+        """Add an image. ``placement`` is a ``MediaPlacement`` or a preset name:
+        ``inline``, ``full_width``, ``full_bleed``, ``float_start``, ``float_end``,
+        ``behind_text`` or ``in_front_of_text``. ``treatment`` sets crop, fit,
+        rotation, opacity, border and shadow; ``source`` is an attribution line."""
         self._blocks.append(ImageBlock(src=src, width=width, height=height,
                                        caption=caption, figure_number=figure_number,
                                        alt_text=alt_text, alignment=alignment,
-                                       border=border, shadow=shadow))
+                                       border=border, shadow=shadow,
+                                       placement=resolve_placement(placement),
+                                       treatment=treatment, source=source))
+        return self
+
+    def page_background(self, src: str, scope: str = "every_page",
+                        sections: Optional[List[str]] = None,
+                        opacity: float = 1.0, focal_x: float = 0.5, focal_y: float = 0.5,
+                        alt_text: Optional[str] = None) -> 'DocumentBuilder':
+        """A full-page image behind editable text. ``scope`` is ``every_page``,
+        ``cover``, ``once`` (the page this call falls on) or ``sections``."""
+        self._blocks.append(PageMediaBlock(
+            src=src, scope=scope, sections=sections or [], alt_text=alt_text,
+            treatment=ImageTreatment(fit="cover", opacity=opacity, focal_x=focal_x, focal_y=focal_y)))
+        return self
+
+    def image_watermark(self, src: str, opacity: float = 0.08, width_ratio: float = 0.55,
+                        rotation: float = 0, scope: str = "every_page",
+                        sections: Optional[List[str]] = None,
+                        alt_text: Optional[str] = None) -> 'DocumentBuilder':
+        """An image watermark, centred on the page behind the text."""
+        self._blocks.append(PageMediaBlock(
+            src=src, scope=scope, sections=sections or [], alt_text=alt_text,
+            placement=MediaPlacement(mode="behind_text", relative_to="page", vertical="middle",
+                                     width_ratio=width_ratio, height_ratio=width_ratio),
+            treatment=ImageTreatment(fit="contain", opacity=opacity, rotation=rotation)))
+        return self
+
+    def page_section(self, name: str, new_page: bool = True) -> 'DocumentBuilder':
+        """Start a named run of pages; bands and backgrounds can target it by name."""
+        self._blocks.append(PageSectionBlock(name=name, new_page=new_page))
+        return self
+
+    def page_system(self, system: Any = None, **fields) -> 'DocumentBuilder':
+        """Slot-based running headers and footers, in place of the theme's."""
+        self._meta.page_system = (system if isinstance(system, PageSystem)
+                                  else PageSystem.model_validate(system or fields))
         return self
 
     def chart(self, chart_type: str, data: Any, title: Optional[str] = None,
@@ -676,10 +722,22 @@ class DocumentBuilder:
     def cover_page(self, title: str, subtitle: Optional[str] = None,
                    logo: Optional[str] = None, date: Optional[str] = None,
                    author: Optional[str] = None,
-                   background_color: Optional[str] = None) -> 'DocumentBuilder':
+                   background_color: Optional[str] = None,
+                   background_image: Optional[str] = None,
+                   layout: Optional[str] = None,
+                   overlay_color: Optional[str] = None,
+                   overlay_opacity: float = 0.0,
+                   text_color: Optional[str] = None,
+                   background_treatment: Optional[ImageTreatment] = None) -> 'DocumentBuilder':
+        """``layout`` is ``centered``, ``left_aligned`` or ``split``. Any of these
+        backdrop options makes the page bare of running headers and footers."""
         self._blocks.append(CoverPageBlock(title=title, subtitle=subtitle,
                                            logo=logo, date=date, author=author,
-                                           background_color=background_color))
+                                           background_color=background_color,
+                                           background_image=background_image, layout=layout,
+                                           overlay_color=overlay_color,
+                                           overlay_opacity=overlay_opacity, text_color=text_color,
+                                           background_treatment=background_treatment))
         return self
 
     def watermark(self, text: str, opacity: float = 0.08,

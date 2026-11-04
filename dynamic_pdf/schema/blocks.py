@@ -4,6 +4,7 @@ Every block is a Pydantic v2 model with Literal discriminator.
 """
 from typing import List, Optional, Union, Dict, Any, Literal, Annotated
 from pydantic import BaseModel, Field
+from .media import ImageTreatment, MediaPlacement, RepeatScope
 
 # ─────────────────────── Base ───────────────────────
 
@@ -125,6 +126,9 @@ class ImageBlock(BaseBlock):
     figure_number: Optional[int] = None             # "Figure 1"
     border: bool = False
     shadow: bool = False
+    placement: Optional[MediaPlacement] = None
+    treatment: Optional[ImageTreatment] = None
+    source: Optional[str] = None                    # attribution, set under the caption
 
 class ChartBlock(BaseBlock):
     type: Literal["chart"] = "chart"
@@ -316,7 +320,12 @@ class CoverPageBlock(BaseBlock):
     date: Optional[str] = None
     author: Optional[str] = None
     background_color: Optional[str] = None
-    layout: str = "centered"                        # centered, left_aligned, split
+    layout: Optional[str] = None                    # centered, left_aligned, split
+    background_image: Optional[str] = None
+    background_treatment: Optional[ImageTreatment] = None
+    overlay_color: Optional[str] = None             # laid over the image so the text reads
+    overlay_opacity: float = 0.0
+    text_color: Optional[str] = None
 
 class TOCBlock(BaseBlock):
     type: Literal["table_of_contents"] = "table_of_contents"
@@ -328,6 +337,25 @@ class WatermarkBlock(BaseBlock):
     text: str
     opacity: float = 0.1
     color: str = "#cccccc"
+
+class PageMediaBlock(BaseBlock):
+    """An image on the page itself, behind or over the text: a background, an image
+    watermark or a recurring brand mark. It takes no space in the text flow."""
+    type: Literal["page_media"] = "page_media"
+    src: str
+    scope: RepeatScope = "every_page"
+    sections: List[str] = Field(default_factory=list)   # for scope="sections"
+    layer: Literal["behind", "front"] = "behind"
+    placement: MediaPlacement = Field(default_factory=lambda: MediaPlacement(
+        mode="behind_text", relative_to="page"))
+    treatment: ImageTreatment = Field(default_factory=lambda: ImageTreatment(fit="cover"))
+    alt_text: Optional[str] = None
+
+class PageSectionBlock(BaseBlock):
+    """Starts a named run of pages, which can have its own bands and backgrounds."""
+    type: Literal["page_section"] = "page_section"
+    name: str
+    new_page: bool = True
 
 class TwoColumnBlock(BaseBlock):
     type: Literal["two_column"] = "two_column"
@@ -492,6 +520,7 @@ Block = Annotated[
         TwoColumnBlock, ThreeColumnBlock, SidebarBlock,
         BadgeBlock, ShapeBlock, QRCodeBlock, IntroductionPageBlock,
         SectionOpenerBlock, PerformancePageBlock, ParallelLedgerBlock,
+        PageMediaBlock, PageSectionBlock,
     ],
     Field(discriminator="type")
 ]
