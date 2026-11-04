@@ -1,0 +1,1033 @@
+{
+ "min_support_docs": 2,
+ "documents_analysed": 9,
+ "recurring": [
+  {
+   "id": "leading-1.41–1.55×",
+   "category": "typography",
+   "title": "Body leading 1.41–1.55× the size",
+   "proposal": {
+    "recipe_field": "line_height",
+    "range": [
+     1.48,
+     1.5
+    ]
+   },
+   "evidence": [
+    {
+     "doc_id": "ref-7237fd8f7b40",
+     "file": "arabic_report.pdf",
+     "pages": [
+      1
+     ],
+     "measured": {
+      "line_height": 1.5
+     }
+    },
+    {
+     "doc_id": "ref-16958a48b65c",
+     "file": "bilingual.pdf",
+     "pages": [
+      1
+     ],
+     "measured": {
+      "line_height": 1.5
+     }
+    },
+    {
+     "doc_id": "ref-2d5e7bf3d2f7",
+     "file": "facing_pages.pdf",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "measured": {
+      "line_height": 1.48
+     }
+    },
+    {
+     "doc_id": "ref-fb23ae9a1592",
+     "file": "spread.pdf",
+     "pages": [
+      1,
+      2
+     ],
+     "measured": {
+      "line_height": 1.48
+     }
+    },
+    {
+     "doc_id": "ref-bb02b5a9a7b4",
+     "file": "annual/northwind_annual_report_2023.pdf",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+     ],
+     "measured": {
+      "line_height": 1.48
+     }
+    },
+    {
+     "doc_id": "ref-1d4eedf0013c",
+     "file": "annual/northwind_annual_report_2023_summary.pdf",
+     "pages": [
+      1,
+      2,
+      3,
+      4
+     ],
+     "measured": {
+      "line_height": 1.48
+     }
+    }
+   ],
+   "support_docs": 6,
+   "evidence_files": 6,
+   "basis": "inferred",
+   "status": "proposal — needs human review",
+   "confidence": "medium"
+  },
+  {
+   "id": "body-size-9.5–10.4 pt",
+   "category": "typography",
+   "title": "Body text set at 9.5–10.4 pt",
+   "proposal": {
+    "recipe_field": "base_size",
+    "range_pt": [
+     10.0,
+     10.0
+    ]
+   },
+   "evidence": [
+    {
+     "doc_id": "ref-2d5e7bf3d2f7",
+     "file": "facing_pages.pdf",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "measured": {
+      "body_size_pt": 10.0
+     }
+    },
+    {
+     "doc_id": "ref-07d815dd9211",
+     "file": "known_geometry.pdf",
+     "pages": [
+      1,
+      2,
+      3
+     ],
+     "measured": {
+      "body_size_pt": 10.0
+     }
+    },
+    {
+     "doc_id": "ref-07d815dd9211-2",
+     "file": "known_geometry_copy.pdf",
+     "pages": [
+      1,
+      2,
+      3
+     ],
+     "measured": {
+      "body_size_pt": 10.0
+     }
+    },
+    {
+     "doc_id": "ref-fb23ae9a1592",
+     "file": "spread.pdf",
+     "pages": [
+      1,
+      2
+     ],
+     "measured": {
+      "body_size_pt": 10.0
+     }
+    },
+    {
+     "doc_id": "ref-bb02b5a9a7b4",
+     "file": "annual/northwind_annual_report_2023.pdf",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+     ],
+     "measured": {
+      "body_size_pt": 10.0
+     }
+    }
+   ],
+   "support_docs": 4,
+   "evidence_files": 5,
+   "basis": "inferred",
+   "status": "proposal — needs human review",
+   "confidence": "medium"
+  },
+  {
+   "id": "side-margins-18–22 mm",
+   "category": "layout",
+   "title": "Side margins 18–22 mm",
+   "proposal": {
+    "recipe_field": "margins",
+    "left_pt": [
+     60.0,
+     90.0
+    ],
+    "right_pt": [
+     50.0,
+     66.8
+    ],
+    "note": "body-text margins; running headers/footers excluded"
+   },
+   "evidence": [
+    {
+     "doc_id": "ref-2d5e7bf3d2f7",
+     "file": "facing_pages.pdf",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "measured": {
+      "margins_pt": {
+       "top": 80.0,
+       "bottom": 408.4,
+       "left": 90.0,
+       "right": 50.0
+      },
+      "facing": true
+     }
+    },
+    {
+     "doc_id": "ref-fb23ae9a1592",
+     "file": "spread.pdf",
+     "pages": [
+      1,
+      2
+     ],
+     "measured": {
+      "margins_pt": {
+       "top": 80.0,
+       "bottom": 541.4,
+       "left": 60.0,
+       "right": 66.8
+      },
+      "facing": false
+     }
+    },
+    {
+     "doc_id": "ref-bb02b5a9a7b4",
+     "file": "annual/northwind_annual_report_2023.pdf",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+     ],
+     "measured": {
+      "margins_pt": {
+       "top": 130.0,
+       "bottom": 417.5,
+       "left": 60.0,
+       "right": 61.2
+      },
+      "facing": false
+     }
+    },
+    {
+     "doc_id": "ref-1d4eedf0013c",
+     "file": "annual/northwind_annual_report_2023_summary.pdf",
+     "pages": [
+      1,
+      2,
+      3,
+      4
+     ],
+     "measured": {
+      "margins_pt": {
+       "top": 130.0,
+       "bottom": 485.6,
+       "left": 60.0,
+       "right": 60.8
+      },
+      "facing": false
+     }
+    }
+   ],
+   "support_docs": 4,
+   "evidence_files": 4,
+   "basis": "inferred",
+   "status": "proposal — needs human review",
+   "confidence": "medium"
+  },
+  {
+   "id": "body-size-10.5–11.4 pt",
+   "category": "typography",
+   "title": "Body text set at 10.5–11.4 pt",
+   "proposal": {
+    "recipe_field": "base_size",
+    "range_pt": [
+     11.0,
+     11.0
+    ]
+   },
+   "evidence": [
+    {
+     "doc_id": "ref-7237fd8f7b40",
+     "file": "arabic_report.pdf",
+     "pages": [
+      1
+     ],
+     "measured": {
+      "body_size_pt": 11.0
+     }
+    },
+    {
+     "doc_id": "ref-16958a48b65c",
+     "file": "bilingual.pdf",
+     "pages": [
+      1
+     ],
+     "measured": {
+      "body_size_pt": 11.0
+     }
+    },
+    {
+     "doc_id": "ref-1d4eedf0013c",
+     "file": "annual/northwind_annual_report_2023_summary.pdf",
+     "pages": [
+      1,
+      2,
+      3,
+      4
+     ],
+     "measured": {
+      "body_size_pt": 11.0
+     }
+    }
+   ],
+   "support_docs": 3,
+   "evidence_files": 3,
+   "basis": "inferred",
+   "status": "proposal — needs human review",
+   "confidence": "medium"
+  },
+  {
+   "id": "heading-ramp-H1 1.5–2.0× body",
+   "category": "hierarchy",
+   "title": "Heading ramp with H1 1.5–2.0× body",
+   "proposal": {
+    "recipe_field": "heading_scale",
+    "h1_range": [
+     1.64,
+     1.8
+    ],
+    "levels_observed": [
+     1
+    ]
+   },
+   "evidence": [
+    {
+     "doc_id": "ref-07d815dd9211",
+     "file": "known_geometry.pdf",
+     "pages": [
+      1,
+      2,
+      3
+     ],
+     "measured": {
+      "levels": [
+       [
+        18.0,
+        1.8
+       ]
+      ]
+     }
+    },
+    {
+     "doc_id": "ref-07d815dd9211-2",
+     "file": "known_geometry_copy.pdf",
+     "pages": [
+      1,
+      2,
+      3
+     ],
+     "measured": {
+      "levels": [
+       [
+        18.0,
+        1.8
+       ]
+      ]
+     }
+    },
+    {
+     "doc_id": "ref-bb02b5a9a7b4",
+     "file": "annual/northwind_annual_report_2023.pdf",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+     ],
+     "measured": {
+      "levels": [
+       [
+        18.0,
+        1.8
+       ]
+      ]
+     }
+    },
+    {
+     "doc_id": "ref-1d4eedf0013c",
+     "file": "annual/northwind_annual_report_2023_summary.pdf",
+     "pages": [
+      1,
+      2,
+      3,
+      4
+     ],
+     "measured": {
+      "levels": [
+       [
+        18.0,
+        1.64
+       ]
+      ]
+     }
+    }
+   ],
+   "support_docs": 3,
+   "evidence_files": 4,
+   "basis": "inferred",
+   "status": "proposal — needs human review",
+   "confidence": "medium"
+  },
+  {
+   "id": "restrained-accent",
+   "category": "colour",
+   "title": "One to three recurring accent colours",
+   "proposal": {
+    "theme_rule": "a small accent set used consistently across pages (roles only; brand colours are not copied)"
+   },
+   "evidence": [
+    {
+     "doc_id": "ref-7237fd8f7b40",
+     "file": "arabic_report.pdf",
+     "pages": [
+      1,
+      2
+     ],
+     "measured": {
+      "recurring_accent_colours": 1,
+      "pages_with_main_accent": 2
+     }
+    },
+    {
+     "doc_id": "ref-07d815dd9211",
+     "file": "known_geometry.pdf",
+     "pages": [
+      1,
+      2,
+      3
+     ],
+     "measured": {
+      "recurring_accent_colours": 1,
+      "pages_with_main_accent": 3
+     }
+    },
+    {
+     "doc_id": "ref-07d815dd9211-2",
+     "file": "known_geometry_copy.pdf",
+     "pages": [
+      1,
+      2,
+      3
+     ],
+     "measured": {
+      "recurring_accent_colours": 1,
+      "pages_with_main_accent": 3
+     }
+    }
+   ],
+   "support_docs": 2,
+   "evidence_files": 3,
+   "basis": "inferred",
+   "status": "proposal — needs human review",
+   "confidence": "low"
+  },
+  {
+   "id": "side-margins-≥23 mm",
+   "category": "layout",
+   "title": "Side margins ≥23 mm",
+   "proposal": {
+    "recipe_field": "margins",
+    "left_pt": [
+     72.0,
+     135.6
+    ],
+    "right_pt": [
+     72.0,
+     78.0
+    ],
+    "note": "body-text margins; running headers/footers excluded"
+   },
+   "evidence": [
+    {
+     "doc_id": "ref-7237fd8f7b40",
+     "file": "arabic_report.pdf",
+     "pages": [
+      1
+     ],
+     "measured": {
+      "margins_pt": {
+       "top": 101.2,
+       "bottom": 114.1,
+       "left": 135.6,
+       "right": 78.0
+      },
+      "facing": false
+     }
+    },
+    {
+     "doc_id": "ref-07d815dd9211",
+     "file": "known_geometry.pdf",
+     "pages": [
+      1,
+      2,
+      3
+     ],
+     "measured": {
+      "margins_pt": {
+       "top": 78.7,
+       "bottom": 370.9,
+       "left": 72.0,
+       "right": 72.0
+      },
+      "facing": false
+     }
+    },
+    {
+     "doc_id": "ref-07d815dd9211-2",
+     "file": "known_geometry_copy.pdf",
+     "pages": [
+      1,
+      2,
+      3
+     ],
+     "measured": {
+      "margins_pt": {
+       "top": 78.7,
+       "bottom": 370.9,
+       "left": 72.0,
+       "right": 72.0
+      },
+      "facing": false
+     }
+    }
+   ],
+   "support_docs": 2,
+   "evidence_files": 3,
+   "basis": "inferred",
+   "status": "proposal — needs human review",
+   "confidence": "low"
+  }
+ ],
+ "observations": [
+  {
+   "id": "facing-pages",
+   "category": "layout",
+   "title": "Mirrored (inner/outer) margins",
+   "proposal": {
+    "layout_rule": "odd/even pages mirror inner and outer margins"
+   },
+   "evidence": [
+    {
+     "doc_id": "ref-2d5e7bf3d2f7",
+     "file": "facing_pages.pdf",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "measured": {
+      "odd": {
+       "top": 80.0,
+       "bottom": 408.4,
+       "left": 90.0,
+       "right": 50.0
+      },
+      "even": {
+       "top": 80.0,
+       "bottom": 408.4,
+       "left": 50.0,
+       "right": 90.0
+      },
+      "inner_minus_outer_pt": 40.0
+     }
+    }
+   ],
+   "support_docs": 1,
+   "evidence_files": 1,
+   "basis": "inferred",
+   "status": "proposal — needs human review",
+   "confidence": "low"
+  },
+  {
+   "id": "heading-ramp-H1 >2.6× body",
+   "category": "hierarchy",
+   "title": "Heading ramp with H1 >2.6× body",
+   "proposal": {
+    "recipe_field": "heading_scale",
+    "h1_range": [
+     3.0,
+     3.0
+    ],
+    "levels_observed": [
+     2
+    ]
+   },
+   "evidence": [
+    {
+     "doc_id": "ref-16958a48b65c",
+     "file": "bilingual.pdf",
+     "pages": [
+      1
+     ],
+     "measured": {
+      "levels": [
+       [
+        33.0,
+        3.0
+       ],
+       [
+        16.0,
+        1.45
+       ]
+      ]
+     }
+    }
+   ],
+   "support_docs": 1,
+   "evidence_files": 1,
+   "basis": "inferred",
+   "status": "proposal — needs human review",
+   "confidence": "low"
+  },
+  {
+   "id": "heading-ramp-H1 ≤1.5× body",
+   "category": "hierarchy",
+   "title": "Heading ramp with H1 ≤1.5× body",
+   "proposal": {
+    "recipe_field": "heading_scale",
+    "h1_range": [
+     1.45,
+     1.45
+    ],
+    "levels_observed": [
+     1
+    ]
+   },
+   "evidence": [
+    {
+     "doc_id": "ref-7237fd8f7b40",
+     "file": "arabic_report.pdf",
+     "pages": [
+      1
+     ],
+     "measured": {
+      "levels": [
+       [
+        16.0,
+        1.45
+       ]
+      ]
+     }
+    }
+   ],
+   "support_docs": 1,
+   "evidence_files": 1,
+   "basis": "inferred",
+   "status": "proposal — needs human review",
+   "confidence": "low"
+  },
+  {
+   "id": "leading-1.26–1.40×",
+   "category": "typography",
+   "title": "Body leading 1.26–1.40× the size",
+   "proposal": {
+    "recipe_field": "line_height",
+    "range": [
+     1.4,
+     1.4
+    ]
+   },
+   "evidence": [
+    {
+     "doc_id": "ref-07d815dd9211",
+     "file": "known_geometry.pdf",
+     "pages": [
+      1,
+      2,
+      3
+     ],
+     "measured": {
+      "line_height": 1.4
+     }
+    },
+    {
+     "doc_id": "ref-07d815dd9211-2",
+     "file": "known_geometry_copy.pdf",
+     "pages": [
+      1,
+      2,
+      3
+     ],
+     "measured": {
+      "line_height": 1.4
+     }
+    }
+   ],
+   "support_docs": 1,
+   "evidence_files": 2,
+   "basis": "inferred",
+   "status": "proposal — needs human review",
+   "confidence": "low"
+  },
+  {
+   "id": "multi-column-body",
+   "category": "layout",
+   "title": "Body text in two or more columns",
+   "proposal": {
+    "layout_rule": "multi-column body text on ≥30 % of text pages"
+   },
+   "evidence": [
+    {
+     "doc_id": "ref-fb23ae9a1592",
+     "file": "spread.pdf",
+     "pages": [
+      1,
+      2
+     ],
+     "measured": {
+      "multi_column_pages": 2,
+      "pages_with_columns": 2
+     }
+    }
+   ],
+   "support_docs": 1,
+   "evidence_files": 1,
+   "basis": "inferred",
+   "status": "proposal — needs human review",
+   "confidence": "low"
+  },
+  {
+   "id": "script-arabic_rtl",
+   "category": "rtl",
+   "title": "Arabic RTL documents",
+   "proposal": {
+    "layout_rule": "measured RTL block alignment per document"
+   },
+   "evidence": [
+    {
+     "doc_id": "ref-7237fd8f7b40",
+     "file": "arabic_report.pdf",
+     "pages": [
+      1,
+      2
+     ],
+     "measured": {
+      "pages": 2,
+      "rtl_block_alignment": {
+       "rtl:right_or_justified": 11
+      }
+     }
+    }
+   ],
+   "support_docs": 1,
+   "evidence_files": 1,
+   "basis": "inferred",
+   "status": "proposal — needs human review",
+   "confidence": "low"
+  },
+  {
+   "id": "script-bilingual",
+   "category": "rtl",
+   "title": "Bilingual pages",
+   "proposal": {
+    "layout_rule": "measured RTL block alignment per document"
+   },
+   "evidence": [
+    {
+     "doc_id": "ref-16958a48b65c",
+     "file": "bilingual.pdf",
+     "pages": [
+      1
+     ],
+     "measured": {
+      "pages": 1,
+      "rtl_block_alignment": {
+       "rtl:right_or_justified": 3
+      }
+     }
+    }
+   ],
+   "support_docs": 1,
+   "evidence_files": 1,
+   "basis": "inferred",
+   "status": "proposal — needs human review",
+   "confidence": "low"
+  },
+  {
+   "id": "side-margins-≤12 mm",
+   "category": "layout",
+   "title": "Side margins ≤12 mm",
+   "proposal": {
+    "recipe_field": "margins",
+    "left_pt": [
+     30.0,
+     30.0
+    ],
+    "right_pt": [
+     30.0,
+     30.0
+    ],
+    "note": "body-text margins; running headers/footers excluded"
+   },
+   "evidence": [
+    {
+     "doc_id": "ref-16958a48b65c",
+     "file": "bilingual.pdf",
+     "pages": [
+      1
+     ],
+     "measured": {
+      "margins_pt": {
+       "top": 17.5,
+       "bottom": 29.9,
+       "left": 30.0,
+       "right": 30.0
+      },
+      "facing": false
+     }
+    }
+   ],
+   "support_docs": 1,
+   "evidence_files": 1,
+   "basis": "inferred",
+   "status": "proposal — needs human review",
+   "confidence": "low"
+  },
+  {
+   "id": "spreads",
+   "category": "layout",
+   "title": "Two-page spreads as single sheets",
+   "proposal": {
+    "layout_rule": "content composed across a facing pair"
+   },
+   "evidence": [
+    {
+     "doc_id": "ref-fb23ae9a1592",
+     "file": "spread.pdf",
+     "pages": [
+      1,
+      2
+     ],
+     "measured": {
+      "spread_pages": 2
+     }
+    }
+   ],
+   "support_docs": 1,
+   "evidence_files": 1,
+   "basis": "inferred",
+   "status": "proposal — needs human review",
+   "confidence": "low"
+  },
+  {
+   "id": "table-padding",
+   "category": "tables",
+   "title": "Measured table cell padding",
+   "proposal": {
+    "table_rule": "horizontal cell padding",
+    "range_pt": [
+     6.0,
+     6.0
+    ]
+   },
+   "evidence": [
+    {
+     "doc_id": "ref-07d815dd9211",
+     "file": "known_geometry.pdf",
+     "pages": [
+      2
+     ],
+     "measured": {
+      "count": 1,
+      "banded_share": 1.0,
+      "header_fill_share": 1.0,
+      "padding_left_median_pt": 6.0,
+      "padding_top_median_pt": 3.3
+     }
+    },
+    {
+     "doc_id": "ref-07d815dd9211-2",
+     "file": "known_geometry_copy.pdf",
+     "pages": [
+      2
+     ],
+     "measured": {
+      "count": 1,
+      "banded_share": 1.0,
+      "header_fill_share": 1.0,
+      "padding_left_median_pt": 6.0,
+      "padding_top_median_pt": 3.3
+     }
+    }
+   ],
+   "support_docs": 1,
+   "evidence_files": 2,
+   "basis": "inferred",
+   "status": "proposal — needs human review",
+   "confidence": "low"
+  },
+  {
+   "id": "tables-banded",
+   "category": "tables",
+   "title": "Banded (zebra) table rows",
+   "proposal": {
+    "table_rule": "alternating row fills"
+   },
+   "evidence": [
+    {
+     "doc_id": "ref-07d815dd9211",
+     "file": "known_geometry.pdf",
+     "pages": [
+      2
+     ],
+     "measured": {
+      "count": 1,
+      "banded_share": 1.0,
+      "header_fill_share": 1.0,
+      "padding_left_median_pt": 6.0,
+      "padding_top_median_pt": 3.3
+     }
+    },
+    {
+     "doc_id": "ref-07d815dd9211-2",
+     "file": "known_geometry_copy.pdf",
+     "pages": [
+      2
+     ],
+     "measured": {
+      "count": 1,
+      "banded_share": 1.0,
+      "header_fill_share": 1.0,
+      "padding_left_median_pt": 6.0,
+      "padding_top_median_pt": 3.3
+     }
+    }
+   ],
+   "support_docs": 1,
+   "evidence_files": 2,
+   "basis": "inferred",
+   "status": "proposal — needs human review",
+   "confidence": "low"
+  },
+  {
+   "id": "tables-header-fill",
+   "category": "tables",
+   "title": "Filled table header row",
+   "proposal": {
+    "table_rule": "header row with a fill"
+   },
+   "evidence": [
+    {
+     "doc_id": "ref-07d815dd9211",
+     "file": "known_geometry.pdf",
+     "pages": [
+      2
+     ],
+     "measured": {
+      "count": 1,
+      "banded_share": 1.0,
+      "header_fill_share": 1.0,
+      "padding_left_median_pt": 6.0,
+      "padding_top_median_pt": 3.3
+     }
+    },
+    {
+     "doc_id": "ref-07d815dd9211-2",
+     "file": "known_geometry_copy.pdf",
+     "pages": [
+      2
+     ],
+     "measured": {
+      "count": 1,
+      "banded_share": 1.0,
+      "header_fill_share": 1.0,
+      "padding_left_median_pt": 6.0,
+      "padding_top_median_pt": 3.3
+     }
+    }
+   ],
+   "support_docs": 1,
+   "evidence_files": 2,
+   "basis": "inferred",
+   "status": "proposal — needs human review",
+   "confidence": "low"
+  }
+ ],
+ "note": "Patterns are inferred from measured values and point to source pages. They are proposals for human review, not measurements, and never imply aesthetic quality. Do not copy commercial branding, artwork or layouts into distributed runtime assets."
+}
