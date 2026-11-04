@@ -1,0 +1,529 @@
+{
+ "format": "dynamic-pdf-builder/m75-comparison",
+ "version": 1,
+ "examples": {
+  "opener_en": {
+   "before": {
+    "name": "opener_en",
+    "variant": "before",
+    "archetype": "asymmetric_opener",
+    "pdf_pages": 1,
+    "docx_pages": 1,
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "pass",
+     "unverified": [],
+     "errors": [],
+     "warnings": []
+    },
+    "missing_words": {
+     "pdf": [],
+     "docx": []
+    },
+    "harakat": {
+     "source": 0,
+     "pdf": 0,
+     "docx": 0
+    },
+    "archetype_notes": [],
+    "render_s": {
+     "pdf": 0.147,
+     "docx": 0.237
+    },
+    "images": {
+     "pdf": "img/opener_en-before-pdf.jpg",
+     "docx": "img/opener_en-before-docx.jpg"
+    }
+   },
+   "after": {
+    "name": "opener_en",
+    "variant": "after",
+    "archetype": "asymmetric_opener",
+    "pdf_pages": 2,
+    "docx_pages": 2,
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "pass",
+     "unverified": [],
+     "errors": [],
+     "warnings": []
+    },
+    "missing_words": {
+     "pdf": [],
+     "docx": []
+    },
+    "harakat": {
+     "source": 0,
+     "pdf": 0,
+     "docx": 0
+    },
+    "archetype_notes": [],
+    "render_s": {
+     "pdf": 0.037,
+     "docx": 0.079
+    },
+    "images": {
+     "pdf": "img/opener_en-after-pdf.jpg",
+     "docx": "img/opener_en-after-docx.jpg"
+    }
+   }
+  },
+  "opener_ar": {
+   "before": {
+    "name": "opener_ar",
+    "variant": "before",
+    "archetype": "asymmetric_opener",
+    "pdf_pages": 1,
+    "docx_pages": 1,
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "pass",
+     "unverified": [],
+     "errors": [],
+     "warnings": []
+    },
+    "missing_words": {
+     "pdf": [],
+     "docx": []
+    },
+    "harakat": {
+     "source": 43,
+     "pdf": 43,
+     "docx": 43
+    },
+    "archetype_notes": [],
+    "render_s": {
+     "pdf": 0.395,
+     "docx": 0.116
+    },
+    "images": {
+     "pdf": "img/opener_ar-before-pdf.jpg",
+     "docx": "img/opener_ar-before-docx.jpg"
+    }
+   },
+   "after": {
+    "name": "opener_ar",
+    "variant": "after",
+    "archetype": "asymmetric_opener",
+    "pdf_pages": 2,
+    "docx_pages": 2,
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "pass",
+     "unverified": [],
+     "errors": [],
+     "warnings": []
+    },
+    "missing_words": {
+     "pdf": [],
+     "docx": []
+    },
+    "harakat": {
+     "source": 43,
+     "pdf": 43,
+     "docx": 43
+    },
+    "archetype_notes": [],
+    "render_s": {
+     "pdf": 0.7,
+     "docx": 0.161
+    },
+    "images": {
+     "pdf": "img/opener_ar-after-pdf.jpg",
+     "docx": "img/opener_ar-after-docx.jpg"
+    }
+   }
+  },
+  "performance_en": {
+   "before": {
+    "name": "performance_en",
+    "variant": "before",
+    "archetype": "performance_page",
+    "pdf_pages": 1,
+    "docx_pages": 1,
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "pass",
+     "unverified": [],
+     "errors": [],
+     "warnings": []
+    },
+    "missing_words": {
+     "pdf": [],
+     "docx": []
+    },
+    "harakat": {
+     "source": 0,
+     "pdf": 0,
+     "docx": 0
+    },
+    "archetype_notes": [],
+    "render_s": {
+     "pdf": 0.37,
+     "docx": 0.267
+    },
+    "images": {
+     "pdf": "img/performance_en-before-pdf.jpg",
+     "docx": "img/performance_en-before-docx.jpg"
+    }
+   },
+   "after": {
+    "name": "performance_en",
+    "variant": "after",
+    "archetype": "performance_page",
+    "pdf_pages": 2,
+    "docx_pages": 2,
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "pass",
+     "unverified": [],
+     "errors": [],
+     "warnings": []
+    },
+    "missing_words": {
+     "pdf": [],
+     "docx": []
+    },
+    "harakat": {
+     "source": 0,
+     "pdf": 0,
+     "docx": 0
+    },
+    "archetype_notes": [],
+    "render_s": {
+     "pdf": 0.668,
+     "docx": 0.265
+    },
+    "images": {
+     "pdf": "img/performance_en-after-pdf.jpg",
+     "docx": "img/performance_en-after-docx.jpg"
+    }
+   }
+  },
+  "performance_ar": {
+   "before": {
+    "name": "performance_ar",
+    "variant": "before",
+    "archetype": "performance_page",
+    "pdf_pages": 2,
+    "docx_pages": 2,
+    "pdf_qa": {
+     "status": "fail",
+     "errors": [
+      "overflow: text overflows into the margin by 0pt: 'ﻣﻌﺪﻝ ﺍﻹﺻﺎﺑﺎﺕ ﻟﻜﻞ ﻣﻠﻴﻮﻥ ﺳﺎﻋﺔ'",
+      "overflow: text overflows into the margin by 0pt: '١٢٫٠'",
+      "overflow: text overflows into the margin by 0pt: '−٣١٫٠'",
+      "overflow: text overflows into the margin by 0pt: '٩ ﻧﻘﺎﻁ+'"
+     ],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "pass",
+     "unverified": [],
+     "errors": [],
+     "warnings": []
+    },
+    "missing_words": {
+     "pdf": [],
+     "docx": []
+    },
+    "harakat": {
+     "source": 51,
+     "pdf": 51,
+     "docx": 51
+    },
+    "archetype_notes": [],
+    "render_s": {
+     "pdf": 1.041,
+     "docx": 0.285
+    },
+    "images": {
+     "pdf": "img/performance_ar-before-pdf.jpg",
+     "docx": "img/performance_ar-before-docx.jpg"
+    }
+   },
+   "after": {
+    "name": "performance_ar",
+    "variant": "after",
+    "archetype": "performance_page",
+    "pdf_pages": 2,
+    "docx_pages": 2,
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "pass",
+     "unverified": [],
+     "errors": [],
+     "warnings": []
+    },
+    "missing_words": {
+     "pdf": [],
+     "docx": []
+    },
+    "harakat": {
+     "source": 51,
+     "pdf": 51,
+     "docx": 51
+    },
+    "archetype_notes": [],
+    "render_s": {
+     "pdf": 1.588,
+     "docx": 0.228
+    },
+    "images": {
+     "pdf": "img/performance_ar-after-pdf.jpg",
+     "docx": "img/performance_ar-after-docx.jpg"
+    }
+   }
+  },
+  "ledger_en": {
+   "before": {
+    "name": "ledger_en",
+    "variant": "before",
+    "archetype": "parallel_ledger",
+    "pdf_pages": 1,
+    "docx_pages": 1,
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "pass",
+     "unverified": [],
+     "errors": [],
+     "warnings": []
+    },
+    "missing_words": {
+     "pdf": [],
+     "docx": []
+    },
+    "harakat": {
+     "source": 0,
+     "pdf": 0,
+     "docx": 0
+    },
+    "archetype_notes": [],
+    "render_s": {
+     "pdf": 0.367,
+     "docx": 0.427
+    },
+    "images": {
+     "pdf": "img/ledger_en-before-pdf.jpg",
+     "docx": "img/ledger_en-before-docx.jpg"
+    }
+   },
+   "after": {
+    "name": "ledger_en",
+    "variant": "after",
+    "archetype": "parallel_ledger",
+    "pdf_pages": 1,
+    "docx_pages": 1,
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "pass",
+     "unverified": [],
+     "errors": [],
+     "warnings": []
+    },
+    "missing_words": {
+     "pdf": [],
+     "docx": []
+    },
+    "harakat": {
+     "source": 0,
+     "pdf": 0,
+     "docx": 0
+    },
+    "archetype_notes": [],
+    "render_s": {
+     "pdf": 0.205,
+     "docx": 0.317
+    },
+    "images": {
+     "pdf": "img/ledger_en-after-pdf.jpg",
+     "docx": "img/ledger_en-after-docx.jpg"
+    }
+   }
+  },
+  "ledger_ar": {
+   "before": {
+    "name": "ledger_ar",
+    "variant": "before",
+    "archetype": "parallel_ledger",
+    "pdf_pages": 1,
+    "docx_pages": 1,
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "pass",
+     "unverified": [],
+     "errors": [],
+     "warnings": []
+    },
+    "missing_words": {
+     "pdf": [],
+     "docx": []
+    },
+    "harakat": {
+     "source": 5,
+     "pdf": 5,
+     "docx": 5
+    },
+    "archetype_notes": [],
+    "render_s": {
+     "pdf": 0.885,
+     "docx": 0.425
+    },
+    "images": {
+     "pdf": "img/ledger_ar-before-pdf.jpg",
+     "docx": "img/ledger_ar-before-docx.jpg"
+    }
+   },
+   "after": {
+    "name": "ledger_ar",
+    "variant": "after",
+    "archetype": "parallel_ledger",
+    "pdf_pages": 1,
+    "docx_pages": 1,
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "pass",
+     "unverified": [],
+     "errors": [],
+     "warnings": []
+    },
+    "missing_words": {
+     "pdf": [],
+     "docx": []
+    },
+    "harakat": {
+     "source": 5,
+     "pdf": 5,
+     "docx": 5
+    },
+    "archetype_notes": [],
+    "render_s": {
+     "pdf": 0.637,
+     "docx": 0.333
+    },
+    "images": {
+     "pdf": "img/ledger_ar-after-pdf.jpg",
+     "docx": "img/ledger_ar-after-docx.jpg"
+    }
+   }
+  },
+  "ledger_bilingual": {
+   "before": {
+    "name": "ledger_bilingual",
+    "variant": "before",
+    "archetype": "parallel_ledger",
+    "pdf_pages": 1,
+    "docx_pages": 1,
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "pass",
+     "unverified": [],
+     "errors": [],
+     "warnings": []
+    },
+    "missing_words": {
+     "pdf": [],
+     "docx": []
+    },
+    "harakat": {
+     "source": 5,
+     "pdf": 5,
+     "docx": 5
+    },
+    "archetype_notes": [],
+    "render_s": {
+     "pdf": 1.373,
+     "docx": 0.41
+    },
+    "images": {
+     "pdf": "img/ledger_bilingual-before-pdf.jpg",
+     "docx": "img/ledger_bilingual-before-docx.jpg"
+    }
+   },
+   "after": {
+    "name": "ledger_bilingual",
+    "variant": "after",
+    "archetype": "parallel_ledger",
+    "pdf_pages": 1,
+    "docx_pages": 1,
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "pass",
+     "unverified": [],
+     "errors": [],
+     "warnings": []
+    },
+    "missing_words": {
+     "pdf": [],
+     "docx": []
+    },
+    "harakat": {
+     "source": 5,
+     "pdf": 5,
+     "docx": 5
+    },
+    "archetype_notes": [],
+    "render_s": {
+     "pdf": 0.417,
+     "docx": 0.456
+    },
+    "images": {
+     "pdf": "img/ledger_bilingual-after-pdf.jpg",
+     "docx": "img/ledger_bilingual-after-docx.jpg"
+    }
+   }
+  }
+ }
+}

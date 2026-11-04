@@ -15,6 +15,8 @@ from typing import List, Optional
 from .report import ERROR, WARNING, Finding, QAReport, sha256
 
 W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+WP = "{http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing}"
+WPS = "{http://schemas.microsoft.com/office/word/2010/wordprocessingShape}"
 
 
 def check_docx(data: bytes, *, heading_texts: Optional[List[str]] = None,
@@ -67,7 +69,6 @@ def check_docx(data: bytes, *, heading_texts: Optional[List[str]] = None,
             rep.findings.append(Finding(severity=ERROR, code="broken_table", format="docx",
                                         message=f"table {ti + 1} has rows with different cell counts {sorted(widths)}"))
     # images need alt text
-    WP = "{http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing}"
     for docPr in body.iter(WP + "docPr"):
         if not (docPr.get("descr") or "").strip():
             rep.findings.append(Finding(severity=WARNING, code="missing_alt_text", format="docx",
@@ -87,11 +88,9 @@ def check_docx(data: bytes, *, heading_texts: Optional[List[str]] = None,
                                         message="LibreOffice not available; DOCX layout is UNVERIFIED"))
         else:
             from .pdf_checks import check_pdf
-            sec = d.sections[0]
             # LibreOffice lets Arabic glyph overhang reach ~1-2pt past the margin;
             # use a slightly larger tolerance than for our own PDF output
-            vis = check_pdf(pdf, margins={"left": sec.left_margin.pt, "right": sec.right_margin.pt},
-                            heading_texts=None, fmt="docx", tolerance=4.0)
+            vis = check_pdf(pdf, margins=_text_margins(d), heading_texts=None, fmt="docx", tolerance=4.0)
             rep.pages = vis.pages
             # Word/LibreOffice paginate themselves; only geometry defects are actionable
             rep.findings += [f for f in vis.findings if f.code in ("clipped_text", "clipped_image",
@@ -100,6 +99,23 @@ def check_docx(data: bytes, *, heading_texts: Optional[List[str]] = None,
             rep.page_images = []
             rep._pdf = pdf  # type: ignore[attr-defined]
     return rep
+
+
+def _text_margins(d) -> dict:
+    """The outermost text edges the document allows: the narrowest section margins,
+    and the text inside page-anchored text boxes, which sit outside them on purpose."""
+    left = min(s.left_margin.pt for s in d.sections)
+    right = min(s.right_margin.pt for s in d.sections)
+    page_w = d.sections[0].page_width.pt
+    for anchor in d.element.body.iter(WP + "anchor"):
+        body = next(anchor.iter(WPS + "bodyPr"), None)
+        x = next(anchor.iter(WP + "posOffset"), None)
+        if body is None or x is None or anchor.find(WP + "positionH").get("relativeFrom") != "page":
+            continue
+        x0 = int(x.text) + int(body.get("lIns", 91440))
+        x1 = int(x.text) + int(anchor.find(WP + "extent").get("cx")) - int(body.get("rIns", 91440))
+        left, right = min(left, x0 / 12700), min(right, page_w - x1 / 12700)
+    return {"left": left, "right": right}
 
 
 def docx_to_pdf(data: bytes, timeout: int = 180) -> Optional[bytes]:

@@ -1,0 +1,2650 @@
+{
+ "format": "dynamic-pdf-builder/m75-ai-curation",
+ "version": 1,
+ "reviewer": {
+  "kind": "ai",
+  "model": "claude-opus-5-5",
+  "name": "Claude Opus 5.5",
+  "reviewed_on": "2026-11-04",
+  "method": "Looked at rendered page images. Atlas labels and distinctiveness scores only helped to find pages; they did not set any score."
+ },
+ "status": {
+  "human_approved": false,
+  "human_review": "none",
+  "note": "These are AI judgements of visual quality, not facts and not human decisions. human-curation.json holds human decisions only and is not touched by this file."
+ },
+ "corpus": {
+  "documents": 13,
+  "pages": 1064,
+  "atlas_index": "visual-page-index.json (local, not committed)"
+ },
+ "scale": {
+  "min": 1,
+  "max": 5,
+  "criteria": [
+   "hierarchy_typography",
+   "composition_grid",
+   "whitespace_balance",
+   "originality_impact",
+   "clarity_storytelling",
+   "pdf_docx_suitability",
+   "reusability",
+   "rtl_bilingual"
+  ],
+  "note": "rtl_bilingual is null where a page has no Arabic. mean_score averages the scored criteria only."
+ },
+ "inspection_levels": {
+  "full_size": "atlas page image, 1100 px wide (1600 px for spreads)",
+  "enlarged": "atlas page image scaled to about 516 px wide (750 px for spreads)",
+  "contact_sheet": "contact sheet, about 144 to 184 px wide; composition only, text unreadable"
+ },
+ "review_coverage": {
+  "pages_viewed": 1064,
+  "unreviewed_pages": [],
+  "unreviewed_count": 0,
+  "full_size": 10,
+  "enlarged_or_better": 83,
+  "contact_sheet_only": 981,
+  "failed_to_load": 0,
+  "caveat": "A contact-sheet view shows composition only. Those pages were seen, but their text and fine detail were not assessed.",
+  "by_document": [
+   {
+    "document": "AR-01",
+    "document_sha256": "af94892827c89513753387aaa7a87cf31f608da3df8eab50cc0d06dba1eb2184",
+    "pages": 42,
+    "contact_sheet_pages": 42,
+    "enlarged_pages": [
+     1,
+     5,
+     14,
+     26,
+     42
+    ],
+    "full_size_pages": [
+     5
+    ],
+    "contact_sheet_only": 37
+   },
+   {
+    "document": "AR-02",
+    "document_sha256": "cf936a8178935930b557072c8328c1dc3f87e3c8ea5bf58d1ef9b43fb8d894a7",
+    "pages": 404,
+    "contact_sheet_pages": 404,
+    "enlarged_pages": [
+     1,
+     25,
+     26,
+     27,
+     39,
+     43,
+     107,
+     181,
+     281,
+     298,
+     349
+    ],
+    "full_size_pages": [
+     25
+    ],
+    "contact_sheet_only": 393
+   },
+   {
+    "document": "AR-03",
+    "document_sha256": "4bbfe8f46cb35fad7bcdbf47d9a8e5086c058d13e4b14536f68488b4b1ec9461",
+    "pages": 48,
+    "contact_sheet_pages": 48,
+    "enlarged_pages": [
+     1,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     13,
+     14,
+     24,
+     30,
+     32,
+     34,
+     36,
+     45
+    ],
+    "full_size_pages": [
+     7,
+     8
+    ],
+    "contact_sheet_only": 32
+   },
+   {
+    "document": "BI-01",
+    "document_sha256": "7f52f49c5dd64feb382f7dfeff9d080d0fe96f46c0ba92629cb74afc1eee3ab2",
+    "pages": 45,
+    "contact_sheet_pages": 45,
+    "enlarged_pages": [
+     1,
+     2,
+     4,
+     11
+    ],
+    "full_size_pages": [
+     2,
+     4
+    ],
+    "contact_sheet_only": 41
+   },
+   {
+    "document": "BI-02",
+    "document_sha256": "fb5a6876872349eb1e432335fc266737d8891fbb5e598583a093a2828448c31d",
+    "pages": 57,
+    "contact_sheet_pages": 57,
+    "enlarged_pages": [
+     1,
+     2,
+     5,
+     10,
+     15,
+     19,
+     21
+    ],
+    "full_size_pages": [
+     19
+    ],
+    "contact_sheet_only": 50
+   },
+   {
+    "document": "BI-04",
+    "document_sha256": "9325a2a9012fce65f818e2d57bd76a248a049b9a6be7ef66e029ed97d7211ac3",
+    "pages": 17,
+    "contact_sheet_pages": 17,
+    "enlarged_pages": [
+     7
+    ],
+    "full_size_pages": [],
+    "contact_sheet_only": 16
+   },
+   {
+    "document": "BI-05",
+    "document_sha256": "b7b9ddcb4981bdc0dafd3458610a416c096cbcb8aa2628fa447ddb9b4a12b26b",
+    "pages": 8,
+    "contact_sheet_pages": 8,
+    "enlarged_pages": [
+     1,
+     2,
+     3,
+     6
+    ],
+    "full_size_pages": [],
+    "contact_sheet_only": 4
+   },
+   {
+    "document": "BI-06",
+    "document_sha256": "cc8416043d9bdd84fbf0907b0ff6933d5d53d81617d28f8ecca13e5047bd8e8b",
+    "pages": 8,
+    "contact_sheet_pages": 8,
+    "enlarged_pages": [],
+    "full_size_pages": [],
+    "contact_sheet_only": 8
+   },
+   {
+    "document": "BI-07",
+    "document_sha256": "582bd105b7d985c3511434e5fd2c985fdb12432df4531f159bc556546c769bd5",
+    "pages": 8,
+    "contact_sheet_pages": 8,
+    "enlarged_pages": [
+     4
+    ],
+    "full_size_pages": [],
+    "contact_sheet_only": 7
+   },
+   {
+    "document": "EN-01",
+    "document_sha256": "db25596332d261a7e20825f4b53f796980566f76a13e4b349dd5f71d755e4ecf",
+    "pages": 224,
+    "contact_sheet_pages": 224,
+    "enlarged_pages": [
+     2,
+     7,
+     9,
+     10,
+     11,
+     12,
+     13,
+     15,
+     18,
+     20,
+     21,
+     23,
+     24,
+     28,
+     37,
+     56,
+     58,
+     59,
+     76,
+     136,
+     222
+    ],
+    "full_size_pages": [
+     15,
+     18,
+     21
+    ],
+    "contact_sheet_only": 203
+   },
+   {
+    "document": "EN-01-1",
+    "document_sha256": "0b2bf0ebc355e66841327761403b19e30f6ec232c66e0600a8611c7f790b0dca",
+    "pages": 32,
+    "contact_sheet_pages": 32,
+    "enlarged_pages": [
+     2,
+     8,
+     10
+    ],
+    "full_size_pages": [],
+    "contact_sheet_only": 29
+   },
+   {
+    "document": "EN-02",
+    "document_sha256": "82ccd1d81704336f40e5a65913e9a9e1f630d65a400f2fc1bb2724ec798c2a47",
+    "pages": 162,
+    "contact_sheet_pages": 162,
+    "enlarged_pages": [
+     1,
+     5,
+     7,
+     17,
+     26,
+     47,
+     84,
+     85,
+     123
+    ],
+    "full_size_pages": [],
+    "contact_sheet_only": 153
+   },
+   {
+    "document": "EN-03",
+    "document_sha256": "0218e50469574c54e3fbaa28618031c104c35b53b4227215d0a667c5cf357d3a",
+    "pages": 9,
+    "contact_sheet_pages": 9,
+    "enlarged_pages": [
+     3
+    ],
+    "full_size_pages": [],
+    "contact_sheet_only": 8
+   }
+  ]
+ },
+ "selection_summary": {
+  "selected": 39,
+  "rejected_with_reasons": 28,
+  "by_category": {
+   "bilingual_layout": 1,
+   "bilingual_navigation": 1,
+   "bilingual_table": 1,
+   "bilingual_text": 1,
+   "chart_page": 2,
+   "cover_title": 5,
+   "editorial_page": 3,
+   "editorial_spread": 2,
+   "financial_table": 3,
+   "infographic": 3,
+   "kpi_page": 5,
+   "section_opener": 6,
+   "statement": 3,
+   "structured_grid": 1,
+   "structured_text": 2
+  },
+  "by_document": {
+   "AR-01": 1,
+   "AR-02": 8,
+   "AR-03": 9,
+   "BI-01": 3,
+   "BI-02": 1,
+   "BI-05": 3,
+   "EN-01": 9,
+   "EN-01-1": 2,
+   "EN-02": 2,
+   "EN-03": 1
+  },
+  "not_selected_documents": [
+   "BI-04",
+   "BI-06",
+   "BI-07"
+  ],
+  "note": "Quality and variety decided this, not equal representation. BI-05 stands for the shared template in BI-06 and BI-07."
+ },
+ "selected": [
+  {
+   "page_id": "af94892827c8:p0005",
+   "document": "AR-01",
+   "document_sha256": "af94892827c89513753387aaa7a87cf31f608da3df8eab50cc0d06dba1eb2184",
+   "page": 5,
+   "visual_category": "cover_title",
+   "inspection_level": "full_size",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 5,
+     "justification": "Three weights and two colours make a clear stack from label to title to subtitle"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "One right-aligned edge holds title and logo; nothing else competes"
+    },
+    "whitespace_balance": {
+     "score": 5,
+     "justification": "More than half the page is left open, and the type block sits above centre"
+    },
+    "originality_impact": {
+     "score": 3,
+     "justification": "Plain idea, done with restraint rather than novelty"
+    },
+    "clarity_storytelling": {
+     "score": 5,
+     "justification": "Reads in one glance"
+    },
+    "pdf_docx_suitability": {
+     "score": 5,
+     "justification": "Live text on white; no artwork to reproduce"
+    },
+    "reusability": {
+     "score": 5,
+     "justification": "Needs only a title, a subtitle and a label"
+    },
+    "rtl_bilingual": {
+     "score": 5,
+     "justification": "Arabic is set at display size with room for its ascenders and descenders"
+    }
+   },
+   "mean_score": 4.62,
+   "selection_rationale": "The cleanest proof that an Arabic title page can rely on type alone.",
+   "distinctive_features": [
+    "single aligned edge",
+    "three-level type stack",
+    "one accent colour on the middle line",
+    "logo anchored low on the same edge"
+   ],
+   "reusable_composition": "Type-only title page: a right- or left-hung stack above centre, with the mark at the foot.",
+   "confidence": "high",
+   "limitations": "Typeface choice is ordinary; the strength is proportion, not the letterforms.",
+   "informs_archetypes": [
+    "asymmetric_opener"
+   ]
+  },
+  {
+   "page_id": "cf936a817893:p0001",
+   "document": "AR-02",
+   "document_sha256": "cf936a8178935930b557072c8328c1dc3f87e3c8ea5bf58d1ef9b43fb8d894a7",
+   "page": 1,
+   "visual_category": "cover_title",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Grey title is calm but quieter than the motif"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Crescent of squares balances the title across the diagonal"
+    },
+    "whitespace_balance": {
+     "score": 5,
+     "justification": "Motif dissolves into open white"
+    },
+    "originality_impact": {
+     "score": 5,
+     "justification": "A motif that fades from colour to grey is memorable"
+    },
+    "clarity_storytelling": {
+     "score": 4,
+     "justification": "Title is found quickly; logos at the foot are tidy"
+    },
+    "pdf_docx_suitability": {
+     "score": 3,
+     "justification": "Needs vector artwork; only approximated in DOCX"
+    },
+    "reusability": {
+     "score": 3,
+     "justification": "The principle travels; the exact motif does not"
+    },
+    "rtl_bilingual": {
+     "score": 4,
+     "justification": "Right-aligned title works with the motif on the leading side"
+    }
+   },
+   "mean_score": 4,
+   "selection_rationale": "Shows that a cover motif can dissolve into white instead of sitting in a box.",
+   "distinctive_features": [
+    "motif that fades out",
+    "title opposite the visual weight",
+    "logos held to a foot line"
+   ],
+   "reusable_composition": "Cover with one abstract motif at low density and a title set against it.",
+   "confidence": "medium",
+   "limitations": "The coloured-square motif belongs to the publisher's programme and must not be reused.",
+   "informs_archetypes": []
+  },
+  {
+   "page_id": "4bbfe8f46cb3:p0001",
+   "document": "AR-03",
+   "document_sha256": "4bbfe8f46cb35fad7bcdbf47d9a8e5086c058d13e4b14536f68488b4b1ec9461",
+   "page": 1,
+   "visual_category": "cover_title",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Title over the image has good contrast"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "About two-thirds image against one-third solid panel gives a firm split"
+    },
+    "whitespace_balance": {
+     "score": 3,
+     "justification": "Dense image leaves little quiet, though the panel rests the eye"
+    },
+    "originality_impact": {
+     "score": 4,
+     "justification": "Night image and navy panel feel considered"
+    },
+    "clarity_storytelling": {
+     "score": 4,
+     "justification": "Title reads first, the panel second"
+    },
+    "pdf_docx_suitability": {
+     "score": 3,
+     "justification": "Full-bleed image is heavy in DOCX"
+    },
+    "reusability": {
+     "score": 4,
+     "justification": "Image plus solid panel suits most report covers"
+    },
+    "rtl_bilingual": {
+     "score": 4,
+     "justification": "Panel sits on the closing edge of an Arabic spread"
+    }
+   },
+   "mean_score": 3.75,
+   "selection_rationale": "A strong, simple proportion for image covers.",
+   "distinctive_features": [
+    "about 2:1 image to panel split",
+    "solid panel as a resting area",
+    "title over the image"
+   ],
+   "reusable_composition": "Image cover with a solid side panel carrying secondary marks.",
+   "confidence": "medium",
+   "limitations": "Seen as a spread; the single-page crop was not assessed.",
+   "informs_archetypes": [
+    "image_slab_divider"
+   ]
+  },
+  {
+   "page_id": "7f52f49c5dd6:p0001",
+   "document": "BI-01",
+   "document_sha256": "7f52f49c5dd64feb382f7dfeff9d080d0fe96f46c0ba92629cb74afc1eee3ab2",
+   "page": 1,
+   "visual_category": "cover_title",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Alternating English and Arabic lines keep equal rank"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "A centred axis is the fair choice for two scripts"
+    },
+    "whitespace_balance": {
+     "score": 4,
+     "justification": "Calm spacing, no decoration fighting the title"
+    },
+    "originality_impact": {
+     "score": 3,
+     "justification": "Conservative but composed"
+    },
+    "clarity_storytelling": {
+     "score": 4,
+     "justification": "Each language is read without hunting"
+    },
+    "pdf_docx_suitability": {
+     "score": 4,
+     "justification": "Text on a tint is easy to reproduce"
+    },
+    "reusability": {
+     "score": 4,
+     "justification": "Works for any bilingual cover"
+    },
+    "rtl_bilingual": {
+     "score": 5,
+     "justification": "Neither script is treated as secondary"
+    }
+   },
+   "mean_score": 4,
+   "selection_rationale": "The most even-handed bilingual cover in the corpus.",
+   "distinctive_features": [
+    "centred axis shared by two scripts",
+    "alternating language lines",
+    "subtle background only"
+   ],
+   "reusable_composition": "Bilingual title stack on a shared centre axis.",
+   "confidence": "medium",
+   "limitations": "The background gradient and chevrons are brand styling and are excluded from the principle.",
+   "informs_archetypes": []
+  },
+  {
+   "page_id": "b7b9ddcb4981:p0001",
+   "document": "BI-05",
+   "document_sha256": "b7b9ddcb4981bdc0dafd3458610a416c096cbcb8aa2628fa447ddb9b4a12b26b",
+   "page": 1,
+   "visual_category": "cover_title",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Label, English title, Arabic title and description step down clearly"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Text is held low, on a darkened part of the image"
+    },
+    "whitespace_balance": {
+     "score": 3,
+     "justification": "Image fills the page, so only the gradient gives relief"
+    },
+    "originality_impact": {
+     "score": 3,
+     "justification": "Familiar pattern"
+    },
+    "clarity_storytelling": {
+     "score": 4,
+     "justification": "Footer strip separates facts from title"
+    },
+    "pdf_docx_suitability": {
+     "score": 3,
+     "justification": "Gradient over an image is hard to edit in DOCX"
+    },
+    "reusability": {
+     "score": 4,
+     "justification": "Fits any image-led bilingual brochure"
+    },
+    "rtl_bilingual": {
+     "score": 4,
+     "justification": "Both titles are given display size"
+    }
+   },
+   "mean_score": 3.62,
+   "selection_rationale": "A workable bilingual image cover with a clear information ladder.",
+   "distinctive_features": [
+    "gradient scrim for text",
+    "stacked bilingual titles",
+    "footer fact strip"
+   ],
+   "reusable_composition": "Full-bleed image cover with stacked bilingual titles over a scrim.",
+   "confidence": "medium",
+   "limitations": "One of three documents sharing a fictional template; it stands for all three.",
+   "informs_archetypes": []
+  },
+  {
+   "page_id": "cf936a817893:p0025",
+   "document": "AR-02",
+   "document_sha256": "cf936a8178935930b557072c8328c1dc3f87e3c8ea5bf58d1ef9b43fb8d894a7",
+   "page": 25,
+   "visual_category": "section_opener",
+   "inspection_level": "full_size",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 5,
+     "justification": "Tile, large number, hairline, then a three-line title, each with its own step in size"
+    },
+    "composition_grid": {
+     "score": 5,
+     "justification": "A vertical strip of about 30% gives the page one firm division"
+    },
+    "whitespace_balance": {
+     "score": 5,
+     "justification": "The upper third is left empty and the block sits on the optical centre"
+    },
+    "originality_impact": {
+     "score": 4,
+     "justification": "Strip and hanging title are striking in a 404-page report"
+    },
+    "clarity_storytelling": {
+     "score": 5,
+     "justification": "Number and title explain the section at a glance"
+    },
+    "pdf_docx_suitability": {
+     "score": 4,
+     "justification": "Text is live; the strip only needs a table cell in DOCX"
+    },
+    "reusability": {
+     "score": 5,
+     "justification": "Used for 17 sections here without tiring"
+    },
+    "rtl_bilingual": {
+     "score": 5,
+     "justification": "Text hangs against the strip on its own reading edge"
+    }
+   },
+   "mean_score": 4.75,
+   "selection_rationale": "The best section opener reviewed: firm division, generous quiet, and a type ladder that survives repetition.",
+   "distinctive_features": [
+    "vertical strip of about 30% of the width",
+    "text hung against the strip",
+    "hairline between number and title",
+    "block on the optical centre"
+   ],
+   "reusable_composition": "Asymmetric opener: strip on the reading edge, with number, hairline and display title hanging from it.",
+   "confidence": "high",
+   "limitations": "The photograph and the dissolving-square overlay are not part of the principle.",
+   "informs_archetypes": [
+    "asymmetric_opener"
+   ]
+  },
+  {
+   "page_id": "db25596332d2:p0024",
+   "document": "EN-01",
+   "document_sha256": "db25596332d261a7e20825f4b53f796980566f76a13e4b349dd5f71d755e4ecf",
+   "page": 24,
+   "visual_category": "section_opener",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Massive display type dominates as intended"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Low-left block with a sweeping curve"
+    },
+    "whitespace_balance": {
+     "score": 4,
+     "justification": "Open upper field around the product image"
+    },
+    "originality_impact": {
+     "score": 4,
+     "justification": "Bold, confident scale"
+    },
+    "clarity_storytelling": {
+     "score": 4,
+     "justification": "Standfirst sets the section quickly"
+    },
+    "pdf_docx_suitability": {
+     "score": 2,
+     "justification": "Depends on a cutout, a gradient and a curve"
+    },
+    "reusability": {
+     "score": 3,
+     "justification": "Scale idea travels; artwork does not"
+    },
+    "rtl_bilingual": {
+     "score": null,
+     "justification": "Latin only; not assessed for RTL"
+    }
+   },
+   "mean_score": 3.57,
+   "selection_rationale": "Evidence that one very large line can carry an opener.",
+   "distinctive_features": [
+    "display type at very large scale",
+    "text block low on the page",
+    "standfirst under the title"
+   ],
+   "reusable_composition": "Display-type opener with the block low on the page.",
+   "confidence": "medium",
+   "limitations": "Product imagery, wave and gradient are brand assets and are excluded.",
+   "informs_archetypes": [
+    "asymmetric_opener"
+   ]
+  },
+  {
+   "page_id": "4bbfe8f46cb3:p0009",
+   "document": "AR-03",
+   "document_sha256": "4bbfe8f46cb35fad7bcdbf47d9a8e5086c058d13e4b14536f68488b4b1ec9461",
+   "page": 9,
+   "visual_category": "section_opener",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Large white title on a solid panel is immediate"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Portrait image against panel, close to even"
+    },
+    "whitespace_balance": {
+     "score": 3,
+     "justification": "Solid panel gives calm; decoration uses some of it"
+    },
+    "originality_impact": {
+     "score": 3,
+     "justification": "Good, though the swirl is a brand gesture"
+    },
+    "clarity_storytelling": {
+     "score": 4,
+     "justification": "Section identity is obvious"
+    },
+    "pdf_docx_suitability": {
+     "score": 3,
+     "justification": "Image and panel survive; the swirl does not"
+    },
+    "reusability": {
+     "score": 4,
+     "justification": "Fits any divider with one image"
+    },
+    "rtl_bilingual": {
+     "score": 4,
+     "justification": "Arabic title reverses well out of the panel"
+    }
+   },
+   "mean_score": 3.62,
+   "selection_rationale": "A strong divider spread with a clear image and panel split.",
+   "distinctive_features": [
+    "image and solid panel split",
+    "reversed display title"
+   ],
+   "reusable_composition": "Divider: one image, one solid panel, one reversed title.",
+   "confidence": "medium",
+   "limitations": "Stands for the near-identical dividers on sheets 24 and 36. Swirl lines are excluded.",
+   "informs_archetypes": [
+    "image_slab_divider"
+   ]
+  },
+  {
+   "page_id": "4bbfe8f46cb3:p0014",
+   "document": "AR-03",
+   "document_sha256": "4bbfe8f46cb35fad7bcdbf47d9a8e5086c058d13e4b14536f68488b4b1ec9461",
+   "page": 14,
+   "visual_category": "section_opener",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Title and intro on a slab, then a table to the side"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Semi-transparent slab keeps text and image in one field"
+    },
+    "whitespace_balance": {
+     "score": 3,
+     "justification": "Busy right side reduces rest"
+    },
+    "originality_impact": {
+     "score": 4,
+     "justification": "Combining a slab with data is uncommon"
+    },
+    "clarity_storytelling": {
+     "score": 4,
+     "justification": "Title, intro and table form a clear order"
+    },
+    "pdf_docx_suitability": {
+     "score": 3,
+     "justification": "Transparency flattens to a solid fill in DOCX"
+    },
+    "reusability": {
+     "score": 4,
+     "justification": "Useful for data-led chapters"
+    },
+    "rtl_bilingual": {
+     "score": 4,
+     "justification": "Slab sits on the reading edge"
+    }
+   },
+   "mean_score": 3.75,
+   "selection_rationale": "Shows how an opener can start the content instead of only announcing it.",
+   "distinctive_features": [
+    "full-height image with a text slab",
+    "opener that already carries a table"
+   ],
+   "reusable_composition": "Image with a text slab that also starts the chapter's data.",
+   "confidence": "medium",
+   "limitations": "Opacity values were not measured.",
+   "informs_archetypes": [
+    "image_slab_divider"
+   ]
+  },
+  {
+   "page_id": "db25596332d2:p0056",
+   "document": "EN-01",
+   "document_sha256": "db25596332d261a7e20825f4b53f796980566f76a13e4b349dd5f71d755e4ecf",
+   "page": 56,
+   "visual_category": "section_opener",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Floating contents card carries the order of the section"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Card set high and to the right, off the axis"
+    },
+    "whitespace_balance": {
+     "score": 4,
+     "justification": "A large quiet field surrounds it"
+    },
+    "originality_impact": {
+     "score": 3,
+     "justification": "Simple but well judged"
+    },
+    "clarity_storytelling": {
+     "score": 5,
+     "justification": "It works as a mini contents page"
+    },
+    "pdf_docx_suitability": {
+     "score": 4,
+     "justification": "A card is one shaded table in DOCX"
+    },
+    "reusability": {
+     "score": 4,
+     "justification": "Any long report can use it"
+    },
+    "rtl_bilingual": {
+     "score": null,
+     "justification": "Latin only; not assessed for RTL"
+    }
+   },
+   "mean_score": 4,
+   "selection_rationale": "A section opener that is also a navigation aid.",
+   "distinctive_features": [
+    "contents card on an open field",
+    "off-axis placement"
+   ],
+   "reusable_composition": "Section contents card on an open page.",
+   "confidence": "medium",
+   "limitations": "The gradient background is brand styling and is excluded.",
+   "informs_archetypes": [
+    "asymmetric_opener"
+   ]
+  },
+  {
+   "page_id": "82ccd1d81704:p0085",
+   "document": "EN-02",
+   "document_sha256": "82ccd1d81704336f40e5a65913e9a9e1f630d65a400f2fc1bb2724ec798c2a47",
+   "page": 85,
+   "visual_category": "section_opener",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Blue title panel and icon are clear"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Photo band above two columns is orderly"
+    },
+    "whitespace_balance": {
+     "score": 3,
+     "justification": "Full but not crowded"
+    },
+    "originality_impact": {
+     "score": 2,
+     "justification": "Conventional government style"
+    },
+    "clarity_storytelling": {
+     "score": 4,
+     "justification": "Title, image, text read in order"
+    },
+    "pdf_docx_suitability": {
+     "score": 4,
+     "justification": "Banded structure maps well to tables"
+    },
+    "reusability": {
+     "score": 4,
+     "justification": "Fits institutional reports"
+    },
+    "rtl_bilingual": {
+     "score": null,
+     "justification": "Latin only; not assessed for RTL"
+    }
+   },
+   "mean_score": 3.57,
+   "selection_rationale": "A dependable institutional opener that keeps body text on the same page.",
+   "distinctive_features": [
+    "image band over a title panel",
+    "two-column start on the opener"
+   ],
+   "reusable_composition": "Banded opener where the body starts immediately.",
+   "confidence": "medium",
+   "limitations": "Chosen for clarity, not for novelty.",
+   "informs_archetypes": []
+  },
+  {
+   "page_id": "db25596332d2:p0015",
+   "document": "EN-01",
+   "document_sha256": "db25596332d261a7e20825f4b53f796980566f76a13e4b349dd5f71d755e4ecf",
+   "page": 15,
+   "visual_category": "statement",
+   "inspection_level": "full_size",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 5,
+     "justification": "A very large sentence with bold keywords is the entire hierarchy"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Sentence block and portrait sit on one left edge"
+    },
+    "whitespace_balance": {
+     "score": 4,
+     "justification": "Room below the sentence lets it land"
+    },
+    "originality_impact": {
+     "score": 4,
+     "justification": "Bolding keywords inside a sentence gives it a voice"
+    },
+    "clarity_storytelling": {
+     "score": 5,
+     "justification": "The message is taken in a few seconds"
+    },
+    "pdf_docx_suitability": {
+     "score": 4,
+     "justification": "The text part is simple; the gradient and masked image are not"
+    },
+    "reusability": {
+     "score": 5,
+     "justification": "Any leadership message or key finding fits"
+    },
+    "rtl_bilingual": {
+     "score": null,
+     "justification": "Latin only; not assessed for RTL"
+    }
+   },
+   "mean_score": 4.43,
+   "selection_rationale": "Best statement page reviewed; the weight contrast inside one sentence does the design work.",
+   "distinctive_features": [
+    "sentence at several times body size",
+    "keyword bolding",
+    "attribution set very small"
+   ],
+   "reusable_composition": "Statement page: one oversized sentence, weighted keywords, small attribution.",
+   "confidence": "high",
+   "limitations": "Portrait and gradient are excluded. Bolding Arabic needs its own test because contrast differs by typeface.",
+   "informs_archetypes": [
+    "statement_page"
+   ]
+  },
+  {
+   "page_id": "4bbfe8f46cb3:p0005",
+   "document": "AR-03",
+   "document_sha256": "4bbfe8f46cb35fad7bcdbf47d9a8e5086c058d13e4b14536f68488b4b1ec9461",
+   "page": 5,
+   "visual_category": "statement",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Big panel statement against quieter columns"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Editorial left, navy panel right, both on the same grid"
+    },
+    "whitespace_balance": {
+     "score": 3,
+     "justification": "Dense spread"
+    },
+    "originality_impact": {
+     "score": 4,
+     "justification": "Statement in a solid panel gives the spread a focal point"
+    },
+    "clarity_storytelling": {
+     "score": 4,
+     "justification": "Reader moves from statement to text"
+    },
+    "pdf_docx_suitability": {
+     "score": 3,
+     "justification": "Two-part spread must be split for single pages"
+    },
+    "reusability": {
+     "score": 3,
+     "justification": "Needs a lot of content"
+    },
+    "rtl_bilingual": {
+     "score": 4,
+     "justification": "Arabic statement holds well at size"
+    }
+   },
+   "mean_score": 3.62,
+   "selection_rationale": "A statement used inside a working spread rather than alone.",
+   "distinctive_features": [
+    "solid panel holding a statement",
+    "inset image in text columns"
+   ],
+   "reusable_composition": "Spread with a panel statement beside editorial columns.",
+   "confidence": "medium",
+   "limitations": "Assessed as a spread, not as single pages.",
+   "informs_archetypes": [
+    "statement_page"
+   ]
+  },
+  {
+   "page_id": "4bbfe8f46cb3:p0006",
+   "document": "AR-03",
+   "document_sha256": "4bbfe8f46cb35fad7bcdbf47d9a8e5086c058d13e4b14536f68488b4b1ec9461",
+   "page": 6,
+   "visual_category": "statement",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Large panel statement leads"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Photo band and panel lock to the columns"
+    },
+    "whitespace_balance": {
+     "score": 3,
+     "justification": "Band and panel fill most of the space"
+    },
+    "originality_impact": {
+     "score": 4,
+     "justification": "A bright panel lifts a text-heavy report"
+    },
+    "clarity_storytelling": {
+     "score": 4,
+     "justification": "Order is clear"
+    },
+    "pdf_docx_suitability": {
+     "score": 3,
+     "justification": "Band alignment takes care in DOCX"
+    },
+    "reusability": {
+     "score": 3,
+     "justification": "One panel colour per theme is needed"
+    },
+    "rtl_bilingual": {
+     "score": 4,
+     "justification": "Mirrors correctly for Arabic"
+    }
+   },
+   "mean_score": 3.62,
+   "selection_rationale": "Colour used to change pace between text spreads.",
+   "distinctive_features": [
+    "coloured statement panel",
+    "photo band locked to columns"
+   ],
+   "reusable_composition": "Pace-change spread: band, panel, two columns.",
+   "confidence": "medium",
+   "limitations": "The panel colour is brand-led and is not reused.",
+   "informs_archetypes": [
+    "statement_page"
+   ]
+  },
+  {
+   "page_id": "db25596332d2:p0018",
+   "document": "EN-01",
+   "document_sha256": "db25596332d261a7e20825f4b53f796980566f76a13e4b349dd5f71d755e4ecf",
+   "page": 18,
+   "visual_category": "kpi_page",
+   "inspection_level": "full_size",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 5,
+     "justification": "Hero figure, section pills, then small comparison rows, in three clear levels"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Two columns with a white card give firm order"
+    },
+    "whitespace_balance": {
+     "score": 4,
+     "justification": "Dense but evenly paced"
+    },
+    "originality_impact": {
+     "score": 4,
+     "justification": "Current period dark and prior periods pale is simple and sharp"
+    },
+    "clarity_storytelling": {
+     "score": 5,
+     "justification": "Direction and scale can be read without reading a table"
+    },
+    "pdf_docx_suitability": {
+     "score": 4,
+     "justification": "Bars and tints reproduce in vectors and in table cells"
+    },
+    "reusability": {
+     "score": 5,
+     "justification": "Any period-based reporting can use it"
+    },
+    "rtl_bilingual": {
+     "score": null,
+     "justification": "Latin only; not assessed for RTL"
+    }
+   },
+   "mean_score": 4.43,
+   "selection_rationale": "Best KPI page reviewed. Encoding the current period by tone, not by a legend, removes a reading step.",
+   "distinctive_features": [
+    "current period dark, prior periods tinted",
+    "hero figure with small prior values",
+    "section label pills",
+    "highlights panel"
+   ],
+   "reusable_composition": "Performance page: hero figure, trend rows with period tone, highlights.",
+   "confidence": "high",
+   "limitations": "The portrait, the mask shape and the two-column arrangement are not copied; only the tone encoding and hierarchy are used.",
+   "informs_archetypes": [
+    "performance_page"
+   ]
+  },
+  {
+   "page_id": "4bbfe8f46cb3:p0008",
+   "document": "AR-03",
+   "document_sha256": "4bbfe8f46cb35fad7bcdbf47d9a8e5086c058d13e4b14536f68488b4b1ec9461",
+   "page": 8,
+   "visual_category": "kpi_page",
+   "inspection_level": "full_size",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 5,
+     "justification": "A giant figure over quiet regional tiles"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Tile grid and table are well aligned on the spread"
+    },
+    "whitespace_balance": {
+     "score": 4,
+     "justification": "A single tinted field keeps a lot of data calm"
+    },
+    "originality_impact": {
+     "score": 5,
+     "justification": "Scale contrast is striking"
+    },
+    "clarity_storytelling": {
+     "score": 5,
+     "justification": "Total first, regions second, table third"
+    },
+    "pdf_docx_suitability": {
+     "score": 4,
+     "justification": "Figures and tiles are plain text and rules"
+    },
+    "reusability": {
+     "score": 5,
+     "justification": "Any total-plus-parts story fits"
+    },
+    "rtl_bilingual": {
+     "score": 5,
+     "justification": "Western digits sit comfortably inside right-aligned Arabic labels"
+    }
+   },
+   "mean_score": 4.62,
+   "selection_rationale": "The strongest Arabic data page: one number, then its breakdown, with no decoration.",
+   "distinctive_features": [
+    "very large hero numeral",
+    "tiles with heavy foot rules",
+    "total-then-parts order",
+    "single tinted field"
+   ],
+   "reusable_composition": "Total-then-parts KPI page with a hero numeral and ruled tiles.",
+   "confidence": "high",
+   "limitations": "Assessed as a spread. The heavy foot rule is a colour-free way of grouping tiles.",
+   "informs_archetypes": [
+    "performance_page"
+   ]
+  },
+  {
+   "page_id": "4bbfe8f46cb3:p0004",
+   "document": "AR-03",
+   "document_sha256": "4bbfe8f46cb35fad7bcdbf47d9a8e5086c058d13e4b14536f68488b4b1ec9461",
+   "page": 4,
+   "visual_category": "kpi_page",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Bold numbers beside circular images"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Zig-zag path leads the eye"
+    },
+    "whitespace_balance": {
+     "score": 4,
+     "justification": "Tinted field, well spaced"
+    },
+    "originality_impact": {
+     "score": 5,
+     "justification": "The staggered path is the most unusual KPI layout seen"
+    },
+    "clarity_storytelling": {
+     "score": 3,
+     "justification": "Order takes a moment to settle"
+    },
+    "pdf_docx_suitability": {
+     "score": 2,
+     "justification": "Circular crops and a stagger are fragile in DOCX"
+    },
+    "reusability": {
+     "score": 3,
+     "justification": "Needs images for every figure"
+    },
+    "rtl_bilingual": {
+     "score": 4,
+     "justification": "Zig-zag still reads from the right"
+    }
+   },
+   "mean_score": 3.62,
+   "selection_rationale": "Most distinctive KPI composition, with limited reuse.",
+   "distinctive_features": [
+    "staggered figure path",
+    "circular images paired with numbers"
+   ],
+   "reusable_composition": "Staggered figure path for a small set of outcomes.",
+   "confidence": "medium",
+   "limitations": "Kept for originality; not a good default.",
+   "informs_archetypes": []
+  },
+  {
+   "page_id": "db25596332d2:p0009",
+   "document": "EN-01",
+   "document_sha256": "db25596332d261a7e20825f4b53f796980566f76a13e4b349dd5f71d755e4ecf",
+   "page": 9,
+   "visual_category": "kpi_page",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Tabs, hero number and stat cards are ordered"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Rounded cards are consistent"
+    },
+    "whitespace_balance": {
+     "score": 3,
+     "justification": "Busy with imagery"
+    },
+    "originality_impact": {
+     "score": 3,
+     "justification": "Clean rather than new"
+    },
+    "clarity_storytelling": {
+     "score": 4,
+     "justification": "Each card holds one idea"
+    },
+    "pdf_docx_suitability": {
+     "score": 3,
+     "justification": "Rounded cards flatten in DOCX"
+    },
+    "reusability": {
+     "score": 4,
+     "justification": "Fits overview pages"
+    },
+    "rtl_bilingual": {
+     "score": null,
+     "justification": "Latin only; not assessed for RTL"
+    }
+   },
+   "mean_score": 3.57,
+   "selection_rationale": "A tidy card dashboard for a year overview.",
+   "distinctive_features": [
+    "card grid",
+    "tab labels",
+    "four-up categories"
+   ],
+   "reusable_composition": "Overview dashboard built from cards.",
+   "confidence": "medium",
+   "limitations": "Product imagery excluded.",
+   "informs_archetypes": [
+    "performance_page"
+   ]
+  },
+  {
+   "page_id": "b7b9ddcb4981:p0002",
+   "document": "BI-05",
+   "document_sha256": "b7b9ddcb4981bdc0dafd3458610a416c096cbcb8aa2628fa447ddb9b4a12b26b",
+   "page": 2,
+   "visual_category": "kpi_page",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Stat tiles with top rules are clear"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Cards, services and tiles sit on one grid"
+    },
+    "whitespace_balance": {
+     "score": 4,
+     "justification": "Balanced spacing"
+    },
+    "originality_impact": {
+     "score": 2,
+     "justification": "Generic template feel"
+    },
+    "clarity_storytelling": {
+     "score": 4,
+     "justification": "Quick to scan"
+    },
+    "pdf_docx_suitability": {
+     "score": 4,
+     "justification": "Tiles and rules reproduce well"
+    },
+    "reusability": {
+     "score": 4,
+     "justification": "Fits brochures and profiles"
+    },
+    "rtl_bilingual": {
+     "score": 4,
+     "justification": "Its mirrored Arabic twin is also in this selection"
+    }
+   },
+   "mean_score": 3.75,
+   "selection_rationale": "A clean service-and-stat page with a clear mirroring pair.",
+   "distinctive_features": [
+    "top-ruled stat tiles",
+    "icon service row"
+   ],
+   "reusable_composition": "Company profile page with ruled stat tiles.",
+   "confidence": "medium",
+   "limitations": "Shared template; stands for the matching pages in the two sibling documents.",
+   "informs_archetypes": []
+  },
+  {
+   "page_id": "db25596332d2:p0021",
+   "document": "EN-01",
+   "document_sha256": "db25596332d261a7e20825f4b53f796980566f76a13e4b349dd5f71d755e4ecf",
+   "page": 21,
+   "visual_category": "financial_table",
+   "inspection_level": "full_size",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 5,
+     "justification": "Current column large and bold, prior years small and grey"
+    },
+    "composition_grid": {
+     "score": 5,
+     "justification": "Column alignment and hairlines are exact"
+    },
+    "whitespace_balance": {
+     "score": 4,
+     "justification": "Row rhythm is even and airy for a financial page"
+    },
+    "originality_impact": {
+     "score": 4,
+     "justification": "Size contrast inside a table is rare and effective"
+    },
+    "clarity_storytelling": {
+     "score": 5,
+     "justification": "The current year can be read down the page in seconds"
+    },
+    "pdf_docx_suitability": {
+     "score": 5,
+     "justification": "Pure table: exact in PDF and DOCX"
+    },
+    "reusability": {
+     "score": 5,
+     "justification": "Any comparative table fits"
+    },
+    "rtl_bilingual": {
+     "score": null,
+     "justification": "Latin only; not assessed for RTL"
+    }
+   },
+   "mean_score": 4.71,
+   "selection_rationale": "Best financial table reviewed. Period emphasis by size and tint turns a table into a reading path.",
+   "distinctive_features": [
+    "current period tinted and enlarged",
+    "prior periods reduced",
+    "pill section labels",
+    "hairlines only"
+   ],
+   "reusable_composition": "Period-emphasis table within labelled sections.",
+   "confidence": "high",
+   "limitations": "Large figures need short values; long values need a smaller step.",
+   "informs_archetypes": [
+    "parallel_ledger"
+   ]
+  },
+  {
+   "page_id": "db25596332d2:p0037",
+   "document": "EN-01",
+   "document_sha256": "db25596332d261a7e20825f4b53f796980566f76a13e4b349dd5f71d755e4ecf",
+   "page": 37,
+   "visual_category": "financial_table",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Multi-level headers are handled well"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Grouped rows with a goal column"
+    },
+    "whitespace_balance": {
+     "score": 3,
+     "justification": "Dense but organised"
+    },
+    "originality_impact": {
+     "score": 3,
+     "justification": "Good craft rather than new"
+    },
+    "clarity_storytelling": {
+     "score": 4,
+     "justification": "Groups and target are easy to compare"
+    },
+    "pdf_docx_suitability": {
+     "score": 4,
+     "justification": "Reproducible with merged cells"
+    },
+    "reusability": {
+     "score": 4,
+     "justification": "Fits sustainability and target tables"
+    },
+    "rtl_bilingual": {
+     "score": null,
+     "justification": "Latin only; not assessed for RTL"
+    }
+   },
+   "mean_score": 3.71,
+   "selection_rationale": "Shows the period-emphasis idea surviving a far more complex table.",
+   "distinctive_features": [
+    "grouped rows",
+    "goal column",
+    "bold current year on a tint"
+   ],
+   "reusable_composition": "Grouped metric table with a target column.",
+   "confidence": "medium",
+   "limitations": "Not viewed at atlas size; small text was only partly legible.",
+   "informs_archetypes": [
+    "parallel_ledger"
+   ]
+  },
+  {
+   "page_id": "7f52f49c5dd6:p0004",
+   "document": "BI-01",
+   "document_sha256": "7f52f49c5dd64feb382f7dfeff9d080d0fe96f46c0ba92629cb74afc1eee3ab2",
+   "page": 4,
+   "visual_category": "bilingual_table",
+   "inspection_level": "full_size",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Section bars, then numbered items, then tables, each language in its own half"
+    },
+    "composition_grid": {
+     "score": 5,
+     "justification": "One set of number columns serves both languages"
+    },
+    "whitespace_balance": {
+     "score": 3,
+     "justification": "Full, with even spacing"
+    },
+    "originality_impact": {
+     "score": 4,
+     "justification": "Sharing numbers between two scripts is very smart"
+    },
+    "clarity_storytelling": {
+     "score": 5,
+     "justification": "Neither reader has to look elsewhere for the data"
+    },
+    "pdf_docx_suitability": {
+     "score": 5,
+     "justification": "Plain tables and shading work exactly in DOCX"
+    },
+    "reusability": {
+     "score": 5,
+     "justification": "Any bilingual report with numbers fits"
+    },
+    "rtl_bilingual": {
+     "score": 5,
+     "justification": "English label left, Arabic label right, numbers between"
+    }
+   },
+   "mean_score": 4.5,
+   "selection_rationale": "The best bilingual data solution found: numbers are stated once, and each language reads in from its own edge.",
+   "distinctive_features": [
+    "shared numeric columns",
+    "label columns at both outer edges",
+    "section bar with a title at each end",
+    "mirrored numbering"
+   ],
+   "reusable_composition": "Parallel ledger: labels at both outer edges, numbers once in the middle.",
+   "confidence": "high",
+   "limitations": "The visual finish is plain; the value is structural. Logo and footer styling are excluded.",
+   "informs_archetypes": [
+    "parallel_ledger"
+   ]
+  },
+  {
+   "page_id": "82ccd1d81704:p0007",
+   "document": "EN-02",
+   "document_sha256": "82ccd1d81704336f40e5a65913e9a9e1f630d65a400f2fc1bb2724ec798c2a47",
+   "page": 7,
+   "visual_category": "financial_table",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 3,
+     "justification": "Clear but colour-heavy"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Two tables and a pie are aligned"
+    },
+    "whitespace_balance": {
+     "score": 3,
+     "justification": "Fairly full"
+    },
+    "originality_impact": {
+     "score": 2,
+     "justification": "Institutional"
+    },
+    "clarity_storytelling": {
+     "score": 4,
+     "justification": "Figures and share are read together"
+    },
+    "pdf_docx_suitability": {
+     "score": 4,
+     "justification": "Tables are simple"
+    },
+    "reusability": {
+     "score": 3,
+     "justification": "Band colours need restraint"
+    },
+    "rtl_bilingual": {
+     "score": null,
+     "justification": "Latin only; not assessed for RTL"
+    }
+   },
+   "mean_score": 3.29,
+   "selection_rationale": "Shows a table and chart reading as one statement.",
+   "distinctive_features": [
+    "table and chart side by side",
+    "highlighted column"
+   ],
+   "reusable_composition": "Financial summary with a table and companion chart.",
+   "confidence": "medium",
+   "limitations": "Yellow and blue compete. Included for the table and chart pairing, not for colour.",
+   "informs_archetypes": []
+  },
+  {
+   "page_id": "4bbfe8f46cb3:p0007",
+   "document": "AR-03",
+   "document_sha256": "4bbfe8f46cb35fad7bcdbf47d9a8e5086c058d13e4b14536f68488b4b1ec9461",
+   "page": 7,
+   "visual_category": "editorial_spread",
+   "inspection_level": "full_size",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 5,
+     "justification": "Two-tone title dominates, with a clear standfirst below"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Staggered image and text columns cascade across the spread"
+    },
+    "whitespace_balance": {
+     "score": 4,
+     "justification": "Deep, uneven top margin creates rhythm"
+    },
+    "originality_impact": {
+     "score": 5,
+     "justification": "The most distinctive editorial page in the corpus"
+    },
+    "clarity_storytelling": {
+     "score": 4,
+     "justification": "Each column is one short story"
+    },
+    "pdf_docx_suitability": {
+     "score": 2,
+     "justification": "Staggered columns are hard in editable DOCX"
+    },
+    "reusability": {
+     "score": 3,
+     "justification": "Needs several images and short stories"
+    },
+    "rtl_bilingual": {
+     "score": 5,
+     "justification": "Cascade starts on the right, as an Arabic reader expects"
+    }
+   },
+   "mean_score": 4,
+   "selection_rationale": "The highest visual ambition in the corpus: a stagger that reads like a procession.",
+   "distinctive_features": [
+    "two-tone title",
+    "staggered columns",
+    "images with pointer captions",
+    "very faint watermark"
+   ],
+   "reusable_composition": "Staggered story columns under a two-tone title.",
+   "confidence": "high",
+   "limitations": "Fragile with uneven content. Watermark and pointer shape excluded.",
+   "informs_archetypes": [
+    "editorial_sink"
+   ]
+  },
+  {
+   "page_id": "4bbfe8f46cb3:p0030",
+   "document": "AR-03",
+   "document_sha256": "4bbfe8f46cb35fad7bcdbf47d9a8e5086c058d13e4b14536f68488b4b1ec9461",
+   "page": 30,
+   "visual_category": "editorial_spread",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Coloured heading, deep sink, callout"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Callout locked to the image with columns hanging below"
+    },
+    "whitespace_balance": {
+     "score": 4,
+     "justification": "Deep sink gives calm"
+    },
+    "originality_impact": {
+     "score": 4,
+     "justification": "Colour per theme gives chapters identity"
+    },
+    "clarity_storytelling": {
+     "score": 4,
+     "justification": "Each block has a job"
+    },
+    "pdf_docx_suitability": {
+     "score": 3,
+     "justification": "Sink is easy; callout lock is not"
+    },
+    "reusability": {
+     "score": 4,
+     "justification": "Fits themed chapters"
+    },
+    "rtl_bilingual": {
+     "score": 4,
+     "justification": "Right-aligned heading and hanging columns read naturally"
+    }
+   },
+   "mean_score": 3.88,
+   "selection_rationale": "A disciplined column page with a deep sink, repeated with one colour per theme.",
+   "distinctive_features": [
+    "deep top sink",
+    "callout locked to an image",
+    "colour by chapter"
+   ],
+   "reusable_composition": "Editorial sink with a locked callout and hanging columns.",
+   "confidence": "medium",
+   "limitations": "Stands for the sibling spreads on sheets 32 and 34.",
+   "informs_archetypes": [
+    "editorial_sink"
+   ]
+  },
+  {
+   "page_id": "cf936a817893:p0281",
+   "document": "AR-02",
+   "document_sha256": "cf936a8178935930b557072c8328c1dc3f87e3c8ea5bf58d1ef9b43fb8d894a7",
+   "page": 281,
+   "visual_category": "editorial_page",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Clear order from heading to sidebar"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Photo and beige sidebar sit in balance"
+    },
+    "whitespace_balance": {
+     "score": 4,
+     "justification": "Cream page feels unhurried"
+    },
+    "originality_impact": {
+     "score": 3,
+     "justification": "Quiet"
+    },
+    "clarity_storytelling": {
+     "score": 4,
+     "justification": "Sidebar separates context from argument"
+    },
+    "pdf_docx_suitability": {
+     "score": 4,
+     "justification": "Sidebar is a shaded cell"
+    },
+    "reusability": {
+     "score": 4,
+     "justification": "Fits case studies"
+    },
+    "rtl_bilingual": {
+     "score": 4,
+     "justification": "Sidebar works on either edge"
+    }
+   },
+   "mean_score": 3.88,
+   "selection_rationale": "Good example of a sidebar treated as a real column.",
+   "distinctive_features": [
+    "tinted page",
+    "full-height sidebar"
+   ],
+   "reusable_composition": "Case study page with a full-height sidebar.",
+   "confidence": "medium",
+   "limitations": "Not viewed at atlas size.",
+   "informs_archetypes": [
+    "editorial_sink"
+   ]
+  },
+  {
+   "page_id": "cf936a817893:p0107",
+   "document": "AR-02",
+   "document_sha256": "cf936a8178935930b557072c8328c1dc3f87e3c8ea5bf58d1ef9b43fb8d894a7",
+   "page": 107,
+   "visual_category": "editorial_page",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Wheel diagram anchors the page"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Wheel and image balance on a tinted field"
+    },
+    "whitespace_balance": {
+     "score": 3,
+     "justification": "Dense lower half"
+    },
+    "originality_impact": {
+     "score": 4,
+     "justification": "A wheel is a welcome change of form"
+    },
+    "clarity_storytelling": {
+     "score": 3,
+     "justification": "Takes time to decode"
+    },
+    "pdf_docx_suitability": {
+     "score": 2,
+     "justification": "Diagram would need an image in DOCX"
+    },
+    "reusability": {
+     "score": 3,
+     "justification": "Specific to cyclical content"
+    },
+    "rtl_bilingual": {
+     "score": 4,
+     "justification": "Arabic labels sit well around the wheel"
+    }
+   },
+   "mean_score": 3.38,
+   "selection_rationale": "Shows a diagram leading a page rather than illustrating it.",
+   "distinctive_features": [
+    "diagram as focal point",
+    "tinted section field"
+   ],
+   "reusable_composition": "Tinted page led by one diagram.",
+   "confidence": "medium",
+   "limitations": "Label legibility was only partly checked at the enlarged size.",
+   "informs_archetypes": []
+  },
+  {
+   "page_id": "db25596332d2:p0023",
+   "document": "EN-01",
+   "document_sha256": "db25596332d261a7e20825f4b53f796980566f76a13e4b349dd5f71d755e4ecf",
+   "page": 23,
+   "visual_category": "editorial_page",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Title and standfirst lead sidebar text"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Shaped image and columns balance"
+    },
+    "whitespace_balance": {
+     "score": 3,
+     "justification": "Full, but ordered"
+    },
+    "originality_impact": {
+     "score": 3,
+     "justification": "System page"
+    },
+    "clarity_storytelling": {
+     "score": 4,
+     "justification": "Clear flow"
+    },
+    "pdf_docx_suitability": {
+     "score": 3,
+     "justification": "Shaped image masks are fragile"
+    },
+    "reusability": {
+     "score": 3,
+     "justification": "Needs a portrait"
+    },
+    "rtl_bilingual": {
+     "score": null,
+     "justification": "Latin only; not assessed for RTL"
+    }
+   },
+   "mean_score": 3.43,
+   "selection_rationale": "A well-judged message page that combines several system parts.",
+   "distinctive_features": [
+    "standfirst plus sidebar",
+    "rounded image"
+   ],
+   "reusable_composition": "Leadership message page with a sidebar.",
+   "confidence": "medium",
+   "limitations": "The same system appears in the separate 32-page extract, which is reviewed on its own.",
+   "informs_archetypes": []
+  },
+  {
+   "page_id": "cf936a817893:p0298",
+   "document": "AR-02",
+   "document_sha256": "cf936a8178935930b557072c8328c1dc3f87e3c8ea5bf58d1ef9b43fb8d894a7",
+   "page": 298,
+   "visual_category": "infographic",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Tinted header band over a grid of donuts"
+    },
+    "composition_grid": {
+     "score": 5,
+     "justification": "Repeated cells give a perfect rhythm"
+    },
+    "whitespace_balance": {
+     "score": 4,
+     "justification": "Cells have room"
+    },
+    "originality_impact": {
+     "score": 3,
+     "justification": "Sound small multiples"
+    },
+    "clarity_storytelling": {
+     "score": 5,
+     "justification": "Comparison is immediate"
+    },
+    "pdf_docx_suitability": {
+     "score": 3,
+     "justification": "Each cell needs a chart image in DOCX"
+    },
+    "reusability": {
+     "score": 5,
+     "justification": "Any category comparison fits"
+    },
+    "rtl_bilingual": {
+     "score": 4,
+     "justification": "Labels follow the reading edge"
+    }
+   },
+   "mean_score": 4.12,
+   "selection_rationale": "Clean small multiples with a figure header that holds them together.",
+   "distinctive_features": [
+    "small multiples",
+    "tinted figure header",
+    "equal cells"
+   ],
+   "reusable_composition": "Figure matrix: a tinted header over equal chart cells.",
+   "confidence": "medium",
+   "limitations": "Chart text was only partly legible at the enlarged size.",
+   "informs_archetypes": [
+    "figure_matrix"
+   ]
+  },
+  {
+   "page_id": "cf936a817893:p0349",
+   "document": "AR-02",
+   "document_sha256": "cf936a8178935930b557072c8328c1dc3f87e3c8ea5bf58d1ef9b43fb8d894a7",
+   "page": 349,
+   "visual_category": "infographic",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Heading, photo, then heat table"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Table and image share the grid"
+    },
+    "whitespace_balance": {
+     "score": 3,
+     "justification": "Full"
+    },
+    "originality_impact": {
+     "score": 4,
+     "justification": "Heat colouring makes a table visual"
+    },
+    "clarity_storytelling": {
+     "score": 5,
+     "justification": "Patterns are visible before any cell is read"
+    },
+    "pdf_docx_suitability": {
+     "score": 5,
+     "justification": "Cell shading is exact in DOCX"
+    },
+    "reusability": {
+     "score": 5,
+     "justification": "Any scored table fits"
+    },
+    "rtl_bilingual": {
+     "score": 4,
+     "justification": "Mirrors cleanly"
+    }
+   },
+   "mean_score": 4.25,
+   "selection_rationale": "Turning a table into an image through cell colour alone.",
+   "distinctive_features": [
+    "heat-coloured cells",
+    "table as the page's visual"
+   ],
+   "reusable_composition": "Heat table as the main visual.",
+   "confidence": "medium",
+   "limitations": "Colour-blind safety was not checked.",
+   "informs_archetypes": [
+    "figure_matrix"
+   ]
+  },
+  {
+   "page_id": "0b2bf0ebc355:p0008",
+   "document": "EN-01-1",
+   "document_sha256": "0b2bf0ebc355e66841327761403b19e30f6ec232c66e0600a8611c7f790b0dca",
+   "page": 8,
+   "visual_category": "chart_page",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Stacked bars then target ranges"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Tables hold small inline bars"
+    },
+    "whitespace_balance": {
+     "score": 3,
+     "justification": "Dense"
+    },
+    "originality_impact": {
+     "score": 4,
+     "justification": "Inline bars inside tables are elegant"
+    },
+    "clarity_storytelling": {
+     "score": 4,
+     "justification": "Target against actual is clear"
+    },
+    "pdf_docx_suitability": {
+     "score": 4,
+     "justification": "Inline bars can be shaded cells"
+    },
+    "reusability": {
+     "score": 4,
+     "justification": "Fits scorecards"
+    },
+    "rtl_bilingual": {
+     "score": null,
+     "justification": "Latin only; not assessed for RTL"
+    }
+   },
+   "mean_score": 3.86,
+   "selection_rationale": "From the separate remuneration extract: bars placed inside a table instead of next to it.",
+   "distinctive_features": [
+    "inline bars in table cells",
+    "target ranges"
+   ],
+   "reusable_composition": "Scorecard table with inline bars.",
+   "confidence": "medium",
+   "limitations": "Reviewed independently of EN-01; the extract has its own page sequence.",
+   "informs_archetypes": [
+    "performance_page"
+   ]
+  },
+  {
+   "page_id": "0b2bf0ebc355:p0010",
+   "document": "EN-01-1",
+   "document_sha256": "0b2bf0ebc355e66841327761403b19e30f6ec232c66e0600a8611c7f790b0dca",
+   "page": 10,
+   "visual_category": "chart_page",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Policy table and timeline are separate and clear"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Gantt strip aligned under the table"
+    },
+    "whitespace_balance": {
+     "score": 3,
+     "justification": "Compact"
+    },
+    "originality_impact": {
+     "score": 3,
+     "justification": "Useful rather than new"
+    },
+    "clarity_storytelling": {
+     "score": 5,
+     "justification": "A complex schedule becomes a picture"
+    },
+    "pdf_docx_suitability": {
+     "score": 4,
+     "justification": "A timeline can be a shaded table"
+    },
+    "reusability": {
+     "score": 4,
+     "justification": "Fits any phased plan"
+    },
+    "rtl_bilingual": {
+     "score": null,
+     "justification": "Latin only; not assessed for RTL"
+    }
+   },
+   "mean_score": 3.86,
+   "selection_rationale": "A plain Gantt strip that explains a policy better than prose.",
+   "distinctive_features": [
+    "table plus timeline",
+    "time as horizontal bars"
+   ],
+   "reusable_composition": "Policy table with a timeline strip.",
+   "confidence": "medium",
+   "limitations": "Reviewed independently of EN-01.",
+   "informs_archetypes": []
+  },
+  {
+   "page_id": "0218e5046957:p0003",
+   "document": "EN-03",
+   "document_sha256": "0218e50469574c54e3fbaa28618031c104c35b53b4227215d0a667c5cf357d3a",
+   "page": 3,
+   "visual_category": "infographic",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 3,
+     "justification": "Dense small type"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Coloured side bars and numbered steps organise it"
+    },
+    "whitespace_balance": {
+     "score": 2,
+     "justification": "Very full"
+    },
+    "originality_impact": {
+     "score": 3,
+     "justification": "Effective academic figure"
+    },
+    "clarity_storytelling": {
+     "score": 4,
+     "justification": "Sequence is explicit"
+    },
+    "pdf_docx_suitability": {
+     "score": 3,
+     "justification": "Must stay an image in DOCX"
+    },
+    "reusability": {
+     "score": 3,
+     "justification": "Fits methods sections"
+    },
+    "rtl_bilingual": {
+     "score": null,
+     "justification": "Latin only; not assessed for RTL"
+    }
+   },
+   "mean_score": 3.14,
+   "selection_rationale": "The only strong figure in the scientific paper; numbered lanes tame a complex workflow.",
+   "distinctive_features": [
+    "numbered workflow",
+    "coloured lanes"
+   ],
+   "reusable_composition": "Workflow figure with numbered lanes.",
+   "confidence": "low",
+   "limitations": "Small text not fully legible at the enlarged size.",
+   "informs_archetypes": []
+  },
+  {
+   "page_id": "cf936a817893:p0027",
+   "document": "AR-02",
+   "document_sha256": "cf936a8178935930b557072c8328c1dc3f87e3c8ea5bf58d1ef9b43fb8d894a7",
+   "page": 27,
+   "visual_category": "structured_text",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Bold coloured key phrases lead the eye"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Two framed columns with bracket spines"
+    },
+    "whitespace_balance": {
+     "score": 3,
+     "justification": "Framed, with a solid callout below"
+    },
+    "originality_impact": {
+     "score": 4,
+     "justification": "Bracket spines are a fresh way to group"
+    },
+    "clarity_storytelling": {
+     "score": 4,
+     "justification": "Key phrases act as a summary"
+    },
+    "pdf_docx_suitability": {
+     "score": 3,
+     "justification": "Frames convert; icons and brackets do not"
+    },
+    "reusability": {
+     "score": 4,
+     "justification": "Fits any key-messages page"
+    },
+    "rtl_bilingual": {
+     "score": 4,
+     "justification": "Spine stays on the reading edge"
+    }
+   },
+   "mean_score": 3.75,
+   "selection_rationale": "A text page made scannable through structure alone.",
+   "distinctive_features": [
+    "coloured key phrases",
+    "framed columns",
+    "solid callout"
+   ],
+   "reusable_composition": "Key messages page with framed columns.",
+   "confidence": "medium",
+   "limitations": "Not viewed at atlas size.",
+   "informs_archetypes": []
+  },
+  {
+   "page_id": "cf936a817893:p0039",
+   "document": "AR-02",
+   "document_sha256": "cf936a8178935930b557072c8328c1dc3f87e3c8ea5bf58d1ef9b43fb8d894a7",
+   "page": 39,
+   "visual_category": "structured_text",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Header and rail frame the table"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "Solid side rail carries icons"
+    },
+    "whitespace_balance": {
+     "score": 3,
+     "justification": "Full"
+    },
+    "originality_impact": {
+     "score": 3,
+     "justification": "Solid craft"
+    },
+    "clarity_storytelling": {
+     "score": 4,
+     "justification": "Categories read down the rail"
+    },
+    "pdf_docx_suitability": {
+     "score": 4,
+     "justification": "Rail is one shaded column"
+    },
+    "reusability": {
+     "score": 4,
+     "justification": "Fits matrix tables"
+    },
+    "rtl_bilingual": {
+     "score": 4,
+     "justification": "Rail sits on the reading edge"
+    }
+   },
+   "mean_score": 3.75,
+   "selection_rationale": "A category rail that gives a long table a spine.",
+   "distinctive_features": [
+    "solid side rail",
+    "tinted header"
+   ],
+   "reusable_composition": "Table with a category rail.",
+   "confidence": "medium",
+   "limitations": "Not viewed at atlas size.",
+   "informs_archetypes": []
+  },
+  {
+   "page_id": "7f52f49c5dd6:p0002",
+   "document": "BI-01",
+   "document_sha256": "7f52f49c5dd64feb382f7dfeff9d080d0fe96f46c0ba92629cb74afc1eee3ab2",
+   "page": 2,
+   "visual_category": "bilingual_navigation",
+   "inspection_level": "full_size",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 3,
+     "justification": "One weight throughout, so the page depends on alignment alone"
+    },
+    "composition_grid": {
+     "score": 5,
+     "justification": "Each row is shared, with one language at each edge"
+    },
+    "whitespace_balance": {
+     "score": 3,
+     "justification": "Lower half simply unused, not composed"
+    },
+    "originality_impact": {
+     "score": 2,
+     "justification": "Plain"
+    },
+    "clarity_storytelling": {
+     "score": 5,
+     "justification": "Both readers find a section on the same row"
+    },
+    "pdf_docx_suitability": {
+     "score": 5,
+     "justification": "A two-column borderless table"
+    },
+    "reusability": {
+     "score": 5,
+     "justification": "Any bilingual contents page"
+    },
+    "rtl_bilingual": {
+     "score": 5,
+     "justification": "Mirrored lettering keeps both scripts in step"
+    }
+   },
+   "mean_score": 4.12,
+   "selection_rationale": "A plain page, but its row-sharing principle is exactly right for bilingual navigation.",
+   "distinctive_features": [
+    "shared rows",
+    "mirrored numbering"
+   ],
+   "reusable_composition": "Mirrored bilingual contents.",
+   "confidence": "high",
+   "limitations": "Viewed at atlas size: visually modest, and selected for structure, not impact.",
+   "informs_archetypes": [
+    "parallel_ledger"
+   ]
+  },
+  {
+   "page_id": "fb5a68768723:p0019",
+   "document": "BI-02",
+   "document_sha256": "fb5a6876872349eb1e432335fc266737d8891fbb5e598583a093a2828448c31d",
+   "page": 19,
+   "visual_category": "bilingual_text",
+   "inspection_level": "full_size",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 5,
+     "justification": "Matched large titles and hairlines give each language equal status"
+    },
+    "composition_grid": {
+     "score": 5,
+     "justification": "Two equal columns aligned row by row at each paragraph"
+    },
+    "whitespace_balance": {
+     "score": 4,
+     "justification": "Calm spacing, with some unused space at the foot"
+    },
+    "originality_impact": {
+     "score": 3,
+     "justification": "Simple and exact"
+    },
+    "clarity_storytelling": {
+     "score": 5,
+     "justification": "Each paragraph has its translation directly opposite"
+    },
+    "pdf_docx_suitability": {
+     "score": 5,
+     "justification": "Two-column table with aligned rows"
+    },
+    "reusability": {
+     "score": 5,
+     "justification": "Any parallel letter or notice"
+    },
+    "rtl_bilingual": {
+     "score": 5,
+     "justification": "Justified Arabic and Latin hold the same measure"
+    }
+   },
+   "mean_score": 4.62,
+   "selection_rationale": "The most elegant parallel-text page reviewed; paragraph alignment is what makes it work.",
+   "distinctive_features": [
+    "paragraph-level alignment",
+    "equal titles",
+    "hairline under each title"
+   ],
+   "reusable_composition": "Parallel letter with paragraph-level alignment.",
+   "confidence": "high",
+   "limitations": "Logo excluded.",
+   "informs_archetypes": [
+    "parallel_ledger"
+   ]
+  },
+  {
+   "page_id": "b7b9ddcb4981:p0006",
+   "document": "BI-05",
+   "document_sha256": "b7b9ddcb4981bdc0dafd3458610a416c096cbcb8aa2628fa447ddb9b4a12b26b",
+   "page": 6,
+   "visual_category": "bilingual_layout",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Same ladder as its English twin"
+    },
+    "composition_grid": {
+     "score": 4,
+     "justification": "A full mirror of the layout"
+    },
+    "whitespace_balance": {
+     "score": 4,
+     "justification": "Balance is preserved"
+    },
+    "originality_impact": {
+     "score": 2,
+     "justification": "Template"
+    },
+    "clarity_storytelling": {
+     "score": 4,
+     "justification": "Clear"
+    },
+    "pdf_docx_suitability": {
+     "score": 4,
+     "justification": "Mirroring tables is simple"
+    },
+    "reusability": {
+     "score": 4,
+     "justification": "Pattern for all mirrored pages"
+    },
+    "rtl_bilingual": {
+     "score": 5,
+     "justification": "A direct example of how a page should flip"
+    }
+   },
+   "mean_score": 3.88,
+   "selection_rationale": "Selected as evidence: the exact RTL mirror of page 2.",
+   "distinctive_features": [
+    "whole-page mirroring"
+   ],
+   "reusable_composition": "Mirrored twin of an English page.",
+   "confidence": "medium",
+   "limitations": "Valuable as a test pattern rather than as a design.",
+   "informs_archetypes": [
+    "performance_page"
+   ]
+  },
+  {
+   "page_id": "db25596332d2:p0059",
+   "document": "EN-01",
+   "document_sha256": "db25596332d261a7e20825f4b53f796980566f76a13e4b349dd5f71d755e4ecf",
+   "page": 59,
+   "visual_category": "structured_grid",
+   "inspection_level": "enlarged",
+   "scores": {
+    "hierarchy_typography": {
+     "score": 4,
+     "justification": "Names and roles are clearly ranked"
+    },
+    "composition_grid": {
+     "score": 5,
+     "justification": "Regular grid of equal cells"
+    },
+    "whitespace_balance": {
+     "score": 4,
+     "justification": "Evenly spaced"
+    },
+    "originality_impact": {
+     "score": 3,
+     "justification": "Standard"
+    },
+    "clarity_storytelling": {
+     "score": 4,
+     "justification": "Fast to scan"
+    },
+    "pdf_docx_suitability": {
+     "score": 3,
+     "justification": "Masked images need simple crops in DOCX"
+    },
+    "reusability": {
+     "score": 4,
+     "justification": "Fits teams, boards and partners"
+    },
+    "rtl_bilingual": {
+     "score": null,
+     "justification": "Latin only; not assessed for RTL"
+    }
+   },
+   "mean_score": 3.86,
+   "selection_rationale": "A dependable profile grid.",
+   "distinctive_features": [
+    "regular profile grid"
+   ],
+   "reusable_composition": "Profile grid.",
+   "confidence": "medium",
+   "limitations": "Names and faces are not relevant to the assessment and were not recorded.",
+   "informs_archetypes": []
+  }
+ ],
+ "rejected_candidates": [
+  {
+   "page_id": "db25596332d2:p0002",
+   "document": "EN-01",
+   "document_sha256": "db25596332d261a7e20825f4b53f796980566f76a13e4b349dd5f71d755e4ecf",
+   "page": 2,
+   "inspection_level": "enlarged",
+   "reason": "Very large low title is good, but the page depends on ghosted brand logos; the type placement is already covered by EN01:24."
+  },
+  {
+   "page_id": "db25596332d2:p0028",
+   "document": "EN-01",
+   "document_sha256": "db25596332d261a7e20825f4b53f796980566f76a13e4b349dd5f71d755e4ecf",
+   "page": 28,
+   "inspection_level": "enlarged",
+   "reason": "Same system as EN01:18 in another colour: useful proof of recolouring, but a near duplicate."
+  },
+  {
+   "page_id": "4bbfe8f46cb3:p0024",
+   "document": "AR-03",
+   "document_sha256": "4bbfe8f46cb35fad7bcdbf47d9a8e5086c058d13e4b14536f68488b4b1ec9461",
+   "page": 24,
+   "inspection_level": "enlarged",
+   "reason": "Near-identical divider to AR03:9."
+  },
+  {
+   "page_id": "4bbfe8f46cb3:p0036",
+   "document": "AR-03",
+   "document_sha256": "4bbfe8f46cb35fad7bcdbf47d9a8e5086c058d13e4b14536f68488b4b1ec9461",
+   "page": 36,
+   "inspection_level": "enlarged",
+   "reason": "Near-identical divider to AR03:9."
+  },
+  {
+   "page_id": "4bbfe8f46cb3:p0032",
+   "document": "AR-03",
+   "document_sha256": "4bbfe8f46cb35fad7bcdbf47d9a8e5086c058d13e4b14536f68488b4b1ec9461",
+   "page": 32,
+   "inspection_level": "enlarged",
+   "reason": "Sibling of AR03:30 with a different theme colour."
+  },
+  {
+   "page_id": "4bbfe8f46cb3:p0034",
+   "document": "AR-03",
+   "document_sha256": "4bbfe8f46cb35fad7bcdbf47d9a8e5086c058d13e4b14536f68488b4b1ec9461",
+   "page": 34,
+   "inspection_level": "enlarged",
+   "reason": "Sibling of AR03:30 with a different theme colour."
+  },
+  {
+   "page_id": "cf936a817893:p0047",
+   "document": "AR-02",
+   "document_sha256": "cf936a8178935930b557072c8328c1dc3f87e3c8ea5bf58d1ef9b43fb8d894a7",
+   "page": 47,
+   "inspection_level": "contact_sheet",
+   "reason": "Same goal-opener system as AR02:25; 16 more such pages exist, so only one is kept."
+  },
+  {
+   "page_id": "82ccd1d81704:p0017",
+   "document": "EN-02",
+   "document_sha256": "82ccd1d81704336f40e5a65913e9a9e1f630d65a400f2fc1bb2724ec798c2a47",
+   "page": 17,
+   "inspection_level": "enlarged",
+   "reason": "Heavy flag panel over columns, repeated on pages 83, 110, 141 and 146."
+  },
+  {
+   "page_id": "82ccd1d81704:p0047",
+   "document": "EN-02",
+   "document_sha256": "82ccd1d81704336f40e5a65913e9a9e1f630d65a400f2fc1bb2724ec798c2a47",
+   "page": 47,
+   "inspection_level": "enlarged",
+   "reason": "Overlaid text and watermark clutter."
+  },
+  {
+   "page_id": "82ccd1d81704:p0026",
+   "document": "EN-02",
+   "document_sha256": "82ccd1d81704336f40e5a65913e9a9e1f630d65a400f2fc1bb2724ec798c2a47",
+   "page": 26,
+   "inspection_level": "enlarged",
+   "reason": "Good map with leader lines, but the bottom 40% is unresolved empty space."
+  },
+  {
+   "page_id": "82ccd1d81704:p0084",
+   "document": "EN-02",
+   "document_sha256": "82ccd1d81704336f40e5a65913e9a9e1f630d65a400f2fc1bb2724ec798c2a47",
+   "page": 84,
+   "inspection_level": "enlarged",
+   "reason": "Clear header band, but the lower third is empty."
+  },
+  {
+   "page_id": "82ccd1d81704:p0001",
+   "document": "EN-02",
+   "document_sha256": "82ccd1d81704336f40e5a65913e9a9e1f630d65a400f2fc1bb2724ec798c2a47",
+   "page": 1,
+   "inspection_level": "enlarged",
+   "reason": "Institutional cover: curved band, seal and brackets compete."
+  },
+  {
+   "page_id": "82ccd1d81704:p0005",
+   "document": "EN-02",
+   "document_sha256": "82ccd1d81704336f40e5a65913e9a9e1f630d65a400f2fc1bb2724ec798c2a47",
+   "page": 5,
+   "inspection_level": "enlarged",
+   "reason": "Icon stats feel like clip art."
+  },
+  {
+   "page_id": "82ccd1d81704:p0123",
+   "document": "EN-02",
+   "document_sha256": "82ccd1d81704336f40e5a65913e9a9e1f630d65a400f2fc1bb2724ec798c2a47",
+   "page": 123,
+   "inspection_level": "enlarged",
+   "reason": "Plain balance sheet; EN01:21 handles the same task far better."
+  },
+  {
+   "page_id": "db25596332d2:p0136",
+   "document": "EN-01",
+   "document_sha256": "db25596332d261a7e20825f4b53f796980566f76a13e4b349dd5f71d755e4ecf",
+   "page": 136,
+   "inspection_level": "enlarged",
+   "reason": "Short table leaves about 60% of the page empty."
+  },
+  {
+   "page_id": "db25596332d2:p0222",
+   "document": "EN-01",
+   "document_sha256": "db25596332d261a7e20825f4b53f796980566f76a13e4b349dd5f71d755e4ecf",
+   "page": 222,
+   "inspection_level": "enlarged",
+   "reason": "Brand back cover with no reusable design idea."
+  },
+  {
+   "page_id": "db25596332d2:p0010",
+   "document": "EN-01",
+   "document_sha256": "db25596332d261a7e20825f4b53f796980566f76a13e4b349dd5f71d755e4ecf",
+   "page": 10,
+   "inspection_level": "enlarged",
+   "reason": "Logo wall."
+  },
+  {
+   "page_id": "db25596332d2:p0012",
+   "document": "EN-01",
+   "document_sha256": "db25596332d261a7e20825f4b53f796980566f76a13e4b349dd5f71d755e4ecf",
+   "page": 12,
+   "inspection_level": "enlarged",
+   "reason": "Pill decoration without much information."
+  },
+  {
+   "page_id": "af94892827c8:p0001",
+   "document": "AR-01",
+   "document_sha256": "af94892827c89513753387aaa7a87cf31f608da3df8eab50cc0d06dba1eb2184",
+   "page": 1,
+   "inspection_level": "enlarged",
+   "reason": "Distinctive, but it depends on commissioned illustration and carries vertical disclosure text."
+  },
+  {
+   "page_id": "af94892827c8:p0042",
+   "document": "AR-01",
+   "document_sha256": "af94892827c89513753387aaa7a87cf31f608da3df8eab50cc0d06dba1eb2184",
+   "page": 42,
+   "inspection_level": "enlarged",
+   "reason": "Back cover with a QR code; no transferable composition."
+  },
+  {
+   "page_id": "af94892827c8:p0026",
+   "document": "AR-01",
+   "document_sha256": "af94892827c89513753387aaa7a87cf31f608da3df8eab50cc0d06dba1eb2184",
+   "page": 26,
+   "inspection_level": "enlarged",
+   "reason": "Default-looking pie charts."
+  },
+  {
+   "page_id": "af94892827c8:p0014",
+   "document": "AR-01",
+   "document_sha256": "af94892827c89513753387aaa7a87cf31f608da3df8eab50cc0d06dba1eb2184",
+   "page": 14,
+   "inspection_level": "enlarged",
+   "reason": "Framed infographic adds little over simpler charts."
+  },
+  {
+   "page_id": "9325a2a9012f:p0007",
+   "document": "BI-04",
+   "document_sha256": "9325a2a9012fce65f818e2d57bd76a248a049b9a6be7ef66e029ed97d7211ac3",
+   "page": 7,
+   "inspection_level": "enlarged",
+   "reason": "Dated cyan circle diagram."
+  },
+  {
+   "page_id": "7f52f49c5dd6:p0011",
+   "document": "BI-01",
+   "document_sha256": "7f52f49c5dd64feb382f7dfeff9d080d0fe96f46c0ba92629cb74afc1eee3ab2",
+   "page": 11,
+   "inspection_level": "enlarged",
+   "reason": "Parallel columns are sound but dense; BI02:19 demonstrates the principle better."
+  },
+  {
+   "page_id": "fb5a68768723:p0005",
+   "document": "BI-02",
+   "document_sha256": "fb5a6876872349eb1e432335fc266737d8891fbb5e598583a093a2828448c31d",
+   "page": 5,
+   "inspection_level": "enlarged",
+   "reason": "Striking, but the letterform mask is a brand mark."
+  },
+  {
+   "page_id": "fb5a68768723:p0001",
+   "document": "BI-02",
+   "document_sha256": "fb5a6876872349eb1e432335fc266737d8891fbb5e598583a093a2828448c31d",
+   "page": 1,
+   "inspection_level": "enlarged",
+   "reason": "Duotone photo with a cropped brand mark."
+  },
+  {
+   "page_id": "fb5a68768723:p0010",
+   "document": "BI-02",
+   "document_sha256": "fb5a6876872349eb1e432335fc266737d8891fbb5e598583a093a2828448c31d",
+   "page": 10,
+   "inspection_level": "enlarged",
+   "reason": "Audit table with an orange header: acceptable, not outstanding."
+  },
+  {
+   "page_id": "582bd105b7d9:p0004",
+   "document": "BI-07",
+   "document_sha256": "582bd105b7d985c3511434e5fd2c985fdb12432df4531f159bc556546c769bd5",
+   "page": 4,
+   "inspection_level": "enlarged",
+   "reason": "Same fictional template as BI05."
+  }
+ ]
+}

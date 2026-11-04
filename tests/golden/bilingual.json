@@ -50,6 +50,7 @@
  "layout": [
   "headings: shallow outline: stronger H1 contrast",
   "measure: 91 chars/line",
-  "tables: table 4: 3 cols, 2 rows; 9.5pt; kept on one page; numeric columns [2] right-aligned"
+  "tables: table 4: 3 cols, 2 rows; 9.5pt; kept on one page; numeric columns [2] right-aligned",
+  "exhibits: 1 heading intro(s) kept with the table or figure they introduce"
  ]
 }

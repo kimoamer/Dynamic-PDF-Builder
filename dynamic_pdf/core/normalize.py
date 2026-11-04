@@ -217,10 +217,11 @@ def normalize(document: Document, *, source_kind: str = "api",
                     alpha_chars += 1
                     if unicodedata.bidirectional(ch) in ("R", "AL"):
                         rtl_chars += 1
-        if t == "heading":
+        if t in ("heading", "section_opener", "performance_page"):
+            level = b.level if t == "heading" else 1
             stats.headings += 1
-            stats.max_heading_level = max(stats.max_heading_level, b.level)
-            text = plain_text(b.text)
+            stats.max_heading_level = max(stats.max_heading_level, level)
+            text = plain_text(b.text if t == "heading" else b.title)
             stats.heading_texts.append(text)
             hid = b.id or _slug(text) or f"section-{i + 1}"
             base, n = hid, 2
@@ -229,7 +230,9 @@ def normalize(document: Document, *, source_kind: str = "api",
                 n += 1
             used_ids.add(hid)
             b.id = hid
-            outline.append(OutlineEntry(id=hid, level=b.level, text=text, block_index=i))
+            outline.append(OutlineEntry(id=hid, level=level, text=text, block_index=i))
+            if t == "performance_page":
+                stats.metrics += 1
         elif t in ("paragraph", "rich_text", "note"):
             stats.paragraphs += 1
             ptxt = plain_text(b.text)
@@ -249,6 +252,9 @@ def normalize(document: Document, *, source_kind: str = "api",
                 for c in row:
                     cells += 1
                     numeric += _is_number(str(c))
+        elif t == "parallel_ledger":
+            stats.tables += 1
+            stats.table_rows += sum(len(s.rows) for s in b.sections)
         elif t == "image":
             stats.figures += 1
         elif t == "chart":

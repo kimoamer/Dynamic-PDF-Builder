@@ -875,6 +875,14 @@ class LayoutEngine:
         if hf.header_style == "sidebar" or hf.footer_style == "sidebar":
             self._draw_sidebar_strip(canvas)
 
+    def _on_page_end(self, canvas, doc):
+        """Headers and footers drawn last, for documents with section openers: a
+        page only knows it is an opener, and takes none, once its content is drawn."""
+        if getattr(canvas, "_dpb_bare", False):
+            canvas._dpb_bare = False
+            return
+        self._on_page(canvas, doc)
+
     def _language(self) -> str:
         meta = self.document.meta
         if meta.rtl or getattr(meta, "direction", None) == "rtl":
@@ -968,15 +976,16 @@ class LayoutEngine:
         )
         frame.geometry = self.geometry
 
-        template = PageTemplate(id='AllPages', frames=[frame], onPage=self._on_page,
-                                pagesize=pagesize)
+        hooks = {"onPage": self._on_page}
+        if any(getattr(b, "type", None) == "section_opener" for b in self.document.blocks):
+            hooks = {"onPageEnd": self._on_page_end}
+        template = PageTemplate(id='AllPages', frames=[frame], pagesize=pagesize, **hooks)
         # Landscape pages for content the planner marks as too wide for portrait
         lw, lh = (h, w) if h > w else (w, h)
         land_frame = GeoFrame(left_m, bot_m, lw - left_m - right_m, lh - top_m - bot_m, id='land')
         land_frame.geometry = self.geometry
         land_frame.landscape = True
-        land_template = PageTemplate(id='Landscape', frames=[land_frame], onPage=self._on_page,
-                                     pagesize=(lw, lh))
+        land_template = PageTemplate(id='Landscape', frames=[land_frame], pagesize=(lw, lh), **hooks)
         land_width = lw - left_m - right_m
 
         meta = self.document.meta
@@ -1019,6 +1028,7 @@ class LayoutEngine:
             language=self._language(),
         )
         ctx.cache = self.cache
+        ctx.page_size = (w, h)
         self.diagnostics.language = ctx.language
         doc_template._dpb_geometry = self.geometry
 
@@ -1039,6 +1049,7 @@ class LayoutEngine:
                     ctx.available_width = land_width if in_land else frame_width
                 self.diagnostics.block_index = i
                 self.diagnostics.block_type = getattr(block, "type", None)
+                ctx.first_block, ctx.last_block = i == 0, i == len(self.document.blocks) - 1
                 if getattr(block, "type", None) == "table":
                     width = max([len(block.headers or [])] + [len(r) for r in block.rows] + [1])
                     _policy.check_limit("Table cells", (len(block.rows) + 1) * width,

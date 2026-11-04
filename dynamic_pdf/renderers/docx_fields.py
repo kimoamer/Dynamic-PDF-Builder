@@ -7,10 +7,19 @@ from __future__ import annotations
 
 import re
 from typing import Optional
+from xml.sax.saxutils import escape
 
-from docx.oxml import OxmlElement
+from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import qn
 from docx.opc.constants import RELATIONSHIP_TYPE as RT
+from docx.shared import Twips
+
+
+_W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+_MC = "http://schemas.openxmlformats.org/markup-compatibility/2006"
+_WP = "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+_A = "http://schemas.openxmlformats.org/drawingml/2006/main"
+_WPS = "http://schemas.microsoft.com/office/word/2010/wordprocessingShape"
 
 
 # ─────────────────────────── generic ───────────────────────────
@@ -112,6 +121,15 @@ def set_table_cell_margins(table, top=60, bottom=60, left=100, right=100) -> Non
         el.set(qn("w:type"), "dxa")
 
 
+def set_cell_margins(cell, top=0, bottom=0, left=0, right=0) -> None:
+    """Margins of one cell; unlike the table default they never shift the table's edge."""
+    mar = _get_or_add(cell._tc.get_or_add_tcPr(), "w:tcMar")
+    for side, v in (("top", top), ("left", left), ("bottom", bottom), ("right", right)):
+        el = _get_or_add(mar, f"w:{side}")
+        el.set(qn("w:w"), str(v))
+        el.set(qn("w:type"), "dxa")
+
+
 def set_repeat_table_header(row) -> None:
     trPr = row._tr.get_or_add_trPr()
     el = _get_or_add(trPr, "w:tblHeader")
@@ -136,10 +154,87 @@ def set_table_layout_fixed(table) -> None:
 
 # ─────────────────────────── bidi / fonts ───────────────────────────
 
+def add_page_text_box(paragraph, shape_id: int, x_pt: float, y_pt: float, w_pt: float, h_pt: float,
+                      fill_hex: str, insets=(0, 0, 0, 0), description: str = ""):
+    """A filled text box anchored to the page, behind the text; returns its content
+    element. Unlike a floating table it may run past the margins to the page edge.
+    ``insets`` are left, top, right, bottom in points."""
+    emu = lambda pt: int(pt * 12700)                                     # noqa: E731
+    left, top, right, bottom = (emu(v) for v in insets)
+    xml = (
+        f'<w:r xmlns:w="{_W}" xmlns:mc="{_MC}" xmlns:wp="{_WP}" xmlns:a="{_A}" xmlns:wps="{_WPS}">'
+        '<mc:AlternateContent><mc:Choice Requires="wps"><w:drawing>'
+        '<wp:anchor distT="0" distB="0" distL="0" distR="0" simplePos="0" relativeHeight="1" behindDoc="1" '
+        'locked="0" layoutInCell="1" allowOverlap="1"><wp:simplePos x="0" y="0"/>'
+        f'<wp:positionH relativeFrom="page"><wp:posOffset>{emu(x_pt)}</wp:posOffset></wp:positionH>'
+        f'<wp:positionV relativeFrom="page"><wp:posOffset>{emu(y_pt)}</wp:posOffset></wp:positionV>'
+        f'<wp:extent cx="{emu(w_pt)}" cy="{emu(h_pt)}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:wrapNone/>'
+        f'<wp:docPr id="{shape_id}" name="Text Box {shape_id}" descr="{escape(description, {chr(34): "&quot;"})}"/>'
+        '<wp:cNvGraphicFramePr/>'
+        f'<a:graphic><a:graphicData uri="{_WPS}"><wps:wsp><wps:cNvSpPr txBox="1"/><wps:spPr>'
+        f'<a:xfrm><a:off x="0" y="0"/><a:ext cx="{emu(w_pt)}" cy="{emu(h_pt)}"/></a:xfrm>'
+        '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>'
+        f'<a:solidFill><a:srgbClr val="{fill_hex.lstrip("#").upper()}"/></a:solidFill><a:ln><a:noFill/></a:ln>'
+        '</wps:spPr><wps:txbx><w:txbxContent/></wps:txbx>'
+        f'<wps:bodyPr rot="0" vert="horz" wrap="square" lIns="{left}" tIns="{top}" rIns="{right}" bIns="{bottom}" '
+        'anchor="t" anchorCtr="0"><a:noAutofit/></wps:bodyPr></wps:wsp></a:graphicData></a:graphic>'
+        '</wp:anchor></w:drawing></mc:Choice><mc:Fallback/></mc:AlternateContent></w:r>'
+    )
+    run = parse_xml(xml)
+    paragraph._p.append(run)
+    return run.find(f".//{qn('w:txbxContent')}")
+
+
 def set_paragraph_bidi(paragraph, on: bool = True) -> None:
     pPr = paragraph._p.get_or_add_pPr()
     el = _get_or_add(pPr, "w:bidi")
     el.set(qn("w:val"), "1" if on else "0")
+
+
+def mirror_bidi_justification(root) -> None:
+    """In a bidi paragraph Word and LibreOffice read ``jc`` left/right as start/end,
+    so a paragraph meant to sit on the right edge needs ``left``. The renderer works
+    in physical sides throughout; this converts them once, just before saving."""
+    swap = {"left": "right", "right": "left"}
+    for ppr in root.iter(qn("w:pPr")):
+        bidi = ppr.find(qn("w:bidi"))
+        jc = ppr.find(qn("w:jc"))
+        if bidi is None or jc is None or bidi.get(qn("w:val")) in ("0", "false"):
+            continue
+        val = jc.get(qn("w:val"))
+        if val in swap:
+            jc.set(qn("w:val"), swap[val])
+
+
+_COMPLEX_SCRIPT = re.compile("[\u0590-\u08ff\ufb1d-\ufdff\ufe70-\ufefc]")
+_AFTER_B_CS = ("w:i", "w:iCs", "w:caps", "w:smallCaps", "w:strike", "w:dstrike", "w:outline", "w:shadow",
+               "w:emboss", "w:imprint", "w:noProof", "w:snapToGrid", "w:vanish", "w:webHidden", "w:color",
+               "w:spacing", "w:w", "w:kern", "w:position", "w:sz", "w:szCs", "w:highlight", "w:u", "w:effect",
+               "w:bdr", "w:shd", "w:fitText", "w:vertAlign", "w:rtl", "w:cs", "w:em", "w:lang")
+_AFTER_I_CS = _AFTER_B_CS[_AFTER_B_CS.index("w:iCs") + 1:]
+_AFTER_SPACING = _AFTER_B_CS[_AFTER_B_CS.index("w:spacing") + 1:]
+_AFTER_SZ_CS = _AFTER_B_CS[_AFTER_B_CS.index("w:szCs") + 1:]
+
+
+def has_complex_script(text: str) -> bool:
+    return bool(_COMPLEX_SCRIPT.search(text or ""))
+
+
+def set_complex_script_format(run, size_pt: Optional[float] = None, bold: bool = False) -> None:
+    """Complex-script text, Arabic digits included, reads w:szCs and w:bCs, not w:sz and w:b."""
+    rPr = run._r.get_or_add_rPr()
+    if bold:
+        _get_or_add(rPr, "w:bCs", _AFTER_B_CS).set(qn("w:val"), "1")
+    if size_pt:
+        _get_or_add(rPr, "w:szCs", _AFTER_SZ_CS).set(qn("w:val"), str(int(round(size_pt * 2))))
+
+
+def clear_style_slant_and_tracking(run) -> None:
+    """Amiri has no slanted cut for a style's w:iCs to select, so the renderer skews the
+    letters past the margin, and tracking pulls connected Arabic letters apart."""
+    rPr = run._r.get_or_add_rPr()
+    _get_or_add(rPr, "w:iCs", _AFTER_I_CS).set(qn("w:val"), "0")
+    _get_or_add(rPr, "w:spacing", _AFTER_SPACING).set(qn("w:val"), "0")
 
 
 def set_run_fonts(run, ascii_font: Optional[str] = None, cs_font: Optional[str] = None,
@@ -304,6 +399,9 @@ _BULLETS = ["•", "–", "◦", "•", "–", "◦", "•", "–", "◦"]
 _ORDERED_FMTS = ["decimal", "lowerLetter", "lowerRoman"] * 3
 
 
+RTL_NUMBER_ROOM, RTL_BULLET_ROOM = 280, 120          # twips
+
+
 class ListNumbering:
     """Creates two abstract list definitions (bullet, ordered) and one numbering
     instance per list, so every ordered list restarts at its own ``start``."""
@@ -382,6 +480,17 @@ class ListNumbering:
             num.append(ov)
         self.numbering.append(num)
         return nid
+
+    def keep_label_inside(self, paragraph, level: int, ordered: bool) -> None:
+        """A right-to-left paragraph hangs its label from the margin itself, and LibreOffice
+        then draws the label past it: move the start of the text in by the label's width."""
+        room = RTL_NUMBER_ROOM if ordered else RTL_BULLET_ROOM
+        paragraph.paragraph_format.left_indent = Twips(self.indent * (level + 1) + room)
+        paragraph.paragraph_format.first_line_indent = Twips(-self.indent)
+        pPr = paragraph._p.pPr
+        bidi = pPr.find(qn("w:bidi"))
+        if bidi is not None:                 # LibreOffice lets a later numPr reset the indent
+            bidi.addprevious(pPr.find(qn("w:numPr")))
 
     @staticmethod
     def apply(paragraph, num_id: int, level: int) -> None:

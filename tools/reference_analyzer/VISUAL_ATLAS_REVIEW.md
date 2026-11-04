@@ -2,8 +2,9 @@
 
 The atlas was built from the 13 reference PDFs (1,064 pages) kept outside this repository, and its labels were
 checked against rendered pages. This file holds counts and page numbers only: no page images, no extracted text.
-A label describes composition. Nothing here says a page is good; only a human decision can do that, and there are
-none yet.
+A label describes composition. Nothing here says a page is good. Human decisions live in `human-curation.json`, and
+there are none yet. [`ai-design-curation.json`](ai-design-curation.json) records a separate AI review, which is not a
+human decision.
 
 Run: `python -m tools.reference_analyzer atlas --input <references> --output <analysis>`, CPU only, offline.
 
@@ -109,15 +110,16 @@ precision or recall, and no human has confirmed them.
 
 - Label precision and recall are not measured; there is no labelled ground truth for the real corpus.
 - Which pages are worth learning from. Distinctiveness measures difference from neighbours, so a strange page ranks
-  high. Only reviewers can decide this.
+  high. An AI reviewer has since given its own opinion; no human has confirmed it.
 - The gallery was exercised in one Chromium pane through `atlas-serve` and a plain static server. Opening
   `index.html` directly from disk uses the same code path, but it could not be run in the test browser. Other
   browsers are untested.
 - Spread pairing in AR-01 and BI-04 is inferred from the facing-page measurement; the pairs were not checked one
   by one.
 
-## What this PR does not do
+## What came next
 
-There is no `layout-archetypes.json`, because archetypes must come from accepted pages and `human-curation.json` is
-empty. PR B waits for real reviewer decisions. The heading and table orphaning, the LibreOffice DOCX check and the
-garbled Arabic chart title also belong to PR B; none are addressed here. `dynamic_pdf` is unchanged.
+The atlas PR left archetypes, heading orphaning, the LibreOffice DOCX check and the garbled Arabic chart title open.
+M7.5's AI art direction took them up without waiting for human curation:
+[`docs/m75-ai-art-director`](../../docs/m75-ai-art-director/README.md) has the results. `human-curation.json` stays
+empty until a person writes to it.

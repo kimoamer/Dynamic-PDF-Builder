@@ -36,6 +36,7 @@ from ..schema.enums import Orientation, PageSize
 from ..schema.theme import Theme
 from ..utils.errors import BlockRenderError, DynamicPDFError
 from . import docx_fields as F
+from .docx_archetypes import ArchetypeDocx
 from .docx_styles import configure_styles, rgb, word_font
 
 _PAGE_SIZES_PT = {PageSize.A4: (595.28, 841.89), PageSize.LETTER: (612, 792),
@@ -45,7 +46,7 @@ _VARIANT_COLORS = {"info": "info", "warning": "warning", "error": "error",
 _NUMERIC = re.compile(r"^[\s$€£¥%+\-−(),.\d٠-٩]+$")
 
 
-class DocxRenderer:
+class DocxRenderer(ArchetypeDocx):
     def __init__(self, sem: SemanticDocument, theme: Theme, collector=None):
         self.sem = sem
         self.theme = theme
@@ -90,8 +91,19 @@ class DocxRenderer:
         self.col.block_index = self.col.block_type = None
         if flow is not None:
             self._switch_columns(1, 18.0)
+            # The closing section still needs a paragraph. A full-height one spills
+            # onto a blank last page when the balanced columns fill the page.
+            tail = self.doc.add_paragraph()
+            tail.paragraph_format.space_before = tail.paragraph_format.space_after = Pt(0)
+            tail.paragraph_format.line_spacing = Pt(1)
+            tail.add_run().font.size = Pt(1)
         if any(b.type == "table_of_contents" for b in self.sem.blocks):
             F.enable_update_fields_on_open(doc)
+        F.mirror_bidi_justification(doc.element.body)
+        for sec in doc.sections:
+            for part in (sec.header, sec.footer, sec.first_page_header, sec.first_page_footer):
+                if not part.is_linked_to_previous:
+                    F.mirror_bidi_justification(part._element)
         buf = io.BytesIO()
         doc.save(buf)
         return buf.getvalue()
@@ -257,6 +269,8 @@ class DocxRenderer:
                     F.set_run_shading(run, "EEF0F3")
                 else:
                     F.set_run_fonts(run, None, arabic, rtl=rtl, bidi_lang="ar-SA" if rtl else None)
+                    if F.has_complex_script(tr.text):
+                        F.set_complex_script_format(run, size, bool(f.bold))
 
             if tr.link:
                 F.add_hyperlink(paragraph, tr.link, tr.text, fmt)
@@ -377,7 +391,7 @@ class DocxRenderer:
     def _b_introduction_page(self, c, b):
         self._runs(self._para(c, "Heading 1", b.title), b.title)
         if b.subtitle:
-            self._runs(self._para(c, "Subtitle", b.subtitle), b.subtitle)
+            self._subtitle(c, b.subtitle)
         for para in (b.content or "").split("\n\n") if isinstance(b.content, str) else (b.content or []):
             if str(para).strip():
                 self._runs(self._para(c, "Body Text", str(para)), str(para))
@@ -394,6 +408,8 @@ class DocxRenderer:
             checked = None if isinstance(it, str) else it.checked
             p = self._para(c, "List Paragraph", text)
             F.ListNumbering.apply(p, num_id, level)
+            if is_rtl_text(text):
+                self.lists.keep_label_inside(p, level, ordered)
             if checked is not None:
                 r = p.add_run("☑ " if checked else "☐ ")
                 F.set_run_fonts(r, "Segoe UI Symbol", "Segoe UI Symbol")
@@ -881,6 +897,12 @@ class DocxRenderer:
 
     # ─── structure ───
 
+    def _subtitle(self, c, text: str) -> None:
+        p = self._runs(self._para(c, "Subtitle", text), text)
+        if F.has_complex_script(text):
+            for run in p.runs:
+                F.clear_style_slant_and_tracking(run)
+
     def _b_cover_page(self, c, b):
         sp = self._para(c, "Normal")
         sp.paragraph_format.space_before = Pt(96)
@@ -892,7 +914,7 @@ class DocxRenderer:
                 self.col.fail("asset_failed", f"Cover logo: {e}", e)
         self._runs(self._para(c, "Title", b.title), b.title)
         if b.subtitle:
-            self._runs(self._para(c, "Subtitle", b.subtitle), b.subtitle)
+            self._subtitle(c, b.subtitle)
         for txt in ((f"{self._label('prepared_by')} {b.author}" if b.author else None), b.date):
             if txt:
                 p = self._para(c, "Normal", txt)

@@ -21,6 +21,7 @@ from .schema.blocks import (
     ShapeBlock, QRCodeBlock, WatermarkBlock, TOCBlock,
     IntroductionPageBlock, DiagramBlock,
     TwoColumnBlock, ThreeColumnBlock, SidebarBlock,
+    SectionOpenerBlock, PerformancePageBlock, ParallelLedgerBlock,
 )
 from .layout.engine import LayoutEngine
 from .policy import RenderPolicy, ResourceLimits, STRICT
@@ -552,6 +553,21 @@ class DocumentBuilder:
         return self
 
     # ─── Metrics & Scores ──────────────────────────────────────────
+
+    def section_opener(self, title: str, **fields) -> 'DocumentBuilder':
+        """Chapter opener on its own page; falls back to a heading when the content cannot fit."""
+        self._blocks.append(SectionOpenerBlock(title=title, **fields))
+        return self
+
+    def performance_page(self, title: str, hero: Dict[str, str], **fields) -> 'DocumentBuilder':
+        """One page of results: hero figure, tiles, trends, highlights."""
+        self._blocks.append(PerformancePageBlock(title=title, hero=hero, **fields))
+        return self
+
+    def parallel_ledger(self, periods: List[str], sections: List[Dict[str, Any]], **fields) -> 'DocumentBuilder':
+        """Comparative figures stated once, labelled in one or two languages."""
+        self._blocks.append(ParallelLedgerBlock(periods=periods, sections=sections, **fields))
+        return self
 
     def metric_row(self, metrics: List[Dict[str, str]]) -> 'DocumentBuilder':
         items = [MetricItem(**m) for m in metrics]
