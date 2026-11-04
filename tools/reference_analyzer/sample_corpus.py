@@ -361,6 +361,162 @@ def _reviewed_index(out: str, rv: str):
         w.writerow(["S-4", "archive/scanned.pdf", "1", "must not apply: other folder", "", ""])
 
 
+def _picture(w: int = 300, h: int = 400) -> bytes:
+    """A deterministic image with the tonal variety of a photograph."""
+    import io
+
+    from PIL import Image as PILImage
+    g, r = PILImage.linear_gradient("L"), PILImage.radial_gradient("L")
+    im = PILImage.merge("RGB", (g, r, g.rotate(90))).resize((w, h))
+    tiles = PILImage.merge("RGB", (r, g.rotate(180), r.rotate(45))).resize((w // 3, h // 3))
+    for x in range(0, w, w // 3):
+        for y in range(0, h, h // 3):
+            if (x // (w // 3) + y // (h // 3)) % 2:
+                im.paste(tiles, (x, y))
+    buf = io.BytesIO()
+    im.save(buf, "PNG")
+    return buf.getvalue()
+
+
+def _scan(w: int = 300, h: int = 400) -> bytes:
+    """A picture of a letter: white paper with grey lines."""
+    import io
+
+    from PIL import Image as PILImage
+    from PIL import ImageDraw
+    im = PILImage.new("RGB", (w, h), (252, 252, 250))
+    d = ImageDraw.Draw(im)
+    for y in range(30, h - 30, 12):
+        d.line((24, y, w - 24, y), fill=(110, 110, 110))
+    buf = io.BytesIO()
+    im.save(buf, "PNG")
+    return buf.getvalue()
+
+
+# page number -> labels the page must have, and labels it must not have
+VISUAL_PAGES = {
+    1: ("cover", {"cover_title", "image_led"}, set()),
+    2: ("body", set(), {"image_led", "section_opener"}),
+    3: ("opener", {"section_opener", "large_type"}, {"cover_title"}),
+    4: ("full_bleed", {"full_bleed", "image_led"}, set()),
+    5: ("split", {"split_image_text"}, {"full_bleed"}),
+    6: ("kpi", {"kpi_dashboard"}, set()),
+    7: ("columns", {"multi_column"}, {"image_led"}),
+    8: ("band", {"accent_band"}, set()),
+    9: ("quote", {"pull_quote"}, set()),
+    10: ("financial", {"financial_table"}, {"kpi_dashboard"}),
+    11: ("whitespace", {"open_whitespace"}, set()),
+    12: ("scan", set(), {"image_led", "section_opener", "split_image_text"}),
+    13: ("runout", set(), {"open_whitespace"}),
+    14: ("infographic", {"infographic"}, set()),
+    15: ("blank", set(), set()),
+    16: ("backdrop", set(), {"full_bleed", "image_led", "split_image_text"}),
+}
+
+
+def _visual_page(doc, kind: str) -> None:
+    import pymupdf
+    W, H = A4
+    page = doc.new_page(width=W, height=H)
+    box = lambda x0, y0, x1, y1, text, size=10, color=(0, 0, 0), name="helv": page.insert_textbox(   # noqa: E731
+        pymupdf.Rect(x0, y0, x1, max(y1, y0 + size * 1.7)), text, fontsize=size, fontname=name, color=color)
+    if kind == "cover":
+        page.insert_image(pymupdf.Rect(0, 0, W, H * 0.7), stream=_picture(), keep_proportion=False)
+        box(50, H * 0.74, W - 50, H * 0.74 + 60, "Harbour Review", 40, name="hebo")
+        box(50, H * 0.84, W - 50, H * 0.9, "Annual report", 14)
+    elif kind == "body":
+        box(70, 70, W - 70, H - 70, LOREM * 11)
+    elif kind == "opener":
+        box(70, 300, W - 70, 390, "03", 72, (0.1, 0.3, 0.6), "hebo")
+        box(70, 400, W - 70, 460, "Operations", 40, name="hebo")
+        box(70, 470, W - 70, 520, "How the network ran this year.", 12)
+    elif kind == "full_bleed":
+        page.insert_image(pymupdf.Rect(0, 0, W, H), stream=_picture(), keep_proportion=False)
+        box(60, H - 120, 300, H - 80, "Coastline", 22, (1, 1, 1), "hebo")
+    elif kind == "split":
+        page.insert_image(pymupdf.Rect(0, 0, W * 0.48, H), stream=_picture(), keep_proportion=False)
+        box(W * 0.54, 90, W - 50, H - 90, LOREM * 5)
+    elif kind == "kpi":
+        box(70, 60, W - 70, 100, "Year at a glance", 18, name="hebo")
+        for i, (num, cap) in enumerate((("€12.4m", "Revenue"), ("96%", "Retention"), ("1,250", "Sites"), ("3.7m", "Trips"))):
+            x, y = 70 + (i % 2) * 230, 160 + (i // 2) * 200
+            box(x, y, x + 210, y + 60, num, 38, (0.1, 0.3, 0.6), "hebo")
+            box(x, y + 64, x + 210, y + 90, cap, 11)
+    elif kind == "columns":
+        for i in range(3):
+            x = 50 + i * 170
+            box(x, 80, x + 155, H - 80, LOREM * 5, 9.5)
+    elif kind == "band":
+        page.draw_rect(pymupdf.Rect(0, 0, W, 90), color=None, fill=(0.75, 0.2, 0.15))
+        box(70, 130, W - 70, H - 90, LOREM * 8)
+    elif kind == "quote":
+        box(70, 70, W - 70, 330, LOREM * 3)
+        box(90, 350, W - 90, 470, "\"We moved the depot once, and every route that followed became shorter.\"", 20)
+        box(70, 490, W - 70, H - 70, LOREM * 3)
+    elif kind == "financial":
+        box(70, 70, W - 70, 110, "Consolidated results", 20, name="hebo")
+        top = 130
+        for r in range(16):
+            y = top + r * 26
+            page.draw_line((70, y), (W - 70, y), color=(0.5, 0.5, 0.5), width=0.5)
+            page.insert_text((76, y + 17), f"Line {r + 1}", fontsize=10, fontname="helv")
+            for c in range(3):
+                page.insert_text((250 + c * 90, y + 17), f"{(r + 3) * 1370 + c * 41:,}", fontsize=10, fontname="helv")
+        page.draw_line((70, top + 16 * 26), (W - 70, top + 16 * 26), color=(0.5, 0.5, 0.5), width=0.5)
+        for x in (70, 240, 330, 420, W - 70):
+            page.draw_line((x, top), (x, top + 16 * 26), color=(0.5, 0.5, 0.5), width=0.5)
+    elif kind == "whitespace":
+        box(W * 0.45, H * 0.62, W - 60, H * 0.9, LOREM * 2, 11)
+    elif kind == "scan":
+        box(70, 60, W - 70, 110, "Auditor's letter", 28, name="hebo")
+        page.insert_image(pymupdf.Rect(60, 130, W - 60, H - 60), stream=_scan(), keep_proportion=False)
+    elif kind == "runout":
+        box(70, 70, W - 70, 240, LOREM * 3)
+        box(70, H - 50, W - 70, H - 30, "Harbour Review", 8)
+    elif kind == "infographic":
+        box(70, 50, W - 70, 90, "Where the network grew", 18, name="hebo")
+        palette = ((0.1, 0.4, 0.7), (0.85, 0.45, 0.1), (0.2, 0.6, 0.35), (0.7, 0.2, 0.4))
+        for i in range(8):
+            x, y = 80 + (i % 4) * 118, 150 + (i // 4) * 280
+            page.draw_circle((x + 40, y + 60), 42, color=None, fill=palette[i % 4])
+            page.draw_rect(pymupdf.Rect(x, y + 120, x + 90, y + 120 + 18 * (i + 2)), color=None, fill=palette[(i + 1) % 4])
+            box(x - 6, y + 104, x + 100, y + 120, f"Hub {i + 1}", 9)
+    elif kind == "backdrop":
+        page.insert_image(pymupdf.Rect(0, 0, W, H), stream=_png(60, 80, (190, 210, 235)), keep_proportion=False)
+        box(70, 70, W - 70, H - 70, LOREM * 11)
+    elif kind != "blank":
+        raise ValueError(kind)
+
+
+def _repeating(path: str, pages: int) -> None:
+    """A long, uniform document: the largest file in the corpus and the least varied."""
+    import pymupdf
+    doc = pymupdf.open()
+    for n in range(pages):
+        page = doc.new_page(width=A4[0], height=A4[1])
+        page.insert_textbox(pymupdf.Rect(70, 70, A4[0] - 70, A4[1] - 70), LOREM * 11, fontsize=10, fontname="helv")
+        page.insert_text((70, A4[1] - 40), f"Register {n + 1}", fontsize=8, fontname="helv")
+    doc.save(path)
+
+
+def build_visual(out: str) -> dict:
+    """Pages of known composition, for the visual atlas. Returns {file: expected labels per page}."""
+    import pymupdf
+    os.makedirs(out, exist_ok=True)
+    doc = pymupdf.open()
+    for kind, _, _ in VISUAL_PAGES.values():
+        _visual_page(doc, kind)
+    doc.save(os.path.join(out, "known_compositions.pdf"))
+    extract = pymupdf.open()
+    extract.insert_pdf(doc, from_page=0, to_page=5)
+    extract.save(os.path.join(out, "known_compositions_extract.pdf"))
+    _repeating(os.path.join(out, "repeating_register.pdf"), 60)
+    _builder_pdf(os.path.join(out, "arabic_report.pdf"), "arabic")
+    _builder_pdf(os.path.join(out, "bilingual.pdf"), "bilingual")
+    _spread_sheets(os.path.join(out, "spread_sheets.pdf"))
+    return {"known_compositions.pdf": VISUAL_PAGES}
+
+
 def build(out: str) -> dict:
     """Write the corpus into ``out``; return ground truth keyed by file name."""
     os.makedirs(out, exist_ok=True)

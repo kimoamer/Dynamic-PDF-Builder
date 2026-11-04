@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visual Reference Atlas</title>
+<style>
+:root{--bg:#f4f4f2;--panel:#fff;--ink:#1c1e21;--muted:#62676e;--line:#d8d9d6;--accent:#1f5fbf;--ok:#1d7f4c;--no:#b3322a;--wait:#a86a00}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15171a;--panel:#1e2125;--ink:#e8e9ea;--muted:#a1a7ae;--line:#34383e;--accent:#7fb0ff;--ok:#5cc08b;--no:#ee8a82;--wait:#e6b35c}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,"Segoe UI",sans-serif}
+button,select,input,textarea{font:inherit;color:inherit}
+button{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+select,input[type=text],input[type=number],textarea{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 7px;width:100%}
+.app{display:grid;grid-template-columns:260px minmax(0,1fr);min-height:100vh}
+aside{background:var(--panel);border-right:1px solid var(--line);padding:14px;position:sticky;top:0;height:100vh;overflow:auto}
+aside h1{font-size:16px;margin:0 0 2px}
+aside p{margin:0 0 12px;color:var(--muted);font-size:12px}
+fieldset{border:0;border-top:1px solid var(--line);margin:10px 0 0;padding:10px 0 0}
+legend{font-size:12px;color:var(--muted);padding:0;float:left;width:100%;margin-bottom:5px}
+fieldset>*:not(legend){clear:both}
+.range{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.labels{display:flex;flex-direction:column;gap:2px;max-height:300px;overflow:auto}
+.labels label{display:flex;gap:6px;align-items:baseline;font-size:13px}
+.labels span{margin-left:auto;color:var(--muted);font-size:12px}
+main{padding:12px 16px 40px;min-width:0}
+.bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.bar .count{color:var(--muted);margin-left:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden;cursor:pointer;padding:0;text-align:left;display:flex;flex-direction:column;content-visibility:auto;contain-intrinsic-size:170px 290px}
+.card.wide{grid-column:span 2}
+.card .pic{position:relative;background:var(--bg)}
+.card img{display:block;width:100%;height:auto}
+.card .cap{padding:5px 7px;font-size:12px;line-height:1.3}
+.card .cap b{font-weight:600}
+.card .cap small{display:block;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.flag{position:absolute;top:5px;left:5px;display:flex;gap:3px}
+.flag i{font-style:normal;font-size:11px;padding:1px 5px;border-radius:4px;background:var(--panel);border:1px solid var(--line)}
+.flag .accept{color:var(--ok)}.flag .reject{color:var(--no)}.flag .needs_review{color:var(--wait)}
+svg.ov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.lb{position:fixed;inset:0;background:var(--bg);display:none;grid-template-columns:minmax(0,1fr) 340px;z-index:5}
+.lb.open{display:grid}
+.stage{overflow:auto;padding:12px;display:flex;flex-direction:column;min-width:0}
+.tools{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px;position:sticky;left:0;top:0}
+.view{display:flex;justify-content:center;gap:0;margin:auto;width:var(--zoom,100%);max-width:none}
+.view.fit{max-height:calc(100vh - 70px)}
+.leaf{position:relative;min-width:0;flex:1 1 0}
+.leaf img{display:block;width:100%;height:auto}
+.view.fit .leaf img{max-height:calc(100vh - 70px);width:auto;max-width:100%;margin:0 auto}
+.fold{position:absolute;top:0;bottom:0;left:50%;border-left:1px dashed var(--accent);opacity:.7}
+.side{background:var(--panel);border-left:1px solid var(--line);padding:14px;overflow:auto}
+.side h2{font-size:15px;margin:0}
+.side h3{font-size:13px;margin:16px 0 6px}
+.side .sub{color:var(--muted);font-size:12px;margin:0 0 10px;overflow-wrap:anywhere}
+.choice{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:6px}
+.rate{display:grid;grid-template-columns:96px repeat(5,1fr);gap:3px;align-items:center;margin-bottom:4px;font-size:13px}
+.rate button{padding:3px 0}
+.note{font-size:12px;color:var(--muted)}
+.facts{font-size:12px}
+.facts li{margin-bottom:3px}
+.facts ul{padding-left:16px;margin:4px 0}
+.status{font-size:12px;color:var(--muted);margin-top:6px}
+.legend{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;margin-right:3px}
+.legend[hidden]{display:none}
+@media (max-width:820px){.app{grid-template-columns:1fr}aside{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}.lb{grid-template-columns:1fr;grid-template-rows:60vh 1fr}.side{border-left:0;border-top:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside>
+  <h1>Visual Reference Atlas</h1>
+  <p id="summary"></p>
+  <fieldset><legend>Your name (required to record a decision)</legend><input id="reviewer" type="text" autocomplete="off"></fieldset>
+  <fieldset><legend>Document</legend><select id="doc"></select></fieldset>
+  <fieldset><legend>Page range</legend><div class="range"><input id="from" type="number" min="1" placeholder="from" aria-label="From page"><input id="to" type="number" min="1" placeholder="to" aria-label="To page"></div></fieldset>
+  <fieldset><legend>Layout type</legend><select id="type"></select></fieldset>
+  <fieldset><legend>Visual category</legend><div class="labels" id="labels"></div></fieldset>
+  <fieldset><legend>Decisions</legend>
+    <div class="status" id="saved"></div>
+    <div class="bar" style="margin-top:6px"><button id="export">Export JSON</button><button id="importBtn">Import</button><input id="import" type="file" accept="application/json" hidden></div>
+  </fieldset>
+</aside>
+<main>
+  <div class="bar" id="views"></div>
+  <div class="bar">
+    <button id="overlays" aria-pressed="false">Show measurements</button>
+    <label>Sort <select id="sort" style="width:auto"><option value="doc">Document order</option><option value="dist">Most distinct first</option></select></label>
+    <span class="count" id="count"></span>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div id="more" style="height:40px"></div>
+</main>
+</div>
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Page view">
+  <div class="stage" id="stage">
+    <div class="tools">
+      <button id="close">Close</button><button id="prev">Previous</button><button id="next">Next</button>
+      <button id="spread" aria-pressed="false">Spread</button>
+      <button id="lbOverlays" aria-pressed="false">Measurements</button>
+      <button data-zoom="fit" aria-pressed="true">Fit</button><button data-zoom="100%" aria-pressed="false">Width</button><button data-zoom="200%" aria-pressed="false">200%</button>
+      <div class="legend" id="legend" hidden></div>
+    </div>
+    <div class="view fit" id="view"></div>
+  </div>
+  <div class="side">
+    <h2 id="title"></h2><p class="sub" id="sub"></p>
+    <h3>Your review</h3>
+    <div class="choice" id="decide">
+      <button data-d="accept" aria-pressed="false">Accept</button><button data-d="reject" aria-pressed="false">Reject</button><button data-d="needs_review" aria-pressed="false">Needs review</button>
+    </div>
+    <button id="pin" aria-pressed="false" style="width:100%">Pin this page</button>
+    <div id="rates" style="margin-top:10px"></div>
+    <label class="note">What makes this composition valuable?
+      <textarea id="notes" rows="4"></textarea></label>
+    <div class="status" id="msg" role="status"></div>
+    <h3>Measured by the tool (not a judgement)</h3>
+    <div class="facts" id="facts"></div>
+  </div>
+</div>
+<script src="atlas-data.js"></script>
+<script src="curation-snapshot.js"></script>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const STORE = "atlas-curation-v1", BATCH = 96;
+const RATINGS = [["visual_appeal","Visual appeal"],["clarity","Clarity"],["applicability","Applicability"]];
+const COLORS = {text:"#2f6fdb",heading:"#7a3fd1",table:"#1f9d55",image:"#e07b00",vector:"#c9a400",rule:"#d62828",column:"#00a6b8"};
+const docs = new Map(ATLAS.documents.map(d => [d.sha256, d]));
+const pages = ATLAS.pages;
+const byKey = new Map(pages.map(p => [key(p), p]));
+window.ATLAS_OVERLAYS = window.ATLAS_OVERLAYS || {};
+function key(p){ return p.sha256 + ":" + p.page; }
+function short(p){ return docs.get(p.sha256).file.split("/").pop().replace(/\.pdf$/i, ""); }
+
+// human decisions: kept apart from the measurements above
+let cur = ATLAS_CURATION, server = false, timer = null;
+const decisions = new Map(cur.decisions.map(d => [d.sha256 + ":" + d.page, d]));
+function local(){ try { return JSON.parse(localStorage.getItem(STORE) || "null"); } catch { return null; } }
+function mergeNewer(list){
+  for (const d of list || []) {
+    const k = d.sha256 + ":" + d.page, old = decisions.get(k);
+    if (!old || String(d.updated_at || "") > String(old.updated_at || "")) decisions.set(k, d);
+  }
+}
+function payload(){ return {...cur, decisions: [...decisions.values()]}; }
+function persist(){
+  try { localStorage.setItem(STORE, JSON.stringify(payload())); } catch {}
+  clearTimeout(timer);
+  timer = setTimeout(async () => {
+    if (!server) { showSaved(); return; }
+    try {
+      const r = await fetch("api/curation", {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload())});
+      $("saved").textContent = r.ok ? "Saved to human-curation.json." : "Not saved: " + (await r.json()).error;
+    } catch { $("saved").textContent = "Not saved: the local server stopped. Export to keep your work."; }
+  }, 300);
+}
+function showSaved(){ if (!server) $("saved").textContent = decisions.size + " decision(s) in this browser. Export them, or use atlas-serve to save straight to human-curation.json."; }
+function decision(k){ return decisions.get(k); }
+function update(k, patch){
+  const who = $("reviewer").value.trim();
+  if (!who) { $("msg").textContent = "Enter your name first."; $("reviewer").focus(); return false; }
+  try { localStorage.setItem(STORE + "-reviewer", who); } catch {}
+  const p = byKey.get(k), d = {sha256:p.sha256, page:p.page, file:docs.get(p.sha256).file, decision:null, pinned:false, ratings:{}, notes:"", ...decision(k), ...patch, reviewer:who, updated_at:new Date().toISOString()};
+  const blank = !d.decision && !d.pinned && !d.notes && !Object.values(d.ratings).some(v => v);
+  if (blank) decisions.delete(k); else decisions.set(k, d);
+  $("msg").textContent = ""; persist(); renderSide(); refreshCard(k); renderViews();
+  return true;
+}
+
+// filters
+const state = {view:"all", doc:"", from:null, to:null, type:"", labels:new Set(), sort:"doc", overlays:false};
+const VIEWS = [["all","All pages",()=>true],["short","Shortlist",p=>p.shortlist],["kept","Accepted and pinned",p=>{const d=decision(key(p));return d&&(d.pinned||d.decision==="accept")}],["review","Needs review",p=>decision(key(p))?.decision==="needs_review"],["rejected","Rejected",p=>decision(key(p))?.decision==="reject"],["open","Shortlist, undecided",p=>p.shortlist&&!decision(key(p))?.decision]];
+function matches(p){
+  return (!state.doc || p.sha256 === state.doc) && (!state.from || p.page >= state.from) && (!state.to || p.page <= state.to)
+    && (!state.type || p.layout_type === state.type) && [...state.labels].every(l => p.labels.some(x => x.label === l));
+}
+let list = [], shown = 0;
+function apply(){
+  const test = VIEWS.find(v => v[0] === state.view)[2];
+  list = pages.filter(p => test(p) && matches(p));
+  if (state.sort === "dist") list.sort((a,b) => b.distinctiveness.score - a.distinctiveness.score || key(a).localeCompare(key(b)));
+  $("grid").textContent = ""; shown = 0; more();
+  $("count").textContent = list.length + " of " + pages.length + " pages";
+}
+function cardHTML(p){
+  const d = decision(key(p)), flags = [];
+  if (p.shortlist) flags.push("<i>candidate</i>");
+  if (d?.decision) flags.push(`<i class="${d.decision}">${d.decision.replace("_"," ")}</i>`);
+  if (d?.pinned) flags.push("<i>pinned</i>");
+  const tags = p.labels.slice(0,3).map(x => ATLAS.labels[x.label]).join(" · ") || p.layout_type.replace(/_/g," ");
+  return `<div class="pic"><img loading="lazy" decoding="async" src="${esc(p.thumb)}" alt="${esc(short(p))} page ${p.page}" width="${Math.round(p.width_pt)}" height="${Math.round(p.height_pt)}" style="height:auto"><div class="flag">${flags.join("")}</div></div><div class="cap"><b>${esc(short(p))}</b> p ${p.page}<small>${esc(tags)}</small></div>`;
+}
+function more(){
+  const grid = $("grid"), frag = document.createDocumentFragment();
+  for (const p of list.slice(shown, shown + BATCH)) {
+    const b = document.createElement("button");
+    b.className = "card" + (p.sheet_spread ? " wide" : ""); b.dataset.key = key(p); b.innerHTML = cardHTML(p);
+    b.onclick = () => open(key(p));
+    frag.append(b);
+    if (state.overlays) overlayInto(b.querySelector(".pic"), p);
+  }
+  grid.append(frag); shown = Math.min(shown + BATCH, list.length);
+}
+new IntersectionObserver(es => { if (es.some(e => e.isIntersecting) && shown < list.length) more(); }, {rootMargin:"900px"}).observe($("more"));
+function refreshCard(k){
+  const b = document.querySelector(`.card[data-key="${k}"]`), p = byKey.get(k);
+  if (b) { b.innerHTML = cardHTML(p); if (state.overlays) overlayInto(b.querySelector(".pic"), p); }
+}
+
+// measurement overlays load per document, only when asked for
+function overlays(sha, done){
+  const id = sha.slice(0,12);
+  if (ATLAS_OVERLAYS[id]) return done(ATLAS_OVERLAYS[id]);
+  const s = document.createElement("script");
+  s.src = "data/overlay-" + id + ".js"; s.onload = () => done(ATLAS_OVERLAYS[id] || {}); s.onerror = () => done({});
+  document.head.append(s);
+}
+function overlayInto(box, p){
+  overlays(p.sha256, data => {
+    box.querySelector("svg.ov")?.remove();
+    const o = data[p.page]; if (!o) return;
+    let s = "";
+    for (const [k, rects] of Object.entries(o)) for (const r of rects)
+      s += `<rect x="${r[0]}" y="${r[1]}" width="${Math.max(r[2]-r[0],.001)}" height="${Math.max(r[3]-r[1],.001)}" fill="${k==="column"?COLORS[k]+"22":"none"}" stroke="${COLORS[k]}" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`;
+    box.insertAdjacentHTML("beforeend", `<svg class="ov" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true">${s}</svg>`);
+  });
+}
+
+// page view
+let at = null, spread = false, lbOver = false;
+function open(k){ at = k; $("lb").classList.add("open"); renderStage(); renderSide(); $("close").focus(); }
+function closeLb(){ $("lb").classList.remove("open"); document.querySelector(`.card[data-key="${at}"]`)?.focus(); at = null; }
+function step(n){
+  const i = list.findIndex(p => key(p) === at);
+  let j = i + n;
+  if (spread) { const shownNow = new Set(byKey.get(at).spread.order); while (list[j] && shownNow.has(list[j].page) && list[j].sha256 === byKey.get(at).sha256) j += n; }
+  if (list[j]) { at = key(list[j]); renderStage(); renderSide(); }
+}
+function renderStage(){
+  const p = byKey.get(at), view = $("view"), order = spread ? p.spread.order : [p.page];
+  view.textContent = "";
+  for (const n of order) {
+    const q = byKey.get(p.sha256 + ":" + n); if (!q) continue;
+    const leaf = document.createElement("div"); leaf.className = "leaf";
+    leaf.innerHTML = `<img src="${esc(q.image)}" alt="${esc(short(q))} page ${q.page}">` + (spread && p.spread.kind === "sheet" ? '<div class="fold"></div>' : "");
+    view.append(leaf);
+    if (lbOver) overlayInto(leaf, q);
+  }
+  $("spread").setAttribute("aria-pressed", spread); $("lbOverlays").setAttribute("aria-pressed", lbOver);
+  $("legend").hidden = !lbOver;
+}
+function renderSide(){
+  if (!at) return;
+  const p = byKey.get(at), d = decision(at) || {}, doc = docs.get(p.sha256), r = p.raster, g = p.geometry;
+  $("title").textContent = short(p) + " · page " + p.page;
+  const sp = p.spread;
+  $("sub").textContent = doc.file + (sp.kind === "sheet" ? " · two-page sheet, reads " + sp.reads.replace(/_/g," ") : "");
+  for (const b of $("decide").children) b.setAttribute("aria-pressed", d.decision === b.dataset.d);
+  $("pin").setAttribute("aria-pressed", !!d.pinned); $("pin").textContent = d.pinned ? "Pinned" : "Pin this page";
+  $("notes").value = d.notes || "";
+  $("rates").innerHTML = RATINGS.map(([k,t]) => `<div class="rate"><span>${t}</span>${[1,2,3,4,5].map(n => `<button data-r="${k}" data-n="${n}" aria-pressed="${(d.ratings||{})[k]===n}" aria-label="${t} ${n}">${n}</button>`).join("")}</div>`).join("");
+  const labels = p.labels.map(x => `<li><b>${esc(ATLAS.labels[x.label])}</b> (${x.confidence}): ${esc(x.evidence)}</li>`).join("") || "<li>No composition label</li>";
+  const why = p.shortlist ? `<p>Candidate because:</p><ul>${p.shortlist.reasons.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : "<p>Not in the shortlist. You can still pin it.</p>";
+  $("facts").innerHTML = `${why}<p>Inferred categories:</p><ul>${labels}</ul><ul><li>Layout type: ${esc(p.layout_type.replace(/_/g," "))}</li><li>Distinctiveness rank: ${p.distinctiveness.score} (difference from similar pages, not quality)</li><li>Layout group ${esc(p.cluster)}: ${p.cluster_size.document} page(s) here, ${p.cluster_size.corpus} in the corpus</li><li>Ink ${Math.round(r.ink_share*100)}%, largest empty area ${Math.round(r.largest_empty.share*100)}%, ${r.palette_colours} main colours</li>${g ? `<li>${g.chars} characters, ${g.columns} column(s), script ${esc(g.script)}</li>` : "<li>Geometry not measured for this page</li>"}</ul>`;
+}
+$("close").onclick = closeLb; $("prev").onclick = () => step(-1); $("next").onclick = () => step(1);
+$("spread").onclick = () => { spread = !spread; renderStage(); };
+$("lbOverlays").onclick = () => { lbOver = !lbOver; renderStage(); };
+document.querySelectorAll("[data-zoom]").forEach(b => b.onclick = () => {
+  const z = b.dataset.zoom, v = $("view");
+  v.classList.toggle("fit", z === "fit"); v.style.setProperty("--zoom", z === "fit" ? "100%" : z);
+  document.querySelectorAll("[data-zoom]").forEach(x => x.setAttribute("aria-pressed", x === b));
+});
+$("decide").onclick = e => { const v = e.target.dataset.d; if (v) update(at, {decision: (decision(at)||{}).decision === v ? null : v}); };
+$("pin").onclick = () => update(at, {pinned: !(decision(at)||{}).pinned});
+$("rates").onclick = e => { const k = e.target.dataset.r; if (!k) return; const n = +e.target.dataset.n, ratings = {...(decision(at)||{}).ratings}; ratings[k] = ratings[k] === n ? null : n; update(at, {ratings}); };
+$("notes").onchange = e => update(at, {notes: e.target.value});
+document.addEventListener("keydown", e => {
+  if (!at || /TEXTAREA|INPUT/.test(e.target.tagName)) return;
+  const act = {ArrowLeft:()=>step(-1),ArrowRight:()=>step(1),Escape:closeLb,a:()=>$("decide").children[0].click(),r:()=>$("decide").children[1].click(),n:()=>$("decide").children[2].click(),p:()=>$("pin").click(),s:()=>$("spread").click(),o:()=>$("lbOverlays").click()}[e.key];
+  if (act) { e.preventDefault(); act(); }
+});
+
+// controls
+function renderViews(){
+  $("views").innerHTML = VIEWS.map(([id,t,test]) => `<button data-v="${id}" aria-pressed="${state.view===id}">${t} (${pages.filter(test).length})</button>`).join("");
+}
+$("views").onclick = e => { const v = e.target.dataset.v; if (v) { state.view = v; renderViews(); apply(); } };
+function controls(){
+  $("doc").innerHTML = `<option value="">All documents</option>` + ATLAS.documents.map(d => `<option value="${d.sha256}">${esc(d.file.split("/").pop())} (${d.pages})</option>`).join("");
+  $("type").innerHTML = `<option value="">All layout types</option>` + ATLAS.layout_types.map(t => `<option value="${t}">${t.replace(/_/g," ")}</option>`).join("");
+  const n = {}; for (const p of pages) for (const x of p.labels) n[x.label] = (n[x.label]||0) + 1;
+  $("labels").innerHTML = Object.entries(ATLAS.labels).map(([k,t]) => `<label><input type="checkbox" value="${k}">${esc(t)}<span>${n[k]||0}</span></label>`).join("");
+  $("legend").innerHTML = Object.entries(COLORS).map(([k,c]) => `<span><i style="background:${c}"></i>${k}</span>`).join("");
+  const bad = ATLAS.gates.filter(g => !g.passed).length;
+  $("summary").textContent = `${pages.length} pages, ${ATLAS.documents.length} documents, ${ATLAS.errors.length} errors. ${bad ? bad + " quality gate(s) failed." : "All quality gates passed."}`;
+  try { $("reviewer").value = localStorage.getItem(STORE + "-reviewer") || ""; } catch {}
+}
+for (const [id,k,f] of [["doc","doc",v=>v],["type","type",v=>v],["sort","sort",v=>v],["from","from",v=>+v||null],["to","to",v=>+v||null]])
+  $(id).onchange = e => { state[k] = f(e.target.value); apply(); };
+$("labels").onchange = e => { e.target.checked ? state.labels.add(e.target.value) : state.labels.delete(e.target.value); apply(); };
+$("overlays").onclick = () => {
+  state.overlays = !state.overlays; $("overlays").setAttribute("aria-pressed", state.overlays);
+  for (const c of document.querySelectorAll(".card")) {
+    const pic = c.querySelector(".pic");
+    if (state.overlays) overlayInto(pic, byKey.get(c.dataset.key)); else pic.querySelector("svg.ov")?.remove();
+  }
+};
+$("export").onclick = () => {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(payload(), null, 1)], {type:"application/json"}));
+  a.download = "human-curation.json"; a.click(); URL.revokeObjectURL(a.href);
+};
+$("importBtn").onclick = () => $("import").click();
+$("import").onchange = async e => {
+  try {
+    const data = JSON.parse(await e.target.files[0].text());
+    if (data.format !== cur.format) throw 0;
+    mergeNewer(data.decisions); persist(); renderViews(); apply();
+  } catch { $("saved").textContent = "That is not a curation file."; }
+};
+(async () => {
+  controls();
+  try {
+    const r = await fetch("api/curation", {cache:"no-store"});
+    if (r.ok) { server = true; const d = await r.json(); decisions.clear(); for (const x of d.decisions) decisions.set(x.sha256 + ":" + x.page, x); cur = d; $("saved").textContent = "Saving to human-curation.json."; }
+  } catch {}
+  mergeNewer(local()?.decisions);
+  showSaved(); renderViews(); apply();
+})();
+</script>
+</body>
+</html>

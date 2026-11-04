@@ -130,3 +130,47 @@ python -m tools.reference_analyzer review --patterns RESULTS/design-patterns.jso
 
 The first checks the file against itself and `REAL_CORPUS_REVIEW.md`, the second also against a run. Only ids
 accepted here may be cited by `EVIDENCE_RECIPES` in `dynamic_pdf/design/recipes.py`; a test enforces it.
+
+## Visual atlas
+
+`analyze` measures geometry and previews a few pages per document. The atlas shows
+every page, finds the visually distinct ones, and records what a human thinks of them.
+
+```bash
+python -m tools.reference_analyzer atlas --input REFS --output OUT
+python -m tools.reference_analyzer atlas-serve --output OUT      # http://127.0.0.1:8765/
+python -m tools.reference_analyzer curation OUT/human-curation.json
+```
+
+`OUT` must be outside any git repository: the command refuses a folder inside one,
+because the atlas holds images of the references.
+
+| File | Holds | Written by |
+|---|---|---|
+| `visual-atlas/index.html` | Gallery of all pages; also opens straight from disk | tool |
+| `visual-page-index.json` | Page descriptors and provenance, no extracted text | tool |
+| `visual-shortlist.json` | Diverse candidates, each with its reasons | tool |
+| `human-curation.json` | Decisions, pins, ratings and notes | reviewers only |
+
+**Labels describe composition.** Each carries its measurement and a confidence, and
+some are weak by design (`callout`, `data_story`, a `pull_quote` without quotation
+marks). Labels help you browse; they are not findings.
+
+**Distinctiveness is not quality.** It ranks how far a page sits from its nearest
+neighbours, in the corpus and in its document. A strange page ranks high.
+
+**Reviewing.** Run `atlas-serve` so decisions save straight to `human-curation.json`.
+Enter your name, then open any page: `a` accept, `r` reject, `n` needs review, `p` pin,
+`s` spread, `o` measurements, arrow keys to move. Opened from disk, decisions stay in
+that browser until you use Export; copy the exported file over `human-curation.json`.
+
+Decisions are keyed by document SHA-256 and page number. Accepted and pinned pages
+stay in the shortlist on every rerun, rejected pages are not proposed again but stay
+in the atlas, and decisions for pages that left the corpus are reported and kept.
+
+**Rerunning is cheap.** Pixels and measurements are cached per document SHA-256, and
+labels, relations and the shortlist are recomputed from the cache. Bump `VERSION` in
+`atlas.py` only when a measurement changes.
+
+[`VISUAL_ATLAS_REVIEW.md`](VISUAL_ATLAS_REVIEW.md) records what the atlas found in the real corpus, which labels
+are weak, and what remains unverified.
