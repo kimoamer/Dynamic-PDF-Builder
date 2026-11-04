@@ -16,7 +16,8 @@ import re
 from typing import Dict, List, Optional, Tuple
 
 REVIEWED_DIR = "05-Reviewed"
-LICENSE_KEYS = ("license", "licence", "license_status", "rights_status", "reuse", "reuse_status", "rights", "usage")
+LICENSE_KEYS = ("license", "licence", "license_status")
+RIGHTS_KEYS = ("rights_status", "reuse", "reuse_status", "rights", "usage")
 PROVENANCE_KEYS = ("source", "provenance", "url", "publisher", "origin", "downloaded_from", "obtained")
 FILE_KEYS = ("file", "filename", "file_name", "path", "pdf", "document", "original_relative_path")
 PAGE_COUNT_KEYS = ("pages", "pdf_pages", "page_count")
@@ -105,6 +106,10 @@ def _names_pdf(record: dict, rel: str, base: str) -> bool:
         if v and (v == rel if "/" in v else v == base):
             return True
     return False
+
+
+def _confirmed(match: Optional[dict], key: str) -> bool:
+    return str((match or {}).get(key, "")).strip().lower() in ("true", "yes", "1")
 
 
 def match_reviewed(records: List[dict], rel: str, sha: str) -> Tuple[Optional[dict], List[dict]]:
@@ -217,20 +222,27 @@ def catalog_record(path: str, root: str, reviewed: List[dict], index: int) -> Tu
         if declared is not None and rec["page_count"] is not None and int(declared) != rec["page_count"]:
             warns.append({"code": "reviewed_page_count_mismatch", "severity": "warning",
                           "message": f"reviewed metadata says {declared} pages, the PDF has {rec['page_count']}"})
-    lic, prov = _first(match, LICENSE_KEYS), _first(match, PROVENANCE_KEYS)
-    rec["license"] = {"status": lic or "unknown",
+    lic, prov, rights = _first(match, LICENSE_KEYS), _first(match, PROVENANCE_KEYS), _first(match, RIGHTS_KEYS)
+    # three separate facts: what a reviewer noted about use, the legal licence, and where the file came from.
+    # A reviewer's note never becomes a licence, and nothing is "verified" unless a reviewer said so explicitly.
+    rec["rights_status"] = {"status": rights or "unknown",
+                            "source": _source_of(reviewed, match, RIGHTS_KEYS) if rights else "not provided",
+                            "evidence": _first(match, ("rights_evidence",)),
+                            "note": "a reviewer's record of permitted use, not a legal determination"}
+    rec["license"] = {"status": lic or "unknown", "verified": bool(lic) and _confirmed(match, "license_verified"),
                       "source": _source_of(reviewed, match, LICENSE_KEYS) if lic else "not provided",
-                      "evidence": _first(match, ("rights_evidence",)),
                       "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, "
                                       "artwork or layouts into distributed assets"}
     rec["provenance"] = {"source": prov or "local reference folder (no reviewed provenance)",
+                         "verified": bool(prov) and _confirmed(match, "provenance_verified"),
                          "recorded_from": _source_of(reviewed, match, PROVENANCE_KEYS) if prov else "file system"}
     if not match:
         warns.append({"code": "reviewed_metadata_missing", "severity": "info",
                       "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"})
     if not lic:
         warns.append({"code": "license_unknown", "severity": "warning",
-                      "message": "licence/reuse status unknown — treat as reference only"})
+                      "message": "no licence on record — treat as reference only"
+                                 + ("; rights_status is a reviewer's note, not a licence" if rights else "")})
     return rec, warns
 
 

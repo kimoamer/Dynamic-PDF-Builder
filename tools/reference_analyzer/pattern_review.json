@@ -1,0 +1,1173 @@
+{
+ "format": "dynamic-pdf-builder/pattern-review",
+ "version": 1,
+ "note": "Human decisions from REAL_CORPUS_REVIEW.md. A decision records where a pattern was seen and what it may be used for; it is never a claim that the pattern is good. Support counts documents and is not a reason to apply a pattern.",
+ "documents": {
+  "AR-01": {
+   "doc_id": "ref-af94892827c8",
+   "sha256": "af94892827c89513753387aaa7a87cf31f608da3df8eab50cc0d06dba1eb2184"
+  },
+  "AR-02": {
+   "doc_id": "ref-cf936a817893",
+   "sha256": "cf936a8178935930b557072c8328c1dc3f87e3c8ea5bf58d1ef9b43fb8d894a7"
+  },
+  "AR-03": {
+   "doc_id": "ref-4bbfe8f46cb3",
+   "sha256": "4bbfe8f46cb35fad7bcdbf47d9a8e5086c058d13e4b14536f68488b4b1ec9461"
+  },
+  "BI-01": {
+   "doc_id": "ref-7f52f49c5dd6",
+   "sha256": "7f52f49c5dd64feb382f7dfeff9d080d0fe96f46c0ba92629cb74afc1eee3ab2"
+  },
+  "BI-02": {
+   "doc_id": "ref-fb5a68768723",
+   "sha256": "fb5a6876872349eb1e432335fc266737d8891fbb5e598583a093a2828448c31d"
+  },
+  "BI-04": {
+   "doc_id": "ref-9325a2a9012f",
+   "sha256": "9325a2a9012fce65f818e2d57bd76a248a049b9a6be7ef66e029ed97d7211ac3"
+  },
+  "BI-05": {
+   "doc_id": "ref-b7b9ddcb4981",
+   "sha256": "b7b9ddcb4981bdc0dafd3458610a416c096cbcb8aa2628fa447ddb9b4a12b26b"
+  },
+  "BI-06": {
+   "doc_id": "ref-cc8416043d9b",
+   "sha256": "cc8416043d9bdd84fbf0907b0ff6933d5d53d81617d28f8ecca13e5047bd8e8b"
+  },
+  "BI-07": {
+   "doc_id": "ref-582bd105b7d9",
+   "sha256": "582bd105b7d985c3511434e5fd2c985fdb12432df4531f159bc556546c769bd5"
+  },
+  "EN-01": {
+   "doc_id": "ref-db25596332d2",
+   "sha256": "db25596332d261a7e20825f4b53f796980566f76a13e4b349dd5f71d755e4ecf"
+  },
+  "EN-01-1": {
+   "doc_id": "ref-0b2bf0ebc355",
+   "sha256": "0b2bf0ebc355e66841327761403b19e30f6ec232c66e0600a8611c7f790b0dca"
+  },
+  "EN-02": {
+   "doc_id": "ref-82ccd1d81704",
+   "sha256": "82ccd1d81704336f40e5a65913e9a9e1f630d65a400f2fc1bb2724ec798c2a47"
+  },
+  "EN-03": {
+   "doc_id": "ref-0218e5046957",
+   "sha256": "0218e50469574c54e3fbaa28618031c104c35b53b4227215d0a667c5cf357d3a"
+  }
+ },
+ "patterns": [
+  {
+   "pattern_id": "leading-≤1.25×",
+   "decision": "accept",
+   "support": 5,
+   "reason": "1.12-1.23x across five sources; a compact setting used for dense reporting",
+   "evidence": [
+    {
+     "doc": "EN-01-1",
+     "role": "supports",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "doc": "EN-01",
+     "role": "supports",
+     "pages": [
+      1,
+      3,
+      4,
+      5,
+      6
+     ]
+    },
+    {
+     "doc": "EN-02",
+     "role": "supports",
+     "pages": [
+      2,
+      3,
+      4,
+      5,
+      6
+     ]
+    },
+    {
+     "doc": "AR-03",
+     "role": "supports",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "doc": "BI-01",
+     "role": "supports",
+     "pages": [
+      2,
+      3,
+      4,
+      5,
+      6
+     ]
+    }
+   ],
+   "applies_to": {
+    "recipes": [
+     "financial_corporate"
+    ],
+    "scope": "compact financial and corporate text, never below the engine's 1.25 leading floor, so only the top of the band is usable"
+   }
+  },
+  {
+   "pattern_id": "leading-1.26–1.40×",
+   "decision": "accept",
+   "support": 2,
+   "reason": "1.33x and 1.40x, one Arabic and one Latin source",
+   "evidence": [
+    {
+     "doc": "EN-03",
+     "role": "supports",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "doc": "AR-01",
+     "role": "supports",
+     "pages": [
+      6,
+      7,
+      8,
+      9,
+      10
+     ]
+    }
+   ],
+   "applies_to": {
+    "recipes": [
+     "editorial_executive",
+     "arabic_bilingual"
+    ],
+    "scope": "continuous reading text in Latin and Arabic"
+   }
+  },
+  {
+   "pattern_id": "multi-column-body",
+   "decision": "accept",
+   "support": 5,
+   "reason": "two columns measured on at least 30 % of text pages, unclassified pages counted against the share",
+   "evidence": [
+    {
+     "doc": "EN-01-1",
+     "role": "supports",
+     "pages": [
+      2,
+      3,
+      4,
+      5,
+      6
+     ]
+    },
+    {
+     "doc": "EN-01",
+     "role": "supports",
+     "pages": [
+      9,
+      11,
+      14,
+      16,
+      19
+     ]
+    },
+    {
+     "doc": "EN-02",
+     "role": "supports",
+     "pages": [
+      4,
+      8,
+      20,
+      25,
+      26
+     ]
+    },
+    {
+     "doc": "AR-02",
+     "role": "supports",
+     "pages": [
+      4,
+      5,
+      6,
+      7,
+      8
+     ]
+    },
+    {
+     "doc": "AR-03",
+     "role": "supports",
+     "pages": [
+      2,
+      4,
+      5,
+      6,
+      7
+     ]
+    }
+   ],
+   "applies_to": {
+    "recipes": [
+     "editorial_executive"
+    ],
+    "scope": "runs of continuous prose only; no tables, figures or short documents"
+   }
+  },
+  {
+   "pattern_id": "body-size-9.5–10.4 pt",
+   "decision": "accept",
+   "support": 3,
+   "reason": "9.5-10 pt, high confidence on all three",
+   "evidence": [
+    {
+     "doc": "EN-03",
+     "role": "supports",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "doc": "AR-02",
+     "role": "supports",
+     "pages": [
+      2,
+      3,
+      4,
+      5,
+      6
+     ]
+    },
+    {
+     "doc": "BI-01",
+     "role": "supports",
+     "pages": [
+      2,
+      3,
+      4,
+      5,
+      6
+     ]
+    }
+   ],
+   "applies_to": {
+    "recipes": [
+     "financial_corporate",
+     "editorial_executive"
+    ],
+    "scope": "report body text; the engine's 9 pt minimum still applies"
+   }
+  },
+  {
+   "pattern_id": "body-size-≥11.5 pt",
+   "decision": "accept",
+   "support": 2,
+   "reason": "narrowed to 12-12.5 pt: BI-04 at 15 pt is an outlier with an unreliable text layer and is left out",
+   "evidence": [
+    {
+     "doc": "EN-02",
+     "role": "supports",
+     "pages": [
+      2,
+      3,
+      4,
+      5,
+      6
+     ]
+    },
+    {
+     "doc": "AR-03",
+     "role": "supports",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "doc": "BI-04",
+     "role": "unchecked",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    }
+   ],
+   "run_support": 3,
+   "applies_to": {
+    "recipes": [
+     "arabic_bilingual"
+    ],
+    "scope": "12-12.5 pt only, for Arabic and bilingual body text"
+   }
+  },
+  {
+   "pattern_id": "heading-ramp-H1 >2.6× body",
+   "decision": "accept",
+   "support": 4,
+   "reason": "2.74-3.58x; headings confirmed on rendered pages",
+   "evidence": [
+    {
+     "doc": "EN-01",
+     "role": "supports",
+     "pages": [
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13
+     ]
+    },
+    {
+     "doc": "AR-02",
+     "role": "supports",
+     "pages": [
+      372,
+      381,
+      393
+     ]
+    },
+    {
+     "doc": "AR-03",
+     "role": "supports",
+     "pages": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "doc": "BI-01",
+     "role": "supports",
+     "pages": [
+      26,
+      27
+     ]
+    }
+   ],
+   "applies_to": {
+    "recipes": [
+     "financial_corporate",
+     "editorial_executive"
+    ],
+    "scope": "top-level headings of multi-section documents; withdrawn from arabic_bilingual after the M7.4 comparison"
+   }
+  },
+  {
+   "pattern_id": "facing-pages",
+   "decision": "accept",
+   "support": 3,
+   "reason": "inner margin wider than outer, mirrored; a print imposition choice",
+   "evidence": [
+    {
+     "doc": "AR-01",
+     "role": "supports",
+     "pages": [
+      6,
+      7,
+      8,
+      9,
+      10
+     ]
+    },
+    {
+     "doc": "AR-03",
+     "role": "supports",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "doc": "BI-04",
+     "role": "supports",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    }
+   ],
+   "applies_to": {
+    "recipes": [],
+    "scope": "printed two-sided documents; not used by a recipe in M7.4, because recipes have no duplex signal"
+   }
+  },
+  {
+   "pattern_id": "script-arabic_rtl",
+   "decision": "accept",
+   "support": 4,
+   "reason": "block alignment measured per document",
+   "evidence": [
+    {
+     "doc": "AR-01",
+     "role": "supports",
+     "pages": [
+      3,
+      4,
+      5,
+      6,
+      7
+     ]
+    },
+    {
+     "doc": "AR-02",
+     "role": "supports",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "doc": "AR-03",
+     "role": "supports",
+     "pages": [
+      2,
+      3,
+      4,
+      5,
+      6
+     ]
+    },
+    {
+     "doc": "BI-05",
+     "role": "supports",
+     "pages": [
+      5,
+      6,
+      7,
+      8
+     ]
+    },
+    {
+     "doc": "BI-06",
+     "role": "supports",
+     "pages": [
+      5,
+      6,
+      7,
+      8
+     ]
+    },
+    {
+     "doc": "BI-07",
+     "role": "supports",
+     "pages": [
+      5,
+      6,
+      7,
+      8
+     ]
+    }
+   ],
+   "applies_to": {
+    "recipes": [
+     "arabic_bilingual"
+    ],
+    "scope": "Arabic body text set right to left"
+   }
+  },
+  {
+   "pattern_id": "script-bilingual",
+   "decision": "accept",
+   "support": 4,
+   "reason": "a real layout in BI-01 and BI-02; single incidental pages in AR-01 and AR-03",
+   "evidence": [
+    {
+     "doc": "BI-01",
+     "role": "supports",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "doc": "BI-02",
+     "role": "supports",
+     "pages": [
+      3,
+      4,
+      5,
+      6,
+      19
+     ]
+    },
+    {
+     "doc": "AR-02",
+     "role": "supports",
+     "pages": [
+      25,
+      44,
+      47,
+      65,
+      86
+     ]
+    },
+    {
+     "doc": "AR-01",
+     "role": "supports",
+     "pages": [
+      1
+     ]
+    },
+    {
+     "doc": "AR-03",
+     "role": "supports",
+     "pages": [
+      1
+     ]
+    }
+   ],
+   "applies_to": {
+    "recipes": [
+     "arabic_bilingual"
+    ],
+    "scope": "page-level language mixing; each block keeps its own direction"
+   }
+  },
+  {
+   "pattern_id": "restrained-accent",
+   "decision": "accept",
+   "support": 6,
+   "reason": "a consistent accent is visible on the previews; only the role is proposed, no colour is copied",
+   "evidence": [
+    {
+     "doc": "EN-01-1",
+     "role": "supports",
+     "pages": [
+      2,
+      3,
+      4,
+      5,
+      6
+     ]
+    },
+    {
+     "doc": "EN-02",
+     "role": "supports",
+     "pages": [
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+     ]
+    },
+    {
+     "doc": "AR-03",
+     "role": "supports",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "doc": "BI-01",
+     "role": "supports",
+     "pages": [
+      2,
+      3,
+      4,
+      5,
+      6
+     ]
+    },
+    {
+     "doc": "BI-05",
+     "role": "supports",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "doc": "BI-07",
+     "role": "supports",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    }
+   ],
+   "applies_to": {
+    "recipes": [
+     "financial_corporate"
+    ],
+    "scope": "one accent role from the existing theme; no reference colour is used"
+   }
+  },
+  {
+   "pattern_id": "captions-above",
+   "decision": "reject",
+   "support": 5,
+   "reason": "one real case of the four documents checked; the rest are a table source note above a photo, section rows above a photo, and text beside a signature stamp",
+   "evidence": [
+    {
+     "doc": "AR-01",
+     "role": "supports",
+     "pages": [
+      17
+     ]
+    },
+    {
+     "doc": "AR-02",
+     "role": "contradicts",
+     "pages": [
+      60,
+      81
+     ]
+    },
+    {
+     "doc": "BI-05",
+     "role": "contradicts",
+     "pages": [
+      7
+     ]
+    },
+    {
+     "doc": "BI-01",
+     "role": "contradicts",
+     "pages": [
+      27
+     ]
+    },
+    {
+     "doc": "EN-02",
+     "role": "unchecked",
+     "pages": [
+      42,
+      47
+     ]
+    }
+   ]
+  },
+  {
+   "pattern_id": "captions-below",
+   "decision": "needs_more_evidence",
+   "support": 4,
+   "reason": "two documents confirmed, two false",
+   "evidence": [
+    {
+     "doc": "EN-02",
+     "role": "supports",
+     "pages": [
+      21
+     ]
+    },
+    {
+     "doc": "EN-03",
+     "role": "supports",
+     "pages": [
+      3
+     ]
+    },
+    {
+     "doc": "AR-02",
+     "role": "contradicts",
+     "pages": [
+      50
+     ]
+    },
+    {
+     "doc": "BI-01",
+     "role": "contradicts",
+     "pages": [
+      27
+     ]
+    }
+   ]
+  },
+  {
+   "pattern_id": "table-padding",
+   "decision": "needs_more_evidence",
+   "support": 9,
+   "reason": "the range 1.9-15.2 pt is too wide to be a rule, and the top end comes from ruled boxes",
+   "evidence": [
+    {
+     "doc": "EN-01",
+     "role": "unchecked",
+     "pages": [
+      21,
+      22
+     ]
+    },
+    {
+     "doc": "EN-02",
+     "role": "unchecked",
+     "pages": [
+      2,
+      7
+     ]
+    },
+    {
+     "doc": "EN-03",
+     "role": "unchecked",
+     "pages": [
+      2,
+      6
+     ]
+    },
+    {
+     "doc": "BI-04",
+     "role": "unchecked",
+     "pages": [
+      10,
+      11,
+      12
+     ]
+    }
+   ]
+  },
+  {
+   "pattern_id": "side-margins-13–17 mm",
+   "decision": "needs_more_evidence",
+   "support": 4,
+   "reason": "the bucket follows the smaller side: left reaches 67.4 pt on facing pages; two of four are one publisher",
+   "evidence": [
+    {
+     "doc": "EN-01-1",
+     "role": "unchecked",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "doc": "EN-01",
+     "role": "unchecked",
+     "pages": [
+      1,
+      3,
+      4,
+      5,
+      6
+     ]
+    },
+    {
+     "doc": "AR-03",
+     "role": "unchecked",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "doc": "BI-04",
+     "role": "unchecked",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    }
+   ]
+  },
+  {
+   "pattern_id": "side-margins-18–22 mm",
+   "decision": "needs_more_evidence",
+   "support": 4,
+   "reason": "same problem: left 54-105.4 pt, right 52.6-84.3 pt; BI-01 mixes two page formats",
+   "evidence": [
+    {
+     "doc": "EN-02",
+     "role": "unchecked",
+     "pages": [
+      2,
+      3,
+      4,
+      5,
+      6
+     ]
+    },
+    {
+     "doc": "AR-01",
+     "role": "unchecked",
+     "pages": [
+      6,
+      7,
+      8,
+      9,
+      10
+     ]
+    },
+    {
+     "doc": "AR-02",
+     "role": "unchecked",
+     "pages": [
+      2,
+      3,
+      4,
+      5,
+      6
+     ]
+    },
+    {
+     "doc": "BI-01",
+     "role": "unchecked",
+     "pages": [
+      2,
+      3,
+      4,
+      5,
+      6
+     ]
+    }
+   ]
+  },
+  {
+   "pattern_id": "side-margins-≤12 mm",
+   "decision": "needs_more_evidence",
+   "support": 2,
+   "reason": "one paper and one fictional template family",
+   "evidence": [
+    {
+     "doc": "EN-03",
+     "role": "unchecked",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "doc": "BI-05",
+     "role": "unchecked",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "doc": "BI-06",
+     "role": "unchecked",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "doc": "BI-07",
+     "role": "unchecked",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    }
+   ]
+  },
+  {
+   "pattern_id": "body-size-10.5–11.4 pt",
+   "decision": "needs_more_evidence",
+   "support": 2,
+   "reason": "one real document; in the family body text is under a third of the characters",
+   "evidence": [
+    {
+     "doc": "AR-01",
+     "role": "unchecked",
+     "pages": [
+      6,
+      7,
+      8,
+      9,
+      10
+     ]
+    },
+    {
+     "doc": "BI-05",
+     "role": "unchecked",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "doc": "BI-06",
+     "role": "unchecked",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "doc": "BI-07",
+     "role": "unchecked",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    }
+   ]
+  },
+  {
+   "pattern_id": "body-size-≤9.4 pt",
+   "decision": "needs_more_evidence",
+   "support": 2,
+   "reason": "both supporters are one publisher",
+   "evidence": [
+    {
+     "doc": "EN-01-1",
+     "role": "unchecked",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "doc": "EN-01",
+     "role": "unchecked",
+     "pages": [
+      1,
+      3,
+      4,
+      5,
+      6
+     ]
+    }
+   ]
+  },
+  {
+   "pattern_id": "heading-ramp-H1 2.0–2.6× body",
+   "decision": "needs_more_evidence",
+   "support": 3,
+   "reason": "one supporter is the family, and the cited heading on EN-02 p18 could not be told apart on the render; AR-01 p7 is a contents title",
+   "evidence": [
+    {
+     "doc": "EN-02",
+     "role": "unchecked",
+     "pages": [
+      2,
+      84,
+      111
+     ]
+    },
+    {
+     "doc": "EN-02",
+     "role": "contradicts",
+     "pages": [
+      18
+     ]
+    },
+    {
+     "doc": "AR-01",
+     "role": "contradicts",
+     "pages": [
+      7
+     ]
+    },
+    {
+     "doc": "AR-01",
+     "role": "unchecked",
+     "pages": [
+      8,
+      9,
+      10,
+      11,
+      12,
+      13
+     ]
+    },
+    {
+     "doc": "BI-05",
+     "role": "unchecked",
+     "pages": [
+      4,
+      8
+     ]
+    },
+    {
+     "doc": "BI-06",
+     "role": "unchecked",
+     "pages": [
+      4,
+      8
+     ]
+    },
+    {
+     "doc": "BI-07",
+     "role": "unchecked",
+     "pages": [
+      4,
+      8
+     ]
+    }
+   ]
+  },
+  {
+   "pattern_id": "leading->1.55×",
+   "decision": "needs_more_evidence",
+   "support": 2,
+   "reason": "AR-02 is confirmed at 1.58x; BI-05 has few samples",
+   "evidence": [
+    {
+     "doc": "AR-02",
+     "role": "supports",
+     "pages": [
+      2,
+      3,
+      4,
+      5,
+      6
+     ]
+    },
+    {
+     "doc": "BI-05",
+     "role": "unchecked",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    }
+   ]
+  },
+  {
+   "pattern_id": "heading-ramp-H1 1.5–2.0× body",
+   "decision": "needs_more_evidence",
+   "support": 1,
+   "reason": "one document",
+   "evidence": [
+    {
+     "doc": "EN-01-1",
+     "role": "unchecked",
+     "pages": [
+      7,
+      8,
+      10,
+      11
+     ]
+    }
+   ]
+  },
+  {
+   "pattern_id": "leading-1.41–1.55×",
+   "decision": "needs_more_evidence",
+   "support": 1,
+   "reason": "one document, unreliable text layer",
+   "evidence": [
+    {
+     "doc": "BI-04",
+     "role": "unchecked",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    }
+   ]
+  },
+  {
+   "pattern_id": "spreads",
+   "decision": "needs_more_evidence",
+   "support": 1,
+   "reason": "one document",
+   "evidence": [
+    {
+     "doc": "AR-03",
+     "role": "unchecked",
+     "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    }
+   ]
+  }
+ ]
+}

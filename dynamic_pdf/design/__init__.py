@@ -10,7 +10,8 @@ from ..schema.blocks import TOCBlock
 from ..schema.theme import Theme
 from .brand import BrandKit, apply_brand
 from .profile import Profile, ProfileDecision, select_profile, resolve_profile_name
-from .recipes import DesignRecipe, RECIPES, apply_recipe, recipe_for
+from .recipes import (DesignRecipe, EVIDENCE_RECIPES, EvidenceRecipe, RECIPES, apply_evidence_recipe,
+                      apply_recipe, recipe_for)
 from .tokens import DesignTokens, compile_tokens, heading_size
 
 
@@ -25,9 +26,10 @@ class DesignPlan(BaseModel):
     toc_inserted: bool = False
     notes: List[str] = Field(default_factory=list)
     layout: Optional[object] = None          # planner.LayoutPlan
+    recipe_outcome: Optional[object] = None  # evidence_gate.RecipeOutcome, when one was requested
 
     def explain(self) -> dict:
-        return {
+        out = {
             "profile": self.decision.profile.value,
             "explicit": self.decision.explicit,
             "direction": self.decision.direction,
@@ -47,13 +49,19 @@ class DesignPlan(BaseModel):
             "estimated_pages": getattr(self.layout, "estimated_pages", None),
             "warnings": self.tokens.warnings,
         }
+        if self.recipe_outcome is not None:
+            out["evidence_recipe"] = self.recipe_outcome.model_dump()
+        return out
 
 
 def plan_design(doc: SemanticDocument, requested: Optional[str] = None,
-                brand: Optional[BrandKit] = None, base_theme: Optional[Theme] = None) -> DesignPlan:
+                brand: Optional[BrandKit] = None, base_theme: Optional[Theme] = None,
+                evidence: Optional[EvidenceRecipe] = None) -> DesignPlan:
     """Select profile → recipe → theme (+brand) → tokens. Pure; content untouched."""
     decision = select_profile(doc, requested)
     recipe = recipe_for(decision, bilingual=doc.stats.bilingual and doc.direction == "ltr")
+    if evidence is not None:
+        recipe = apply_evidence_recipe(recipe, evidence)
     theme = apply_recipe(recipe, base_theme)
     notes: List[str] = []
     if brand:

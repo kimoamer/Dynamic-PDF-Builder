@@ -15,7 +15,7 @@
    },
    "evidence": [
     {
-     "doc_id": "ref-cf94c704dffb",
+     "doc_id": "ref-2e16553cb269",
      "file": "arabic_report.pdf",
      "pages": [
       1
@@ -25,7 +25,7 @@
      }
     },
     {
-     "doc_id": "ref-c7b38a7876de",
+     "doc_id": "ref-07e5339f91e1",
      "file": "bilingual.pdf",
      "pages": [
       1
@@ -35,7 +35,7 @@
      }
     },
     {
-     "doc_id": "ref-981a17e13750",
+     "doc_id": "ref-4f1afccd1d56",
      "file": "compilation.pdf",
      "pages": [
       1,
@@ -50,7 +50,7 @@
      }
     },
     {
-     "doc_id": "ref-d12693e6ee67",
+     "doc_id": "ref-15f075e119f3",
      "file": "facing_pages.pdf",
      "pages": [
       1,
@@ -65,7 +65,7 @@
      }
     },
     {
-     "doc_id": "ref-953195aea2ec",
+     "doc_id": "ref-15bddec22f5e",
      "file": "garbled.pdf",
      "pages": [
       1
@@ -75,7 +75,7 @@
      }
     },
     {
-     "doc_id": "ref-3a44fd9b00eb",
+     "doc_id": "ref-a5238891267b",
      "file": "landscape_slides.pdf",
      "pages": [
       1,
@@ -87,7 +87,7 @@
      }
     },
     {
-     "doc_id": "ref-2b6bb9af11ae",
+     "doc_id": "ref-e1055abbe307",
      "file": "mixed_media.pdf",
      "pages": [
       1,
@@ -101,7 +101,7 @@
      }
     },
     {
-     "doc_id": "ref-017a5b3a4503",
+     "doc_id": "ref-d82e8035a6e6",
      "file": "ruled_tables.pdf",
      "pages": [
       1,
@@ -113,7 +113,7 @@
      }
     },
     {
-     "doc_id": "ref-b9943160a1ec",
+     "doc_id": "ref-f790e9cbb1dd",
      "file": "spread.pdf",
      "pages": [
       1,
@@ -124,7 +124,7 @@
      }
     },
     {
-     "doc_id": "ref-e0a205d949e3",
+     "doc_id": "ref-0254dbf1728b",
      "file": "spread_sheets.pdf",
      "pages": [
       1,
@@ -137,7 +137,7 @@
      }
     },
     {
-     "doc_id": "ref-5249f019e4d8",
+     "doc_id": "ref-3423aebea3ac",
      "file": "template_alpha.pdf",
      "pages": [
       1,
@@ -149,7 +149,7 @@
      }
     },
     {
-     "doc_id": "ref-5a2e89d3ead6",
+     "doc_id": "ref-670ddb1e12d1",
      "file": "template_gamma.pdf",
      "pages": [
       1,
@@ -161,7 +161,7 @@
      }
     },
     {
-     "doc_id": "ref-9163605b13c4",
+     "doc_id": "ref-6b84d029ff62",
      "file": "annual/northwind_annual_report_2023.pdf",
      "pages": [
       1,
@@ -182,7 +182,7 @@
      }
     },
     {
-     "doc_id": "ref-d8f7c34f8902",
+     "doc_id": "ref-21e08185040f",
      "file": "annual/northwind_annual_report_2023_summary.pdf",
      "pages": [
       1,
@@ -214,7 +214,7 @@
    },
    "evidence": [
     {
-     "doc_id": "ref-d12693e6ee67",
+     "doc_id": "ref-15f075e119f3",
      "file": "facing_pages.pdf",
      "pages": [
       1,
@@ -229,7 +229,7 @@
      }
     },
     {
-     "doc_id": "ref-953195aea2ec",
+     "doc_id": "ref-15bddec22f5e",
      "file": "garbled.pdf",
      "pages": [
       1
@@ -239,7 +239,7 @@
      }
     },
     {
-     "doc_id": "ref-99ebf82af396",
+     "doc_id": "ref-23c71db70f44",
      "file": "known_geometry.pdf",
      "pages": [
       1,
@@ -251,7 +251,7 @@
      }
     },
     {
-     "doc_id": "ref-99ebf82af396-2",
+     "doc_id": "ref-23c71db70f44-2",
      "file": "known_geometry_copy.pdf",
      "pages": [
       1,
@@ -263,7 +263,7 @@
      }
     },
     {
-     "doc_id": "ref-3420d01129f9",
+     "doc_id": "ref-0d33293aed4b",
      "file": "long_report.pdf",
      "pages": [
       1,
@@ -278,7 +278,7 @@
      }
     },
     {
-     "doc_id": "ref-2b6bb9af11ae",
+     "doc_id": "ref-e1055abbe307",
      "file": "mixed_media.pdf",
      "pages": [
       1,
@@ -292,7 +292,7 @@
      }
     },
     {
-     "doc_id": "ref-017a5b3a4503",
+     "doc_id": "ref-d82e8035a6e6",
      "file": "ruled_tables.pdf",
      "pages": [
       1,
@@ -304,7 +304,7 @@
      }
     },
     {
-     "doc_id": "ref-b9943160a1ec",
+     "doc_id": "ref-f790e9cbb1dd",
      "file": "spread.pdf",
      "pages": [
       1,
@@ -315,7 +315,7 @@
      }
     },
     {
-     "doc_id": "ref-e0a205d949e3",
+     "doc_id": "ref-0254dbf1728b",
      "file": "spread_sheets.pdf",
      "pages": [
       1,
@@ -328,7 +328,7 @@
      }
     },
     {
-     "doc_id": "ref-9163605b13c4",
+     "doc_id": "ref-6b84d029ff62",
      "file": "annual/northwind_annual_report_2023.pdf",
      "pages": [
       1,
@@ -373,7 +373,7 @@
    },
    "evidence": [
     {
-     "doc_id": "ref-981a17e13750",
+     "doc_id": "ref-4f1afccd1d56",
      "file": "compilation.pdf",
      "pages": [
       1,
@@ -394,7 +394,7 @@
      }
     },
     {
-     "doc_id": "ref-d12693e6ee67",
+     "doc_id": "ref-15f075e119f3",
      "file": "facing_pages.pdf",
      "pages": [
       1,
@@ -415,7 +415,7 @@
      }
     },
     {
-     "doc_id": "ref-3a44fd9b00eb",
+     "doc_id": "ref-a5238891267b",
      "file": "landscape_slides.pdf",
      "pages": [
       1,
@@ -433,7 +433,7 @@
      }
     },
     {
-     "doc_id": "ref-3420d01129f9",
+     "doc_id": "ref-0d33293aed4b",
      "file": "long_report.pdf",
      "pages": [
       1,
@@ -454,7 +454,7 @@
      }
     },
     {
-     "doc_id": "ref-017a5b3a4503",
+     "doc_id": "ref-d82e8035a6e6",
      "file": "ruled_tables.pdf",
      "pages": [
       1,
@@ -472,7 +472,7 @@
      }
     },
     {
-     "doc_id": "ref-b9943160a1ec",
+     "doc_id": "ref-f790e9cbb1dd",
      "file": "spread.pdf",
      "pages": [
       1,
@@ -489,7 +489,7 @@
      }
     },
     {
-     "doc_id": "ref-9163605b13c4",
+     "doc_id": "ref-6b84d029ff62",
      "file": "annual/northwind_annual_report_2023.pdf",
      "pages": [
       1,
@@ -516,7 +516,7 @@
      }
     },
     {
-     "doc_id": "ref-d8f7c34f8902",
+     "doc_id": "ref-21e08185040f",
      "file": "annual/northwind_annual_report_2023_summary.pdf",
      "pages": [
       1,
@@ -559,7 +559,7 @@
    },
    "evidence": [
     {
-     "doc_id": "ref-cf94c704dffb",
+     "doc_id": "ref-2e16553cb269",
      "file": "arabic_report.pdf",
      "pages": [
       1
@@ -575,7 +575,7 @@
      }
     },
     {
-     "doc_id": "ref-953195aea2ec",
+     "doc_id": "ref-15bddec22f5e",
      "file": "garbled.pdf",
      "pages": [
       1
@@ -591,7 +591,7 @@
      }
     },
     {
-     "doc_id": "ref-99ebf82af396",
+     "doc_id": "ref-23c71db70f44",
      "file": "known_geometry.pdf",
      "pages": [
       1,
@@ -609,7 +609,7 @@
      }
     },
     {
-     "doc_id": "ref-99ebf82af396-2",
+     "doc_id": "ref-23c71db70f44-2",
      "file": "known_geometry_copy.pdf",
      "pages": [
       1,
@@ -627,7 +627,7 @@
      }
     },
     {
-     "doc_id": "ref-2b6bb9af11ae",
+     "doc_id": "ref-e1055abbe307",
      "file": "mixed_media.pdf",
      "pages": [
       1,
@@ -647,7 +647,7 @@
      }
     },
     {
-     "doc_id": "ref-5249f019e4d8",
+     "doc_id": "ref-3423aebea3ac",
      "file": "template_alpha.pdf",
      "pages": [
       1,
@@ -665,7 +665,7 @@
      }
     },
     {
-     "doc_id": "ref-5a2e89d3ead6",
+     "doc_id": "ref-670ddb1e12d1",
      "file": "template_gamma.pdf",
      "pages": [
       1,
@@ -702,7 +702,7 @@
    },
    "evidence": [
     {
-     "doc_id": "ref-cf94c704dffb",
+     "doc_id": "ref-2e16553cb269",
      "file": "arabic_report.pdf",
      "pages": [
       1
@@ -712,7 +712,7 @@
      }
     },
     {
-     "doc_id": "ref-c7b38a7876de",
+     "doc_id": "ref-07e5339f91e1",
      "file": "bilingual.pdf",
      "pages": [
       1
@@ -722,7 +722,7 @@
      }
     },
     {
-     "doc_id": "ref-3a44fd9b00eb",
+     "doc_id": "ref-a5238891267b",
      "file": "landscape_slides.pdf",
      "pages": [
       1,
@@ -734,7 +734,7 @@
      }
     },
     {
-     "doc_id": "ref-d8f7c34f8902",
+     "doc_id": "ref-21e08185040f",
      "file": "annual/northwind_annual_report_2023_summary.pdf",
      "pages": [
       1,
@@ -769,7 +769,7 @@
    },
    "evidence": [
     {
-     "doc_id": "ref-99ebf82af396",
+     "doc_id": "ref-23c71db70f44",
      "file": "known_geometry.pdf",
      "pages": [
       1,
@@ -786,7 +786,7 @@
      }
     },
     {
-     "doc_id": "ref-99ebf82af396-2",
+     "doc_id": "ref-23c71db70f44-2",
      "file": "known_geometry_copy.pdf",
      "pages": [
       1,
@@ -803,7 +803,7 @@
      }
     },
     {
-     "doc_id": "ref-2b6bb9af11ae",
+     "doc_id": "ref-e1055abbe307",
      "file": "mixed_media.pdf",
      "pages": [
       3,
@@ -821,7 +821,7 @@
      }
     },
     {
-     "doc_id": "ref-9163605b13c4",
+     "doc_id": "ref-6b84d029ff62",
      "file": "annual/northwind_annual_report_2023.pdf",
      "pages": [
       1,
@@ -847,7 +847,7 @@
      }
     },
     {
-     "doc_id": "ref-d8f7c34f8902",
+     "doc_id": "ref-21e08185040f",
      "file": "annual/northwind_annual_report_2023_summary.pdf",
      "pages": [
       1,
@@ -880,7 +880,7 @@
    },
    "evidence": [
     {
-     "doc_id": "ref-d12693e6ee67",
+     "doc_id": "ref-15f075e119f3",
      "file": "facing_pages.pdf",
      "pages": [
       1,
@@ -907,7 +907,7 @@
      }
     },
     {
-     "doc_id": "ref-e0a205d949e3",
+     "doc_id": "ref-0254dbf1728b",
      "file": "spread_sheets.pdf",
      "pages": [
       1,
@@ -954,7 +954,7 @@
    },
    "evidence": [
     {
-     "doc_id": "ref-cf94c704dffb",
+     "doc_id": "ref-2e16553cb269",
      "file": "arabic_report.pdf",
      "pages": [
       1
@@ -969,7 +969,7 @@
      }
     },
     {
-     "doc_id": "ref-e0a205d949e3",
+     "doc_id": "ref-0254dbf1728b",
      "file": "spread_sheets.pdf",
      "pages": [
       1,
@@ -1006,7 +1006,7 @@
    },
    "evidence": [
     {
-     "doc_id": "ref-99ebf82af396",
+     "doc_id": "ref-23c71db70f44",
      "file": "known_geometry.pdf",
      "pages": [
       1,
@@ -1018,7 +1018,7 @@
      }
     },
     {
-     "doc_id": "ref-99ebf82af396-2",
+     "doc_id": "ref-23c71db70f44-2",
      "file": "known_geometry_copy.pdf",
      "pages": [
       1,
@@ -1030,7 +1030,7 @@
      }
     },
     {
-     "doc_id": "ref-3420d01129f9",
+     "doc_id": "ref-0d33293aed4b",
      "file": "long_report.pdf",
      "pages": [
       1,
@@ -1060,7 +1060,7 @@
    },
    "evidence": [
     {
-     "doc_id": "ref-3a44fd9b00eb",
+     "doc_id": "ref-a5238891267b",
      "file": "landscape_slides.pdf",
      "pages": [
       1,
@@ -1069,11 +1069,13 @@
      ],
      "measured": {
       "multi_column_pages": 3,
-      "pages_with_columns": 3
+      "text_pages": 3,
+      "unclassified_pages": 0,
+      "share_of_text_pages": 1.0
      }
     },
     {
-     "doc_id": "ref-3420d01129f9",
+     "doc_id": "ref-0d33293aed4b",
      "file": "long_report.pdf",
      "pages": [
       1,
@@ -1085,7 +1087,9 @@
      ],
      "measured": {
       "multi_column_pages": 6,
-      "pages_with_columns": 6
+      "text_pages": 6,
+      "unclassified_pages": 0,
+      "share_of_text_pages": 1.0
      }
     }
    ],
@@ -1104,7 +1108,7 @@
    },
    "evidence": [
     {
-     "doc_id": "ref-cf94c704dffb",
+     "doc_id": "ref-2e16553cb269",
      "file": "arabic_report.pdf",
      "pages": [
       1,
@@ -1116,7 +1120,7 @@
      }
     },
     {
-     "doc_id": "ref-99ebf82af396",
+     "doc_id": "ref-23c71db70f44",
      "file": "known_geometry.pdf",
      "pages": [
       1,
@@ -1129,7 +1133,7 @@
      }
     },
     {
-     "doc_id": "ref-99ebf82af396-2",
+     "doc_id": "ref-23c71db70f44-2",
      "file": "known_geometry_copy.pdf",
      "pages": [
       1,
@@ -1166,7 +1170,7 @@
    },
    "evidence": [
     {
-     "doc_id": "ref-c7b38a7876de",
+     "doc_id": "ref-07e5339f91e1",
      "file": "bilingual.pdf",
      "pages": [
       1
@@ -1182,7 +1186,7 @@
      }
     },
     {
-     "doc_id": "ref-e0a205d949e3",
+     "doc_id": "ref-0254dbf1728b",
      "file": "spread_sheets.pdf",
      "pages": [
       1,
@@ -1216,7 +1220,7 @@
    },
    "evidence": [
     {
-     "doc_id": "ref-b9943160a1ec",
+     "doc_id": "ref-f790e9cbb1dd",
      "file": "spread.pdf",
      "pages": [
       1,
@@ -1227,7 +1231,7 @@
      }
     },
     {
-     "doc_id": "ref-e0a205d949e3",
+     "doc_id": "ref-0254dbf1728b",
      "file": "spread_sheets.pdf",
      "pages": [
       1,
@@ -1259,7 +1263,7 @@
    },
    "evidence": [
     {
-     "doc_id": "ref-99ebf82af396",
+     "doc_id": "ref-23c71db70f44",
      "file": "known_geometry.pdf",
      "pages": [
       2
@@ -1274,7 +1278,7 @@
      }
     },
     {
-     "doc_id": "ref-99ebf82af396-2",
+     "doc_id": "ref-23c71db70f44-2",
      "file": "known_geometry_copy.pdf",
      "pages": [
       2
@@ -1289,7 +1293,7 @@
      }
     },
     {
-     "doc_id": "ref-017a5b3a4503",
+     "doc_id": "ref-d82e8035a6e6",
      "file": "ruled_tables.pdf",
      "pages": [
       1,
@@ -1327,7 +1331,7 @@
    },
    "evidence": [
     {
-     "doc_id": "ref-5249f019e4d8",
+     "doc_id": "ref-3423aebea3ac",
      "file": "template_alpha.pdf",
      "pages": [
       1,
@@ -1339,7 +1343,7 @@
      }
     },
     {
-     "doc_id": "ref-5a2e89d3ead6",
+     "doc_id": "ref-670ddb1e12d1",
      "file": "template_gamma.pdf",
      "pages": [
       1,
@@ -1370,7 +1374,7 @@
    },
    "evidence": [
     {
-     "doc_id": "ref-981a17e13750",
+     "doc_id": "ref-4f1afccd1d56",
      "file": "compilation.pdf",
      "pages": [
       1,
@@ -1407,7 +1411,7 @@
    },
    "evidence": [
     {
-     "doc_id": "ref-c7b38a7876de",
+     "doc_id": "ref-07e5339f91e1",
      "file": "bilingual.pdf",
      "pages": [
       1
@@ -1441,7 +1445,7 @@
    },
    "evidence": [
     {
-     "doc_id": "ref-cf94c704dffb",
+     "doc_id": "ref-2e16553cb269",
      "file": "arabic_report.pdf",
      "pages": [
       1,
@@ -1470,7 +1474,7 @@
    },
    "evidence": [
     {
-     "doc_id": "ref-c7b38a7876de",
+     "doc_id": "ref-07e5339f91e1",
      "file": "bilingual.pdf",
      "pages": [
       1
@@ -1498,7 +1502,7 @@
    },
    "evidence": [
     {
-     "doc_id": "ref-99ebf82af396",
+     "doc_id": "ref-23c71db70f44",
      "file": "known_geometry.pdf",
      "pages": [
       2
@@ -1513,7 +1517,7 @@
      }
     },
     {
-     "doc_id": "ref-99ebf82af396-2",
+     "doc_id": "ref-23c71db70f44-2",
      "file": "known_geometry_copy.pdf",
      "pages": [
       2
@@ -1543,7 +1547,7 @@
    },
    "evidence": [
     {
-     "doc_id": "ref-99ebf82af396",
+     "doc_id": "ref-23c71db70f44",
      "file": "known_geometry.pdf",
      "pages": [
       2
@@ -1558,7 +1562,7 @@
      }
     },
     {
-     "doc_id": "ref-99ebf82af396-2",
+     "doc_id": "ref-23c71db70f44-2",
      "file": "known_geometry_copy.pdf",
      "pages": [
       2
@@ -1580,5 +1584,5 @@
    "confidence": "low"
   }
  ],
- "note": "Patterns are inferred from measured values and point to source pages. They are proposals for human review, not measurements, and never imply aesthetic quality. Do not copy commercial branding, artwork or layouts into distributed runtime assets."
+ "note": "Patterns are inferred from measured values and point to source pages. They are proposals for human review, not measurements, and never imply aesthetic quality: how often a pattern occurs says where it was seen, not that it is good. Do not copy commercial branding, artwork or layouts into distributed runtime assets."
 }

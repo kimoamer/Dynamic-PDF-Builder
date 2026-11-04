@@ -1,0 +1,1762 @@
+{
+ "format": "dynamic-pdf-builder/m74-comparison",
+ "version": 1,
+ "recipes": {
+  "arabic_bilingual": {
+   "status": "inconclusive",
+   "status_reason": "larger body text is safe on three of four documents; the long Arabic report goes over the page limit and falls back; no human review yet",
+   "documents": {
+    "ar_annual_report": {
+     "defects": [
+      "pages: 20 → 25 (limit 23)"
+     ],
+     "gains": [
+      "body size 9.5 → 12 pt",
+      "readability score 0.72 → 1.00"
+     ],
+     "costs": [
+      "pages 20 → 25",
+      "line gaps clear of ink 100% → 90%"
+     ]
+    },
+    "ar_financial_statements": {
+     "defects": [],
+     "gains": [
+      "body size 9.5 → 12 pt",
+      "readability score 0.72 → 1.00"
+     ],
+     "costs": []
+    },
+    "ar_memo": {
+     "defects": [],
+     "gains": [
+      "body size 10.5 → 12 pt",
+      "readability score 0.94 → 1.00"
+     ],
+     "costs": []
+    },
+    "bilingual_board_report": {
+     "defects": [],
+     "gains": [
+      "body size 10.5 → 12 pt"
+     ],
+     "costs": [
+      "mean body page fill 0.83 → 0.71"
+     ]
+    }
+   },
+   "human_review": {
+    "status": "pending",
+    "judgments": 0
+   },
+   "documents_total": 4,
+   "documents_with_defects": 1,
+   "documents_with_gains_and_no_costs": 2
+  },
+  "editorial_executive": {
+   "status": "inconclusive",
+   "status_reason": "safe on all three documents, but columns were used on one fictional briefing only, the proposal lost body size, and no human review exists yet",
+   "documents": {
+    "editorial_briefing": {
+     "defects": [],
+     "gains": [
+      "chars per line 109 → 48, back inside 90",
+      "body size 9.5 → 10 pt",
+      "readability score 0.78 → 0.90"
+     ],
+     "costs": []
+    },
+    "en_executive_report": {
+     "defects": [],
+     "gains": [
+      "body size 9.5 → 10 pt",
+      "readability score 0.78 → 0.90"
+     ],
+     "costs": []
+    },
+    "proposal": {
+     "defects": [],
+     "gains": [],
+     "costs": [
+      "body size 10.5 → 10 pt",
+      "readability score 0.99 → 0.94"
+     ]
+    }
+   },
+   "human_review": {
+    "status": "pending",
+    "judgments": 0
+   },
+   "documents_total": 3,
+   "documents_with_defects": 0,
+   "documents_with_gains_and_no_costs": 2
+  },
+  "financial_corporate": {
+   "status": "inconclusive",
+   "status_reason": "no measured gain on either document: no page or table-split saved, lower readability score, and a heading separated from its table; no human review yet",
+   "documents": {
+    "business_memo": {
+     "defects": [],
+     "gains": [],
+     "costs": [
+      "body size 10.5 → 10 pt",
+      "readability score 1.00 → 0.89"
+     ]
+    },
+    "financial_statements": {
+     "defects": [],
+     "gains": [],
+     "costs": [
+      "readability score 0.93 → 0.81",
+      "mean body page fill 0.88 → 0.82"
+     ]
+    }
+   },
+   "human_review": {
+    "status": "pending",
+    "judgments": 0
+   },
+   "documents_total": 2,
+   "documents_with_defects": 0,
+   "documents_with_gains_and_no_costs": 0
+  }
+ },
+ "documents": {
+  "arabic_bilingual/ar_annual_report": {
+   "baseline": {
+    "recipe": "arabic_bilingual",
+    "name": "ar_annual_report",
+    "variant": "baseline",
+    "profile": "data_report",
+    "direction": "rtl",
+    "pages": 20,
+    "layout_id": "f6a6b52e6f9069cc",
+    "typography": {
+     "body_family": "Amiri",
+     "body_size": 9.5,
+     "line_height": 1.6,
+     "h1_size": 17.1,
+     "h1_ratio": 1.8
+    },
+    "columns": [],
+    "density": {
+     "chars_per_page": 1058,
+     "mean_body_page_fill": 0.806,
+     "underfilled_body_pages": 1,
+     "utilization": 0.858
+    },
+    "readability": {
+     "lines": 159,
+     "median_chars_per_line": 50,
+     "p90_chars_per_line": 135,
+     "score_readability": 0.716
+    },
+    "line_clearance": {
+     "gaps": 57,
+     "clear_share": 1.0
+    },
+    "tables": {
+     "tables": 27,
+     "split_tables": 1,
+     "pages_with_tables": 17
+    },
+    "pdf_qa": {
+     "status": "fail",
+     "errors": [
+      "overflow: text overflows into the margin by 0pt: '١٫٢ ﻣﻠﻴﻮﻥ'",
+      "overflow: text overflows into the margin by 0pt: '+٥٪'"
+     ],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "unverified",
+     "pages": 0,
+     "unverified": [
+      "visual"
+     ],
+     "errors": [],
+     "warnings": [
+      "visual_check_skipped"
+     ]
+    },
+    "timing": {
+     "pdf_cold_s": 5.519,
+     "docx_cold_s": 1.928,
+     "pdf_warm_s": 4.784,
+     "docx_warm_s": 1.721
+    },
+    "peak_rss_mb": 145.3,
+    "rtl": {
+     "arabic_paragraphs_checked": 41,
+     "line_order_defects": [],
+     "symbol_font_text_spans": 0,
+     "harakat_source": 41,
+     "harakat_pdf": 41,
+     "harakat_docx": 41
+    },
+    "gate": null,
+    "docx_renderer": null
+   },
+   "proposed": {
+    "recipe": "arabic_bilingual",
+    "name": "ar_annual_report",
+    "variant": "proposed",
+    "profile": "data_report",
+    "direction": "rtl",
+    "pages": 25,
+    "layout_id": "27c774043875f6f2",
+    "typography": {
+     "body_family": "Amiri",
+     "body_size": 12.0,
+     "line_height": 1.4,
+     "h1_size": 21.6,
+     "h1_ratio": 1.8
+    },
+    "columns": [],
+    "density": {
+     "chars_per_page": 859,
+     "mean_body_page_fill": 0.768,
+     "underfilled_body_pages": 4,
+     "utilization": 0.814
+    },
+    "readability": {
+     "lines": 194,
+     "median_chars_per_line": 54.0,
+     "p90_chars_per_line": 105,
+     "score_readability": 0.997
+    },
+    "line_clearance": {
+     "gaps": 59,
+     "clear_share": 0.898
+    },
+    "tables": {
+     "tables": 27,
+     "split_tables": 1,
+     "pages_with_tables": 21
+    },
+    "pdf_qa": {
+     "status": "fail",
+     "errors": [
+      "overflow: text overflows into the margin by 0pt: '١٫٢ ﻣﻠﻴﻮﻥ'"
+     ],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "unverified",
+     "pages": 0,
+     "unverified": [
+      "visual"
+     ],
+     "errors": [],
+     "warnings": [
+      "visual_check_skipped"
+     ]
+    },
+    "timing": {
+     "pdf_cold_s": 12.76,
+     "docx_cold_s": 1.805,
+     "pdf_warm_s": 11.958,
+     "docx_warm_s": 1.813
+    },
+    "peak_rss_mb": 153.1,
+    "rtl": {
+     "arabic_paragraphs_checked": 44,
+     "line_order_defects": [],
+     "symbol_font_text_spans": 0,
+     "harakat_source": 41,
+     "harakat_pdf": 41,
+     "harakat_docx": 41
+    },
+    "gate": {
+     "recipe": "arabic_bilingual",
+     "status": "inconclusive",
+     "applied": true,
+     "reasons": [
+      "pages: 20 → 25 (limit 23)"
+     ],
+     "evidence": {
+      "base_size": [
+       "body-size-≥11.5 pt"
+      ],
+      "line_height": [
+       "leading-1.26–1.40×"
+      ],
+      "direction": [
+       "script-arabic_rtl",
+       "script-bilingual"
+      ]
+     },
+     "not_applied": {
+      "heading ramp": "tried and withdrawn: at 12 pt an H1 of 2.75× wrapped bilingual headings mid-phrase and overlapped the Arabic cover subtitle",
+      "facing pages": "accepted, but recipes have no signal for two-sided printing",
+      "columns": "the column flow is left-to-right only",
+      "spacing": "no accepted pattern measures Arabic spacing beyond leading"
+     },
+     "baseline": {
+      "pages": 20,
+      "valid": true,
+      "hard_errors": [],
+      "split_tables": 1
+     },
+     "proposed": {
+      "pages": 25,
+      "valid": true,
+      "hard_errors": [],
+      "split_tables": 1
+     }
+    },
+    "docx_renderer": null
+   }
+  },
+  "arabic_bilingual/ar_financial_statements": {
+   "baseline": {
+    "recipe": "arabic_bilingual",
+    "name": "ar_financial_statements",
+    "variant": "baseline",
+    "profile": "data_report",
+    "direction": "rtl",
+    "pages": 2,
+    "layout_id": "1ca72a2c2a6ce713",
+    "typography": {
+     "body_family": "Amiri",
+     "body_size": 9.5,
+     "line_height": 1.6,
+     "h1_size": 18.05,
+     "h1_ratio": 1.9
+    },
+    "columns": [],
+    "density": {
+     "chars_per_page": 854,
+     "mean_body_page_fill": 0.854,
+     "underfilled_body_pages": 0,
+     "utilization": 0.909
+    },
+    "readability": {
+     "lines": 5,
+     "median_chars_per_line": 84,
+     "p90_chars_per_line": 141,
+     "score_readability": 0.716
+    },
+    "line_clearance": {
+     "gaps": 3,
+     "clear_share": 1.0
+    },
+    "tables": {
+     "tables": 3,
+     "split_tables": 1,
+     "pages_with_tables": 2
+    },
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "unverified",
+     "pages": 0,
+     "unverified": [
+      "visual"
+     ],
+     "errors": [],
+     "warnings": [
+      "visual_check_skipped"
+     ]
+    },
+    "timing": {
+     "pdf_cold_s": 0.63,
+     "docx_cold_s": 0.238,
+     "pdf_warm_s": 0.504,
+     "docx_warm_s": 0.142
+    },
+    "peak_rss_mb": 74.7,
+    "rtl": {
+     "arabic_paragraphs_checked": 0,
+     "line_order_defects": [],
+     "symbol_font_text_spans": 0,
+     "harakat_source": 5,
+     "harakat_pdf": 5,
+     "harakat_docx": 5
+    },
+    "gate": null,
+    "docx_renderer": null
+   },
+   "proposed": {
+    "recipe": "arabic_bilingual",
+    "name": "ar_financial_statements",
+    "variant": "proposed",
+    "profile": "data_report",
+    "direction": "rtl",
+    "pages": 2,
+    "layout_id": "2b153b97fcade6cc",
+    "typography": {
+     "body_family": "Amiri",
+     "body_size": 12.0,
+     "line_height": 1.4,
+     "h1_size": 21.6,
+     "h1_ratio": 1.8
+    },
+    "columns": [],
+    "density": {
+     "chars_per_page": 854,
+     "mean_body_page_fill": 0.873,
+     "underfilled_body_pages": 0,
+     "utilization": 0.924
+    },
+    "readability": {
+     "lines": 7,
+     "median_chars_per_line": 81,
+     "p90_chars_per_line": 114,
+     "score_readability": 0.997
+    },
+    "line_clearance": {
+     "gaps": 4,
+     "clear_share": 1.0
+    },
+    "tables": {
+     "tables": 3,
+     "split_tables": 1,
+     "pages_with_tables": 2
+    },
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "unverified",
+     "pages": 0,
+     "unverified": [
+      "visual"
+     ],
+     "errors": [],
+     "warnings": [
+      "visual_check_skipped"
+     ]
+    },
+    "timing": {
+     "pdf_cold_s": 1.255,
+     "docx_cold_s": 0.248,
+     "pdf_warm_s": 1.131,
+     "docx_warm_s": 0.14
+    },
+    "peak_rss_mb": 75.4,
+    "rtl": {
+     "arabic_paragraphs_checked": 1,
+     "line_order_defects": [],
+     "symbol_font_text_spans": 0,
+     "harakat_source": 5,
+     "harakat_pdf": 5,
+     "harakat_docx": 5
+    },
+    "gate": {
+     "recipe": "arabic_bilingual",
+     "status": "inconclusive",
+     "applied": true,
+     "reasons": [
+      "safety checks passed"
+     ],
+     "evidence": {
+      "base_size": [
+       "body-size-≥11.5 pt"
+      ],
+      "line_height": [
+       "leading-1.26–1.40×"
+      ],
+      "direction": [
+       "script-arabic_rtl",
+       "script-bilingual"
+      ]
+     },
+     "not_applied": {
+      "heading ramp": "tried and withdrawn: at 12 pt an H1 of 2.75× wrapped bilingual headings mid-phrase and overlapped the Arabic cover subtitle",
+      "facing pages": "accepted, but recipes have no signal for two-sided printing",
+      "columns": "the column flow is left-to-right only",
+      "spacing": "no accepted pattern measures Arabic spacing beyond leading"
+     },
+     "baseline": {
+      "pages": 2,
+      "valid": true,
+      "hard_errors": [],
+      "split_tables": 1
+     },
+     "proposed": {
+      "pages": 2,
+      "valid": true,
+      "hard_errors": [],
+      "split_tables": 1
+     }
+    },
+    "docx_renderer": null
+   }
+  },
+  "arabic_bilingual/ar_memo": {
+   "baseline": {
+    "recipe": "arabic_bilingual",
+    "name": "ar_memo",
+    "variant": "baseline",
+    "profile": "general",
+    "direction": "rtl",
+    "pages": 1,
+    "layout_id": "402424acb161ee77",
+    "typography": {
+     "body_family": "Amiri",
+     "body_size": 10.5,
+     "line_height": 1.6,
+     "h1_size": 19.95,
+     "h1_ratio": 1.9
+    },
+    "columns": [],
+    "density": {
+     "chars_per_page": 630,
+     "mean_body_page_fill": null,
+     "underfilled_body_pages": 0,
+     "utilization": 0.311
+    },
+    "readability": {
+     "lines": 10,
+     "median_chars_per_line": 63.5,
+     "p90_chars_per_line": 118,
+     "score_readability": 0.939
+    },
+    "line_clearance": {
+     "gaps": 6,
+     "clear_share": 0.833
+    },
+    "tables": {
+     "tables": 0,
+     "split_tables": 0,
+     "pages_with_tables": 0
+    },
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "unverified",
+     "pages": 0,
+     "unverified": [
+      "visual"
+     ],
+     "errors": [],
+     "warnings": [
+      "visual_check_skipped"
+     ]
+    },
+    "timing": {
+     "pdf_cold_s": 0.155,
+     "docx_cold_s": 0.131,
+     "pdf_warm_s": 0.084,
+     "docx_warm_s": 0.041
+    },
+    "peak_rss_mb": 73.6,
+    "rtl": {
+     "arabic_paragraphs_checked": 1,
+     "line_order_defects": [],
+     "symbol_font_text_spans": 0,
+     "harakat_source": 7,
+     "harakat_pdf": 7,
+     "harakat_docx": 7
+    },
+    "gate": null,
+    "docx_renderer": null
+   },
+   "proposed": {
+    "recipe": "arabic_bilingual",
+    "name": "ar_memo",
+    "variant": "proposed",
+    "profile": "general",
+    "direction": "rtl",
+    "pages": 1,
+    "layout_id": "9965fc0acf79125f",
+    "typography": {
+     "body_family": "Amiri",
+     "body_size": 12.0,
+     "line_height": 1.4,
+     "h1_size": 22.799999999999997,
+     "h1_ratio": 1.9
+    },
+    "columns": [],
+    "density": {
+     "chars_per_page": 630,
+     "mean_body_page_fill": null,
+     "underfilled_body_pages": 0,
+     "utilization": 0.322
+    },
+    "readability": {
+     "lines": 10,
+     "median_chars_per_line": 66.0,
+     "p90_chars_per_line": 99,
+     "score_readability": 1.0
+    },
+    "line_clearance": {
+     "gaps": 6,
+     "clear_share": 1.0
+    },
+    "tables": {
+     "tables": 0,
+     "split_tables": 0,
+     "pages_with_tables": 0
+    },
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "unverified",
+     "pages": 0,
+     "unverified": [
+      "visual"
+     ],
+     "errors": [],
+     "warnings": [
+      "visual_check_skipped"
+     ]
+    },
+    "timing": {
+     "pdf_cold_s": 0.283,
+     "docx_cold_s": 0.13,
+     "pdf_warm_s": 0.198,
+     "docx_warm_s": 0.043
+    },
+    "peak_rss_mb": 74.2,
+    "rtl": {
+     "arabic_paragraphs_checked": 1,
+     "line_order_defects": [],
+     "symbol_font_text_spans": 0,
+     "harakat_source": 7,
+     "harakat_pdf": 7,
+     "harakat_docx": 7
+    },
+    "gate": {
+     "recipe": "arabic_bilingual",
+     "status": "inconclusive",
+     "applied": true,
+     "reasons": [
+      "safety checks passed"
+     ],
+     "evidence": {
+      "base_size": [
+       "body-size-≥11.5 pt"
+      ],
+      "line_height": [
+       "leading-1.26–1.40×"
+      ],
+      "direction": [
+       "script-arabic_rtl",
+       "script-bilingual"
+      ]
+     },
+     "not_applied": {
+      "heading ramp": "tried and withdrawn: at 12 pt an H1 of 2.75× wrapped bilingual headings mid-phrase and overlapped the Arabic cover subtitle",
+      "facing pages": "accepted, but recipes have no signal for two-sided printing",
+      "columns": "the column flow is left-to-right only",
+      "spacing": "no accepted pattern measures Arabic spacing beyond leading"
+     },
+     "baseline": {
+      "pages": 1,
+      "valid": true,
+      "hard_errors": [],
+      "split_tables": 0
+     },
+     "proposed": {
+      "pages": 1,
+      "valid": true,
+      "hard_errors": [],
+      "split_tables": 0
+     }
+    },
+    "docx_renderer": null
+   }
+  },
+  "arabic_bilingual/bilingual_board_report": {
+   "baseline": {
+    "recipe": "arabic_bilingual",
+    "name": "bilingual_board_report",
+    "variant": "baseline",
+    "profile": "executive_report",
+    "direction": "ltr",
+    "pages": 3,
+    "layout_id": "7637bcd119576be7",
+    "typography": {
+     "body_family": "Helvetica",
+     "body_size": 10.5,
+     "line_height": 1.55,
+     "h1_size": 21.0,
+     "h1_ratio": 2.0
+    },
+    "columns": [],
+    "density": {
+     "chars_per_page": 546,
+     "mean_body_page_fill": 0.831,
+     "underfilled_body_pages": 0,
+     "utilization": 0.928
+    },
+    "readability": {
+     "lines": 14,
+     "median_chars_per_line": 81.0,
+     "p90_chars_per_line": 110,
+     "score_readability": 0.991
+    },
+    "line_clearance": {
+     "gaps": 8,
+     "clear_share": 0.875
+    },
+    "tables": {
+     "tables": 1,
+     "split_tables": 0,
+     "pages_with_tables": 1
+    },
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "unverified",
+     "pages": 0,
+     "unverified": [
+      "visual"
+     ],
+     "errors": [],
+     "warnings": [
+      "visual_check_skipped"
+     ]
+    },
+    "timing": {
+     "pdf_cold_s": 1.584,
+     "docx_cold_s": 0.247,
+     "pdf_warm_s": 1.044,
+     "docx_warm_s": 0.175
+    },
+    "peak_rss_mb": 126.8,
+    "rtl": {
+     "arabic_paragraphs_checked": 3,
+     "line_order_defects": [],
+     "symbol_font_text_spans": 0,
+     "harakat_source": 3,
+     "harakat_pdf": 3,
+     "harakat_docx": 3
+    },
+    "gate": null,
+    "docx_renderer": null
+   },
+   "proposed": {
+    "recipe": "arabic_bilingual",
+    "name": "bilingual_board_report",
+    "variant": "proposed",
+    "profile": "executive_report",
+    "direction": "ltr",
+    "pages": 3,
+    "layout_id": "252f1dbbb862b1b2",
+    "typography": {
+     "body_family": "Helvetica",
+     "body_size": 12.0,
+     "line_height": 1.4,
+     "h1_size": 24.0,
+     "h1_ratio": 2.0
+    },
+    "columns": [],
+    "density": {
+     "chars_per_page": 546,
+     "mean_body_page_fill": 0.709,
+     "underfilled_body_pages": 0,
+     "utilization": 0.793
+    },
+    "readability": {
+     "lines": 17,
+     "median_chars_per_line": 73,
+     "p90_chars_per_line": 91,
+     "score_readability": 1.0
+    },
+    "line_clearance": {
+     "gaps": 12,
+     "clear_share": 0.917
+    },
+    "tables": {
+     "tables": 1,
+     "split_tables": 0,
+     "pages_with_tables": 1
+    },
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "unverified",
+     "pages": 0,
+     "unverified": [
+      "visual"
+     ],
+     "errors": [],
+     "warnings": [
+      "visual_check_skipped"
+     ]
+    },
+    "timing": {
+     "pdf_cold_s": 2.868,
+     "docx_cold_s": 0.286,
+     "pdf_warm_s": 2.488,
+     "docx_warm_s": 0.168
+    },
+    "peak_rss_mb": 128.8,
+    "rtl": {
+     "arabic_paragraphs_checked": 3,
+     "line_order_defects": [],
+     "symbol_font_text_spans": 0,
+     "harakat_source": 3,
+     "harakat_pdf": 3,
+     "harakat_docx": 3
+    },
+    "gate": {
+     "recipe": "arabic_bilingual",
+     "status": "inconclusive",
+     "applied": true,
+     "reasons": [
+      "safety checks passed"
+     ],
+     "evidence": {
+      "base_size": [
+       "body-size-≥11.5 pt"
+      ],
+      "line_height": [
+       "leading-1.26–1.40×"
+      ],
+      "direction": [
+       "script-arabic_rtl",
+       "script-bilingual"
+      ]
+     },
+     "not_applied": {
+      "heading ramp": "tried and withdrawn: at 12 pt an H1 of 2.75× wrapped bilingual headings mid-phrase and overlapped the Arabic cover subtitle",
+      "facing pages": "accepted, but recipes have no signal for two-sided printing",
+      "columns": "the column flow is left-to-right only",
+      "spacing": "no accepted pattern measures Arabic spacing beyond leading"
+     },
+     "baseline": {
+      "pages": 3,
+      "valid": true,
+      "hard_errors": [],
+      "split_tables": 0
+     },
+     "proposed": {
+      "pages": 3,
+      "valid": true,
+      "hard_errors": [],
+      "split_tables": 0
+     }
+    },
+    "docx_renderer": null
+   }
+  },
+  "editorial_executive/editorial_briefing": {
+   "baseline": {
+    "recipe": "editorial_executive",
+    "name": "editorial_briefing",
+    "variant": "baseline",
+    "profile": "data_report",
+    "direction": "ltr",
+    "pages": 3,
+    "layout_id": "0ff9db24877cd44b",
+    "typography": {
+     "body_family": "Helvetica",
+     "body_size": 9.5,
+     "line_height": 1.35,
+     "h1_size": 18.05,
+     "h1_ratio": 1.9
+    },
+    "columns": [],
+    "density": {
+     "chars_per_page": 1892,
+     "mean_body_page_fill": 0.726,
+     "underfilled_body_pages": 0,
+     "utilization": 0.788
+    },
+    "readability": {
+     "lines": 61,
+     "median_chars_per_line": 109,
+     "p90_chars_per_line": 113,
+     "score_readability": 0.777
+    },
+    "line_clearance": {
+     "gaps": 57,
+     "clear_share": 1.0
+    },
+    "tables": {
+     "tables": 1,
+     "split_tables": 0,
+     "pages_with_tables": 1
+    },
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "unverified",
+     "pages": 0,
+     "unverified": [
+      "visual"
+     ],
+     "errors": [],
+     "warnings": [
+      "visual_check_skipped"
+     ]
+    },
+    "timing": {
+     "pdf_cold_s": 0.146,
+     "docx_cold_s": 0.164,
+     "pdf_warm_s": 0.093,
+     "docx_warm_s": 0.076
+    },
+    "peak_rss_mb": 71.5,
+    "rtl": {
+     "arabic_paragraphs_checked": 0,
+     "line_order_defects": [],
+     "symbol_font_text_spans": 0,
+     "harakat_source": 0,
+     "harakat_pdf": 0,
+     "harakat_docx": 0
+    },
+    "gate": null,
+    "docx_renderer": null
+   },
+   "proposed": {
+    "recipe": "editorial_executive",
+    "name": "editorial_briefing",
+    "variant": "proposed",
+    "profile": "data_report",
+    "direction": "ltr",
+    "pages": 3,
+    "layout_id": "c5e96f492344347f",
+    "typography": {
+     "body_family": "Helvetica",
+     "body_size": 10.0,
+     "line_height": 1.38,
+     "h1_size": 27.5,
+     "h1_ratio": 2.75
+    },
+    "columns": [
+     "4 paragraphs from block 6 set in 2 balanced columns",
+     "4 paragraphs from block 11 set in 2 balanced columns",
+     "4 paragraphs from block 17 set in 2 balanced columns",
+     "3 paragraphs from block 22 set in 2 balanced columns"
+    ],
+    "density": {
+     "chars_per_page": 1886,
+     "mean_body_page_fill": 0.852,
+     "underfilled_body_pages": 0,
+     "utilization": 0.925
+    },
+    "readability": {
+     "lines": 118,
+     "median_chars_per_line": 48.0,
+     "p90_chars_per_line": 53,
+     "score_readability": 0.904
+    },
+    "line_clearance": {
+     "gaps": 110,
+     "clear_share": 1.0
+    },
+    "tables": {
+     "tables": 1,
+     "split_tables": 0,
+     "pages_with_tables": 1
+    },
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "unverified",
+     "pages": 0,
+     "unverified": [
+      "visual"
+     ],
+     "errors": [],
+     "warnings": [
+      "visual_check_skipped"
+     ]
+    },
+    "timing": {
+     "pdf_cold_s": 0.397,
+     "docx_cold_s": 0.168,
+     "pdf_warm_s": 0.351,
+     "docx_warm_s": 0.078
+    },
+    "peak_rss_mb": 72.2,
+    "rtl": {
+     "arabic_paragraphs_checked": 0,
+     "line_order_defects": [],
+     "symbol_font_text_spans": 0,
+     "harakat_source": 0,
+     "harakat_pdf": 0,
+     "harakat_docx": 0
+    },
+    "gate": {
+     "recipe": "editorial_executive",
+     "status": "inconclusive",
+     "applied": true,
+     "reasons": [
+      "safety checks passed"
+     ],
+     "evidence": {
+      "base_size": [
+       "body-size-9.5–10.4 pt"
+      ],
+      "line_height": [
+       "leading-1.26–1.40×"
+      ],
+      "heading_scale": [
+       "heading-ramp-H1 >2.6× body"
+      ],
+      "body_columns": [
+       "multi-column-body"
+      ]
+     },
+     "not_applied": {
+      "whitespace": "no accepted pattern measures whitespace; side-margin patterns need more evidence; recipe margins unchanged"
+     },
+     "baseline": {
+      "pages": 3,
+      "valid": true,
+      "hard_errors": [],
+      "split_tables": 0
+     },
+     "proposed": {
+      "pages": 3,
+      "valid": true,
+      "hard_errors": [],
+      "split_tables": 0
+     }
+    },
+    "docx_renderer": null
+   }
+  },
+  "editorial_executive/en_executive_report": {
+   "baseline": {
+    "recipe": "editorial_executive",
+    "name": "en_executive_report",
+    "variant": "baseline",
+    "profile": "data_report",
+    "direction": "ltr",
+    "pages": 2,
+    "layout_id": "50d9eb7556fb381f",
+    "typography": {
+     "body_family": "Helvetica",
+     "body_size": 9.5,
+     "line_height": 1.35,
+     "h1_size": 18.05,
+     "h1_ratio": 1.9
+    },
+    "columns": [],
+    "density": {
+     "chars_per_page": 948,
+     "mean_body_page_fill": 0.728,
+     "underfilled_body_pages": 0,
+     "utilization": 0.761
+    },
+    "readability": {
+     "lines": 20,
+     "median_chars_per_line": 103.0,
+     "p90_chars_per_line": 109,
+     "score_readability": 0.777
+    },
+    "line_clearance": {
+     "gaps": 16,
+     "clear_share": 1.0
+    },
+    "tables": {
+     "tables": 1,
+     "split_tables": 0,
+     "pages_with_tables": 1
+    },
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "unverified",
+     "pages": 0,
+     "unverified": [
+      "visual"
+     ],
+     "errors": [],
+     "warnings": [
+      "visual_check_skipped"
+     ]
+    },
+    "timing": {
+     "pdf_cold_s": 1.604,
+     "docx_cold_s": 0.276,
+     "pdf_warm_s": 1.106,
+     "docx_warm_s": 0.181
+    },
+    "peak_rss_mb": 123.0,
+    "rtl": {
+     "arabic_paragraphs_checked": 0,
+     "line_order_defects": [],
+     "symbol_font_text_spans": 0,
+     "harakat_source": 0,
+     "harakat_pdf": 0,
+     "harakat_docx": 0
+    },
+    "gate": null,
+    "docx_renderer": null
+   },
+   "proposed": {
+    "recipe": "editorial_executive",
+    "name": "en_executive_report",
+    "variant": "proposed",
+    "profile": "data_report",
+    "direction": "ltr",
+    "pages": 2,
+    "layout_id": "2a576e0cb5e8fbd9",
+    "typography": {
+     "body_family": "Helvetica",
+     "body_size": 10.0,
+     "line_height": 1.38,
+     "h1_size": 27.5,
+     "h1_ratio": 2.75
+    },
+    "columns": [],
+    "density": {
+     "chars_per_page": 948,
+     "mean_body_page_fill": 0.78,
+     "underfilled_body_pages": 0,
+     "utilization": 0.824
+    },
+    "readability": {
+     "lines": 22,
+     "median_chars_per_line": 96.0,
+     "p90_chars_per_line": 105,
+     "score_readability": 0.904
+    },
+    "line_clearance": {
+     "gaps": 17,
+     "clear_share": 1.0
+    },
+    "tables": {
+     "tables": 1,
+     "split_tables": 0,
+     "pages_with_tables": 1
+    },
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "unverified",
+     "pages": 0,
+     "unverified": [
+      "visual"
+     ],
+     "errors": [],
+     "warnings": [
+      "visual_check_skipped"
+     ]
+    },
+    "timing": {
+     "pdf_cold_s": 2.966,
+     "docx_cold_s": 0.286,
+     "pdf_warm_s": 2.527,
+     "docx_warm_s": 0.187
+    },
+    "peak_rss_mb": 134.7,
+    "rtl": {
+     "arabic_paragraphs_checked": 0,
+     "line_order_defects": [],
+     "symbol_font_text_spans": 0,
+     "harakat_source": 0,
+     "harakat_pdf": 0,
+     "harakat_docx": 0
+    },
+    "gate": {
+     "recipe": "editorial_executive",
+     "status": "inconclusive",
+     "applied": true,
+     "reasons": [
+      "safety checks passed"
+     ],
+     "evidence": {
+      "base_size": [
+       "body-size-9.5–10.4 pt"
+      ],
+      "line_height": [
+       "leading-1.26–1.40×"
+      ],
+      "heading_scale": [
+       "heading-ramp-H1 >2.6× body"
+      ],
+      "body_columns": [
+       "multi-column-body"
+      ]
+     },
+     "not_applied": {
+      "whitespace": "no accepted pattern measures whitespace; side-margin patterns need more evidence; recipe margins unchanged"
+     },
+     "baseline": {
+      "pages": 2,
+      "valid": true,
+      "hard_errors": [],
+      "split_tables": 0
+     },
+     "proposed": {
+      "pages": 2,
+      "valid": true,
+      "hard_errors": [],
+      "split_tables": 0
+     }
+    },
+    "docx_renderer": null
+   }
+  },
+  "editorial_executive/proposal": {
+   "baseline": {
+    "recipe": "editorial_executive",
+    "name": "proposal",
+    "variant": "baseline",
+    "profile": "executive_report",
+    "direction": "ltr",
+    "pages": 3,
+    "layout_id": "6dc12fbf01bfec36",
+    "typography": {
+     "body_family": "Helvetica",
+     "body_size": 10.5,
+     "line_height": 1.4,
+     "h1_size": 21.0,
+     "h1_ratio": 2.0
+    },
+    "columns": [],
+    "density": {
+     "chars_per_page": 854,
+     "mean_body_page_fill": 0.928,
+     "underfilled_body_pages": 0,
+     "utilization": 1.0
+    },
+    "readability": {
+     "lines": 24,
+     "median_chars_per_line": 90.0,
+     "p90_chars_per_line": 129,
+     "score_readability": 0.991
+    },
+    "line_clearance": {
+     "gaps": 10,
+     "clear_share": 1.0
+    },
+    "tables": {
+     "tables": 2,
+     "split_tables": 0,
+     "pages_with_tables": 2
+    },
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "unverified",
+     "pages": 0,
+     "unverified": [
+      "visual"
+     ],
+     "errors": [],
+     "warnings": [
+      "visual_check_skipped"
+     ]
+    },
+    "timing": {
+     "pdf_cold_s": 0.133,
+     "docx_cold_s": 0.181,
+     "pdf_warm_s": 0.082,
+     "docx_warm_s": 0.095
+    },
+    "peak_rss_mb": 71.5,
+    "rtl": {
+     "arabic_paragraphs_checked": 0,
+     "line_order_defects": [],
+     "symbol_font_text_spans": 0,
+     "harakat_source": 0,
+     "harakat_pdf": 0,
+     "harakat_docx": 0
+    },
+    "gate": null,
+    "docx_renderer": null
+   },
+   "proposed": {
+    "recipe": "editorial_executive",
+    "name": "proposal",
+    "variant": "proposed",
+    "profile": "executive_report",
+    "direction": "ltr",
+    "pages": 3,
+    "layout_id": "b9710de0f14995c6",
+    "typography": {
+     "body_family": "Helvetica",
+     "body_size": 10.0,
+     "line_height": 1.3,
+     "h1_size": 27.5,
+     "h1_ratio": 2.75
+    },
+    "columns": [],
+    "density": {
+     "chars_per_page": 849,
+     "mean_body_page_fill": 0.919,
+     "underfilled_body_pages": 0,
+     "utilization": 1.0
+    },
+    "readability": {
+     "lines": 24,
+     "median_chars_per_line": 80.5,
+     "p90_chars_per_line": 123,
+     "score_readability": 0.944
+    },
+    "line_clearance": {
+     "gaps": 12,
+     "clear_share": 1.0
+    },
+    "tables": {
+     "tables": 2,
+     "split_tables": 0,
+     "pages_with_tables": 2
+    },
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "unverified",
+     "pages": 0,
+     "unverified": [
+      "visual"
+     ],
+     "errors": [],
+     "warnings": [
+      "visual_check_skipped"
+     ]
+    },
+    "timing": {
+     "pdf_cold_s": 0.269,
+     "docx_cold_s": 0.191,
+     "pdf_warm_s": 0.218,
+     "docx_warm_s": 0.097
+    },
+    "peak_rss_mb": 71.9,
+    "rtl": {
+     "arabic_paragraphs_checked": 0,
+     "line_order_defects": [],
+     "symbol_font_text_spans": 0,
+     "harakat_source": 0,
+     "harakat_pdf": 0,
+     "harakat_docx": 0
+    },
+    "gate": {
+     "recipe": "editorial_executive",
+     "status": "inconclusive",
+     "applied": true,
+     "reasons": [
+      "safety checks passed"
+     ],
+     "evidence": {
+      "base_size": [
+       "body-size-9.5–10.4 pt"
+      ],
+      "line_height": [
+       "leading-1.26–1.40×"
+      ],
+      "heading_scale": [
+       "heading-ramp-H1 >2.6× body"
+      ],
+      "body_columns": [
+       "multi-column-body"
+      ]
+     },
+     "not_applied": {
+      "whitespace": "no accepted pattern measures whitespace; side-margin patterns need more evidence; recipe margins unchanged"
+     },
+     "baseline": {
+      "pages": 3,
+      "valid": true,
+      "hard_errors": [],
+      "split_tables": 0
+     },
+     "proposed": {
+      "pages": 3,
+      "valid": true,
+      "hard_errors": [],
+      "split_tables": 0
+     }
+    },
+    "docx_renderer": null
+   }
+  },
+  "financial_corporate/business_memo": {
+   "baseline": {
+    "recipe": "financial_corporate",
+    "name": "business_memo",
+    "variant": "baseline",
+    "profile": "corporate_memo",
+    "direction": "ltr",
+    "pages": 1,
+    "layout_id": "aedcc1ad07d1cec9",
+    "typography": {
+     "body_family": "Helvetica",
+     "body_size": 10.5,
+     "line_height": 1.4,
+     "h1_size": 19.95,
+     "h1_ratio": 1.9
+    },
+    "columns": [],
+    "density": {
+     "chars_per_page": 514,
+     "mean_body_page_fill": null,
+     "underfilled_body_pages": 0,
+     "utilization": 0.228
+    },
+    "readability": {
+     "lines": 8,
+     "median_chars_per_line": 72.0,
+     "p90_chars_per_line": 87,
+     "score_readability": 1.0
+    },
+    "line_clearance": {
+     "gaps": 7,
+     "clear_share": 1.0
+    },
+    "tables": {
+     "tables": 0,
+     "split_tables": 0,
+     "pages_with_tables": 0
+    },
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "unverified",
+     "pages": 0,
+     "unverified": [
+      "visual"
+     ],
+     "errors": [],
+     "warnings": [
+      "visual_check_skipped"
+     ]
+    },
+    "timing": {
+     "pdf_cold_s": 0.063,
+     "docx_cold_s": 0.132,
+     "pdf_warm_s": 0.017,
+     "docx_warm_s": 0.036
+    },
+    "peak_rss_mb": 71.1,
+    "rtl": {
+     "arabic_paragraphs_checked": 0,
+     "line_order_defects": [],
+     "symbol_font_text_spans": 0,
+     "harakat_source": 0,
+     "harakat_pdf": 0,
+     "harakat_docx": 0
+    },
+    "gate": null,
+    "docx_renderer": null
+   },
+   "proposed": {
+    "recipe": "financial_corporate",
+    "name": "business_memo",
+    "variant": "proposed",
+    "profile": "corporate_memo",
+    "direction": "ltr",
+    "pages": 1,
+    "layout_id": "49aab6bec192d212",
+    "typography": {
+     "body_family": "Helvetica",
+     "body_size": 10.0,
+     "line_height": 1.25,
+     "h1_size": 27.5,
+     "h1_ratio": 2.75
+    },
+    "columns": [],
+    "density": {
+     "chars_per_page": 514,
+     "mean_body_page_fill": null,
+     "underfilled_body_pages": 0,
+     "utilization": 0.212
+    },
+    "readability": {
+     "lines": 8,
+     "median_chars_per_line": 72.0,
+     "p90_chars_per_line": 87,
+     "score_readability": 0.889
+    },
+    "line_clearance": {
+     "gaps": 7,
+     "clear_share": 1.0
+    },
+    "tables": {
+     "tables": 0,
+     "split_tables": 0,
+     "pages_with_tables": 0
+    },
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "unverified",
+     "pages": 0,
+     "unverified": [
+      "visual"
+     ],
+     "errors": [],
+     "warnings": [
+      "visual_check_skipped"
+     ]
+    },
+    "timing": {
+     "pdf_cold_s": 0.079,
+     "docx_cold_s": 0.123,
+     "pdf_warm_s": 0.033,
+     "docx_warm_s": 0.037
+    },
+    "peak_rss_mb": 71.7,
+    "rtl": {
+     "arabic_paragraphs_checked": 0,
+     "line_order_defects": [],
+     "symbol_font_text_spans": 0,
+     "harakat_source": 0,
+     "harakat_pdf": 0,
+     "harakat_docx": 0
+    },
+    "gate": {
+     "recipe": "financial_corporate",
+     "status": "inconclusive",
+     "applied": true,
+     "reasons": [
+      "safety checks passed"
+     ],
+     "evidence": {
+      "base_size": [
+       "body-size-9.5–10.4 pt"
+      ],
+      "line_height": [
+       "leading-≤1.25×"
+      ],
+      "heading_scale": [
+       "heading-ramp-H1 >2.6× body"
+      ],
+      "accent": [
+       "restrained-accent"
+      ]
+     },
+     "not_applied": {
+      "margins": "side-margin patterns need more evidence; recipe margins unchanged",
+      "table padding": "table-padding needs more evidence; planner padding unchanged"
+     },
+     "baseline": {
+      "pages": 1,
+      "valid": true,
+      "hard_errors": [],
+      "split_tables": 0
+     },
+     "proposed": {
+      "pages": 1,
+      "valid": true,
+      "hard_errors": [],
+      "split_tables": 0
+     }
+    },
+    "docx_renderer": null
+   }
+  },
+  "financial_corporate/financial_statements": {
+   "baseline": {
+    "recipe": "financial_corporate",
+    "name": "financial_statements",
+    "variant": "baseline",
+    "profile": "financial_report",
+    "direction": "ltr",
+    "pages": 5,
+    "layout_id": "a3745a832f156e25",
+    "typography": {
+     "body_family": "Helvetica",
+     "body_size": 10.0,
+     "line_height": 1.4,
+     "h1_size": 19.0,
+     "h1_ratio": 1.9
+    },
+    "columns": [],
+    "density": {
+     "chars_per_page": 697,
+     "mean_body_page_fill": 0.883,
+     "underfilled_body_pages": 0,
+     "utilization": 0.976
+    },
+    "readability": {
+     "lines": 20,
+     "median_chars_per_line": 84.0,
+     "p90_chars_per_line": 106,
+     "score_readability": 0.925
+    },
+    "line_clearance": {
+     "gaps": 6,
+     "clear_share": 1.0
+    },
+    "tables": {
+     "tables": 4,
+     "split_tables": 1,
+     "pages_with_tables": 3
+    },
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "unverified",
+     "pages": 0,
+     "unverified": [
+      "visual"
+     ],
+     "errors": [],
+     "warnings": [
+      "visual_check_skipped"
+     ]
+    },
+    "timing": {
+     "pdf_cold_s": 0.246,
+     "docx_cold_s": 0.344,
+     "pdf_warm_s": 0.14,
+     "docx_warm_s": 0.248
+    },
+    "peak_rss_mb": 72.3,
+    "rtl": {
+     "arabic_paragraphs_checked": 0,
+     "line_order_defects": [],
+     "symbol_font_text_spans": 0,
+     "harakat_source": 0,
+     "harakat_pdf": 0,
+     "harakat_docx": 0
+    },
+    "gate": null,
+    "docx_renderer": null
+   },
+   "proposed": {
+    "recipe": "financial_corporate",
+    "name": "financial_statements",
+    "variant": "proposed",
+    "profile": "financial_report",
+    "direction": "ltr",
+    "pages": 5,
+    "layout_id": "ad34e3ef6675cc78",
+    "typography": {
+     "body_family": "Helvetica",
+     "body_size": 10.0,
+     "line_height": 1.25,
+     "h1_size": 27.5,
+     "h1_ratio": 2.75
+    },
+    "columns": [],
+    "density": {
+     "chars_per_page": 697,
+     "mean_body_page_fill": 0.824,
+     "underfilled_body_pages": 0,
+     "utilization": 0.91
+    },
+    "readability": {
+     "lines": 20,
+     "median_chars_per_line": 84.0,
+     "p90_chars_per_line": 106,
+     "score_readability": 0.814
+    },
+    "line_clearance": {
+     "gaps": 6,
+     "clear_share": 1.0
+    },
+    "tables": {
+     "tables": 4,
+     "split_tables": 1,
+     "pages_with_tables": 3
+    },
+    "pdf_qa": {
+     "status": "pass",
+     "errors": [],
+     "warnings": []
+    },
+    "docx_qa": {
+     "status": "unverified",
+     "pages": 0,
+     "unverified": [
+      "visual"
+     ],
+     "errors": [],
+     "warnings": [
+      "visual_check_skipped"
+     ]
+    },
+    "timing": {
+     "pdf_cold_s": 0.446,
+     "docx_cold_s": 0.351,
+     "pdf_warm_s": 0.338,
+     "docx_warm_s": 0.258
+    },
+    "peak_rss_mb": 72.9,
+    "rtl": {
+     "arabic_paragraphs_checked": 0,
+     "line_order_defects": [],
+     "symbol_font_text_spans": 0,
+     "harakat_source": 0,
+     "harakat_pdf": 0,
+     "harakat_docx": 0
+    },
+    "gate": {
+     "recipe": "financial_corporate",
+     "status": "inconclusive",
+     "applied": true,
+     "reasons": [
+      "safety checks passed"
+     ],
+     "evidence": {
+      "base_size": [
+       "body-size-9.5–10.4 pt"
+      ],
+      "line_height": [
+       "leading-≤1.25×"
+      ],
+      "heading_scale": [
+       "heading-ramp-H1 >2.6× body"
+      ],
+      "accent": [
+       "restrained-accent"
+      ]
+     },
+     "not_applied": {
+      "margins": "side-margin patterns need more evidence; recipe margins unchanged",
+      "table padding": "table-padding needs more evidence; planner padding unchanged"
+     },
+     "baseline": {
+      "pages": 5,
+      "valid": true,
+      "hard_errors": [],
+      "split_tables": 1
+     },
+     "proposed": {
+      "pages": 5,
+      "valid": true,
+      "hard_errors": [],
+      "split_tables": 1
+     }
+    },
+    "docx_renderer": null
+   }
+  }
+ }
+}

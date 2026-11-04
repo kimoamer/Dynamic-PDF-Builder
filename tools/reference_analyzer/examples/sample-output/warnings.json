@@ -1,27 +1,27 @@
 [
  {
-  "doc_id": "ref-9163605b13c4",
+  "doc_id": "ref-6b84d029ff62",
   "file": "annual/northwind_annual_report_2023.pdf",
   "code": "previews_sampled",
   "severity": "info",
   "message": "6 representative pages previewed of 12; all pages are measured"
  },
  {
-  "doc_id": "ref-cf94c704dffb",
+  "doc_id": "ref-2e16553cb269",
   "file": "arabic_report.pdf",
   "code": "license_unknown",
   "severity": "warning",
-  "message": "licence/reuse status unknown — treat as reference only"
+  "message": "no licence on record — treat as reference only"
  },
  {
-  "doc_id": "ref-cf94c704dffb",
+  "doc_id": "ref-2e16553cb269",
   "file": "arabic_report.pdf",
   "code": "reviewed_metadata_missing",
   "severity": "info",
   "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
  },
  {
-  "doc_id": "ref-cf94c704dffb",
+  "doc_id": "ref-2e16553cb269",
   "file": "arabic_report.pdf",
   "code": "arabic_presentation_forms",
   "severity": "info",
@@ -34,14 +34,21 @@
   "page": 1
  },
  {
-  "doc_id": "ref-c7b38a7876de",
+  "doc_id": "ref-07e5339f91e1",
+  "file": "bilingual.pdf",
+  "code": "license_unknown",
+  "severity": "warning",
+  "message": "no licence on record — treat as reference only; rights_status is a reviewer's note, not a licence"
+ },
+ {
+  "doc_id": "ref-07e5339f91e1",
   "file": "bilingual.pdf",
   "code": "reviewed_page_count_mismatch",
   "severity": "warning",
   "message": "reviewed metadata says 99 pages, the PDF has 1"
  },
  {
-  "doc_id": "ref-c7b38a7876de",
+  "doc_id": "ref-07e5339f91e1",
   "file": "bilingual.pdf",
   "code": "ambiguous_alignment",
   "severity": "info",
@@ -53,7 +60,7 @@
   "page": 1
  },
  {
-  "doc_id": "ref-c7b38a7876de",
+  "doc_id": "ref-07e5339f91e1",
   "file": "bilingual.pdf",
   "code": "arabic_presentation_forms",
   "severity": "info",
@@ -65,14 +72,14 @@
   "page": 1
  },
  {
-  "doc_id": "ref-981a17e13750",
+  "doc_id": "ref-4f1afccd1d56",
   "file": "compilation.pdf",
   "code": "license_unknown",
   "severity": "warning",
-  "message": "licence/reuse status unknown — treat as reference only"
+  "message": "no licence on record — treat as reference only"
  },
  {
-  "doc_id": "ref-981a17e13750",
+  "doc_id": "ref-4f1afccd1d56",
   "file": "compilation.pdf",
   "code": "mixed_design_system",
   "severity": "warning",
@@ -81,56 +88,63 @@
   "message": "3 page formats each on ≥10 % of the pages: a compilation — document-level medians describe no single design and it gives no support to patterns"
  },
  {
-  "doc_id": "ref-981a17e13750",
+  "doc_id": "ref-4f1afccd1d56",
   "file": "compilation.pdf",
   "code": "mixed_page_sizes",
   "severity": "info",
   "message": "3 distinct page sizes"
  },
  {
-  "doc_id": "ref-981a17e13750",
+  "doc_id": "ref-4f1afccd1d56",
   "file": "compilation.pdf",
   "code": "reviewed_metadata_missing",
   "severity": "info",
   "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
  },
  {
-  "doc_id": "ref-d7279d19fd97",
+  "doc_id": "ref-03cfc8a0b942",
   "file": "corrupt.pdf",
   "code": "empty_pdf",
   "severity": "error",
   "message": "no pages"
  },
  {
-  "doc_id": "ref-d7279d19fd97",
+  "doc_id": "ref-03cfc8a0b942",
   "file": "corrupt.pdf",
   "code": "license_unknown",
   "severity": "warning",
-  "message": "licence/reuse status unknown — treat as reference only"
+  "message": "no licence on record — treat as reference only"
  },
  {
-  "doc_id": "ref-d7279d19fd97",
+  "doc_id": "ref-03cfc8a0b942",
   "file": "corrupt.pdf",
   "code": "reviewed_metadata_missing",
   "severity": "info",
   "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
  },
  {
-  "doc_id": "ref-953195aea2ec",
+  "doc_id": "ref-15f075e119f3",
+  "file": "facing_pages.pdf",
+  "code": "license_unknown",
+  "severity": "warning",
+  "message": "no licence on record — treat as reference only; rights_status is a reviewer's note, not a licence"
+ },
+ {
+  "doc_id": "ref-15bddec22f5e",
   "file": "garbled.pdf",
   "code": "license_unknown",
   "severity": "warning",
-  "message": "licence/reuse status unknown — treat as reference only"
+  "message": "no licence on record — treat as reference only"
  },
  {
-  "doc_id": "ref-953195aea2ec",
+  "doc_id": "ref-15bddec22f5e",
   "file": "garbled.pdf",
   "code": "reviewed_metadata_missing",
   "severity": "info",
   "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
  },
  {
-  "doc_id": "ref-953195aea2ec",
+  "doc_id": "ref-15bddec22f5e",
   "file": "garbled.pdf",
   "code": "broken_text_extraction",
   "severity": "warning",
@@ -142,84 +156,84 @@
   "page": 1
  },
  {
-  "doc_id": "ref-99ebf82af396",
+  "doc_id": "ref-23c71db70f44",
   "file": "known_geometry.pdf",
   "code": "duplicate_exact",
   "severity": "warning",
   "message": "identical bytes to known_geometry_copy.pdf — kept as a separate record"
  },
  {
-  "doc_id": "ref-99ebf82af396-2",
+  "doc_id": "ref-23c71db70f44-2",
   "file": "known_geometry_copy.pdf",
   "code": "duplicate_exact",
   "severity": "warning",
   "message": "identical bytes to known_geometry.pdf — kept as a separate record"
  },
  {
-  "doc_id": "ref-99ebf82af396-2",
+  "doc_id": "ref-23c71db70f44-2",
   "file": "known_geometry_copy.pdf",
   "code": "license_unknown",
   "severity": "warning",
-  "message": "licence/reuse status unknown — treat as reference only"
+  "message": "no licence on record — treat as reference only"
  },
  {
-  "doc_id": "ref-99ebf82af396-2",
+  "doc_id": "ref-23c71db70f44-2",
   "file": "known_geometry_copy.pdf",
   "code": "reviewed_metadata_missing",
   "severity": "info",
   "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
  },
  {
-  "doc_id": "ref-3a44fd9b00eb",
+  "doc_id": "ref-a5238891267b",
   "file": "landscape_slides.pdf",
   "code": "license_unknown",
   "severity": "warning",
-  "message": "licence/reuse status unknown — treat as reference only"
+  "message": "no licence on record — treat as reference only"
  },
  {
-  "doc_id": "ref-3a44fd9b00eb",
+  "doc_id": "ref-a5238891267b",
   "file": "landscape_slides.pdf",
   "code": "reviewed_metadata_missing",
   "severity": "info",
   "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
  },
  {
-  "doc_id": "ref-3420d01129f9",
+  "doc_id": "ref-0d33293aed4b",
   "file": "long_report.pdf",
   "code": "license_unknown",
   "severity": "warning",
-  "message": "licence/reuse status unknown — treat as reference only"
+  "message": "no licence on record — treat as reference only"
  },
  {
-  "doc_id": "ref-3420d01129f9",
+  "doc_id": "ref-0d33293aed4b",
   "file": "long_report.pdf",
   "code": "reviewed_metadata_missing",
   "severity": "info",
   "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
  },
  {
-  "doc_id": "ref-2b6bb9af11ae",
+  "doc_id": "ref-e1055abbe307",
   "file": "mixed_media.pdf",
   "code": "license_unknown",
   "severity": "warning",
-  "message": "licence/reuse status unknown — treat as reference only"
+  "message": "no licence on record — treat as reference only"
  },
  {
-  "doc_id": "ref-2b6bb9af11ae",
+  "doc_id": "ref-e1055abbe307",
   "file": "mixed_media.pdf",
   "code": "previews_sampled",
   "severity": "info",
   "message": "6 representative pages previewed of 7; all pages are measured"
  },
  {
-  "doc_id": "ref-2b6bb9af11ae",
+  "doc_id": "ref-e1055abbe307",
   "file": "mixed_media.pdf",
   "code": "reviewed_metadata_missing",
   "severity": "info",
   "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
  },
  {
-  "doc_id": "ref-2b6bb9af11ae",
+  "doc_id": "ref-e1055abbe307",
   "file": "mixed_media.pdf",
   "code": "fragmented_images",
   "severity": "info",
@@ -231,7 +245,7 @@
   "page": 1
  },
  {
-  "doc_id": "ref-2b6bb9af11ae",
+  "doc_id": "ref-e1055abbe307",
   "file": "mixed_media.pdf",
   "code": "image_only_page",
   "severity": "info",
@@ -244,35 +258,35 @@
   "page": 2
  },
  {
-  "doc_id": "ref-017a5b3a4503",
+  "doc_id": "ref-d82e8035a6e6",
   "file": "ruled_tables.pdf",
   "code": "license_unknown",
   "severity": "warning",
-  "message": "licence/reuse status unknown — treat as reference only"
+  "message": "no licence on record — treat as reference only"
  },
  {
-  "doc_id": "ref-017a5b3a4503",
+  "doc_id": "ref-d82e8035a6e6",
   "file": "ruled_tables.pdf",
   "code": "reviewed_metadata_missing",
   "severity": "info",
   "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
  },
  {
-  "doc_id": "ref-6a148a3e9805",
+  "doc_id": "ref-6003da1ead7c",
   "file": "scanned.pdf",
   "code": "license_unknown",
   "severity": "warning",
-  "message": "licence/reuse status unknown — treat as reference only"
+  "message": "no licence on record — treat as reference only"
  },
  {
-  "doc_id": "ref-6a148a3e9805",
+  "doc_id": "ref-6003da1ead7c",
   "file": "scanned.pdf",
   "code": "reviewed_metadata_missing",
   "severity": "info",
   "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
  },
  {
-  "doc_id": "ref-6a148a3e9805",
+  "doc_id": "ref-6003da1ead7c",
   "file": "scanned.pdf",
   "code": "no_text_layer_scanned",
   "severity": "warning",
@@ -284,28 +298,28 @@
   "page": 1
  },
  {
-  "doc_id": "ref-b9943160a1ec",
+  "doc_id": "ref-f790e9cbb1dd",
   "file": "spread.pdf",
   "code": "license_unknown",
   "severity": "warning",
-  "message": "licence/reuse status unknown — treat as reference only"
+  "message": "no licence on record — treat as reference only"
  },
  {
-  "doc_id": "ref-b9943160a1ec",
+  "doc_id": "ref-f790e9cbb1dd",
   "file": "spread.pdf",
   "code": "reviewed_sha256_mismatch",
   "severity": "warning",
   "message": "rights-index.csv names this file with a different SHA-256 — record ignored"
  },
  {
-  "doc_id": "ref-b9943160a1ec",
+  "doc_id": "ref-f790e9cbb1dd",
   "file": "spread.pdf",
   "code": "reviewed_metadata_missing",
   "severity": "info",
   "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
  },
  {
-  "doc_id": "ref-b9943160a1ec",
+  "doc_id": "ref-f790e9cbb1dd",
   "file": "spread.pdf",
   "code": "spread_detected",
   "severity": "info",
@@ -318,21 +332,21 @@
   "page": 1
  },
  {
-  "doc_id": "ref-e0a205d949e3",
+  "doc_id": "ref-0254dbf1728b",
   "file": "spread_sheets.pdf",
   "code": "license_unknown",
   "severity": "warning",
-  "message": "licence/reuse status unknown — treat as reference only"
+  "message": "no licence on record — treat as reference only"
  },
  {
-  "doc_id": "ref-e0a205d949e3",
+  "doc_id": "ref-0254dbf1728b",
   "file": "spread_sheets.pdf",
   "code": "reviewed_metadata_missing",
   "severity": "info",
   "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
  },
  {
-  "doc_id": "ref-e0a205d949e3",
+  "doc_id": "ref-0254dbf1728b",
   "file": "spread_sheets.pdf",
   "code": "spread_detected",
   "severity": "info",
@@ -347,42 +361,42 @@
   "page": 1
  },
  {
-  "doc_id": "ref-5249f019e4d8",
+  "doc_id": "ref-3423aebea3ac",
   "file": "template_alpha.pdf",
   "code": "license_unknown",
   "severity": "warning",
-  "message": "licence/reuse status unknown — treat as reference only"
+  "message": "no licence on record — treat as reference only"
  },
  {
-  "doc_id": "ref-5249f019e4d8",
+  "doc_id": "ref-3423aebea3ac",
   "file": "template_alpha.pdf",
   "code": "possible_template_family",
   "severity": "info",
   "message": "same page count, formats, body size, fonts and margins as template_gamma.pdf — kept as a separate record, counted once in patterns"
  },
  {
-  "doc_id": "ref-5249f019e4d8",
+  "doc_id": "ref-3423aebea3ac",
   "file": "template_alpha.pdf",
   "code": "reviewed_metadata_missing",
   "severity": "info",
   "message": "no 05-Reviewed record matched (by SHA-256, filename or stem)"
  },
  {
-  "doc_id": "ref-5a2e89d3ead6",
+  "doc_id": "ref-670ddb1e12d1",
   "file": "template_gamma.pdf",
   "code": "license_unknown",
   "severity": "warning",
-  "message": "licence/reuse status unknown — treat as reference only"
+  "message": "no licence on record — treat as reference only"
  },
  {
-  "doc_id": "ref-5a2e89d3ead6",
+  "doc_id": "ref-670ddb1e12d1",
   "file": "template_gamma.pdf",
   "code": "possible_template_family",
   "severity": "info",
   "message": "same page count, formats, body size, fonts and margins as template_alpha.pdf — kept as a separate record, counted once in patterns"
  },
  {
-  "doc_id": "ref-5a2e89d3ead6",
+  "doc_id": "ref-670ddb1e12d1",
   "file": "template_gamma.pdf",
   "code": "reviewed_metadata_missing",
   "severity": "info",

@@ -6,10 +6,14 @@ extracted text, no colour values. A verdict is a statement about the evidence fo
 quality of a design.
 
 Run: `python -m tools.reference_analyzer analyze --input <references> --output <analysis>`, CPU only, offline,
-about 6 minutes. 13 of 13 analysed, 20 recurring patterns, 3 single-document observations, 59 warnings. All 13
-PDFs matched both reviewed records (`observed-features.json`, `review-index.csv`), with no SHA-256 or page-count
-conflict. Licence status now comes from the reviewed index for all 13; provenance stays `unknown` because the
+about 6 minutes. 13 of 13 analysed, 20 recurring patterns, 3 single-document observations. All 13 PDFs matched both
+reviewed records (`observed-features.json`, `review-index.csv`), with no SHA-256 or page-count conflict. The
+index holds a reviewer's `rights_status` for all 13. That is a note on permitted use, not a verified legal
+licence, so since M7.4 `license` stays `unknown` and warns on all 13; provenance stays `unknown` because the
 reviewed data has no provenance key.
+
+The verdicts below are also held in [`pattern_review.json`](pattern_review.json), linked to doc ids, SHA-256
+values and pages. Run `python -m tools.reference_analyzer review` to check that the two agree.
 
 **The two Unilever reports are independent records**: EN-01 (`ref-db25596332d2`, 224 pages) and EN-01-1
 (`ref-0b2bf0ebc355`, 32 pages) have different document ids and SHA-256 values, the right page counts, no
@@ -106,7 +110,7 @@ Evidence is `doc pages`. Support counts independent documents; template families
 |---|---:|---|---|
 | Leading ≤1.25× | 5 | 1.12-1.23× across five sources | EN-01-1 p1-5; EN-01 p1, 3-6; EN-02 p2-6; AR-03 p1-5; BI-01 p2-6 |
 | Leading 1.26-1.40× | 2 | 1.33× and 1.40×, one Arabic and one Latin source | EN-03 p1-5; AR-01 p6-10 |
-| Multi-column body | 5 | two columns on at least 30 % of text pages | EN-01-1 p2-6; EN-01 p9, 11, 14, 16, 19; EN-02 p4, 8, 20, 25, 26; AR-02 p4-8; AR-03 p2, 4-7 |
+| Multi-column body | 5 | two columns on at least 30 % of text pages, counting pages that could not be classified: EN-01-1 .41, EN-01 .32, EN-02 .45, AR-02 .52, AR-03 .82 (M7.3 left those pages out and read .42, .36, .61, .69, .84) | EN-01-1 p2-6; EN-01 p9, 11, 14, 16, 19; EN-02 p4, 8, 20, 25, 26; AR-02 p4-8; AR-03 p2, 4-7 |
 | Body size 9.5-10.4 pt | 3 | 9.5-10 pt, high confidence on all three | EN-03 p1-5; AR-02 p2-6; BI-01 p2-6 |
 | Body size ≥11.5 pt, narrowed to 12-12.5 pt | 2 | BI-04 at 15 pt is an outlier with an unreliable text layer, left out | EN-02 p2-6; AR-03 p1-5 |
 | H1 over 2.6× body | 4 | 2.74-3.58×; headings confirmed on rendered pages | EN-01 p6-13; AR-02 p372, 381, 393; AR-03 p2-12; BI-01 p26, 27 |

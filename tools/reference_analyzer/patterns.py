@@ -123,12 +123,14 @@ def build_patterns(features: List[dict], min_support: int = 2, content_id: Optio
     # 6. multi-column body
     ev = []
     for f in features:
-        cols = S(f, "columns")
-        total = sum(cols.values())
-        multi = sum(n for c, n in cols.items() if int(c) >= 2)
-        if total and multi / total >= 0.3:
-            pages = [p["page"] for p in f["pages"] if p["columns"]["value"] and p["columns"]["value"]["count"] >= 2]
-            ev.append(_ev(f, {"multi_column_pages": multi, "pages_with_columns": total}, pages))
+        # the denominator is every text page: pages the column reading could not classify count against the share
+        text = [p for p in f["pages"] if p["chars"]["value"] >= 200]
+        classified = [p for p in text if p["columns"]["value"] and p["columns"]["confidence"] in ("high", "medium")]
+        multi = [p["page"] for p in classified if p["columns"]["value"]["count"] >= 2]
+        if text and len(multi) / len(text) >= 0.3:
+            ev.append(_ev(f, {"multi_column_pages": len(multi), "text_pages": len(text),
+                              "unclassified_pages": len(text) - len(classified),
+                              "share_of_text_pages": round(len(multi) / len(text), 2)}, multi))
     if ev:
         candidates.append({"id": "multi-column-body", "category": "layout", "title": "Body text in two or more columns",
                            "proposal": {"layout_rule": "multi-column body text on ≥30 % of text pages"},
@@ -202,5 +204,6 @@ def build_patterns(features: List[dict], min_support: int = 2, content_id: Optio
     return {"min_support_docs": min_support, "documents_analysed": len(features),
             "recurring": recurring, "observations": observations,
             "note": "Patterns are inferred from measured values and point to source pages. They are proposals for "
-                    "human review, not measurements, and never imply aesthetic quality. Do not copy commercial "
+                    "human review, not measurements, and never imply aesthetic quality: how often a pattern occurs says "
+                    "where it was seen, not that it is good. Do not copy commercial "
                     "branding, artwork or layouts into distributed runtime assets."}

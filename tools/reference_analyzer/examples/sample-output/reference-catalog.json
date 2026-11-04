@@ -17,15 +17,15 @@
   "network": "none — runs offline; nothing is uploaded"
  },
  "input": {
-  "folder": "samplecorpus",
+  "folder": "sc",
   "pdf_files": 19,
   "reviewed_metadata_records": 8
  },
  "documents": [
   {
-   "doc_id": "ref-cf94c704dffb",
+   "doc_id": "ref-2e16553cb269",
    "file": "arabic_report.pdf",
-   "sha256": "cf94c704dffbcc54c72e7ed00293a5fd910801931fc87b4f79a31c788d9f55e7",
+   "sha256": "2e16553cb2692eacc016cd8bed50dad8426d4b0a814c6610aab803377b3759c3",
    "bytes": 39510,
    "status": "ok",
    "page_count": 2,
@@ -33,8 +33,8 @@
     "title": "تقرير تجريبي",
     "creator": "Dynamic PDF Builder",
     "producer": "ReportLab PDF Library - (opensource)",
-    "creationDate": "D:20261104141728+02'00'",
-    "modDate": "D:20261104141728+02'00'",
+    "creationDate": "D:20261104144509+02'00'",
+    "modDate": "D:20261104144509+02'00'",
     "format": "PDF 1.4"
    },
    "encrypted": false,
@@ -50,20 +50,27 @@
    "reviewed_metadata": null,
    "provenance": {
     "source": "local reference folder (no reviewed provenance)",
+    "verified": false,
     "recorded_from": "file system"
    },
    "license": {
     "status": "unknown",
+    "verified": false,
+    "source": "not provided",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "rights_status": {
+    "status": "unknown",
     "source": "not provided",
     "evidence": null,
-    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+    "note": "a reviewer's record of permitted use, not a legal determination"
    },
    "duplicates": []
   },
   {
-   "doc_id": "ref-c7b38a7876de",
+   "doc_id": "ref-07e5339f91e1",
    "file": "bilingual.pdf",
-   "sha256": "c7b38a7876de7908603401728ee7b30bc4b47b99587e1fc658b445937bb3332d",
+   "sha256": "07e5339f91e1280143b52530f2c3e0de83ef3dd2f8837dfecb885483e6ae6a77",
    "bytes": 38843,
    "status": "ok",
    "page_count": 1,
@@ -71,8 +78,8 @@
     "title": "Bilingual sample — عينة ثنائية اللغة",
     "creator": "Dynamic PDF Builder",
     "producer": "ReportLab PDF Library - (opensource)",
-    "creationDate": "D:20261104141728+02'00'",
-    "modDate": "D:20261104141728+02'00'",
+    "creationDate": "D:20261104144509+02'00'",
+    "modDate": "D:20261104144509+02'00'",
     "format": "PDF 1.4"
    },
    "encrypted": false,
@@ -100,20 +107,27 @@
    },
    "provenance": {
     "source": "local reference folder (no reviewed provenance)",
+    "verified": false,
     "recorded_from": "file system"
    },
    "license": {
+    "status": "unknown",
+    "verified": false,
+    "source": "not provided",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "rights_status": {
     "status": "synthetic",
     "source": "05-Reviewed/rights-index.csv",
     "evidence": null,
-    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+    "note": "a reviewer's record of permitted use, not a legal determination"
    },
    "duplicates": []
   },
   {
-   "doc_id": "ref-981a17e13750",
+   "doc_id": "ref-4f1afccd1d56",
    "file": "compilation.pdf",
-   "sha256": "981a17e137503dee2fc85bbf46bdf6d1d849685cbe8d71532e8bc34d05f95243",
+   "sha256": "4f1afccd1d563778143ecc8204b493b70ee5bf4cbb6e69ca543d141a29ab9162",
    "bytes": 4666,
    "status": "ok",
    "page_count": 6,
@@ -146,20 +160,27 @@
    "reviewed_metadata": null,
    "provenance": {
     "source": "local reference folder (no reviewed provenance)",
+    "verified": false,
     "recorded_from": "file system"
    },
    "license": {
     "status": "unknown",
+    "verified": false,
+    "source": "not provided",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "rights_status": {
+    "status": "unknown",
     "source": "not provided",
     "evidence": null,
-    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+    "note": "a reviewer's record of permitted use, not a legal determination"
    },
    "duplicates": []
   },
   {
-   "doc_id": "ref-d7279d19fd97",
+   "doc_id": "ref-03cfc8a0b942",
    "file": "corrupt.pdf",
-   "sha256": "d7279d19fd974c063a1152838e5d8d58c4540b21f306cd572c8d0d048321242a",
+   "sha256": "03cfc8a0b94265dc1095c11afbe4f92a130c0f17d14b5cfea8f1acceedfd07e2",
    "bytes": 110,
    "status": "empty",
    "page_count": 0,
@@ -172,20 +193,27 @@
    "reviewed_metadata": null,
    "provenance": {
     "source": "local reference folder (no reviewed provenance)",
+    "verified": false,
     "recorded_from": "file system"
    },
    "license": {
     "status": "unknown",
+    "verified": false,
+    "source": "not provided",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "rights_status": {
+    "status": "unknown",
     "source": "not provided",
     "evidence": null,
-    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+    "note": "a reviewer's record of permitted use, not a legal determination"
    },
    "duplicates": []
   },
   {
-   "doc_id": "ref-d12693e6ee67",
+   "doc_id": "ref-15f075e119f3",
    "file": "facing_pages.pdf",
-   "sha256": "d12693e6ee67eb025bf7c8ba8f8c5a8c8796619a698efb2a562874a378fa167e",
+   "sha256": "15f075e119f3c3520719d8287f89ff642cc3dc864b1321d0caa2260426000c4a",
    "bytes": 6463,
    "status": "ok",
    "page_count": 6,
@@ -211,7 +239,7 @@
     "fields": {
      "id": "S-1",
      "original_relative_path": "facing_pages.pdf",
-     "sha256": "d12693e6ee67eb025bf7c8ba8f8c5a8c8796619a698efb2a562874a378fa167e",
+     "sha256": "15f075e119f3c3520719d8287f89ff642cc3dc864b1321d0caa2260426000c4a",
      "pdf_pages": 6,
      "file": "facing_pages.pdf",
      "pages": "6",
@@ -221,20 +249,27 @@
    },
    "provenance": {
     "source": "local reference folder (no reviewed provenance)",
+    "verified": false,
     "recorded_from": "file system"
    },
    "license": {
+    "status": "unknown",
+    "verified": false,
+    "source": "not provided",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "rights_status": {
     "status": "study only",
     "source": "05-Reviewed/rights-index.csv",
     "evidence": "generated by sample_corpus.py",
-    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+    "note": "a reviewer's record of permitted use, not a legal determination"
    },
    "duplicates": []
   },
   {
-   "doc_id": "ref-953195aea2ec",
+   "doc_id": "ref-15bddec22f5e",
    "file": "garbled.pdf",
-   "sha256": "953195aea2ecea134183b1d4118f1ab4fd0dcfef371be8ce8a05776e944cad6f",
+   "sha256": "15bddec22f5ed5eae2322a78724580902371817217b70968927451e5f954c429",
    "bytes": 1154,
    "status": "ok",
    "page_count": 1,
@@ -255,20 +290,27 @@
    "reviewed_metadata": null,
    "provenance": {
     "source": "local reference folder (no reviewed provenance)",
+    "verified": false,
     "recorded_from": "file system"
    },
    "license": {
     "status": "unknown",
+    "verified": false,
+    "source": "not provided",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "rights_status": {
+    "status": "unknown",
     "source": "not provided",
     "evidence": null,
-    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+    "note": "a reviewer's record of permitted use, not a legal determination"
    },
    "duplicates": []
   },
   {
-   "doc_id": "ref-99ebf82af396",
+   "doc_id": "ref-23c71db70f44",
    "file": "known_geometry.pdf",
-   "sha256": "99ebf82af3965a6bc88aaa1bb33cd247accd181325546c4b4dfb02586af62b84",
+   "sha256": "23c71db70f44040da5bf2d3daae8ef357715728e4652ebbd04192f078e0be97c",
    "bytes": 4807,
    "status": "ok",
    "page_count": 3,
@@ -278,8 +320,8 @@
     "subject": "(unspecified)",
     "creator": "(unspecified)",
     "producer": "ReportLab PDF Library - (opensource)",
-    "creationDate": "D:20261104141727+02'00'",
-    "modDate": "D:20261104141727+02'00'",
+    "creationDate": "D:20261104144509+02'00'",
+    "modDate": "D:20261104144509+02'00'",
     "format": "PDF 1.4"
    },
    "encrypted": false,
@@ -304,27 +346,34 @@
    },
    "provenance": {
     "source": "generated by sample_corpus.py",
+    "verified": false,
     "recorded_from": "05-Reviewed/known_geometry.json"
    },
    "license": {
     "status": "CC0 (synthetic test file)",
+    "verified": false,
     "source": "05-Reviewed/known_geometry.json",
-    "evidence": null,
     "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "rights_status": {
+    "status": "unknown",
+    "source": "not provided",
+    "evidence": null,
+    "note": "a reviewer's record of permitted use, not a legal determination"
    },
    "duplicates": [
     {
      "kind": "exact",
      "with": [
-      "ref-99ebf82af396-2"
+      "ref-23c71db70f44-2"
      ]
     }
    ]
   },
   {
-   "doc_id": "ref-99ebf82af396-2",
+   "doc_id": "ref-23c71db70f44-2",
    "file": "known_geometry_copy.pdf",
-   "sha256": "99ebf82af3965a6bc88aaa1bb33cd247accd181325546c4b4dfb02586af62b84",
+   "sha256": "23c71db70f44040da5bf2d3daae8ef357715728e4652ebbd04192f078e0be97c",
    "bytes": 4807,
    "status": "ok",
    "page_count": 3,
@@ -334,8 +383,8 @@
     "subject": "(unspecified)",
     "creator": "(unspecified)",
     "producer": "ReportLab PDF Library - (opensource)",
-    "creationDate": "D:20261104141727+02'00'",
-    "modDate": "D:20261104141727+02'00'",
+    "creationDate": "D:20261104144509+02'00'",
+    "modDate": "D:20261104144509+02'00'",
     "format": "PDF 1.4"
    },
    "encrypted": false,
@@ -351,27 +400,34 @@
    "reviewed_metadata": null,
    "provenance": {
     "source": "local reference folder (no reviewed provenance)",
+    "verified": false,
     "recorded_from": "file system"
    },
    "license": {
     "status": "unknown",
+    "verified": false,
+    "source": "not provided",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "rights_status": {
+    "status": "unknown",
     "source": "not provided",
     "evidence": null,
-    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+    "note": "a reviewer's record of permitted use, not a legal determination"
    },
    "duplicates": [
     {
      "kind": "exact",
      "with": [
-      "ref-99ebf82af396"
+      "ref-23c71db70f44"
      ]
     }
    ]
   },
   {
-   "doc_id": "ref-3a44fd9b00eb",
+   "doc_id": "ref-a5238891267b",
    "file": "landscape_slides.pdf",
-   "sha256": "3a44fd9b00eb48dfe2b2e3b72e6d6b1d3314b57069a12472f06dbc75331bcd51",
+   "sha256": "a5238891267b5c94f80a82be3303e8fd92af88b9e4e5221bb79ff3085914b449",
    "bytes": 4529,
    "status": "ok",
    "page_count": 3,
@@ -392,21 +448,28 @@
    "reviewed_metadata": null,
    "provenance": {
     "source": "local reference folder (no reviewed provenance)",
+    "verified": false,
     "recorded_from": "file system"
    },
    "license": {
     "status": "unknown",
+    "verified": false,
+    "source": "not provided",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "rights_status": {
+    "status": "unknown",
     "source": "not provided",
     "evidence": null,
-    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+    "note": "a reviewer's record of permitted use, not a legal determination"
    },
    "duplicates": []
   },
   {
-   "doc_id": "ref-3420d01129f9",
+   "doc_id": "ref-0d33293aed4b",
    "file": "long_report.pdf",
-   "sha256": "3420d01129f9d04773cf9f19e73870c7de651dce11f2eca78e2fe19c3568973f",
-   "bytes": 129790,
+   "sha256": "0d33293aed4b4949903552b640de8b62381395cd1a22620d96df1cecec2de1b7",
+   "bytes": 129789,
    "status": "ok",
    "page_count": 6,
    "pdf_metadata": {
@@ -426,20 +489,27 @@
    "reviewed_metadata": null,
    "provenance": {
     "source": "local reference folder (no reviewed provenance)",
+    "verified": false,
     "recorded_from": "file system"
    },
    "license": {
     "status": "unknown",
+    "verified": false,
+    "source": "not provided",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "rights_status": {
+    "status": "unknown",
     "source": "not provided",
     "evidence": null,
-    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+    "note": "a reviewer's record of permitted use, not a legal determination"
    },
    "duplicates": []
   },
   {
-   "doc_id": "ref-2b6bb9af11ae",
+   "doc_id": "ref-e1055abbe307",
    "file": "mixed_media.pdf",
-   "sha256": "2b6bb9af11ae7fa9f9e690e53d91f3ccd70bc94f0a56f053d5496e944671e4ee",
+   "sha256": "e1055abbe307a93e4aedaa272e329fa1edb3182abf1d3caa3d8d52caa62a5145",
    "bytes": 106880,
    "status": "ok",
    "page_count": 7,
@@ -460,20 +530,27 @@
    "reviewed_metadata": null,
    "provenance": {
     "source": "local reference folder (no reviewed provenance)",
+    "verified": false,
     "recorded_from": "file system"
    },
    "license": {
     "status": "unknown",
+    "verified": false,
+    "source": "not provided",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "rights_status": {
+    "status": "unknown",
     "source": "not provided",
     "evidence": null,
-    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+    "note": "a reviewer's record of permitted use, not a legal determination"
    },
    "duplicates": []
   },
   {
-   "doc_id": "ref-017a5b3a4503",
+   "doc_id": "ref-d82e8035a6e6",
    "file": "ruled_tables.pdf",
-   "sha256": "017a5b3a4503b09ced5677bc7e9f03c0affebbcf117ce4f794cfce317d0d0896",
+   "sha256": "d82e8035a6e66320d2d8af9aefce54e77943908110d8dc76078c66a25be52bde",
    "bytes": 16908,
    "status": "ok",
    "page_count": 3,
@@ -494,20 +571,27 @@
    "reviewed_metadata": null,
    "provenance": {
     "source": "local reference folder (no reviewed provenance)",
+    "verified": false,
     "recorded_from": "file system"
    },
    "license": {
     "status": "unknown",
+    "verified": false,
+    "source": "not provided",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "rights_status": {
+    "status": "unknown",
     "source": "not provided",
     "evidence": null,
-    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+    "note": "a reviewer's record of permitted use, not a legal determination"
    },
    "duplicates": []
   },
   {
-   "doc_id": "ref-6a148a3e9805",
+   "doc_id": "ref-6003da1ead7c",
    "file": "scanned.pdf",
-   "sha256": "6a148a3e9805c2e371e014050eddb4838eb7a6f8ddb9dc6a74c9ecf7788720f1",
+   "sha256": "6003da1ead7cc413e87b0717e953680ffea13d2aef5eea8b69fb6d66c8de7f61",
    "bytes": 1050346,
    "status": "ok",
    "page_count": 1,
@@ -528,20 +612,27 @@
    "reviewed_metadata": null,
    "provenance": {
     "source": "local reference folder (no reviewed provenance)",
+    "verified": false,
     "recorded_from": "file system"
    },
    "license": {
     "status": "unknown",
+    "verified": false,
+    "source": "not provided",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "rights_status": {
+    "status": "unknown",
     "source": "not provided",
     "evidence": null,
-    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+    "note": "a reviewer's record of permitted use, not a legal determination"
    },
    "duplicates": []
   },
   {
-   "doc_id": "ref-b9943160a1ec",
+   "doc_id": "ref-f790e9cbb1dd",
    "file": "spread.pdf",
-   "sha256": "b9943160a1ecc55ffd30ded03c3b7962ee3396703dfdf83fe89d728049e4617d",
+   "sha256": "f790e9cbb1dd24f8654f827876f58ce6865322a919d8d26aa80e1386cf117f65",
    "bytes": 3061,
    "status": "ok",
    "page_count": 2,
@@ -562,20 +653,27 @@
    "reviewed_metadata": null,
    "provenance": {
     "source": "local reference folder (no reviewed provenance)",
+    "verified": false,
     "recorded_from": "file system"
    },
    "license": {
     "status": "unknown",
+    "verified": false,
+    "source": "not provided",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "rights_status": {
+    "status": "unknown",
     "source": "not provided",
     "evidence": null,
-    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+    "note": "a reviewer's record of permitted use, not a legal determination"
    },
    "duplicates": []
   },
   {
-   "doc_id": "ref-e0a205d949e3",
+   "doc_id": "ref-0254dbf1728b",
    "file": "spread_sheets.pdf",
-   "sha256": "e0a205d949e322547b8e116eae0ba334569fd876a1c380c9dd267053e661f751",
+   "sha256": "0254dbf1728bc3508801fe6fdd098eaced0083a1d3f79b57bee84345f1cbf46d",
    "bytes": 7539,
    "status": "ok",
    "page_count": 4,
@@ -596,20 +694,27 @@
    "reviewed_metadata": null,
    "provenance": {
     "source": "local reference folder (no reviewed provenance)",
+    "verified": false,
     "recorded_from": "file system"
    },
    "license": {
     "status": "unknown",
+    "verified": false,
+    "source": "not provided",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "rights_status": {
+    "status": "unknown",
     "source": "not provided",
     "evidence": null,
-    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+    "note": "a reviewer's record of permitted use, not a legal determination"
    },
    "duplicates": []
   },
   {
-   "doc_id": "ref-5249f019e4d8",
+   "doc_id": "ref-3423aebea3ac",
    "file": "template_alpha.pdf",
-   "sha256": "5249f019e4d899ee8472a40fb0185d26b5f3b6a3f3d5a5b621896b17ad23fe22",
+   "sha256": "3423aebea3ac2bd18a95fae7c0bd206895389c8225e12a89cfdba3554c2d2ecc",
    "bytes": 3085,
    "status": "ok",
    "page_count": 3,
@@ -630,20 +735,27 @@
    "reviewed_metadata": null,
    "provenance": {
     "source": "local reference folder (no reviewed provenance)",
+    "verified": false,
     "recorded_from": "file system"
    },
    "license": {
     "status": "unknown",
+    "verified": false,
+    "source": "not provided",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "rights_status": {
+    "status": "unknown",
     "source": "not provided",
     "evidence": null,
-    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+    "note": "a reviewer's record of permitted use, not a legal determination"
    },
    "duplicates": []
   },
   {
-   "doc_id": "ref-5a2e89d3ead6",
+   "doc_id": "ref-670ddb1e12d1",
    "file": "template_gamma.pdf",
-   "sha256": "5a2e89d3ead67f62f51ced20aae4c2fdf3a464a90824dec1fca925fb311604ee",
+   "sha256": "670ddb1e12d17958a32f1b23da93eb6391471da5cd91aac627da9039f0ae0083",
    "bytes": 3190,
    "status": "ok",
    "page_count": 3,
@@ -664,20 +776,27 @@
    "reviewed_metadata": null,
    "provenance": {
     "source": "local reference folder (no reviewed provenance)",
+    "verified": false,
     "recorded_from": "file system"
    },
    "license": {
     "status": "unknown",
+    "verified": false,
+    "source": "not provided",
+    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "rights_status": {
+    "status": "unknown",
     "source": "not provided",
     "evidence": null,
-    "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+    "note": "a reviewer's record of permitted use, not a legal determination"
    },
    "duplicates": []
   },
   {
-   "doc_id": "ref-9163605b13c4",
+   "doc_id": "ref-6b84d029ff62",
    "file": "annual/northwind_annual_report_2023.pdf",
-   "sha256": "9163605b13c4321df51100b39d941aae82669f036cd77bab94ca98e12d8d28ec",
+   "sha256": "6b84d029ff62603924a79c77dc0360600a895722e3ff2276ecd48b09b77b905d",
    "bytes": 13375,
    "status": "ok",
    "page_count": 12,
@@ -708,20 +827,27 @@
    },
    "provenance": {
     "source": "sample_corpus.py",
+    "verified": false,
     "recorded_from": "05-Reviewed/catalog.csv"
    },
    "license": {
     "status": "fictional sample — internal use",
+    "verified": false,
     "source": "05-Reviewed/catalog.csv",
-    "evidence": null,
     "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "rights_status": {
+    "status": "unknown",
+    "source": "not provided",
+    "evidence": null,
+    "note": "a reviewer's record of permitted use, not a legal determination"
    },
    "duplicates": []
   },
   {
-   "doc_id": "ref-d8f7c34f8902",
+   "doc_id": "ref-21e08185040f",
    "file": "annual/northwind_annual_report_2023_summary.pdf",
-   "sha256": "d8f7c34f89024d50e63f5bf73270818c36dc720573f132758b03f7553bc3da7b",
+   "sha256": "21e08185040f43d56fc81f3e7fda777853e7adceb5bda1acffac08fb14b9b9d2",
    "bytes": 4744,
    "status": "ok",
    "page_count": 4,
@@ -752,13 +878,20 @@
    },
    "provenance": {
     "source": "sample_corpus.py",
+    "verified": false,
     "recorded_from": "05-Reviewed/catalog.csv"
    },
    "license": {
     "status": "fictional sample — internal use",
+    "verified": false,
     "source": "05-Reviewed/catalog.csv",
-    "evidence": null,
     "reuse_policy": "analysis only — measurements and abstract patterns; never copy branding, artwork or layouts into distributed assets"
+   },
+   "rights_status": {
+    "status": "unknown",
+    "source": "not provided",
+    "evidence": null,
+    "note": "a reviewer's record of permitted use, not a legal determination"
    },
    "duplicates": []
   }

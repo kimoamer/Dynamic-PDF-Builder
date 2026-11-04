@@ -113,6 +113,9 @@ class DocumentBuilder:
         self._source_text: Optional[str] = None
         self.front_matter: dict = {}
         self.last_design = None
+        self._evidence_recipe: Optional[str] = None
+        self._recipe_gate = "evidence"
+        self._gate_cache: dict = {}
         self._qa_hints: dict = {}        # block index -> layout hints from the QA loop
         self._compose_options = None     # set by compose(); None = classic single render
         self._composition = None
@@ -136,11 +139,24 @@ class DocumentBuilder:
         self._meta.rtl = direction == "rtl"
         return self
 
-    def design(self, mode: str = "auto", brand=None) -> 'DocumentBuilder':
+    def design(self, mode: str = "auto", brand=None, recipe: Optional[str] = None,
+               recipe_gate: str = "evidence") -> 'DocumentBuilder':
         """Enable intelligent design: ``"auto"`` selects a profile from the
         content; a profile name forces it. ``brand`` is a ``BrandKit`` or dict.
-        Content is never altered — only typography, layout and navigation."""
-        from .design import BrandKit, resolve_profile_name
+        Content is never altered — only typography, layout and navigation.
+
+        ``recipe`` opts into an evidence recipe (a name from ``EVIDENCE_RECIPES``,
+        or ``"auto"`` for the one covering this document). It is used only if its
+        comparison evidence supports it and this document passes the safety checks;
+        otherwise the existing design stays and ``design_explain()`` says why.
+        ``recipe_gate="preview"`` renders it regardless, for comparisons."""
+        from .design import BrandKit, EVIDENCE_RECIPES, resolve_profile_name
+        from .design.evidence_gate import GATES
+        if recipe is not None and recipe != "auto" and recipe not in EVIDENCE_RECIPES:
+            raise ValueError(f"unknown evidence recipe {recipe!r}; choose from {sorted(EVIDENCE_RECIPES)}")
+        if recipe_gate not in GATES:
+            raise ValueError(f"recipe_gate must be one of {GATES}")
+        self._evidence_recipe, self._recipe_gate = recipe, recipe_gate
         self._design_explicit = True
         if mode is None or mode == "none":
             self._design_mode = None       # explicit opt-out: classic theme rendering
@@ -266,7 +282,7 @@ class DocumentBuilder:
             self.last_design = None
             return self.build(), None
         from .design import plan_design, apply_plan
-        sem = self.semantic()
+        base_sem = sem = self.semantic()
         from .themes import get_theme as _gt
         plan = plan_design(sem, None if self._design_mode in (None, "auto") else self._design_mode,
                            self._brand, base_theme=_gt(self._theme) if self._theme_explicit else None)
@@ -282,8 +298,22 @@ class DocumentBuilder:
             plan.theme, plan.layout = cached
             from .design.tokens import compile_tokens
             plan.tokens = compile_tokens(plan.theme)
+        if self._evidence_recipe:
+            sem, plan = self._gated(base_sem, sem, plan, key)
         self.last_design = plan
         return sem.to_document(), plan.theme
+
+    def _gated(self, base_sem, sem, plan, key):
+        """The design after the evidence gate (one evaluation per content and design)."""
+        from .design.evidence_gate import run_gate
+        from .themes import get_theme as _gt
+        key = key + (self._evidence_recipe, self._recipe_gate)
+        if key not in self._gate_cache:
+            self._gate_cache = {key: run_gate(
+                self._evidence_recipe, self._recipe_gate, base_sem, sem, plan,
+                None if self._design_mode in (None, "auto") else self._design_mode, self._brand,
+                _gt(self._theme) if self._theme_explicit else None, self._policy)}
+        return self._gate_cache[key]
 
     def design_explain(self) -> dict:
         """Why each style/layout decision was made (profile, reasons, recipe)."""

@@ -74,14 +74,22 @@ class DocxRenderer:
         from ..layout.engine import _landscape_indices
         land = _landscape_indices(self.sem.blocks)
         in_land = False
+        flow = None
         for i, block in enumerate(self.sem.blocks):
             if (i in land) != in_land:
                 in_land = i in land
                 self._switch_orientation(landscape=in_land)
+            hints = getattr(block, "hints", None) or {}
+            if hints.get("flow_run") != flow:
+                flow = hints.get("flow_run")
+                self._switch_columns(hints.get("flow_columns", 1) if flow is not None else 1,
+                                     hints.get("flow_gap", 18.0))
             self.col.block_index = i
             self.col.block_type = getattr(block, "type", None)
             self._block_safe(doc, block)
         self.col.block_index = self.col.block_type = None
+        if flow is not None:
+            self._switch_columns(1, 18.0)
         if any(b.type == "table_of_contents" for b in self.sem.blocks):
             F.enable_update_fields_on_open(doc)
         buf = io.BytesIO()
@@ -461,6 +469,21 @@ class DocxRenderer:
                      "header_distance", "footer_distance"):
             setattr(sec, attr, getattr(prev, attr))
         self.content_width_pt = sec.page_width.pt - sec.left_margin.pt - sec.right_margin.pt
+
+    def _switch_columns(self, columns: int, gap: float):
+        """A continuous section with ``columns`` real Word columns: text stays editable and reflows."""
+        from docx.enum.section import WD_SECTION
+        sec = self.doc.add_section(WD_SECTION.CONTINUOUS)
+        sec.different_first_page_header_footer = False
+        body = self.doc.element.body
+        marker = body.xpath("./w:p[last()]")[-1]      # python-docx parks the break in an empty paragraph
+        before = marker.getprevious()
+        if before is not None and before.tag == F.qn("w:p"):
+            before.get_or_add_pPr().append(marker.pPr.find(F.qn("w:sectPr")))
+            body.remove(marker)
+        cols = F._get_or_add(sec._sectPr, "w:cols")
+        cols.set(F.qn("w:num"), str(columns))
+        cols.set(F.qn("w:space"), str(int(gap * 20)))
 
     def _table(self, c, b, hints):
         size = hints.get("font_size")

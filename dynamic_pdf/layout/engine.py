@@ -908,6 +908,20 @@ class LayoutEngine:
 
     # ═══════════════════════ RENDER ═══════════════════════
 
+    def _column_paragraph(self, block, index: int, theme, ctx) -> list:
+        """A paragraph of a column run, set to the column width."""
+        width = ctx.available_width
+        n, gap = block.hints["flow_columns"], block.hints["flow_gap"]
+        ctx.available_width = (width - gap * (n - 1)) / n
+        try:
+            result = create_flowables(block, theme, ctx) or []
+        finally:
+            ctx.available_width = width
+        if self.geometry is not None:
+            from ..intelligence.geometry import tag
+            tag(result, index, _role_for(block))
+        return result
+
     def render(self, output) -> None:
         register_fonts()
         theme = self.theme
@@ -1014,6 +1028,7 @@ class LayoutEngine:
             flowables = [self._page_counter]
             land = _landscape_indices(self.document.blocks) if lw > w else set()
             in_land = False
+            column_run: list = []
             from reportlab.platypus import NextPageTemplate
             from reportlab.platypus.flowables import PageBreakIfNotEmpty
             for i, block in enumerate(self.document.blocks):
@@ -1028,6 +1043,15 @@ class LayoutEngine:
                     width = max([len(block.headers or [])] + [len(r) for r in block.rows] + [1])
                     _policy.check_limit("Table cells", (len(block.rows) + 1) * width,
                                         limits.max_table_cells)
+                flow = (getattr(block, "hints", None) or {}).get("flow_run")
+                if flow is not None:
+                    column_run += self._column_paragraph(block, i, theme, ctx)
+                    following = self.document.blocks[i + 1] if i + 1 < len(self.document.blocks) else None
+                    if (getattr(following, "hints", None) or {}).get("flow_run") != flow:
+                        from .column_flow import column_flow
+                        flowables += column_flow(column_run, block.hints["flow_columns"], block.hints["flow_gap"])
+                        column_run = []
+                    continue
                 result = create_flowables(block, theme, ctx)
                 if result:
                     if self.geometry is not None:

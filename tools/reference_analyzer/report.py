@@ -90,12 +90,13 @@ def write_report(out_dir: str, catalog: dict, features: List[dict], patterns: di
          '<div class="legend">' + "".join(f'<span><i style="background:{c}"></i>{_e(n)}</span>' for n, c in LEGEND)
          + '</div>']
     H.append('<section><h2>Catalogue</h2><table><tr><th>doc_id</th><th>file</th><th>pages</th><th>status</th>'
-             '<th>SHA-256</th><th>licence / reuse</th><th>provenance</th><th>duplicates</th><th>warnings</th></tr>')
+             '<th>SHA-256</th><th>rights status (reviewer note)</th><th>licence</th><th>provenance</th><th>duplicates</th><th>warnings</th></tr>')
     for d in docs:
         dup = "; ".join(f'{x["kind"]}: {", ".join(x["with"])}' for x in d["duplicates"]) or "—"
         H.append(f'<tr><td><a href="#{_e(d["doc_id"])}">{_e(d["doc_id"])}</a></td><td>{_e(d["file"])}</td>'
                  f'<td>{_e(d["page_count"])}</td><td>{_e(d["status"])}</td><td><code>{_e(d["sha256"][:16])}…</code></td>'
-                 f'<td>{_e(d["license"]["status"])}</td><td>{_e(d["provenance"]["source"])}</td><td>{_e(dup)}</td>'
+                 f'<td>{_e(d["rights_status"]["status"])}</td><td>{_e(d["license"]["status"])}</td>'
+                 f'<td>{_e(d["provenance"]["source"])}</td><td>{_e(dup)}</td>'
                  f'<td>{wcount.get(d["doc_id"], 0)}</td></tr>')
     H.append('</table></section>')
     for f in features:
