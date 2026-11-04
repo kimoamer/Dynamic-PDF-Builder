@@ -1,0 +1,112 @@
+{
+ "name": "invoice",
+ "variant": "smart",
+ "category": "Invoice",
+ "size": "small",
+ "pages": 1,
+ "pdf_sha256": "ae9470810d78be8b0167c95669d223d6b22d3607d7d1f9f53c8bfa4187f1897d",
+ "layout_id": "e4ee9e359230b4bc",
+ "timing": {
+  "pdf_cold_s": 0.19,
+  "pdf_cold_cpu_s": 0.189,
+  "docx_cold_s": 0.116,
+  "pdf_warm_s": 0.102,
+  "docx_warm_s": 0.091,
+  "engine_import_s": 0.245
+ },
+ "memory": {
+  "rss_before_mb": 44.5,
+  "rss_peak_mb": 100.9
+ },
+ "renders": 3,
+ "composition": {
+  "strategy": "baseline",
+  "status": "ok",
+  "preflight": "readability 0.953",
+  "candidates_considered": 2,
+  "candidates_rendered": 1,
+  "render_attempts": 2,
+  "repair_renders": 0,
+  "design_trial_renders": 1,
+  "fallbacks": []
+ },
+ "score": {
+  "value": 87.95,
+  "valid": true,
+  "hard_errors": [],
+  "utilization": 0.495,
+  "wasted": 0.0,
+  "readability": 0.953,
+  "cpl": 95.6,
+  "separated_figures": 0.0,
+  "efficiency": 1.0,
+  "placement": 1.0
+ },
+ "page_roles": [
+  [
+   1,
+   "final",
+   0.47
+  ]
+ ],
+ "layout": {
+  "underfilled_body_pages": [],
+  "geometry_duplicates": [],
+  "oversize_figures": [],
+  "figures_after_gap": [],
+  "rtl_right_aligned_share": null
+ },
+ "rtl": {
+  "arabic_paragraphs_checked": 0,
+  "line_order_defects": [],
+  "symbol_font_text_spans": 0,
+  "harakat_source": 0,
+  "harakat_pdf": 0,
+  "harakat_docx": 0
+ },
+ "pdf_qa": {
+  "status": "pass",
+  "errors": [],
+  "warnings": []
+ },
+ "docx_qa": {
+  "status": "pass",
+  "pages": 1,
+  "unverified": [],
+  "errors": [],
+  "warnings": []
+ },
+ "content": {
+  "source_words": 77,
+  "pdf_missing_words": [],
+  "docx_missing_words": [],
+  "pdf_sequence": {
+   "checked": 3,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  },
+  "docx_sequence": {
+   "checked": 3,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  }
+ },
+ "docx_editability": {
+  "word_tables": 1,
+  "source_tables": 1,
+  "source_tables_editable": 1,
+  "heading_styles": 1,
+  "source_headings": 1,
+  "images": 0,
+  "figure_blocks": 0,
+  "text_chars": 691
+ },
+ "diagnostics": [],
+ "network_attempts": [],
+ "sheets": {
+  "pdf": "img/invoice-smart-pdf.jpg",
+  "docx": "img/invoice-smart-docx.jpg"
+ }
+}

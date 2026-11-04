@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Layout Review Gallery</title>
+<style>
+:root { --bg:#f6f7f9; --card:#fff; --ink:#1d232b; --muted:#5d6774; --line:#d9dee5; --accent:#2f5bd3; --ok:#1f7a4d; --bad:#b3261e; }
+@media (prefers-color-scheme: dark) { :root { --bg:#14171c; --card:#1d2128; --ink:#e7eaee; --muted:#a3acb8; --line:#333a44; --accent:#7ea2ff; --ok:#5bc58d; --bad:#ff8a80; } }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+header { position:sticky; top:0; z-index:2; background:var(--card); border-bottom:1px solid var(--line); padding:12px 16px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+header h1 { font-size:17px; margin:0 12px 0 0; }
+header input[type=text] { padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--ink); }
+button { padding:6px 12px; border-radius:6px; border:1px solid var(--line); background:var(--bg); color:var(--ink); cursor:pointer; }
+button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+main { max-width:1500px; margin:0 auto; padding:16px; }
+.intro { color:var(--muted); max-width:900px; }
+section.doc { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; margin:18px 0; }
+section.doc h2 { margin:0; font-size:18px; }
+.meta { color:var(--muted); font-size:13px; }
+.pair { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:12px; }
+@media (max-width: 800px) { .pair { grid-template-columns:1fr; } }
+figure { margin:0; }
+figure img { width:100%; height:auto; border:1px solid var(--line); border-radius:6px; background:#fff; }
+figcaption { font-weight:600; margin-bottom:4px; }
+.fmt { margin-top:14px; font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+.review { margin-top:14px; padding:12px; border:1px dashed var(--line); border-radius:8px; display:grid; gap:8px; }
+.review .choices label { margin-right:16px; }
+.review .tags label { display:inline-block; margin:0 12px 4px 0; font-size:13px; }
+textarea { width:100%; min-height:48px; border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--ink); padding:6px; }
+details { margin-top:10px; }
+table { border-collapse:collapse; font-size:13px; margin-top:6px; }
+td, th { border:1px solid var(--line); padding:3px 8px; text-align:left; }
+.done { color:var(--ok); font-weight:600; }
+.missing { color:var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Layout Review Gallery</h1>
+  <label>Reviewer <input id="reviewer" type="text" placeholder="name or initials"></label>
+  <span id="progress"></span>
+  <button class="primary" id="export">Export judgments (JSON)</button>
+  <label><button id="importBtn" type="button">Import JSON</button><input id="import" type="file" accept="application/json" hidden></label>
+  <button id="clear">Clear my judgments</button>
+</header>
+<main>
+<p class="intro">Each document was rendered twice from identical input. The two versions are shown blind as
+<b>A</b> and <b>B</b> (the assignment is fixed per document and stored in the export); documents whose
+two layouts are identical are marked and need no judgment. Compare the full-page
+contact sheets for the PDF and for the DOCX (rendered independently by LibreOffice), then choose A, B or Tie and
+optionally tick reasons. Judgments stay in this browser until you export them. Automated metrics are hidden
+under “Automated metrics” — open them only after judging. No rating is pre-filled.</p>
+<div id="docs"></div>
+</main>
+<script>
+const DATA = /*__DATA__*/null;
+const KEY = "m7-layout-review-v1";
+let state = {};
+try { state = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { state = {}; }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} progress(); };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function sheet(doc, side, fmt) {
+  const v = doc[side], src = (doc.sheets[v] || {})[fmt];
+  const pages = fmt === "pdf" ? doc.pages[v] : doc.docx_pages[v];
+  return `<figure><figcaption>${side} — ${pages ?? "?"} page(s)</figcaption>` +
+    (src ? `<a href="${src}" target="_blank"><img loading="lazy" src="${src}" alt="${side} ${fmt} pages of ${esc(doc.name)}"></a>`
+         : `<p class="missing">not available (LibreOffice missing)</p>`) + `</figure>`;
+}
+
+function metrics(doc) {
+  const keys = Object.keys(doc.facts.baseline);
+  const row = k => `<tr><td>${k}</td><td>${doc.facts.baseline[k]}</td><td>${doc.facts.smart[k]}</td></tr>`;
+  const f = v => (doc.findings[v].length ? doc.findings[v].map(esc).join("<br>") : "none");
+  return `<details><summary>Automated metrics (open after judging)</summary>
+    <p>A = <b>${doc.A}</b>, B = <b>${doc.B}</b>. Smart strategy: <b>${esc(doc.strategy)}</b>. Automated verdict:
+    <b>${esc(doc.verdict)}</b>${doc.notes.length ? " (" + doc.notes.map(esc).join("; ") + ")" : ""}.</p>
+    <table><tr><th>fact (lower is better)</th><th>baseline</th><th>smart</th></tr>${keys.map(row).join("")}
+    <tr><td>internal score (reference only)</td><td>${doc.score.baseline}</td><td>${doc.score.smart}</td></tr>
+    <tr><td>QA PDF / DOCX</td><td>${doc.qa.baseline.join(" / ")}</td><td>${doc.qa.smart.join(" / ")}</td></tr></table>
+    <p>Findings — baseline: ${f("baseline")}<br>Findings — smart: ${f("smart")}</p></details>`;
+}
+
+const same = d => d.layout_id.baseline === d.layout_id.smart;
+
+function render() {
+  const root = document.getElementById("docs");
+  root.innerHTML = DATA.docs.map((d, i) => {
+    const s = state[d.name] || {};
+    const radio = c => `<label><input type="radio" name="c-${i}" value="${c}" ${s.choice === c ? "checked" : ""}> ${c === "tie" ? "Tie" : c}</label>`;
+    const tag = t => `<label><input type="checkbox" data-tag="${esc(t)}" ${(s.reasons || []).includes(t) ? "checked" : ""}> ${esc(t)}</label>`;
+    return `<section class="doc" data-i="${i}">
+      <h2>${esc(d.name)}</h2><div class="meta">${esc(d.category)} · ${d.size}</div>
+      <div class="fmt">PDF</div><div class="pair">${sheet(d, "A", "pdf")}${sheet(d, "B", "pdf")}</div>
+      <div class="fmt">DOCX rendered by LibreOffice</div><div class="pair">${sheet(d, "A", "docx")}${sheet(d, "B", "docx")}</div>
+      ${same(d) ? `<div class="review"><b>A and B are the same layout</b> (smart composition kept the designed layout); no judgment needed.</div>` :
+      `<div class="review"><div class="choices"><b>Preferred:</b> ${radio("A")}${radio("B")}${radio("tie")}</div>
+      <div class="tags">${DATA.reasons.map(tag).join("")}</div>
+      <textarea placeholder="Optional reason">${esc(s.note || "")}</textarea></div>`}
+      ${metrics(d)}</section>`;
+  }).join("");
+  root.querySelectorAll("section.doc").forEach(sec => {
+    const d = DATA.docs[+sec.dataset.i];
+    const upd = () => {
+      const c = sec.querySelector("input[type=radio]:checked");
+      const tags = [...sec.querySelectorAll("input[data-tag]:checked")].map(x => x.dataset.tag);
+      const note = sec.querySelector("textarea").value;
+      if (!c && !tags.length && !note) { delete state[d.name]; } else {
+        state[d.name] = { choice: c ? c.value : null, reasons: tags, note, at: new Date().toISOString() };
+      }
+      save();
+    };
+    if (same(d)) return;
+    sec.addEventListener("change", upd);
+    sec.querySelector("textarea").addEventListener("input", upd);
+  });
+  progress();
+}
+
+function progress() {
+  const todo = DATA.docs.filter(d => !same(d));
+  const n = todo.filter(d => state[d.name] && state[d.name].choice).length;
+  document.getElementById("progress").innerHTML = `<span class="${n === todo.length ? "done" : ""}">${n} / ${todo.length} judged</span>`;
+}
+
+document.getElementById("export").onclick = () => {
+  const judgments = DATA.docs.filter(d => !same(d) && state[d.name] && state[d.name].choice).map(d => {
+    const s = state[d.name];
+    return { document: d.name, shown_as: { A: d.A, B: d.B }, choice: s.choice,
+             preferred_variant: s.choice === "tie" ? "tie" : d[s.choice], reasons: s.reasons, note: s.note,
+             layout_id: d.layout_id, judged_at: s.at };
+  });
+  const out = { format: "dynamic-pdf-builder/m7-human-preferences", version: 1,
+                reviewer: document.getElementById("reviewer").value.trim(), exported_at: new Date().toISOString(),
+                judgments };
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(out, null, 1)], { type: "application/json" }));
+  a.download = `human_preferences_${(out.reviewer || "anonymous").replace(/\W+/g, "_")}.json`;
+  a.click();
+};
+document.getElementById("importBtn").onclick = () => document.getElementById("import").click();
+document.getElementById("import").onchange = async ev => {
+  const f = ev.target.files[0]; if (!f) return;
+  const j = JSON.parse(await f.text());
+  for (const x of j.judgments || []) state[x.document] = { choice: x.choice, reasons: x.reasons || [], note: x.note || "", at: x.judged_at };
+  if (j.reviewer) document.getElementById("reviewer").value = j.reviewer;
+  save(); render();
+};
+document.getElementById("clear").onclick = () => { if (confirm("Remove all judgments stored in this browser?")) { state = {}; save(); render(); } };
+try { document.getElementById("reviewer").value = localStorage.getItem(KEY + "-reviewer") || ""; } catch (e) {}
+document.getElementById("reviewer").oninput = e => { try { localStorage.setItem(KEY + "-reviewer", e.target.value); } catch (x) {} };
+render();
+</script>
+</body>
+</html>

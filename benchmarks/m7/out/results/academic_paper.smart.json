@@ -1,0 +1,124 @@
+{
+ "name": "academic_paper",
+ "variant": "smart",
+ "category": "Academic paper with citations",
+ "size": "medium",
+ "pages": 3,
+ "pdf_sha256": "7cff610d24dacf91cdf77449a32d7d584db2600ecf8cd8a136cc8723a387b490",
+ "layout_id": "efa30f78e5204e17",
+ "timing": {
+  "pdf_cold_s": 0.775,
+  "pdf_cold_cpu_s": 1.152,
+  "docx_cold_s": 0.212,
+  "pdf_warm_s": 0.306,
+  "docx_warm_s": 0.141,
+  "engine_import_s": 0.258
+ },
+ "memory": {
+  "rss_before_mb": 44.5,
+  "rss_peak_mb": 147.7
+ },
+ "renders": 4,
+ "composition": {
+  "strategy": "baseline",
+  "status": "ok",
+  "preflight": "clean: no measurable layout issue predicted",
+  "candidates_considered": 0,
+  "candidates_rendered": 0,
+  "render_attempts": 1,
+  "repair_renders": 0,
+  "design_trial_renders": 3,
+  "fallbacks": []
+ },
+ "score": {
+  "value": 89.73,
+  "valid": true,
+  "hard_errors": [],
+  "utilization": 0.533,
+  "wasted": 0.0,
+  "readability": 1.0,
+  "cpl": 88.0,
+  "separated_figures": 0.0,
+  "efficiency": 1.0,
+  "placement": 1.0
+ },
+ "page_roles": [
+  [
+   1,
+   "toc",
+   0.476
+  ],
+  [
+   2,
+   "body",
+   0.641
+  ],
+  [
+   3,
+   "final",
+   0.751
+  ]
+ ],
+ "layout": {
+  "underfilled_body_pages": [],
+  "geometry_duplicates": [],
+  "oversize_figures": [],
+  "figures_after_gap": [],
+  "rtl_right_aligned_share": null
+ },
+ "rtl": {
+  "arabic_paragraphs_checked": 0,
+  "line_order_defects": [],
+  "symbol_font_text_spans": 0,
+  "harakat_source": 0,
+  "harakat_pdf": 0,
+  "harakat_docx": 0
+ },
+ "pdf_qa": {
+  "status": "pass",
+  "errors": [],
+  "warnings": []
+ },
+ "docx_qa": {
+  "status": "pass",
+  "pages": 4,
+  "unverified": [],
+  "errors": [],
+  "warnings": []
+ },
+ "content": {
+  "source_words": 232,
+  "pdf_missing_words": [
+   "fednf"
+  ],
+  "docx_missing_words": [],
+  "pdf_sequence": {
+   "checked": 10,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  },
+  "docx_sequence": {
+   "checked": 10,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  }
+ },
+ "docx_editability": {
+  "word_tables": 1,
+  "source_tables": 1,
+  "source_tables_editable": 1,
+  "heading_styles": 10,
+  "source_headings": 10,
+  "images": 1,
+  "figure_blocks": 1,
+  "text_chars": 3273
+ },
+ "diagnostics": [],
+ "network_attempts": [],
+ "sheets": {
+  "pdf": "img/academic_paper-smart-pdf.jpg",
+  "docx": "img/academic_paper-smart-docx.jpg"
+ }
+}

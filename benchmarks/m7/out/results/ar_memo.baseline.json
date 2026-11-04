@@ -1,0 +1,104 @@
+{
+ "name": "ar_memo",
+ "variant": "baseline",
+ "category": "Arabic internal memo",
+ "size": "small",
+ "pages": 1,
+ "pdf_sha256": "6286078d75a7bdccdab8ad73af09c71a25726d9ae9663961cc99f47c3bb421bc",
+ "layout_id": "402424acb161ee77",
+ "timing": {
+  "pdf_cold_s": 0.109,
+  "pdf_cold_cpu_s": 0.109,
+  "docx_cold_s": 0.083,
+  "pdf_warm_s": 0.052,
+  "docx_warm_s": 0.049,
+  "engine_import_s": 0.253
+ },
+ "memory": {
+  "rss_before_mb": 44.4,
+  "rss_peak_mb": 68.6
+ },
+ "renders": 2,
+ "composition": null,
+ "score": {
+  "value": 83.6,
+  "valid": true,
+  "hard_errors": [],
+  "utilization": 0.31,
+  "wasted": 0.0,
+  "readability": 0.939,
+  "cpl": 97.3,
+  "separated_figures": 0.0,
+  "efficiency": 1.0,
+  "placement": 1.0
+ },
+ "page_roles": [
+  [
+   1,
+   "final",
+   0.339
+  ]
+ ],
+ "layout": {
+  "underfilled_body_pages": [],
+  "geometry_duplicates": [],
+  "oversize_figures": [],
+  "figures_after_gap": [],
+  "rtl_right_aligned_share": 1.0
+ },
+ "rtl": {
+  "arabic_paragraphs_checked": 1,
+  "line_order_defects": [
+   2
+  ],
+  "symbol_font_text_spans": 0,
+  "harakat_source": 7,
+  "harakat_pdf": 0,
+  "harakat_docx": 7
+ },
+ "pdf_qa": {
+  "status": "pass",
+  "errors": [],
+  "warnings": []
+ },
+ "docx_qa": {
+  "status": "pass",
+  "pages": 1,
+  "unverified": [],
+  "errors": [],
+  "warnings": []
+ },
+ "content": {
+  "source_words": 87,
+  "pdf_missing_words": [],
+  "docx_missing_words": [],
+  "pdf_sequence": {
+   "checked": 0,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  },
+  "docx_sequence": {
+   "checked": 3,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  }
+ },
+ "docx_editability": {
+  "word_tables": 0,
+  "source_tables": 0,
+  "source_tables_editable": 0,
+  "heading_styles": 3,
+  "source_headings": 3,
+  "images": 0,
+  "figure_blocks": 0,
+  "text_chars": 730
+ },
+ "diagnostics": [],
+ "network_attempts": [],
+ "sheets": {
+  "pdf": "img/ar_memo-baseline-pdf.jpg",
+  "docx": "img/ar_memo-baseline-docx.jpg"
+ }
+}

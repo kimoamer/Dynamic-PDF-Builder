@@ -1,0 +1,117 @@
+{
+ "name": "en_executive_report",
+ "variant": "smart",
+ "category": "English executive report",
+ "size": "medium",
+ "pages": 2,
+ "pdf_sha256": "d90dc6233d646c8d8e6f36e2f285c22674661ab72b381c978cf4b439dab9eaa9",
+ "layout_id": "875666f93bbe21e0",
+ "timing": {
+  "pdf_cold_s": 2.311,
+  "pdf_cold_cpu_s": 2.651,
+  "docx_cold_s": 0.352,
+  "pdf_warm_s": 1.848,
+  "docx_warm_s": 0.297,
+  "engine_import_s": 0.307
+ },
+ "memory": {
+  "rss_before_mb": 44.5,
+  "rss_peak_mb": 159.0
+ },
+ "renders": 6,
+ "composition": {
+  "strategy": "baseline",
+  "status": "ok",
+  "preflight": "1 figure(s) separated from their intro; figure placement; readability 0.777",
+  "candidates_considered": 4,
+  "candidates_rendered": 2,
+  "render_attempts": 3,
+  "repair_renders": 0,
+  "design_trial_renders": 3,
+  "fallbacks": []
+ },
+ "score": {
+  "value": 88.85,
+  "valid": true,
+  "hard_errors": [],
+  "utilization": 0.764,
+  "wasted": 0.0,
+  "readability": 0.777,
+  "cpl": 106.8,
+  "separated_figures": 1.0,
+  "efficiency": 1.0,
+  "placement": 0.85
+ },
+ "page_roles": [
+  [
+   1,
+   "body",
+   0.73
+  ],
+  [
+   2,
+   "final",
+   0.653
+  ]
+ ],
+ "layout": {
+  "underfilled_body_pages": [],
+  "geometry_duplicates": [],
+  "oversize_figures": [],
+  "figures_after_gap": [],
+  "rtl_right_aligned_share": null
+ },
+ "rtl": {
+  "arabic_paragraphs_checked": 0,
+  "line_order_defects": [],
+  "symbol_font_text_spans": 0,
+  "harakat_source": 0,
+  "harakat_pdf": 0,
+  "harakat_docx": 0
+ },
+ "pdf_qa": {
+  "status": "pass",
+  "errors": [],
+  "warnings": []
+ },
+ "docx_qa": {
+  "status": "pass",
+  "pages": 2,
+  "unverified": [],
+  "errors": [],
+  "warnings": []
+ },
+ "content": {
+  "source_words": 176,
+  "pdf_missing_words": [],
+  "docx_missing_words": [],
+  "pdf_sequence": {
+   "checked": 6,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  },
+  "docx_sequence": {
+   "checked": 6,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  }
+ },
+ "docx_editability": {
+  "word_tables": 1,
+  "source_tables": 1,
+  "source_tables_editable": 1,
+  "heading_styles": 5,
+  "source_headings": 5,
+  "images": 2,
+  "figure_blocks": 2,
+  "text_chars": 2139
+ },
+ "diagnostics": [],
+ "network_attempts": [],
+ "sheets": {
+  "pdf": "img/en_executive_report-smart-pdf.jpg",
+  "docx": "img/en_executive_report-smart-docx.jpg"
+ }
+}

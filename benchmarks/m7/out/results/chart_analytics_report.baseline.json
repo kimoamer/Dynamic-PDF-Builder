@@ -1,0 +1,132 @@
+{
+ "name": "chart_analytics_report",
+ "variant": "baseline",
+ "category": "Chart-heavy analytical report",
+ "size": "medium",
+ "pages": 7,
+ "pdf_sha256": "9dfca31f828c37581af27d27dbf81fd902a8176353648edfeb34c9f751ed4364",
+ "layout_id": "2bfbdca33187e4d0",
+ "timing": {
+  "pdf_cold_s": 2.95,
+  "pdf_cold_cpu_s": 3.315,
+  "docx_cold_s": 0.969,
+  "pdf_warm_s": 2.52,
+  "docx_warm_s": 1.034,
+  "engine_import_s": 0.265
+ },
+ "memory": {
+  "rss_before_mb": 44.4,
+  "rss_peak_mb": 148.4
+ },
+ "renders": 2,
+ "composition": null,
+ "score": {
+  "value": 96.96,
+  "valid": true,
+  "hard_errors": [],
+  "utilization": 0.968,
+  "wasted": 0.0,
+  "readability": 0.991,
+  "cpl": 91.1,
+  "separated_figures": 1.0,
+  "efficiency": 1.0,
+  "placement": 0.85
+ },
+ "page_roles": [
+  [
+   1,
+   "cover",
+   0.117
+  ],
+  [
+   2,
+   "toc",
+   0.416
+  ],
+  [
+   3,
+   "body",
+   0.869
+  ],
+  [
+   4,
+   "body",
+   0.912
+  ],
+  [
+   5,
+   "body",
+   0.945
+  ],
+  [
+   6,
+   "body",
+   0.924
+  ],
+  [
+   7,
+   "final",
+   0.838
+  ]
+ ],
+ "layout": {
+  "underfilled_body_pages": [],
+  "geometry_duplicates": [],
+  "oversize_figures": [],
+  "figures_after_gap": [],
+  "rtl_right_aligned_share": null
+ },
+ "rtl": {
+  "arabic_paragraphs_checked": 0,
+  "line_order_defects": [],
+  "symbol_font_text_spans": 0,
+  "harakat_source": 0,
+  "harakat_pdf": 0,
+  "harakat_docx": 0
+ },
+ "pdf_qa": {
+  "status": "pass",
+  "errors": [],
+  "warnings": []
+ },
+ "docx_qa": {
+  "status": "pass",
+  "pages": 7,
+  "unverified": [],
+  "errors": [],
+  "warnings": []
+ },
+ "content": {
+  "source_words": 144,
+  "pdf_missing_words": [],
+  "docx_missing_words": [],
+  "pdf_sequence": {
+   "checked": 9,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  },
+  "docx_sequence": {
+   "checked": 9,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  }
+ },
+ "docx_editability": {
+  "word_tables": 2,
+  "source_tables": 1,
+  "source_tables_editable": 1,
+  "heading_styles": 10,
+  "source_headings": 10,
+  "images": 8,
+  "figure_blocks": 8,
+  "text_chars": 2090
+ },
+ "diagnostics": [],
+ "network_attempts": [],
+ "sheets": {
+  "pdf": "img/chart_analytics_report-baseline-pdf.jpg",
+  "docx": "img/chart_analytics_report-baseline-docx.jpg"
+ }
+}

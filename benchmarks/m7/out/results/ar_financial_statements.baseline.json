@@ -1,0 +1,109 @@
+{
+ "name": "ar_financial_statements",
+ "variant": "baseline",
+ "category": "Arabic financial statements",
+ "size": "medium",
+ "pages": 2,
+ "pdf_sha256": "a68e5cf3f0a5e41012ba38c91ac42c42eed6ef85905362c788480efff6f1e675",
+ "layout_id": "1ca72a2c2a6ce713",
+ "timing": {
+  "pdf_cold_s": 0.428,
+  "pdf_cold_cpu_s": 0.414,
+  "docx_cold_s": 0.191,
+  "pdf_warm_s": 0.292,
+  "docx_warm_s": 0.168,
+  "engine_import_s": 0.243
+ },
+ "memory": {
+  "rss_before_mb": 44.4,
+  "rss_peak_mb": 69.6
+ },
+ "renders": 4,
+ "composition": null,
+ "score": {
+  "value": 92.32,
+  "valid": true,
+  "hard_errors": [],
+  "utilization": 0.909,
+  "wasted": 0.0,
+  "readability": 0.716,
+  "cpl": 114.1,
+  "separated_figures": 0.0,
+  "efficiency": 1.0,
+  "placement": 1.0
+ },
+ "page_roles": [
+  [
+   1,
+   "body",
+   0.854
+  ],
+  [
+   2,
+   "final",
+   0.364
+  ]
+ ],
+ "layout": {
+  "underfilled_body_pages": [],
+  "geometry_duplicates": [],
+  "oversize_figures": [],
+  "figures_after_gap": [],
+  "rtl_right_aligned_share": 1.0
+ },
+ "rtl": {
+  "arabic_paragraphs_checked": 0,
+  "line_order_defects": [],
+  "symbol_font_text_spans": 0,
+  "harakat_source": 5,
+  "harakat_pdf": 0,
+  "harakat_docx": 5
+ },
+ "pdf_qa": {
+  "status": "pass",
+  "errors": [],
+  "warnings": []
+ },
+ "docx_qa": {
+  "status": "fail",
+  "pages": 2,
+  "unverified": [],
+  "errors": [
+   "overflow: text overflows into the margin by 2pt: '1  القوائم المالية األولية الموجزة للفتر'"
+  ],
+  "warnings": []
+ },
+ "content": {
+  "source_words": 213,
+  "pdf_missing_words": [],
+  "docx_missing_words": [],
+  "pdf_sequence": {
+   "checked": 0,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  },
+  "docx_sequence": {
+   "checked": 5,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  }
+ },
+ "docx_editability": {
+  "word_tables": 3,
+  "source_tables": 3,
+  "source_tables_editable": 3,
+  "heading_styles": 5,
+  "source_headings": 5,
+  "images": 0,
+  "figure_blocks": 0,
+  "text_chars": 1817
+ },
+ "diagnostics": [],
+ "network_attempts": [],
+ "sheets": {
+  "pdf": "img/ar_financial_statements-baseline-pdf.jpg",
+  "docx": "img/ar_financial_statements-baseline-docx.jpg"
+ }
+}

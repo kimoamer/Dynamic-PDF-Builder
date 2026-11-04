@@ -1,0 +1,107 @@
+{
+ "name": "en_executive_report",
+ "variant": "baseline",
+ "category": "English executive report",
+ "size": "medium",
+ "pages": 2,
+ "pdf_sha256": "4ff7c9f3af5e2c75f1f5928a2b5b1c2fd559577f503cdaa65e6f9de72e7d17c0",
+ "layout_id": "875666f93bbe21e0",
+ "timing": {
+  "pdf_cold_s": 1.621,
+  "pdf_cold_cpu_s": 1.984,
+  "docx_cold_s": 0.323,
+  "pdf_warm_s": 1.046,
+  "docx_warm_s": 0.261,
+  "engine_import_s": 0.291
+ },
+ "memory": {
+  "rss_before_mb": 44.4,
+  "rss_peak_mb": 119.0
+ },
+ "renders": 4,
+ "composition": null,
+ "score": {
+  "value": 88.85,
+  "valid": true,
+  "hard_errors": [],
+  "utilization": 0.764,
+  "wasted": 0.0,
+  "readability": 0.777,
+  "cpl": 106.8,
+  "separated_figures": 1.0,
+  "efficiency": 1.0,
+  "placement": 0.85
+ },
+ "page_roles": [
+  [
+   1,
+   "body",
+   0.73
+  ],
+  [
+   2,
+   "final",
+   0.653
+  ]
+ ],
+ "layout": {
+  "underfilled_body_pages": [],
+  "geometry_duplicates": [],
+  "oversize_figures": [],
+  "figures_after_gap": [],
+  "rtl_right_aligned_share": null
+ },
+ "rtl": {
+  "arabic_paragraphs_checked": 0,
+  "line_order_defects": [],
+  "symbol_font_text_spans": 0,
+  "harakat_source": 0,
+  "harakat_pdf": 0,
+  "harakat_docx": 0
+ },
+ "pdf_qa": {
+  "status": "pass",
+  "errors": [],
+  "warnings": []
+ },
+ "docx_qa": {
+  "status": "pass",
+  "pages": 2,
+  "unverified": [],
+  "errors": [],
+  "warnings": []
+ },
+ "content": {
+  "source_words": 176,
+  "pdf_missing_words": [],
+  "docx_missing_words": [],
+  "pdf_sequence": {
+   "checked": 6,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  },
+  "docx_sequence": {
+   "checked": 6,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  }
+ },
+ "docx_editability": {
+  "word_tables": 1,
+  "source_tables": 1,
+  "source_tables_editable": 1,
+  "heading_styles": 5,
+  "source_headings": 5,
+  "images": 2,
+  "figure_blocks": 2,
+  "text_chars": 2139
+ },
+ "diagnostics": [],
+ "network_attempts": [],
+ "sheets": {
+  "pdf": "img/en_executive_report-baseline-pdf.jpg",
+  "docx": "img/en_executive_report-baseline-docx.jpg"
+ }
+}

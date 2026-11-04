@@ -1,0 +1,102 @@
+{
+ "name": "letter",
+ "variant": "baseline",
+ "category": "Formal letter",
+ "size": "small",
+ "pages": 1,
+ "pdf_sha256": "676f381355ba95d87b74b4b651945b73f3658ac712b1cf9c8e97a86724c9b9e6",
+ "layout_id": "2284aaaf69d19792",
+ "timing": {
+  "pdf_cold_s": 0.051,
+  "pdf_cold_cpu_s": 0.051,
+  "docx_cold_s": 0.072,
+  "pdf_warm_s": 0.012,
+  "docx_warm_s": 0.041,
+  "engine_import_s": 0.249
+ },
+ "memory": {
+  "rss_before_mb": 44.5,
+  "rss_peak_mb": 65.7
+ },
+ "renders": 2,
+ "composition": null,
+ "score": {
+  "value": 85.28,
+  "valid": true,
+  "hard_errors": [],
+  "utilization": 0.331,
+  "wasted": 0.0,
+  "readability": 1.0,
+  "cpl": 88.9,
+  "separated_figures": 0.0,
+  "efficiency": 1.0,
+  "placement": 1.0
+ },
+ "page_roles": [
+  [
+   1,
+   "final",
+   0.372
+  ]
+ ],
+ "layout": {
+  "underfilled_body_pages": [],
+  "geometry_duplicates": [],
+  "oversize_figures": [],
+  "figures_after_gap": [],
+  "rtl_right_aligned_share": null
+ },
+ "rtl": {
+  "arabic_paragraphs_checked": 0,
+  "line_order_defects": [],
+  "symbol_font_text_spans": 0,
+  "harakat_source": 0,
+  "harakat_pdf": 0,
+  "harakat_docx": 0
+ },
+ "pdf_qa": {
+  "status": "pass",
+  "errors": [],
+  "warnings": []
+ },
+ "docx_qa": {
+  "status": "pass",
+  "pages": 1,
+  "unverified": [],
+  "errors": [],
+  "warnings": []
+ },
+ "content": {
+  "source_words": 93,
+  "pdf_missing_words": [],
+  "docx_missing_words": [],
+  "pdf_sequence": {
+   "checked": 7,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  },
+  "docx_sequence": {
+   "checked": 7,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  }
+ },
+ "docx_editability": {
+  "word_tables": 0,
+  "source_tables": 0,
+  "source_tables_editable": 0,
+  "heading_styles": 0,
+  "source_headings": 0,
+  "images": 0,
+  "figure_blocks": 0,
+  "text_chars": 1007
+ },
+ "diagnostics": [],
+ "network_attempts": [],
+ "sheets": {
+  "pdf": "img/letter-baseline-pdf.jpg",
+  "docx": "img/letter-baseline-docx.jpg"
+ }
+}

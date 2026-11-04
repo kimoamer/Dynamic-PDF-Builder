@@ -1,0 +1,258 @@
+{
+ "name": "ar_annual_report",
+ "variant": "smart",
+ "category": "Arabic corporate report",
+ "size": "long",
+ "pages": 20,
+ "pdf_sha256": "49818ba8b8175bd0e8047c9a1782e4396f4a00fe463f8bcd84d5eea218b4810d",
+ "layout_id": "a3cb95565086a1be",
+ "timing": {
+  "pdf_cold_s": 12.066,
+  "pdf_cold_cpu_s": 12.319,
+  "docx_cold_s": 2.048,
+  "pdf_warm_s": 11.945,
+  "docx_warm_s": 2.277,
+  "engine_import_s": 0.271
+ },
+ "memory": {
+  "rss_before_mb": 44.4,
+  "rss_peak_mb": 175.1
+ },
+ "renders": 6,
+ "composition": {
+  "strategy": "baseline",
+  "status": "failed",
+  "preflight": "12 figure(s) separated from their intro; pagination efficiency 0.95; figure placement; readability 0.716",
+  "candidates_considered": 4,
+  "candidates_rendered": 2,
+  "render_attempts": 3,
+  "repair_renders": 2,
+  "design_trial_renders": 1,
+  "fallbacks": [
+   "a repair render regressed the layout; the better earlier attempt was kept",
+   "compact failed final validation after repair (3 QA error(s)); designed layout restored"
+  ]
+ },
+ "score": {
+  "value": 73.76,
+  "valid": true,
+  "hard_errors": [],
+  "utilization": 0.857,
+  "wasted": 0.088,
+  "readability": 0.716,
+  "cpl": 114.1,
+  "separated_figures": 12.0,
+  "efficiency": 0.85,
+  "placement": 0.0
+ },
+ "page_roles": [
+  [
+   1,
+   "cover",
+   0.089
+  ],
+  [
+   2,
+   "toc",
+   0.777
+  ],
+  [
+   3,
+   "body",
+   0.64
+  ],
+  [
+   4,
+   "body",
+   0.757
+  ],
+  [
+   5,
+   "body",
+   0.764
+  ],
+  [
+   6,
+   "body",
+   0.814
+  ],
+  [
+   7,
+   "body",
+   0.532
+  ],
+  [
+   8,
+   "body",
+   0.841
+  ],
+  [
+   9,
+   "body",
+   0.841
+  ],
+  [
+   10,
+   "body",
+   0.841
+  ],
+  [
+   11,
+   "body",
+   0.841
+  ],
+  [
+   12,
+   "body",
+   0.841
+  ],
+  [
+   13,
+   "body",
+   0.841
+  ],
+  [
+   14,
+   "body",
+   0.841
+  ],
+  [
+   15,
+   "body",
+   0.841
+  ],
+  [
+   16,
+   "body",
+   0.828
+  ],
+  [
+   17,
+   "body",
+   0.814
+  ],
+  [
+   18,
+   "body",
+   0.954
+  ],
+  [
+   19,
+   "body",
+   0.876
+  ],
+  [
+   20,
+   "final",
+   0.706
+  ]
+ ],
+ "layout": {
+  "underfilled_body_pages": [
+   7
+  ],
+  "geometry_duplicates": [],
+  "oversize_figures": [],
+  "figures_after_gap": [],
+  "rtl_right_aligned_share": 1.0
+ },
+ "rtl": {
+  "arabic_paragraphs_checked": 42,
+  "line_order_defects": [
+   3,
+   4,
+   5,
+   8,
+   9,
+   10,
+   14,
+   15,
+   19,
+   22,
+   25,
+   28,
+   31,
+   32,
+   39,
+   40,
+   43,
+   44,
+   46,
+   47,
+   51,
+   53,
+   57,
+   61,
+   65,
+   69,
+   73,
+   77,
+   81,
+   85,
+   89,
+   93,
+   97,
+   101,
+   105,
+   109,
+   113,
+   117,
+   121,
+   126,
+   130,
+   131
+  ],
+  "symbol_font_text_spans": 0,
+  "harakat_source": 41,
+  "harakat_pdf": 0,
+  "harakat_docx": 41
+ },
+ "pdf_qa": {
+  "status": "fail",
+  "errors": [
+   "overflow: text overflows into the margin by 0pt: '١٫٢ ﻣﻠﻴﻮﻥ'",
+   "overflow: text overflows into the margin by 0pt: '+٥٪'"
+  ],
+  "warnings": []
+ },
+ "docx_qa": {
+  "status": "pass",
+  "pages": 20,
+  "unverified": [],
+  "errors": [],
+  "warnings": []
+ },
+ "content": {
+  "source_words": 995,
+  "pdf_missing_words": [],
+  "docx_missing_words": [],
+  "pdf_sequence": {
+   "checked": 0,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  },
+  "docx_sequence": {
+   "checked": 62,
+   "missing": [],
+   "duplicated": [],
+   "reordered": []
+  }
+ },
+ "docx_editability": {
+  "word_tables": 28,
+  "source_tables": 27,
+  "source_tables_editable": 27,
+  "heading_styles": 38,
+  "source_headings": 38,
+  "images": 1,
+  "figure_blocks": 1,
+  "text_chars": 22840
+ },
+ "diagnostics": [],
+ "network_attempts": [],
+ "sheets": {
+  "pdf": "img/ar_annual_report-smart-pdf.jpg",
+  "docx": "img/ar_annual_report-smart-docx.jpg"
+ }
+}
