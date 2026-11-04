@@ -43,16 +43,11 @@ def _dump(path: str, data) -> None:
         f.write("\n")
 
 
-def analyze(input_dir: str, output_dir: str, reviewed: Optional[List[str]] = None, max_previews: int = 6,
-            min_support: int = 2, previews: bool = True, log=print) -> dict:
-    from .analyze import analyze_document, preview_pages
+def load_catalog(input_dir: str, reviewed: Optional[List[str]] = None) -> tuple:
+    """(catalog records, their paths, warnings) for every PDF under ``input_dir``."""
     from .catalog import (REVIEWED_DIR, assign_ids_and_duplicates, catalog_record, discover,
                           first_page_fingerprint, load_reviewed)
-    from .patterns import build_patterns, template_families
-    from .report import render_preview, write_report
-
     input_dir = os.path.abspath(input_dir)
-    os.makedirs(output_dir, exist_ok=True)
     reviewed_dirs = reviewed or [os.path.join(input_dir, REVIEWED_DIR),
                                  os.path.join(os.path.dirname(input_dir), REVIEWED_DIR)]
     rev_records, warnings = load_reviewed(reviewed_dirs)
@@ -73,6 +68,18 @@ def analyze(input_dir: str, output_dir: str, reviewed: Optional[List[str]] = Non
         for w in ws:
             warnings.append({"doc_id": rec["doc_id"], "file": rec["file"], **w})
     warnings += dup_warn
+    return records, files, warnings, len(rev_records)
+
+
+def analyze(input_dir: str, output_dir: str, reviewed: Optional[List[str]] = None, max_previews: int = 6,
+            min_support: int = 2, previews: bool = True, log=print) -> dict:
+    from .analyze import analyze_document, preview_pages
+    from .patterns import build_patterns, template_families
+    from .report import render_preview, write_report
+
+    input_dir = os.path.abspath(input_dir)
+    os.makedirs(output_dir, exist_ok=True)
+    records, files, warnings, reviewed_count = load_catalog(input_dir, reviewed)
     features, prev = [], {}
     pdir = os.path.join(output_dir, "previews")
     for rec, path in zip(records, files):
@@ -97,7 +104,7 @@ def analyze(input_dir: str, output_dir: str, reviewed: Optional[List[str]] = Non
     catalog = {"tool": {"name": NAME, "version": __version__, "dependencies": _dep_info(),
                         "network": "none — runs offline; nothing is uploaded"},
                "input": {"folder": os.path.basename(input_dir.rstrip(os.sep)), "pdf_files": len(files),
-                         "reviewed_metadata_records": len(rev_records)},
+                         "reviewed_metadata_records": reviewed_count},
                "documents": records}
     identity = {r["doc_id"]: r["sha256"] for r in records}
     for family in template_families(features):
@@ -136,7 +143,34 @@ def main(argv=None) -> int:
     r = sub.add_parser("review", help="validate the machine-readable pattern review")
     r.add_argument("--file", default=None, help="review file (default: the committed pattern_review.json)")
     r.add_argument("--patterns", help="design-patterns.json of a run: also check ids and support against it")
+    v = sub.add_parser("atlas", help="build the visual atlas of every page, with shortlist and curation file")
+    v.add_argument("--input", required=True, help="folder with reference PDFs (searched recursively)")
+    v.add_argument("--output", required=True, help="results folder, outside any git repository")
+    v.add_argument("--reviewed", action="append", help="reviewed-metadata folder")
+    v.add_argument("--shortlist", type=int, default=120, help="target number of candidate pages")
+    s = sub.add_parser("atlas-serve", help="serve the atlas on 127.0.0.1 and save decisions to human-curation.json")
+    s.add_argument("--output", required=True, help="results folder of an atlas run")
+    s.add_argument("--port", type=int, default=8765)
+    c = sub.add_parser("curation", help="validate a human curation file")
+    c.add_argument("file")
     args = ap.parse_args(argv)
+    if args.cmd == "curation":
+        from .curation import load, summary
+        try:
+            print(summary(load(args.file)))
+        except ValueError as e:
+            print(e, file=sys.stderr)
+            return 1
+        return 0
+    if args.cmd == "atlas-serve":
+        from .atlas import make_server
+        with make_server(args.output, args.port) as srv:
+            print(f"atlas at http://127.0.0.1:{srv.server_address[1]}/ (Ctrl+C to stop)")
+            try:
+                srv.serve_forever()
+            except KeyboardInterrupt:
+                pass
+        return 0
     if args.cmd == "review":
         from .review import REVIEW_PATH, check
         errs = check(args.file or REVIEW_PATH, args.patterns)
@@ -148,6 +182,24 @@ def main(argv=None) -> int:
         print("PyMuPDF is required: pip install 'dynamic-pdf-builder[analyzer]' (AGPL-3.0; local use only)",
               file=sys.stderr)
         return 2
+    if args.cmd == "atlas":
+        from .atlas import build
+        try:
+            res = build(args.input, args.output, args.reviewed, args.shortlist,
+                        log=lambda m: print(m, file=sys.stderr))
+        except ValueError as e:
+            print(e, file=sys.stderr)
+            return 2
+        idx, cov = res["index"], res["shortlist"]["coverage"]
+        failed = [g for g in idx["gates"] if not g["passed"]]
+        print(f"{len(idx['pages'])} page(s), {len(idx['errors'])} error(s); {cov['pages']} candidates, "
+              f"{res['curation']['decisions']} human decision(s) → {args.output}")
+        if res["stale_decisions"]:
+            print(f"{len(res['stale_decisions'])} human decision(s) point at pages no longer in the corpus; "
+                  "they stay in the file", file=sys.stderr)
+        for g in failed:
+            print(f"FAILED: {g['gate']}: {g['detail']}", file=sys.stderr)
+        return 1 if failed else 0
     res = analyze(args.input, args.output, args.reviewed, args.max_previews, args.min_support,
                   not args.no_previews, log=lambda s: print(s, file=sys.stderr))
     docs = res["catalog"]["documents"]
