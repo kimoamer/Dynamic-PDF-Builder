@@ -41,6 +41,12 @@ class DesignRecipe(BaseModel):
     body_columns: int = 1                      # columns for runs of prose (planner decides where)
     notes: List[str] = Field(default_factory=list)
 
+    @property
+    def media_policy(self):
+        """What this kind of document allows images to do."""
+        from .media_policy import media_policy_for
+        return media_policy_for(self.profile.value)
+
 
 _SERIF = "Times-Roman"
 _SANS = "Helvetica"

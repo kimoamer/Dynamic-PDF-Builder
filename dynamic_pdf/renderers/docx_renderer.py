@@ -152,15 +152,14 @@ class DocxRenderer(ArchetypeDocx):
         self.content_width_pt = w - m["left"] - m["right"]
         system = meta.page_system
         if system is not None:
-            from ..design.page_values import band_values
             from ..schema.page_system import settled
             system = self.page_sys = settled(system, self.sem.blocks)
             from ..fonts import register_fonts
-            from ..layout.page_system import BandMaker, margin_needs
+            from ..layout.page_envelope import band_maker, reserve_bands
             register_fonts()
-            values, sample = band_values(self.sem.to_document(), self.theme.header_footer)
-            maker = BandMaker(self.theme, system, self.rtl_doc, self.col.policy.assets, self.col, values)
-            top, bottom = margin_needs(maker, self.content_width_pt, sample)
+            maker, sample = band_maker(self.sem.to_document(), self.theme, system, self.rtl_doc,
+                                       self.col.policy.assets, self.col)
+            top, bottom = reserve_bands(maker, self.content_width_pt, sample, self.col)
             sec.top_margin, sec.bottom_margin = Pt(max(m["top"], top)), Pt(max(m["bottom"], bottom))
             sec.header_distance = sec.footer_distance = Pt(system.edge_distance)
             self.band_writer = M.BandWriter(self, maker, sample)

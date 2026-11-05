@@ -26,6 +26,8 @@ class Region:
     role: str             # heading | caption | table | figure | body | list | other
     level: int = 0        # heading level when role == heading
     extra_blocks: tuple = ()   # further blocks in this region (a run set in columns)
+    chars: int = 0             # characters of a paragraph's text set in this region
+    in_float: bool = False     # set beside other content, so its height says nothing of order
 
     @property
     def height(self) -> float:
@@ -55,6 +57,15 @@ class Geometry:
     def reset(self):
         self.regions.clear()
         self.pages.clear()
+
+    def fragments(self, block: int) -> List[tuple]:
+        """Page, start and end offset of each placed piece of a block's text, in order."""
+        out, start = [], 0
+        for r in self.regions:
+            if r.block == block and r.chars:
+                out.append((r.page, start, start + r.chars))
+                start += r.chars
+        return out
 
     def by_page(self) -> Dict[int, List[Region]]:
         out: Dict[int, List[Region]] = {}
@@ -96,6 +107,23 @@ def content_extent(f, fx: float, fw: float):
     h = str(getattr(f, "hAlign", "LEFT")).upper()
     off = (fw - w) / 2 if h == "CENTER" else (fw - w if h == "RIGHT" else 0.0)
     return fx + off, fx + off + w
+
+
+def text_chars(f) -> int:
+    """Characters of text in a paragraph or a piece of one."""
+    from reportlab.platypus import Paragraph
+    if not isinstance(f, Paragraph):
+        return 0
+    return len(f.getPlainText()) or _split_chars(f)
+
+
+def _split_chars(f) -> int:
+    """A piece of a split paragraph keeps its lines but not its fragments. Each line
+    ending stands for the space it replaced."""
+    lines = f.blPara.lines
+    if f.blPara.kind == 0:
+        return sum(len(" ".join(words)) + 1 for _, words in lines)
+    return sum(sum(len(w.text) for w in line.words) + 1 for line in lines)
 
 
 def union_area(rects) -> float:
@@ -147,12 +175,14 @@ class GeoFrame(Frame):
         at_top = getattr(self, "_atTop", 0)
         placed = super().add(flowable, canv, trySplit)
         geo = self.geometry
-        if (placed and geo is not None and getattr(flowable, "_dpb_block", None) is not None
-                and (y0 - self._y > 0.5 or getattr(flowable, "_dpb_role", "") == "heading")):
+        children = getattr(flowable, "_dpb_children", None)
+        if placed and geo is not None and children is not None:
+            self._note_page(geo, canv)
+            self._add_children(geo, canv, children)
+        elif (placed and geo is not None and getattr(flowable, "_dpb_block", None) is not None
+                and (y0 - self._y > 0.5 or getattr(flowable, "_dpb_role", "") in ("heading", "decorative"))):
+            self._note_page(geo, canv)
             page = canv.getPageNumber()
-            if page not in geo.pages:
-                geo.pages[page] = PageInfo(page, self.id, self._y2, self._y1, self._x1, self._width,
-                                           self.landscape)
             top = y0 - (0 if at_top else flowable.getSpaceBefore())
             bottom = self._y + flowable.getSpaceAfter()
             x0, x1 = content_extent(flowable, self._x1 + self._leftPadding,
@@ -161,8 +191,29 @@ class GeoFrame(Frame):
                                       flowable._dpb_block,
                                       getattr(flowable, "_dpb_role", "other"),
                                       getattr(flowable, "_dpb_level", 0),
-                                      getattr(flowable, "_dpb_extra_blocks", ())))
+                                      getattr(flowable, "_dpb_extra_blocks", ()),
+                                      text_chars(flowable)))
         return placed
+
+    def _note_page(self, geo: Geometry, canv) -> None:
+        page = canv.getPageNumber()
+        if page not in geo.pages:
+            geo.pages[page] = PageInfo(page, self.id, self._y2, self._y1, self._x1, self._width,
+                                       self.landscape)
+
+    def _add_children(self, geo: Geometry, canv, children) -> None:
+        """Regions for what a composite drew, each where it really is. The composite
+        itself adds none, so nothing is counted twice."""
+        page = canv.getPageNumber()
+        origin_x, origin_y = self._x1 + self._leftPadding, self._y
+        for child, x, y, width, height, in_float in children:
+            block = getattr(child, "_dpb_block", None)
+            if block is None:
+                continue
+            x0, x1 = content_extent(child, origin_x + x, width)
+            geo.regions.append(Region(page, self.id, origin_y + y + height, origin_y + y, x0, x1, block,
+                                      getattr(child, "_dpb_role", "other"), 0, (), text_chars(child),
+                                      in_float))
 
     def split(self, flowable, canv):
         parts = super().split(flowable, canv)

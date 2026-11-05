@@ -261,3 +261,22 @@ def choose(sem_stats, profile: str, est_pages: float, max_candidates: int = 4,
     if prose_led or (est_pages >= 6 and sem_stats.headings >= 6):
         out.append(Candidate(name="editorial", reason="prose-led or long, sectioned document"))
     return out[:max_candidates]
+
+
+def media_candidates(doc, theme, policy, options, render_policy, measures: List[BlockMeasure], source_hash: str):
+    """Image plans for ``doc``, from the frame the renderer will use and where each
+    block is predicted to start."""
+    from ..design.media_planner import plan_media
+    from ..layout.page_envelope import resolve_page_envelope
+    from .analysis import frame_geometry, simulate
+    envelope = resolve_page_envelope(doc, theme, render_policy)
+    positions: Dict[int, object] = {}
+    for region in simulate(measures, frame_geometry(doc, theme, render_policy)).regions:
+        positions.setdefault(region.block, region)
+    assets = render_policy.assets if render_policy is not None else _default_assets()
+    return plan_media(doc, policy, envelope, options, assets, positions, measures, source_hash)
+
+
+def _default_assets():
+    from ..policy import RenderPolicy
+    return RenderPolicy().assets

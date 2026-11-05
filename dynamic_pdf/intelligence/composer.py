@@ -29,6 +29,8 @@ from pydantic import BaseModel, Field
 from .analysis import measure_blocks, simulate
 from .candidates import CandidateInvalid, apply as apply_candidate, choose
 from .geometry import Geometry
+from .media_gate import MediaGate
+from .media_options import AutoMediaOptions
 from .scoring import LayoutScore, PageMetric, hard_typography_errors, score_layout
 
 
@@ -44,6 +46,7 @@ class ComposeOptions(BaseModel):
     measure_memory: bool = False        # tracemalloc peak (process-global: benchmarks only)
     qa: bool = True                     # inspect the selected PDF (needs PyMuPDF)
     ranker_model: Optional[str] = None  # optional LightGBM text model (valid candidates only)
+    media: Optional[AutoMediaOptions] = None    # automatic image placement; off unless given
 
 
 class CandidateResult(BaseModel):
@@ -85,6 +88,14 @@ class CompositionReport(BaseModel):
     preflight: str = ""                 # predicted issues, or "clean: …" (no candidates tried)
     final_score: Optional[float] = None
     design_trial_renders: int = 0       # renders spent by design page-fitting before composition
+    # automatic image placement: present only when it was asked for
+    media_decisions: Optional[List[dict]] = None
+    band_decisions: Optional[List[dict]] = None
+    source_ledger: Optional[str] = None
+    asset_hashes: Optional[Dict[str, str]] = None
+    validation_by_format: Optional[Dict[str, str]] = None
+    fallback_reason: Optional[str] = None
+    effective_policy_version: Optional[str] = None
 
 
 def _rss_mb() -> Optional[float]:
@@ -104,6 +115,9 @@ class Composer:
         self.cache: dict = {}             # request-local figure cache shared by all renders
         self.report = CompositionReport(mode=self.o.mode)
         self.pdf_qa = None                # QAReport of the selected PDF
+        self.recipe = None                # design recipe, for its media policy
+        self.docx_source = None           # (doc, theme) for DOCX, when a plan was only for the PDF
+        self.media: Optional[MediaGate] = None
         self._t0 = self._c0 = 0.0
         self._rss0: Optional[float] = None
 
@@ -165,10 +179,11 @@ class Composer:
     PAGE_PENALTY = 1.5          # score points per page added vs the baseline
     PRED_MARGIN = 0.25          # predicted gain needed before a candidate is rendered
 
-    def _adjusted(self, s: LayoutScore, pages: int, base_pages: int) -> float:
-        return s.score - self.PAGE_PENALTY * max(0, pages - base_pages)
+    def _adjusted(self, s: LayoutScore, pages: int, base_pages: int, bonus: float = 0.0) -> float:
+        return s.score - self.PAGE_PENALTY * max(0, pages - base_pages) + bonus
 
-    def _eligible(self, s: LayoutScore, pages: int, base: LayoutScore, base_pages: int) -> bool:
+    def _eligible(self, s: LayoutScore, pages: int, base: LayoutScore, base_pages: int,
+                  bonus: float = 0.0) -> bool:
         """Baseline non-regression policy — the *only* way a candidate can be selected
         (deterministically or by the optional ranker)."""
         if not s.valid:
@@ -179,7 +194,7 @@ class Composer:
             return False
         if self._less_readable(s, base):
             return False
-        return self._adjusted(s, pages, base_pages) >= base.score + self.o.min_gain
+        return self._adjusted(s, pages, base_pages, bonus) >= base.score + self.o.min_gain
 
     READ_TOLERANCE = 0.01       # readability a candidate may lose vs the designed layout
 
@@ -216,8 +231,9 @@ class Composer:
         base_pred, base_pages, measures = self._predict(doc, theme)
         issues = self.preflight(base_pred)
         r.preflight = issues or "clean: no measurable layout issue predicted"
+        media = self.media.shortlist(doc, theme, profile, measures) if self.media else []
         if not issues:
-            return base_pred, base_pages, []
+            return base_pred, base_pages, media
         from .analysis import frame_geometry
         fg = frame_geometry(doc, theme)
         page_w = fg.width + theme.spacing.page_margin_left + theme.spacing.page_margin_right
@@ -265,12 +281,16 @@ class Composer:
         # the baseline's measurements), so it is rendered first; the rest by
         # predicted score net of the page penalty
         shortlist.sort(key=lambda x: (x[0].name != "grouped", -self._adjusted_pred(x[0], base_pages)))
-        return base_pred, base_pages, shortlist
+        # the designed candidates come first: they decide the output that suggest mode and
+        # PDF-only plans must keep. Bands that lose text leave nothing worth keeping.
+        return base_pred, base_pages, (media + shortlist if self.media and self.media.rescue else shortlist + media)
 
     def _compose(self, doc, theme, profile, stats):
         r = self.report
         baseline = CandidateResult(name="baseline", reason="designed layout (M5 engine)")
         r.candidates.append(baseline)
+        if self.o.media is not None and self.o.media.mode != "off":
+            self.media = MediaGate(self, doc, theme)
         # 1–3. analysis + prediction; a failure here must not affect the baseline
         try:
             base_pred, _, shortlist = self._plan(doc, theme, profile, stats)
@@ -286,6 +306,8 @@ class Composer:
         base_pages = len(geo.pages)
         self._fill(baseline, base_score, base_pages)
         base_entry = (baseline, doc, theme, pdf, eng, base_score, geo)
+        if self.media:
+            self.media.baseline(pdf, geo, base_score.valid)
         eligible = []
         for res, d, t in shortlist:
             if r.render_attempts >= self.o.max_renders:
@@ -304,8 +326,15 @@ class Composer:
                 r.fallbacks.append(f"candidate {res.name} failed to render; ignored")
                 continue
             self._fill(res, cs, len(cgeo.pages))
-            res.metrics["adjusted"] = round(self._adjusted(cs, len(cgeo.pages), base_pages), 2)
-            if self._eligible(cs, len(cgeo.pages), base_score, base_pages):
+            bonus = 0.0
+            if self.media and self.media.owns(res):
+                bonus = self.media.review(res, d, t, cpdf, cgeo)
+                if res.rejected:
+                    continue
+            res.metrics["adjusted"] = round(self._adjusted(cs, len(cgeo.pages), base_pages, bonus), 2)
+            if self._eligible(cs, len(cgeo.pages), base_score, base_pages, bonus):
+                if self.media and self.media.owns(res) and self.media.suggesting(res):
+                    continue
                 eligible.append((res, d, t, cpdf, ceng, cs, cgeo))
             elif cs.valid and self._less_readable(cs, base_score):
                 res.rejected = "reduces readability"
@@ -316,31 +345,22 @@ class Composer:
 
         # 5. selection: deterministic, optionally re-ranked — both only among
         #    candidates that passed the non-regression policy (plus the baseline)
-        best = max(eligible, key=lambda e: e[0].metrics["adjusted"], default=base_entry)
-        best = self._apply_ranker(best, eligible, base_entry)
-        chosen, d, t, pdf, eng, s, geo = best
-        r.strategy = chosen.name
-        self._explain(chosen, baseline, base_score, s)
+        best = designed = self._select(eligible, base_entry)
+        if self.media and self.media.owns(best[0]):
+            designed = self._select([e for e in eligible if not self.media.owns(e[0])], base_entry)
+            best = self.media.settle_docx(best, designed)
+        self._explain(best[0], baseline, base_score, best[5])
 
         # 6. QA + bounded repairs, then re-apply the full selection policy (hard
         #    constraints, min_gain, page penalty, QA) to what will be delivered
-        final = self._repair(_Layout(d, t, pdf, eng, s), self.o.max_repairs)
-        if chosen is not baseline:
-            why = self._rejects(final, base_score, base_pages)
-            if why:
-                base_final = self._repair(_Layout(doc, theme, base_entry[3], base_entry[4], base_score),
-                                          self.o.max_repairs - final.used)
-                # the verified baseline is restored unless it is itself worse on
-                # hard constraints or QA (score alone never keeps a rejected candidate)
-                if self._quality(base_final)[:2] >= self._quality(final)[:2]:
-                    r.fallbacks.append(f"{chosen.name} failed final validation after repair ({why}); "
-                                       "designed layout restored")
-                    r.strategy = "baseline"
-                    r.status = "fallback"
-                    final = base_final
-                else:
-                    r.reasons.append(f"{chosen.name} kept although {why}: the designed layout "
-                                     "is worse after repair")
+        final = self._settle(best, base_entry)
+        if self.media:
+            if self.media.owns(best[0]) and r.strategy == best[0].name:
+                if "docx" not in self.media.o.targets:
+                    self.docx_source = self._designed_source(designed, base_entry)
+            elif self.media.owns(best[0]) and designed is not base_entry:
+                final = self._settle(designed, base_entry)
+            self.media.finish(final)
         self.pdf_qa = final.qa                  # QA of exactly the delivered bytes
         r.qa.pop("pdf", None)
         if final.qa is not None:
@@ -366,7 +386,7 @@ class Composer:
         """Order of delivered layouts: valid first, then fewer QA errors, then score."""
         return (lay.score.valid, -self._qa_errors(lay), lay.score.score)
 
-    def _rejects(self, lay: "_Layout", base: LayoutScore, base_pages: int) -> Optional[str]:
+    def _rejects(self, lay: "_Layout", base: LayoutScore, base_pages: int, bonus: float = 0.0) -> Optional[str]:
         """Why a (repaired) candidate no longer passes the selection policy."""
         if not lay.score.valid:
             return "; ".join(lay.score.hard_errors[:2])
@@ -375,8 +395,8 @@ class Composer:
         pages = len(lay.score.pages)
         if base.valid and pages > base_pages + self.o.max_extra_pages:
             return f"adds {pages - base_pages} pages after repair"
-        if not self._eligible(lay.score, pages, base, base_pages):
-            return (f"adjusted score {self._adjusted(lay.score, pages, base_pages):.1f} < "
+        if not self._eligible(lay.score, pages, base, base_pages, bonus):
+            return (f"adjusted score {self._adjusted(lay.score, pages, base_pages, bonus):.1f} < "
                     f"baseline {base.score:.1f} + min_gain {self.o.min_gain:g}")
         return None
 
@@ -396,6 +416,47 @@ class Composer:
             if m0.get(k) != m1.get(k):
                 r.reasons.append(f"{k} {m0.get(k)} → {m1.get(k)}")
         r.reasons += chosen.changes
+
+    def _select(self, eligible, base_entry):
+        """The best of ``eligible`` and the baseline, by the deterministic policy and any ranker."""
+        best = max(eligible, key=lambda e: e[0].metrics["adjusted"], default=base_entry)
+        return self._apply_ranker(best, eligible, base_entry)
+
+    def _settle(self, entry, base_entry) -> "_Layout":
+        """QA and repair ``entry``, then hold what comes out to the selection policy."""
+        r = self.report
+        chosen, d, t, pdf, eng, s, _ = entry
+        base_score, base_pages = base_entry[5], len(base_entry[6].pages)
+        r.strategy = chosen.name
+        final = self._repair(_Layout(d, t, pdf, eng, s), self.o.max_repairs)
+        if chosen is not base_entry[0]:
+            bonus = self.media.bonus(chosen) if self.media else 0.0
+            why = self._rejects(final, base_score, base_pages, bonus)
+            if why:
+                base_final = self._repair(_Layout(base_entry[1], base_entry[2], base_entry[3], base_entry[4], base_score),
+                                          self.o.max_repairs - final.used)
+                # the verified baseline is restored unless it is itself worse on
+                # hard constraints or QA (score alone never keeps a rejected candidate)
+                if self._quality(base_final)[:2] >= self._quality(final)[:2]:
+                    r.fallbacks.append(f"{chosen.name} failed final validation after repair ({why}); "
+                                       "designed layout restored")
+                    r.strategy = "baseline"
+                    r.status = "fallback"
+                    final = base_final
+                else:
+                    r.reasons.append(f"{chosen.name} kept although {why}: the designed layout "
+                                     "is worse after repair")
+        return final
+
+    def _designed_source(self, designed, base_entry):
+        """What the designed layout settles to, without it counting as this report's result."""
+        r = self.report
+        kept = (r.strategy, r.status, r.repair_renders, r.render_attempts,
+                list(r.corrections), list(r.fallbacks), list(r.reasons))
+        final = self._settle(designed, base_entry)
+        r.strategy, r.status, r.repair_renders, r.render_attempts = kept[:4]
+        r.corrections, r.fallbacks, r.reasons = kept[4:]
+        return final.doc, final.theme
 
     def _apply_ranker(self, best, eligible, base_entry):
         """Optional learned re-ranking among the baseline and *eligible* candidates."""

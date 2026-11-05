@@ -113,6 +113,8 @@ def score_layout(geo: Geometry, doc, theme, *, typography_errors: Optional[List[
             errors.append(f"block {i} ({b.type}) not placed")
     last = -1
     for r in regs:
+        if r.in_float:
+            continue
         if r.block is not None and r.block < last:
             errors.append(f"reading order broken at block {r.block} (after {last})")
             break
@@ -135,7 +137,7 @@ def score_layout(geo: Geometry, doc, theme, *, typography_errors: Optional[List[
         for r in rs:
             if r.bottom < info.frame_bottom - 1.5 or r.top > info.frame_top + 1.5:
                 errors.append(f"region of block {r.block} clipped on page {p}")
-        dense = [r for r in rs if r.role not in ("space",)]
+        dense = [r for r in rs if r.role not in ("space", "decorative")]
         # vertical fill: union of occupied y-intervals (no double counting)
         fill = min(1.0, union_length([(r.bottom, r.top) for r in dense]) / max(1.0, info.frame_height))
         # area occupancy: union of real content rectangles over the frame area
@@ -172,7 +174,7 @@ def score_layout(geo: Geometry, doc, theme, *, typography_errors: Optional[List[
                                        intentional=role != "body", wasted=round(wasted, 3)))
         # hard: stranded heading / detached caption at the bottom of a non-final page
         if rs and not is_last:
-            tail = [r for r in rs if r.role != "space"][-1:] or rs[-1:]
+            tail = [r for r in rs if r.role not in ("space", "decorative")][-1:] or rs[-1:]
             tail = tail[0]
             cont = [r for r in nxt if r.block == tail.block]
             if tail.role == "heading" and not cont:

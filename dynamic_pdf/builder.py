@@ -189,7 +189,8 @@ class DocumentBuilder:
         designed layout is kept unless a candidate is objectively better.
         ``mode="off"`` disables it. Options: see ``intelligence.ComposeOptions``
         (max_candidates, max_renders, max_repairs, min_gain, time_budget_s,
-        memory_budget_mb, measure_memory, qa). The result is in
+        memory_budget_mb, measure_memory, qa, media). ``media=AutoMediaOptions(mode="auto")``
+        also tries image placements, off unless given. The result is in
         ``last_composition`` (and ``ExportResult.composition``).
         """
         from .intelligence import ComposeOptions
@@ -211,12 +212,14 @@ class DocumentBuilder:
         doc, theme = self._prepared_base()
         theme = theme or _gt(doc.theme)
         key = hashlib.sha256((doc.model_dump_json() + theme.model_dump_json()
-                              + self._compose_options.model_dump_json()).encode()).hexdigest()
+                              + self._compose_options.model_dump_json()
+                              + self._media_cache_inputs(doc, theme)).encode()).hexdigest()
         if self._composition is not None and self._composition[0] == key:
             return self._composition[1]
         sem = normalize(doc)
         profile = self.last_design.decision.profile.value if self.last_design else "general"
         composer = Composer(self._compose_options, self._policy)
+        composer.recipe = getattr(self.last_design, "recipe", None) if self.last_design else None
         layout = getattr(self.last_design, "layout", None) if self.last_design else None
         composer.report.design_trial_renders = getattr(layout, "trial_renders", 0) or 0
         try:
@@ -251,6 +254,21 @@ class DocumentBuilder:
         self._composition = (key, result)
         self.last_composition = composer.report
         return result
+
+    def _media_cache_inputs(self, doc, theme) -> str:
+        """What else a result depends on when images are placed automatically: a file
+        can change while its path stays the same. Empty unless media is on."""
+        media = self._compose_options.media
+        if media is None or media.mode == "off":
+            return ""
+        import reportlab
+        from . import __version__
+        from .core.content_ledger import build_content_ledger
+        from .design.media_policy import MEDIA_POLICY_VERSION
+        from .fonts.manager import font_signature
+        ledger = build_content_ledger(doc, self._policy.assets, theme)
+        return "|".join((ledger.fingerprint(), font_signature(), MEDIA_POLICY_VERSION, __version__,
+                         reportlab.Version))
 
     def _composer_pdf_qa(self):
         """QAReport of the delivered composed PDF (unverified when QA could not run)."""
@@ -505,17 +523,20 @@ class DocumentBuilder:
               shadow: bool = False,
               placement=None,
               treatment: Optional[ImageTreatment] = None,
-              source: Optional[str] = None) -> 'DocumentBuilder':
+              source: Optional[str] = None,
+              intent=None) -> 'DocumentBuilder':
         """Add an image. ``placement`` is a ``MediaPlacement`` or a preset name:
         ``inline``, ``full_width``, ``full_bleed``, ``float_start``, ``float_end``,
         ``behind_text`` or ``in_front_of_text``. ``treatment`` sets crop, fit,
-        rotation, opacity, border and shadow; ``source`` is an attribution line."""
+        rotation, opacity, border and shadow; ``source`` is an attribution line.
+        ``intent`` is a ``MediaIntent``: what the image is for, which limits what
+        automatic placement may do to it."""
         self._blocks.append(ImageBlock(src=src, width=width, height=height,
                                        caption=caption, figure_number=figure_number,
                                        alt_text=alt_text, alignment=alignment,
                                        border=border, shadow=shadow,
                                        placement=resolve_placement(placement),
-                                       treatment=treatment, source=source))
+                                       treatment=treatment, source=source, intent=intent))
         return self
 
     def page_background(self, src: str, scope: str = "every_page",
@@ -832,6 +853,8 @@ class DocumentBuilder:
         from .renderers.docx_renderer import render_docx
         from .themes import get_theme as _get_theme
         doc, theme = self._prepared()
+        if self._compose_active() and self._composed()[4].docx_source is not None:
+            doc, theme = self._composed()[4].docx_source    # a plan made for the PDF only
         sem = normalize(doc, source_kind=self._source_kind, source_text=self._source_text,
                         front_matter=self.front_matter)
         data, col = render_docx(sem, theme or _get_theme(doc.theme), self._policy)

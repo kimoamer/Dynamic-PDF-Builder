@@ -25,6 +25,31 @@ _ARABIC = re.compile("[֐-ࣿיִ-﷿ﹰ-﻿]")
 _COLUMN_GAP = 12.0
 _LOGO_GAP = 7.0
 SAMPLE = {"page": "000", "pages": "000"}
+_LIVE_FIELDS = {"page", "pages", "section", "chapter"}
+_MAX_SECTION_SAMPLES = 64
+_MIN_LOGO_HEIGHT = 12.0
+_LOGO_SHRINK = 0.75
+
+
+class BandContentUnfit(DynamicPDFError):
+    """Band content cannot be set whole within the limits its author gave."""
+
+
+@dataclass(frozen=True)
+class BandLoss:
+    """Something a band would not show."""
+    kind: str                # ellipsis, item_dropped, row_dropped, unknown_field
+    text: str
+
+    def describe(self) -> str:
+        return f"{self.kind}: {self.text[:60]}"
+
+
+def missing_fields(template: str, values: Dict[str, str], optional=()) -> List[str]:
+    """Fields in ``template`` with no value, leaving out those filled in per page and
+    those the author declared optional."""
+    return [name for name in _FIELD.findall(template)
+            if name not in _LIVE_FIELDS and name not in optional and not values.get(name)]
 
 
 def fill_fields(text: str, values: Dict[str, str]) -> str:
@@ -97,6 +122,8 @@ class BandLayout:
     rows: List[Row]
     height: float
     accent: float
+    losses: List[BandLoss] = field(default_factory=list)
+    reflowed: List[str] = field(default_factory=list)
 
 
 def _logo_size(asset: MediaAsset, logo: Logo) -> Tuple[float, float]:
@@ -130,6 +157,7 @@ class BandMaker:
         self.policy, self.collector = policy, collector
         self.values = dict(values or {})
         self._assets: Dict[str, Optional[MediaAsset]] = {}
+        self.section_samples: List[str] = []
 
     def asset(self, logo: Logo) -> Optional[MediaAsset]:
         if logo.src not in self._assets:
@@ -155,7 +183,7 @@ class BandMaker:
                 text_w = max(text_w, text_width(self.theme, text, size, row.bold) if text else 0)
         return logo_w + text_w
 
-    def _cell(self, items, row, x, width, align, size, leading, values, warn) -> Cell:
+    def _cell(self, items, row, x, width, align, size, leading, values, warn, losses) -> Cell:
         cell = Cell(x, width, align, items=list(items))
         text_room = width
         for it in items:
@@ -167,15 +195,20 @@ class BandMaker:
                     text_room -= w + _LOGO_GAP
         budget = row.max_lines
         for it in items:
-            if isinstance(it, Logo) or budget <= 0:
+            if isinstance(it, Logo):
                 continue
             text = fill_fields(it, values)
             if not text:
+                continue
+            if budget <= 0:
+                losses.append(BandLoss("item_dropped", it))
                 continue
             lines, cut = wrap_text(self.theme, text, size, row.bold, max(text_room, 12), budget)
             cell.lines += lines
             cell.raw.append(it)
             budget -= len(lines)
+            if cut:
+                losses.append(BandLoss("ellipsis", it))
             if cut and warn:
                 self.collector.warn("band_overflow", f"Band text was cut to fit its slot: {text[:60]}")
         logos_h = max((h for _, _, h, _ in cell.logos), default=0)
@@ -183,9 +216,54 @@ class BandMaker:
         return cell
 
     def layout(self, band: Band, width: float, values=None, warn: bool = False) -> BandLayout:
+        """The band's rows. ``losses`` lists anything left out; a lossless system first
+        moves slots and items onto rows of their own and shrinks logos to avoid that."""
+        if not self.system.lossless:
+            return self._layout(band, band.rows, width, values, warn)
+        first = self._layout(band, band.rows, width, values, False)
+        cuts = [x for x in first.losses if x.kind != "unknown_field"]
+        if not cuts:
+            return first
+        rows = [r for spec in band.rows for r in self._split_row(spec)]
+        split = self._layout(band, rows, width, values, False)
+        split.reflowed.append("slots moved to their own rows")
+        if any(x.kind == "row_dropped" for x in split.losses):
+            small = self._layout(band, [self._smaller_logos(r) for r in rows], width, values, False)
+            small.reflowed += split.reflowed + ["logos reduced"]
+            split = small
+        return split
+
+    def _split_row(self, spec: BandRow) -> List[BandRow]:
+        """One row for each text item, in reading order; logos stay with the first item
+        of their slot. Only the last row keeps the rule."""
+        left, center, right = spec.slots(self.rtl)
+        slots = [("left", left), ("center", center), ("right", right)]
+        pieces = []
+        for side, items in reversed(slots) if self.rtl else slots:
+            logos = [i for i in items if isinstance(i, Logo)]
+            texts = [i for i in items if not isinstance(i, Logo)] or [None]
+            for k, text in enumerate(texts):
+                held = (logos if k == 0 else []) + ([text] if text is not None else [])
+                if held:
+                    pieces.append((side, held))
+        common = spec.model_dump(exclude={"left", "center", "right", "start", "end", "rule_below"})
+        last = len(pieces) - 1
+        return [BandRow(**common, **{side: held}, rule_below=spec.rule_below and k == last)
+                for k, (side, held) in enumerate(pieces)] or [spec]
+
+    def _smaller_logos(self, spec: BandRow) -> BandRow:
+        def smaller(item):
+            if not isinstance(item, Logo):
+                return item
+            height = max(_MIN_LOGO_HEIGHT, item.max_height * _LOGO_SHRINK)
+            return item.model_copy(update={"max_height": min(height, item.max_height)})
+        return spec.model_copy(update={k: [smaller(i) for i in getattr(spec, k)]
+                                       for k in ("left", "center", "right", "start", "end")})
+
+    def _layout(self, band: Band, specs, width: float, values, warn: bool) -> BandLayout:
         merged = {**self.values, **SAMPLE, **(values or {})}
-        rows, total = [], 0.0
-        for spec in band.rows:
+        rows, total, losses = [], 0.0, []
+        for k, spec in enumerate(specs):
             size = self._size(spec)
             leading = size * (1.42 if self._has_arabic(spec, merged) else 1.26)
             left, center, right = spec.slots(self.rtl)
@@ -193,11 +271,13 @@ class BandMaker:
             lw, cw, rw = _column_widths(*nat, width)
             cells = []
             if left:
-                cells.append(self._cell(left, spec, 0, lw, "left", size, leading, merged, warn))
+                cells.append(self._cell(left, spec, 0, lw, "left", size, leading, merged, warn, losses))
             if center:
-                cells.append(self._cell(center, spec, (width - cw) / 2, cw, "center", size, leading, merged, warn))
+                cells.append(self._cell(center, spec, (width - cw) / 2, cw, "center", size, leading, merged,
+                                        warn, losses))
             if right:
-                cells.append(self._cell(right, spec, width - rw, rw, "right", size, leading, merged, warn))
+                cells.append(self._cell(right, spec, width - rw, rw, "right", size, leading, merged, warn,
+                                        losses))
             height = max([c.height for c in cells] + [leading if not cells else 0])
             if spec.fill:
                 height += band.padding * 2
@@ -207,11 +287,32 @@ class BandMaker:
             if band.max_height and total + gap + height > band.max_height and rows:
                 if warn:
                     self.collector.warn("band_overflow", "A band row was dropped to stay within max_height")
+                losses += [BandLoss("row_dropped", _row_label(r)) for r in specs[k:]]
                 break
             total += gap + height
             rows.append(Row(spec, cells, height, size, leading))
         accent = band.accent_height if band.accent_color else 0
-        return BandLayout(rows, total + accent, accent)
+        if self.system.lossless:
+            losses += [BandLoss("unknown_field", name) for spec in specs
+                       for item in _texts(spec)
+                       for name in missing_fields(item, merged, self.system.optional_fields)]
+        return BandLayout(rows, total + accent, accent, losses)
+
+    def audit(self, width: float, sample=None) -> List[BandLoss]:
+        """All that any band of the system would leave out, for every running title."""
+        found: Dict[BandLoss, None] = {}
+        heads, feet = self.system.bands()
+        for band in heads + feet:
+            for values in self._variants(width, sample):
+                found.update(dict.fromkeys(self.layout(band, width, values).losses))
+        return list(found)
+
+    def _variants(self, width: float, sample) -> List[dict]:
+        """The sample values, then each possible running title, widest first: a title
+        with fewer letters can still be the wider one."""
+        size = self.theme.typography.footer_text_size + 1
+        titles = sorted(self.section_samples, key=lambda t: -text_width(self.theme, t, size, False))
+        return [sample or {}] + [{"section": t, "chapter": t} for t in titles[:_MAX_SECTION_SAMPLES]]
 
     def _has_arabic(self, row: BandRow, values) -> bool:
         for items in (row.left, row.center, row.right, row.start, row.end):
@@ -221,12 +322,22 @@ class BandMaker:
         return False
 
 
+def _texts(spec: BandRow) -> List[str]:
+    return [i for k in ("left", "center", "right", "start", "end") for i in getattr(spec, k)
+            if isinstance(i, str)]
+
+
+def _row_label(spec: BandRow) -> str:
+    return " / ".join(_texts(spec)) or "logo row"
+
+
 def margin_needs(maker: BandMaker, width: float, sample_values=None) -> Tuple[float, float]:
     """The page margins that clear the tallest header and footer in the system."""
     sys = maker.system
     heads, feet = sys.bands()
-    top = max((maker.layout(b, width, sample_values, warn=True).height for b in heads), default=0)
-    bottom = max((maker.layout(b, width, sample_values, warn=True).height for b in feet), default=0)
+    variants = maker._variants(width, sample_values) if sys.lossless else [sample_values]
+    top = max((maker.layout(b, width, v, warn=True).height for b in heads for v in variants), default=0)
+    bottom = max((maker.layout(b, width, v, warn=True).height for b in feet for v in variants), default=0)
     return (top + sys.edge_distance + sys.body_gap if heads else 0,
             bottom + sys.edge_distance + sys.body_gap if feet else 0)
 

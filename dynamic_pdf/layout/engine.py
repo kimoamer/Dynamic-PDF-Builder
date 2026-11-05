@@ -1028,6 +1028,7 @@ class LayoutEngine:
             return None
         if normal_mode(block.placement) != "floating":
             return None
+        from ..intelligence.geometry import tag
         from .media_flow import FloatRegion
         ratio = block.placement.width_ratio or 0.42
         fig_w = min(block.width or frame_width * ratio, frame_width * 0.62)
@@ -1040,6 +1041,7 @@ class LayoutEngine:
         finally:
             ctx.available_width, ctx.available_height = saved
         figure = list(built[0]._content) if isinstance(built[0], KeepTogether) else list(built)
+        tag(figure, i, _role_for(plain))
         fig_h = sum(f.wrap(fig_w, 1e6)[1] + f.getSpaceAfter() for f in figure)
         narrow = frame_width - fig_w - block.placement.gutter
         items, got, j = [], 0.0, i + 1
@@ -1049,6 +1051,7 @@ class LayoutEngine:
                     nxt.hints or {}).get("flow_run") is not None:
                 break
             made = create_flowables(nxt, theme, ctx)
+            tag(made, j, _role_for(nxt))
             for f in made:
                 f.keepWithNext = 0
                 got += f.wrap(narrow, 1e6)[1] + f.getSpaceAfter()
@@ -1118,9 +1121,6 @@ class LayoutEngine:
         pagesize = self._get_pagesize()
         w, h = pagesize
 
-        # Compute text frame area based on style
-        top_m = sp.page_margin_top
-        bot_m = sp.page_margin_bottom
         self.page_system = self.document.meta.page_system
         if self.page_system is not None:
             from ..schema.page_system import settled
@@ -1128,38 +1128,15 @@ class LayoutEngine:
         rtl = (is_rtl_document(self.document) if self.page_system is not None
                or _uses_media_model(self.document.blocks) else False)
         self.band_maker = None
+        band_needs = None
         if self.page_system is not None:
-            from .page_system import BandMaker, margin_needs
-            from ..design.page_values import band_values
-            base_values, sample = band_values(self.document, hf)
-            self.band_maker = BandMaker(theme, self.page_system, rtl, self.policy.assets,
-                                        self.diagnostics, base_values)
-            need_top, need_bottom = margin_needs(
-                self.band_maker, w - sp.page_margin_left - sp.page_margin_right, sample)
-            top_m, bot_m = max(top_m, need_top), max(bot_m, need_bottom)
-        elif hf.enabled:
-            # Styles that draw a bar need margin clearance
-            bar_styles = {"bar", "gradient", "banner", "split", "logo_left",
-                          "logo_right", "modern"}
-            if hf.header_style in bar_styles:
-                top_m = max(top_m, hf.height + 16)
-            else:
-                top_m = max(top_m, hf.height + 4)
-
-            fbar_styles = {"bar", "gradient"}
-            if hf.footer_style in fbar_styles:
-                bot_m = max(bot_m, hf.footer_height + 12)
-            else:
-                bot_m = max(bot_m, 40)
-
-        # Sidebar offset
-        left_m = sp.page_margin_left
-        right_m = sp.page_margin_right
-        if hf.header_style == "sidebar" or hf.footer_style == "sidebar":
-            if hf.sidebar_position == "left":
-                left_m += hf.sidebar_width + 4
-            else:
-                right_m += hf.sidebar_width + 4
+            from .page_envelope import band_maker, reserve_bands
+            self.band_maker, sample = band_maker(self.document, theme, self.page_system, rtl,
+                                                 self.policy.assets, self.diagnostics)
+            band_needs = reserve_bands(self.band_maker, w - sp.page_margin_left - sp.page_margin_right,
+                                       sample, self.diagnostics)
+        from .page_envelope import page_margins
+        top_m, bot_m, left_m, right_m = page_margins(theme, band_needs)
 
         frame_width = w - left_m - right_m
 

@@ -73,6 +73,18 @@ jobs:
             m76-comparison/gallery
             m76-comparison/results.json
             m76-comparison/report.md
+      - name: Automatic image placement comparison (PDF and LibreOffice-rendered DOCX)
+        if: matrix.python-version == '3.12'
+        run: python benchmarks/m78/run.py m78-comparison
+      - name: Upload automatic image placement comparison
+        if: matrix.python-version == '3.12' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m78-comparison
+          path: |
+            m78-comparison/gallery
+            m78-comparison/results.json
+            m78-comparison/report.md
       - name: Upload contact sheets for visual review
         if: matrix.python-version == '3.12' && always()
         uses: actions/upload-artifact@v4

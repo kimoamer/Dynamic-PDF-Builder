@@ -36,7 +36,7 @@ _NON_TEXT_FIELDS = {
     "chart_type", "diagram_type", "direction", "error_correction", "colors", "orientation",
     "doi", "key", "highlight_lines", "stroke_dash", "background", "hints",
     "background_image", "background_treatment", "background_color", "placement", "treatment",
-    "overlay_color", "scope", "layer",
+    "overlay_color", "scope", "layer", "intent",
 }
 
 _block_adapter = TypeAdapter(Block)

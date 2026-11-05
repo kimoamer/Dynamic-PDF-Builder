@@ -50,26 +50,18 @@ class FrameGeometry:
     bottom: float
 
 
-def frame_geometry(doc, theme) -> FrameGeometry:
-    """Mirror of LayoutEngine's frame computation (margins, header/footer clearance)."""
-    sp, hf = theme.spacing, theme.header_footer
+def page_size(doc) -> Tuple[float, float]:
     w, h = _PAGE.get(doc.meta.page_size, _PAGE[PageSize.A4])
-    if doc.meta.orientation == Orientation.LANDSCAPE:
-        w, h = h, w
-    top_m, bot_m = sp.page_margin_top, sp.page_margin_bottom
-    if hf.enabled:
-        bar = {"bar", "gradient", "banner", "split", "logo_left", "logo_right", "modern"}
-        top_m = max(top_m, hf.height + (16 if hf.header_style in bar else 4))
-        bot_m = max(bot_m, hf.footer_height + 12 if hf.footer_style in ("bar", "gradient") else 40)
-    left, right = sp.page_margin_left, sp.page_margin_right
-    if hf.header_style == "sidebar" or hf.footer_style == "sidebar":
-        if hf.sidebar_position == "left":
-            left += hf.sidebar_width + 4
-        else:
-            right += hf.sidebar_width + 4
-    lw, lh = (h, w) if h > w else (w, h)
-    return FrameGeometry(w - left - right, h - top_m - bot_m, lw - left - right, lh - top_m - bot_m,
-                         left, bot_m)
+    return (h, w) if doc.meta.orientation == Orientation.LANDSCAPE else (w, h)
+
+
+def frame_geometry(doc, theme, policy=None) -> FrameGeometry:
+    """The body frame the renderer will use, bands included."""
+    from ..layout.page_envelope import resolve_page_envelope
+    env = resolve_page_envelope(doc, theme, policy)
+    lw, lh = env.landscape_size
+    return FrameGeometry(env.width, env.height, lw - env.left - env.right, lh - env.top - env.bottom,
+                         env.left, env.bottom)
 
 
 def _flowable_height(f, canv, width: float, avail: float) -> float:
@@ -106,7 +98,7 @@ def measure_blocks(doc, theme, policy=None, cache=None) -> Tuple[List[BlockMeasu
     from ..layout.factory import RenderContext, create_flowables
     from ..policy import DiagnosticCollector, RenderPolicy
 
-    fg = frame_geometry(doc, theme)
+    fg = frame_geometry(doc, theme, policy)
     canv = Canvas(io.BytesIO())
     col = DiagnosticCollector(policy or RenderPolicy(error_mode="permissive"))
     token = _policy.activate(col)

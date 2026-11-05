@@ -1,0 +1,229 @@
+"""
+Proof that a rendered document still says what its source says.
+
+Four layers are checked, each only as far as it can be: the source itself, the placed
+fragments, the DOCX XML and the PDF text. A layer reports ``verified``, ``failed`` or
+``unknown``. Text extraction cannot be trusted with shaped Arabic, so a difference
+there is ``unknown``: neither a pass nor a proven loss.
+"""
+
+from __future__ import annotations
+
+import io
+import re
+import unicodedata
+import zipfile
+from collections import Counter
+from dataclasses import dataclass, field
+from typing import List, Optional
+from xml.etree import ElementTree
+
+from ..core.content_ledger import ContentLedger
+from ..core.inline import parse_inline, plain_text
+
+VERIFIED, FAILED, UNKNOWN = "verified", "failed", "unknown"
+_W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+_WP = "{http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing}"
+_MC_FALLBACK = "{http://schemas.openxmlformats.org/markup-compatibility/2006}Fallback"
+_R_NS = "{http://schemas.openxmlformats.org/package/2006/relationships}"
+_LATIN = re.compile(r"[A-Za-z]{2,}|[0-9٠-٩]+")
+_ARABIC = re.compile(r"[ء-يٱ-ۓ]{2,}")
+_ARABIC_ANY = re.compile(r"[؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]")
+_FLOW_TYPES = {"paragraph", "heading"}
+_SHOWN_TYPES = _FLOW_TYPES | {"bullet_list", "numbered_list", "checklist", "table", "image", "quote", "note",
+                              "callout"}
+_HIDDEN_KINDS = {"alt_text"}
+_NO_REGION = {"page_break", "spacer", "watermark", "divider"}
+_SHORT = 20         # shorter strings occur inside other text, so a surplus proves nothing
+
+
+@dataclass
+class LayerResult:
+    name: str
+    status: str
+    details: List[str] = field(default_factory=list)
+
+
+@dataclass
+class PreservationReport:
+    layers: List[LayerResult]
+
+    @property
+    def status(self) -> str:
+        found = {x.status for x in self.layers}
+        if FAILED in found:
+            return FAILED
+        return UNKNOWN if UNKNOWN in found or not self.layers else VERIFIED
+
+    def layer(self, name: str) -> Optional[LayerResult]:
+        return next((x for x in self.layers if x.name == name), None)
+
+    def to_dict(self) -> dict:
+        return {"status": self.status,
+                "layers": {x.name: {"status": x.status, "details": x.details} for x in self.layers}}
+
+
+def _result(name: str, failed: List[str], unsure: List[str]) -> LayerResult:
+    if failed:
+        return LayerResult(name, FAILED, failed[:12])
+    return LayerResult(name, UNKNOWN if unsure else VERIFIED, unsure[:12])
+
+
+def _squash(text: str) -> str:
+    return " ".join(text.split())
+
+
+def _shown(ledger: ContentLedger) -> List[tuple]:
+    """Block type, kind and visible text of what readers are meant to see."""
+    return [(e.block_type, e.kind, _squash(plain_text(e.text))) for e in ledger.entries
+            if e.block_type in _SHOWN_TYPES and e.kind not in _HIDDEN_KINDS]
+
+
+def check_source(ledger: ContentLedger, candidate: ContentLedger) -> LayerResult:
+    return _result("source", ledger.diff(candidate), [])
+
+
+def _set_length(text: str) -> int:
+    """Characters of ``text`` as set: shaping joins some Arabic letter pairs into one."""
+    if not _ARABIC_ANY.search(text):
+        return len(text)
+    from ..layout.factory import _apply_rtl
+    return len(_apply_rtl(text))
+
+
+def check_fragments(ledger: ContentLedger, geometry) -> LayerResult:
+    """Every block was placed, once, and its pieces add up to its text."""
+    failed: List[str] = []
+    unsure: List[str] = []
+    placed = {b for r in geometry.regions for b in (r.block, *r.extra_blocks)}
+    for block, kind, _ in ledger.block_digests:
+        if kind not in _NO_REGION and block not in placed:
+            failed.append(f"block {block} ({kind}) was not placed")
+    seen = Counter((r.page, r.block, round(r.top, 1), round(r.bottom, 1), round(r.x0, 1)) for r in geometry.regions
+                   if r.chars)
+    failed += [f"block {k[1]} was placed twice on page {k[0]}" for k, n in seen.items() if n > 1]
+    for e in ledger.entries:
+        if e.block_type != "paragraph" or e.kind != "text":
+            continue
+        pieces = geometry.fragments(e.block)
+        if not pieces:
+            unsure.append(f"block {e.block}: no text fragments were recorded")
+            continue
+        got, want = pieces[-1][2], _set_length(plain_text(e.text))
+        if abs(got - want) <= len(pieces):
+            continue
+        message = f"block {e.block}: {got} characters placed, {want} in the source"
+        (unsure if _ARABIC_ANY.search(e.text) else failed).append(message)
+    return _result("fragments", failed, unsure)
+
+
+def _paragraphs(root) -> List[str]:
+    for parent in list(root.iter()):
+        for child in list(parent):
+            if child.tag == _MC_FALLBACK:
+                parent.remove(child)
+    return [_squash("".join(t.text or "" for t in p.iter(_W + "t"))) for p in root.iter(_W + "p")]
+
+
+def check_docx_content(ledger: ContentLedger, data: bytes) -> LayerResult:
+    """The XML holds every string the expected number of times, the flow in order,
+    with its images, alt text, links and band text."""
+    failed: List[str] = []
+    with zipfile.ZipFile(io.BytesIO(data)) as z:
+        names = z.namelist()
+        body = ElementTree.fromstring(z.read("word/document.xml"))
+        bands = [" ".join(_paragraphs(ElementTree.fromstring(z.read(n)))) for n in names
+                 if re.fullmatch(r"word/(header|footer)\d*\.xml", n)]
+        rels = z.read("word/_rels/document.xml.rels") if "word/_rels/document.xml.rels" in names else b""
+    alts = [d.get("descr") or "" for d in body.iter(_WP + "docPr")]
+    full = "\n".join(_paragraphs(body))
+    shown = _shown(ledger)
+    wanted = Counter(text for _, _, text in shown if text)
+    for text, count in wanted.items():
+        found = full.count(text)
+        if found < count:
+            failed.append(f"expected {count}, found {found}: {text[:60]!r}")
+        elif found > count and len(text) >= _SHORT:
+            failed.append(f"repeated: expected {count}, found {found}: {text[:60]!r}")
+    cursor = 0
+    for kind, field_name, text in shown:
+        if kind in _FLOW_TYPES and field_name == "text" and text:
+            at = full.find(text, cursor)
+            if at < 0:
+                if text in full:
+                    failed.append(f"out of order: {text[:60]!r}")
+                continue
+            cursor = at + len(text)
+    for entry in ledger.entries:
+        if entry.kind == "alt_text" and entry.text not in alts:
+            failed.append(f"alt text missing: {entry.text[:60]!r}")
+    images = sum(1 for e in ledger.block_digests if e[1] == "image")
+    if len(alts) < images:
+        failed.append(f"{images} images in the source, {len(alts)} drawings in the XML")
+    targets = {r.get("Target") for r in ElementTree.fromstring(rels).iter(_R_NS + "Relationship")} if rels else set()
+    for e in ledger.entries:
+        if e.block_type in _SHOWN_TYPES:
+            for run in parse_inline(e.text):
+                if run.link and not run.link.startswith("#") and run.link not in targets:
+                    failed.append(f"link missing: {run.link}")
+    text_of_bands = " ".join(bands)
+    failed += [f"band text missing: {t[:60]!r}" for t in ledger.band_texts if _squash(t) not in text_of_bands]
+    return _result("docx", failed, [])
+
+
+def _fold(text: str) -> str:
+    """Forms and marks that PDF extraction changes without any loss."""
+    return "".join(c for c in unicodedata.normalize("NFKC", text.lower()) if not unicodedata.combining(c))
+
+
+def _arabic_tokens(text: str) -> Counter:
+    return Counter(min(w, w[::-1]) for w in _ARABIC.findall(_fold(text)))
+
+
+def check_pdf_content(ledger: ContentLedger, data: bytes) -> LayerResult:
+    """The page text holds every word of the source. Extra words prove nothing here:
+    bands and contents repeat text, which is why repeats are checked on the fragments."""
+    try:
+        import pymupdf
+    except ImportError:
+        return LayerResult("pdf", UNKNOWN, ["PyMuPDF is not installed"])
+    with pymupdf.open(stream=data, filetype="pdf") as pdf:
+        page_text = "\n".join(page.get_text() for page in pdf)
+    source = "\n".join([t for _, _, t in _shown(ledger)] + list(ledger.band_texts))
+    have, want = Counter(_LATIN.findall(_fold(page_text))), Counter(_LATIN.findall(_fold(source)))
+    failed = [f"missing {n}: {w!r}" for w, n in (want - have).items()]
+    short = _arabic_tokens(source) - _arabic_tokens(page_text)
+    unsure = [f"{sum(short.values())} Arabic words could not be matched in the extracted text"] if short else []
+    return _result("pdf", failed, unsure)
+
+
+def same_extracted_words(first: bytes, second: bytes) -> Optional[bool]:
+    """Whether two PDFs use the same Arabic and Latin words. Shaping and extraction are
+    the same on both sides, so this holds where a comparison with the source cannot.
+    Counts and digits are left out: a shorter document repeats its bands and page
+    numbers fewer times. None when PyMuPDF is missing."""
+    try:
+        import pymupdf
+    except ImportError:
+        return None
+
+    def words(data: bytes) -> set:
+        with pymupdf.open(stream=data, filetype="pdf") as pdf:
+            text = "\n".join(page.get_text() for page in pdf)
+        return set(_arabic_tokens(text)) | {w for w in _LATIN.findall(_fold(text)) if w.isalpha()}
+    return words(first) == words(second)
+
+
+def check_preservation(ledger: ContentLedger, *, candidate: Optional[ContentLedger] = None, geometry=None,
+                       pdf: Optional[bytes] = None, docx: Optional[bytes] = None) -> PreservationReport:
+    """Every layer the given artifacts allow. A layer with nothing to check is left out."""
+    layers: List[LayerResult] = []
+    if candidate is not None:
+        layers.append(check_source(ledger, candidate))
+    if geometry is not None:
+        layers.append(check_fragments(ledger, geometry))
+    if docx is not None:
+        layers.append(check_docx_content(ledger, docx))
+    if pdf is not None:
+        layers.append(check_pdf_content(ledger, pdf))
+    return PreservationReport(layers)

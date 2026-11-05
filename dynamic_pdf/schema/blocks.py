@@ -5,6 +5,7 @@ Every block is a Pydantic v2 model with Literal discriminator.
 from typing import List, Optional, Union, Dict, Any, Literal, Annotated
 from pydantic import BaseModel, Field
 from .media import ImageTreatment, MediaPlacement, RepeatScope
+from .media_intent import MediaIntent
 
 # ─────────────────────── Base ───────────────────────
 
@@ -129,6 +130,7 @@ class ImageBlock(BaseBlock):
     placement: Optional[MediaPlacement] = None
     treatment: Optional[ImageTreatment] = None
     source: Optional[str] = None                    # attribution, set under the caption
+    intent: Optional[MediaIntent] = None
 
 class ChartBlock(BaseBlock):
     type: Literal["chart"] = "chart"

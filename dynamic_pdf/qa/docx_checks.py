@@ -135,3 +135,15 @@ def docx_to_pdf(data: bytes, timeout: int = 180) -> Optional[bytes]:
             return None
         with open(out, "rb") as f:
             return f.read()
+
+
+def office_version(timeout: int = 60) -> Optional[str]:
+    """The LibreOffice build that would render, or None without one."""
+    soffice = shutil.which("soffice") or shutil.which("libreoffice")
+    if not soffice:
+        return None
+    try:
+        done = subprocess.run([soffice, "--version"], capture_output=True, text=True, timeout=timeout, check=False)
+    except (OSError, subprocess.TimeoutExpired):
+        return "unknown"
+    return done.stdout.strip() or "unknown"
