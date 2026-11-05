@@ -29,6 +29,11 @@
 - [Project Structure](#project-structure)
 - [Dependencies](#dependencies)
 - [Testing](#testing)
+- [Editable Word (DOCX) export & intelligent design](#editable-word-docx-export--intelligent-design)
+- [Intelligent page composition (CPU-only)](#intelligent-page-composition-cpu-only)
+- [Design variants & design grammar](#design-variants--design-grammar)
+- [Learning pipeline](#learning-pipeline)
+- [Visual quality assurance](#visual-quality-assurance)
 - [Changelog](#changelog)
 
 ---
@@ -47,7 +52,10 @@ pip install -e ".[plotly]"     # Plotly charts
 pip install -e ".[pdf]"        # PDF merge / encrypt via pikepdf
 pip install -e ".[qrcode]"     # QR code blocks
 pip install -e ".[rtl]"        # Arabic & Hebrew RTL support
-pip install -e ".[all]"        # Everything
+pip install -e ".[qa]"         # Visual QA via PyMuPDF (AGPL)
+pip install -e ".[ranker]"     # Optional learned rankers via LightGBM
+pip install -e ".[analyzer]"   # Reference analysis tools via PyMuPDF (AGPL)
+pip install -e ".[all]"        # All feature extras (not ranker or analyzer)
 pip install -e ".[dev]"        # Testing + linting tools
 ```
 
@@ -1083,12 +1091,27 @@ dynamic_pdf/
 ├── fonts/
 │   ├── manager.py          #  Thread-safe register + deterministic fallback (no network)
 │   └── bundled/            #  JetBrains Mono + Amiri (shipped, OFL licences in LICENSES/)
+├── design/
+│   ├── art_direction.py    #  Art direction plans for design variants
+│   ├── directions.py       #  Named design directions
+│   ├── grammar.py          #  Loads approved grammar rules and applies them to a direction
+│   └── approved_grammar.json  # The published rules; the only learned data in the package
+├── intelligence/
+│   ├── composer.py         #  compose("smart") layout optimizer
+│   ├── variants.py         #  design_variants(), hard gates and selection
+│   └── variant_ranker.py   #  Optional learned choice among valid designs
 ├── markdown/
 │   ├── parser.py           #  CommonMark + GFM → Block tree
 │   └── preprocessors.py    #  Math/Mermaid fence extraction
 └── rtl/
     └── processor.py        #  Arabic BiDi reshaping
 
+tools/
+├── reference_analyzer/     #  Offline: measure reference PDFs, build the grammar
+└── design_learning/        #  Offline: the learning pipeline CLI
+training/                   #  AI and human preference data, trained models (models stay out of Git)
+config/design-learning.json #  Where the pipeline keeps its files
+docs/m77-design-grammar/    #  Grammar, coverage, report and comparisons
 tests/                      #  pytest suite run by GitHub Actions (see Testing)
 ```
 
@@ -1119,6 +1142,9 @@ tests/                      #  pytest suite run by GitHub Actions (see Testing)
 | `plotly` | `plotly ≥ 5.0`, `kaleido ≥ 0.2` | Plotly interactive chart export |
 | `pdf` | `pikepdf ≥ 8.0` | PDF merge, AES-256 encryption |
 | `qrcode` | `qrcode[pil] ≥ 7.4` | QR code block generation |
+| `qa` | `pymupdf ≥ 1.23` | Visual QA (AGPL) |
+| `ranker` | `lightgbm ≥ 4.0` | Optional learned rankers, CPU only |
+| `analyzer` | `pymupdf ≥ 1.23` | Reference analysis tools (AGPL, local use) |
 
 ---
 
@@ -1154,6 +1180,7 @@ just that a file was produced:
 | `test_stress_documents.py` | 20–50 page Arabic report, bilingual report, proposal, multi-page financial tables, academic paper, manual: page QA + word preservation in PDF and DOCX |
 | `test_m6_composer.py` | Geometry capture, simulation accuracy, hard constraints, selection, budgets, determinism, thread isolation, no network, hints, API/CLI, ranker fallback |
 | `test_pdf_docx_parity.py` | Same words and heading structure in AST, PDF and DOCX; LibreOffice conversion |
+| `test_m77_design_grammar.py` | Grammar loading and fallback, rules stay opt-in, approvals, AI and human data kept apart, ranker gates, deliverables stay free of reference files |
 
 ## Editable Word (DOCX) export & intelligent design
 
@@ -1249,6 +1276,83 @@ can re-order *valid* candidates. No model ships: collect real preferences with
 labelled pairs, reports document-grouped CV accuracy, saves LightGBM's text format —
 never pickle), then pass `compose("smart", ranker_model="model.txt")`.
 
+## Design variants & design grammar
+
+`design_variants()` makes several complete designs of one document, each with a different art
+direction, and recommends one of those that pass the hard gates:
+
+```python
+made = DocumentBuilder.from_markdown(content).design_variants(n=3)
+for v in made.variants:
+    print(v.id, v.valid)
+print(made.recommended.id if made.recommended else "none passed: use render()")
+```
+
+The **design grammar** is a set of layout rules learned from a local corpus of 1,064 reference
+pages. It stores normalized relationships between page elements, with no reference artwork, branding
+or complete page arrangements. It is opt-in, so output is unchanged unless you ask for it:
+
+```python
+made = builder.design_variants(grammar=True)                                # every rule that fits
+made = builder.design_variants(grammar=True, grammar_rules=["kpi.hero_and_grid"])
+made = builder.design_variants(grammar="my-grammar.json")                   # another approved file
+```
+
+The grammar has 18 rules. Nine run in the engine, covering covers, section openers, KPI layouts,
+ledger tables, header and footer bands, image insets and closing pages. The other nine are documented
+only: eight need a layout primitive the engine does not have yet, and one is not wired to the engine.
+
+A rule applies only when the document fits it. If a design with rules fails a hard gate, that design
+falls back to the same direction without them and says so. To see what happened:
+
+```python
+for v in made.variants:
+    print(v.id, v.report.grammar_version, v.report.grammar_rules)
+print(made.stats["selection"])     # which selector chose, and why
+```
+
+An empty `grammar_rules` means no rule fitted that design. A listed rule does not always change a
+page visibly, and a changed page is not proof of a better one. The rules were reviewed by AI and no
+person has approved them. Limits and measurements are in the
+[design learning report](docs/m77-design-grammar/design-learning-report.md).
+
+## Learning pipeline
+
+Everything here runs offline. Production needs only the package: no AI service, no network and no GPU.
+
+```text
+Reference PDFs → Design Grammar → Generate Variants → Claude Visual Review
+               → AI Preference Dataset → Train LightGBM → Evaluate → Optional Deployment
+```
+
+```bash
+python -m tools.design_learning import      # from the inbox folder set in config/design-learning.json
+python -m tools.design_learning analyze
+python -m tools.design_learning validate
+python -m tools.design_learning review --limit 24
+python -m tools.reference_analyzer.grammar_build
+python -m tools.design_learning approve --rules all --reviewer-type ai --model claude-opus-5-5
+python -m tools.design_learning publish
+python -m tools.design_learning trace annual_report
+```
+
+`publish` refuses any rule without a recorded approval. Reference PDFs, page previews and composition
+graphs stay outside Git, and only approved rules enter the package.
+
+An optional LightGBM ranker can choose among valid designs:
+
+```python
+made = builder.design_variants(ranker_model="training/models/ranker-1.txt")
+```
+
+No model ships, and none is active unless you pass one. A model would be trained on Claude's labelled
+comparisons, which makes it AI preference distillation and not human-supervised training. The trainer
+needs 200 usable comparisons and the seed batch has 16, so it currently refuses to train. If a model
+is missing or fails, selection falls back to the deterministic choice and reports why.
+
+[docs/LEARNING_PIPELINE.md](docs/LEARNING_PIPELINE.md) has the folder map and every command, including
+rendering DOCX through Microsoft Word on Windows.
+
 ## Visual quality assurance
 
 `export(..., qa=True)` (or `builder.qa("pdf"|"docx")`, CLI `--qa`) renders the document,
@@ -1301,6 +1405,14 @@ b.asset_policy(base_dir="/srv/assets")       # confine local paths
 ---
 
 ## Changelog
+
+### Unreleased
+
+- `design_variants()` gains an opt-in design grammar: `grammar=` and `grammar_rules=`. Default output is unchanged
+- 18 rules from a 1,064-page reference corpus, 9 of them usable by the engine, reviewed by AI only
+- A hard gate for cover text that spills onto a second page, for designs using cover rules
+- Learning pipeline CLI: `python -m tools.design_learning`
+- Optional learned choice among designs: `ranker_model=`. No model ships
 
 ### v0.3.0 (2026-04-04)
 
