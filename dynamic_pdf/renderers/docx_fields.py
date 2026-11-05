@@ -47,11 +47,30 @@ def set_cell_shading(cell, fill_hex: str) -> None:
 
 
 def set_paragraph_shading(paragraph, fill_hex: str) -> None:
-    pPr = paragraph._p.get_or_add_pPr()
+    """``paragraph`` may also be a paragraph style."""
+    pPr = paragraph._p.get_or_add_pPr() if hasattr(paragraph, "_p") else paragraph.element.get_or_add_pPr()
     shd = _get_or_add(pPr, "w:shd")
     shd.set(qn("w:val"), "clear")
     shd.set(qn("w:color"), "auto")
     shd.set(qn("w:fill"), fill_hex.lstrip("#").upper())
+
+
+_PPR_ORDER = ("pStyle", "keepNext", "keepLines", "pageBreakBefore", "framePr", "widowControl", "numPr",
+              "suppressLineNumbers", "pBdr", "shd", "tabs", "suppressAutoHyphens", "kinsoku", "wordWrap",
+              "overflowPunct", "topLinePunct", "autoSpaceDE", "autoSpaceDN", "bidi", "adjustRightInd", "snapToGrid",
+              "spacing", "ind", "contextualSpacing", "mirrorIndents", "suppressOverlap", "jc", "textDirection",
+              "textAlignment", "textboxTightWrap", "outlineLvl", "divId", "cnfStyle", "rPr", "sectPr", "pPrChange")
+
+
+def order_paragraph_properties(paragraph) -> None:
+    """Put a paragraph's properties in the order the schema requires. LibreOffice drops
+    shading that comes after the alignment, which would leave white text on white."""
+    pPr = paragraph._p.get_or_add_pPr()
+    rank = {name: i for i, name in enumerate(_PPR_ORDER)}
+    children = sorted(pPr, key=lambda el: rank.get(el.tag.rsplit("}", 1)[-1], len(rank)))
+    for el in children:
+        pPr.remove(el)
+        pPr.append(el)
 
 
 def set_run_shading(run, fill_hex: str) -> None:

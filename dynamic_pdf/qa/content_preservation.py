@@ -15,7 +15,7 @@ import unicodedata
 import zipfile
 from collections import Counter
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Sequence
 from xml.etree import ElementTree
 
 from ..core.content_ledger import ContentLedger
@@ -27,6 +27,7 @@ _WP = "{http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing}"
 _MC_FALLBACK = "{http://schemas.openxmlformats.org/markup-compatibility/2006}Fallback"
 _R_NS = "{http://schemas.openxmlformats.org/package/2006/relationships}"
 _LATIN = re.compile(r"[A-Za-z]{2,}|[0-9٠-٩]+")
+_INDIC = "٠١٢٣٤٥٦٧٨٩"
 _ARABIC = re.compile(r"[ء-يٱ-ۓ]{2,}")
 _ARABIC_ANY = re.compile(r"[؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]")
 _FLOW_TYPES = {"paragraph", "heading"}
@@ -139,12 +140,19 @@ def check_docx_content(ledger: ContentLedger, data: bytes) -> LayerResult:
     full = "\n".join(_paragraphs(body))
     shown = _shown(ledger)
     wanted = Counter(text for _, _, text in shown if text)
+    # a contents list repeats each heading once
+    listed = Counter(text for kind, _, text in set(shown) if kind in ("heading", "section_opener", "performance_page")
+                     ) if any(d[1] == "table_of_contents" for d in ledger.block_digests) else Counter()
+    # and an opening page's strip lists the chapters
+    listed.update(_squash(plain_text(e.text)) for e in ledger.entries if e.kind.startswith("chapters"))
+    lines = Counter(full.split("\n"))
     for text, count in wanted.items():
-        found = full.count(text)
+        found = full.count(text) - listed[text]
+        whole = lines[text] - listed[text]        # a phrase inside a sentence is no repeat
         if found < count:
             failed.append(f"expected {count}, found {found}: {text[:60]!r}")
-        elif found > count and len(text) >= _SHORT:
-            failed.append(f"repeated: expected {count}, found {found}: {text[:60]!r}")
+        elif whole > count and len(text) >= _SHORT:
+            failed.append(f"repeated: expected {count}, found {whole}: {text[:60]!r}")
     cursor = 0
     for kind, field_name, text in shown:
         if kind in _FLOW_TYPES and field_name == "text" and text:
@@ -180,7 +188,13 @@ def _arabic_tokens(text: str) -> Counter:
     return Counter(min(w, w[::-1]) for w in _ARABIC.findall(_fold(text)))
 
 
-def check_pdf_content(ledger: ContentLedger, data: bytes) -> LayerResult:
+def _either_way(word: str) -> str:
+    """Arabic-Indic digits come out of PDF extraction reversed, as Arabic words do. The
+    source check and the DOCX check still compare these numbers exactly."""
+    return min(word, word[::-1]) if word[:1] in _INDIC else word
+
+
+def check_pdf_content(ledger: ContentLedger, data: bytes, initials: Sequence[str] = ()) -> LayerResult:
     """The page text holds every word of the source. Extra words prove nothing here:
     bands and contents repeat text, which is why repeats are checked on the fragments."""
     try:
@@ -190,7 +204,12 @@ def check_pdf_content(ledger: ContentLedger, data: bytes) -> LayerResult:
     with pymupdf.open(stream=data, filetype="pdf") as pdf:
         page_text = "\n".join(page.get_text() for page in pdf)
     source = "\n".join([t for _, _, t in _shown(ledger)] + list(ledger.band_texts))
-    have, want = Counter(_LATIN.findall(_fold(page_text))), Counter(_LATIN.findall(_fold(source)))
+    folded = _fold(page_text)
+    have = Counter(map(_either_way, _LATIN.findall(folded)))
+    want = Counter(map(_either_way, _LATIN.findall(_fold(source))))
+    for word in map(_fold, initials):             # a drop cap draws its letter apart from the word
+        if have[word] < want[word] and word[1:] in folded:
+            want[word] -= 1
     failed = [f"missing {n}: {w!r}" for w, n in (want - have).items()]
     short = _arabic_tokens(source) - _arabic_tokens(page_text)
     unsure = [f"{sum(short.values())} Arabic words could not be matched in the extracted text"] if short else []
@@ -215,7 +234,8 @@ def same_extracted_words(first: bytes, second: bytes) -> Optional[bool]:
 
 
 def check_preservation(ledger: ContentLedger, *, candidate: Optional[ContentLedger] = None, geometry=None,
-                       pdf: Optional[bytes] = None, docx: Optional[bytes] = None) -> PreservationReport:
+                       pdf: Optional[bytes] = None, docx: Optional[bytes] = None,
+                       initials: Sequence[str] = ()) -> PreservationReport:
     """Every layer the given artifacts allow. A layer with nothing to check is left out."""
     layers: List[LayerResult] = []
     if candidate is not None:
@@ -225,5 +245,5 @@ def check_preservation(ledger: ContentLedger, *, candidate: Optional[ContentLedg
     if docx is not None:
         layers.append(check_docx_content(ledger, docx))
     if pdf is not None:
-        layers.append(check_pdf_content(ledger, pdf))
+        layers.append(check_pdf_content(ledger, pdf, initials))
     return PreservationReport(layers)

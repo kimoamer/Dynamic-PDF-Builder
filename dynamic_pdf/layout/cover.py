@@ -24,12 +24,28 @@ def _load(src, label, collector):
         return None
 
 
-def _panel(geo: PageGeometry, split: bool, rtl: bool):
+def _panel(geo: PageGeometry, split: bool, rtl: bool, top: float = 0.0):
     """x, y from the bottom, width and height of the image area."""
+    if top:
+        return 0.0, geo.height * (1 - top), geo.width, geo.height * top
     if not split:
         return 0.0, 0.0, geo.width, geo.height
     w = geo.width * 0.46
     return (0.0 if rtl else geo.width - w), 0.0, w, geo.height
+
+
+def image_top(block) -> float:
+    """Share of the page an image takes across the top of the cover; 0 for other covers."""
+    return float((block.hints or {}).get("image_top", 0.0)) if block.background_image else 0.0
+
+
+def title_drop(block, layout: str, frame_h: float, page_h: float, margin_top: float) -> float:
+    """How far down the frame the title starts."""
+    top = image_top(block)
+    if top:
+        return page_h * top - margin_top + 30
+    hint = (block.hints or {}).get("drop")
+    return frame_h * (float(hint) if hint is not None else 0.30 if layout == "centered" else 0.46)
 
 
 def cover_plan(block, geo: PageGeometry, rtl: bool, collector):
@@ -37,6 +53,7 @@ def cover_plan(block, geo: PageGeometry, rtl: bool, collector):
     the text colour."""
     layout = block.layout or "left_aligned"
     split = layout == "split" and bool(block.background_image)
+    top = image_top(block)
     layers = []
     fill = block.background_color
     if fill:
@@ -46,14 +63,14 @@ def cover_plan(block, geo: PageGeometry, rtl: bool, collector):
     overlay, opacity = block.overlay_color, block.overlay_opacity
     ink = block.text_color
     if asset is not None:
-        x, y, w, h = _panel(geo, split, rtl)
+        x, y, w, h = _panel(geo, split, rtl, top)
         t = block.background_treatment or ImageTreatment(fit="cover")
         if t.fit != "cover":
             t = t.model_copy(update={"fit": "cover"})
         f = fit_image(asset, w, h, t)
         check_resolution(asset, f, collector, "Cover background", 96)
         layers.append(PageItem(asset, f, x, y, t, True, -1))
-        if not split:
+        if not split and not top:
             auto_ink, auto_overlay = cover_text_color(asset, f, overlay, opacity)
             ink = ink or auto_ink
             if auto_overlay and not overlay:
@@ -69,12 +86,16 @@ def cover_plan(block, geo: PageGeometry, rtl: bool, collector):
 def designed_cover(block, theme, ctx) -> list:
     from .factory import Paragraph, _is_rtl, _md_inline, _safe_color, _label
     geo = ctx.page_geometry
+    hints = block.hints or {}
+    if hints.get("masthead"):
+        from .art import masthead
+        return masthead(block, theme, ctx)
     rtl = _is_rtl(block.title) or geo.rtl
     layout, split, layers, ink = cover_plan(block, geo, rtl, _diag.current())
     primary = _safe_color(ink or theme.colors.text_primary)
     secondary = _safe_color(ink or theme.colors.text_secondary)
     align = 1 if layout == "centered" else (2 if rtl else 0)
-    size = theme.typography.base_size * theme.typography.heading_scale[0] * 1.4
+    size = theme.typography.base_size * theme.typography.heading_scale[0] * float(hints.get("title_scale", 1.4))
     arabic = get_font_name(theme.typography.arabic_family or "Amiri", bold=True)
     arabic_body = get_font_name(theme.typography.arabic_family or "Amiri")
 
@@ -96,8 +117,13 @@ def designed_cover(block, theme, ctx) -> list:
             check_resolution(asset, logo.fitted, _diag.current(), "Cover logo", LOGO_RESOLUTION_DPI)
             story.append(logo)
             used += logo.outer_h
-    drop = frame_h * (0.30 if layout == "centered" else 0.46)
+    drop = title_drop(block, layout, frame_h, geo.height, geo.top)
     story.append(Spacer(1, max(24, drop - used)))
+    if hints.get("rule"):
+        from reportlab.lib.colors import HexColor
+        from reportlab.platypus import HRFlowable
+        story.append(HRFlowable(width="16%", thickness=3, color=HexColor(hints["rule"]), spaceAfter=size * 0.5,
+                                hAlign={0: "RIGHT" if rtl else "LEFT", 1: "CENTER", 2: "RIGHT"}[align]))
     title = ParagraphStyle(
         "CoverTitle", fontName=face(block.title, get_font_name(theme.typography.heading_family, bold=True), True),
         fontSize=size, leading=size * (1.5 if _is_rtl(block.title) else 1.18), textColor=primary,

@@ -1028,9 +1028,19 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
                 keepWithNext=1,
             )
             hf = Paragraph(_md_inline(display_text), sty)
+        hints = block.hints or {}
+        if hints.get("opener") or hints.get("scale"):
+            from .art import designed_heading
+            hf = designed_heading(block, display_text, theme, fs, block.color or theme.colors.text_primary,
+                                  is_rtl_heading, h_before, h_after)
         hf.keepWithNext = 1          # never strand a heading at a page bottom
         hf._toc_entry = toc_entry    # consumed by the doc template (TOC/outline/links)
-        hints = block.hints or {}
+        if hints.get("drop") and ctx.available_height:
+            from reportlab.platypus.flowables import PageBreakIfNotEmpty
+            return [PageBreakIfNotEmpty(), Spacer(1, ctx.available_height * float(hints["drop"])), hf]
+        if hints.get("break_before") == "if_not_empty":
+            from reportlab.platypus.flowables import PageBreakIfNotEmpty
+            return [PageBreakIfNotEmpty(), hf]
         if hints.get("break_before"):
             return [PageBreak(), hf]   # section opens a page (editorial / QA fix)
         if hints.get("min_space_before") and ctx.available_height:
@@ -1178,6 +1188,9 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
 
     # ─── Quote ───
     if btype == "quote":
+        if (block.hints or {}).get("statement"):
+            from .art import statement
+            return statement(block, theme, ctx)
         return _render_quote(block, theme)
 
     # ─── Layout archetypes (opt-in page compositions) ───
@@ -1187,6 +1200,9 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
 
     # ─── Metrics ───
     if btype == "metric_row":
+        if (block.hints or {}).get("style"):
+            from .art import metric_strip
+            return metric_strip(block, theme, ctx.available_width, block.hints["style"])
         return _render_metrics(block, theme, ctx.available_width)
 
     # ─── Progress Bar ───
@@ -1380,7 +1396,8 @@ def _render_table(block, theme, bs, ctx=None):
 
     h_sty = ParagraphStyle('TH', parent=bs, firstLineIndent=0,
                            fontName=body_font,
-                           textColor=_safe_color(block.header_text_color or theme.colors.text_on_primary),
+                           textColor=_safe_color(block.header_text_color or (
+                               theme.colors.text_primary if hints.get("design") else theme.colors.text_on_primary)),
                            alignment=tbl_align)
     c_sty = ParagraphStyle('TD', parent=bs, firstLineIndent=0, fontName=cell_font, alignment=tbl_align)
     h_num = ParagraphStyle('THn', parent=h_sty, alignment=2)
@@ -1418,6 +1435,10 @@ def _render_table(block, theme, bs, ctx=None):
     if block.footer_row:
         cmds.append(('BACKGROUND', (0, -1), (-1, -1), _safe_color(theme.colors.surface)))
         cmds.append(('LINEABOVE', (0, -1), (-1, -1), 1.5, _safe_color(theme.colors.text_primary)))
+    if hints.get("design"):
+        from .art import table_commands
+        cmds = table_commands(hints["design"], theme, len(data), ncols, bool(block.headers), bool(block.footer_row),
+                              pad, hints.get("current_col"), tbl_rtl)
     avail = ctx.available_width if ctx else None
     col_widths = block.column_widths
     if not col_widths and hints.get("col_fractions") and avail:

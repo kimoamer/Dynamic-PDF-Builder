@@ -1,0 +1,3200 @@
+{
+ "meta": {
+  "office": "LibreOffice 24.2.7.2 420(Build:2)",
+  "word": "not run",
+  "heuristic_label": "heuristic measurement of page images, not a human or aesthetic judgement"
+ },
+ "documents": [
+  {
+   "document": "annual_report",
+   "title": "annual_report",
+   "baseline": {
+    "sheet": "annual_report/baseline-pdf.jpg",
+    "docx_sheet": "annual_report/baseline-docx.jpg",
+    "pdf_pages": 6,
+    "docx_pages": 5,
+    "pdf_kb": 101,
+    "docx_kb": 126,
+    "fonts": [
+     "Helvetica",
+     "Helvetica-Bold",
+     "Helvetica-Oblique",
+     "Times-Roman"
+    ],
+    "pdf": "annual_report/baseline.pdf",
+    "docx": "annual_report/baseline.docx",
+    "seconds": 1.14,
+    "heuristics": {
+     "pages": 6.0,
+     "sparse_share": 0.0,
+     "alike_share": 0.0,
+     "page_variety": 1.0,
+     "type_contrast": 2.08,
+     "image_share": 0.095,
+     "last_page_ink": 0.272
+    }
+   },
+   "seconds": 19.73,
+   "peak_mb": 93.5,
+   "renders": 10,
+   "plain_pages": 6,
+   "recommended": "executive_premium",
+   "reasons": [
+    "Executive Premium: fit 3.8 for this document, measured index 91.47",
+    "annual report for stakeholders and the public: base fit 3",
+    "2 photographs can carry the composition",
+    "chosen from fit rules and page measurements; no person has judged it",
+    "not chosen: Editorial Modern (fit 2.8, index 85)",
+    "not chosen: Financial / Data-Driven (fit 1.8, index 84.15)"
+   ],
+   "fallback": false,
+   "variants": [
+    {
+     "id": "executive_premium",
+     "name": "Executive Premium",
+     "status": "valid",
+     "sheet": "annual_report/executive_premium-pdf.jpg",
+     "docx_sheet": "annual_report/executive_premium-docx.jpg",
+     "pdf_pages": 9,
+     "docx_pages": 9,
+     "pdf_kb": 138,
+     "docx_kb": 134,
+     "fonts": [
+      "Helvetica",
+      "Helvetica-Oblique",
+      "Times-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "annual_report/executive_premium.pdf",
+     "docx": "annual_report/executive_premium.docx",
+     "seconds": 7.14,
+     "renders": 3,
+     "fit": 3.8,
+     "index": 91.47,
+     "heuristics": {
+      "pages": 9.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 11.2,
+      "image_share": 0.14,
+      "last_page_ink": 0.14
+     },
+     "hard_failures": [],
+     "refinements": [
+      "kept: last page holds 57 words: let 'Appendix: governance' follow on (index 90.13)",
+      "kept: 11 pages against about 6 in plain setting: dropped the opening pages (index 91.47)"
+     ],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "full",
+     "bands": "quiet",
+     "typography": "Times-Roman headings, Times-Roman 11/1.58",
+     "rhythm": [
+      "rule/summary",
+      "performance page/figures",
+      "rule/image: image band",
+      "rule/image: float end",
+      "rule/data",
+      "rule/data",
+      "quiet/appendix"
+     ],
+     "decisions": [
+      "cover: full, using the document's own photo 'C:\\\\Users\\\\LOQ\\\\AppData\\\\Local\\\\Temp\\\\m79-assets-etgpb80z\\\\coast.png'"
+     ],
+     "differs_from": {
+      "editorial_modern": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ],
+      "financial_data": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ]
+     }
+    },
+    {
+     "id": "editorial_modern",
+     "name": "Editorial Modern",
+     "status": "valid",
+     "sheet": "annual_report/editorial_modern-pdf.jpg",
+     "docx_sheet": "annual_report/editorial_modern-docx.jpg",
+     "pdf_pages": 6,
+     "docx_pages": 6,
+     "pdf_kb": 110,
+     "docx_kb": 131,
+     "fonts": [
+      "Helvetica",
+      "Helvetica-Bold",
+      "Helvetica-Oblique",
+      "Times-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "annual_report/editorial_modern.pdf",
+     "docx": "annual_report/editorial_modern.docx",
+     "seconds": 6.87,
+     "renders": 3,
+     "fit": 2.8,
+     "index": 85.0,
+     "heuristics": {
+      "pages": 6.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.21,
+      "image_share": 0.149,
+      "last_page_ink": 0.105
+     },
+     "hard_failures": [],
+     "refinements": [
+      "undone: page 3 ended early: let 'Rebuilding the north quay' follow on instead of opening a page (index fell to 68.33)",
+      "kept: page 5 ended early: let 'People and safety' follow on instead of opening a page (index 85.0)"
+     ],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "image_top",
+     "bands": "folio",
+     "typography": "Helvetica headings, Times-Roman 10.5/1.5",
+     "rhythm": [
+      "hang/summary",
+      "hang/summary",
+      "hang/image: image band, following on",
+      "hang/image: float start",
+      "hang/data",
+      "hang/data",
+      "quiet/appendix"
+     ],
+     "decisions": [
+      "contents: about 4.0 pages needs no contents page",
+      "cover: image_top, using the document's own photo 'C:\\\\Users\\\\LOQ\\\\AppData\\\\Local\\\\Temp\\\\m79-assets-etgpb80z\\\\coast.png'"
+     ],
+     "differs_from": {
+      "executive_premium": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ],
+      "financial_data": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ]
+     }
+    },
+    {
+     "id": "financial_data",
+     "name": "Financial / Data-Driven",
+     "status": "valid",
+     "sheet": "annual_report/financial_data-pdf.jpg",
+     "docx_sheet": "annual_report/financial_data-docx.jpg",
+     "pdf_pages": 4,
+     "docx_pages": 3,
+     "pdf_kb": 79,
+     "docx_kb": 128,
+     "fonts": [
+      "Helvetica",
+      "Helvetica-Bold",
+      "Helvetica-Oblique",
+      "Times-Roman"
+     ],
+     "pdf": "annual_report/financial_data.pdf",
+     "docx": "annual_report/financial_data.docx",
+     "seconds": 5.19,
+     "renders": 3,
+     "fit": 1.8,
+     "index": 84.15,
+     "heuristics": {
+      "pages": 4.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 2.19,
+      "image_share": 0.073,
+      "last_page_ink": 0.131
+     },
+     "hard_failures": [],
+     "refinements": [
+      "kept: last page holds 65 words: tightened spacing to pull it back (index 84.15)",
+      "kept: last page holds 65 words: tightened spacing to pull it back (index 84.15)"
+     ],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "masthead",
+     "bands": "filled",
+     "typography": "Helvetica headings, Helvetica 9.2/1.36",
+     "rhythm": [
+      "rule/summary",
+      "slab/summary",
+      "slab/image: image band",
+      "slab/image: float end",
+      "slab/data",
+      "slab/data",
+      "quiet/appendix"
+     ],
+     "decisions": [
+      "contents: about 2.9 pages needs no contents page",
+      "cover: masthead, type only"
+     ],
+     "differs_from": {
+      "executive_premium": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ],
+      "editorial_modern": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "document": "financial_statements",
+   "title": "financial_statements",
+   "baseline": {
+    "sheet": "financial_statements/baseline-pdf.jpg",
+    "docx_sheet": "financial_statements/baseline-docx.jpg",
+    "pdf_pages": 4,
+    "docx_pages": 4,
+    "pdf_kb": 30,
+    "docx_kb": 108,
+    "fonts": [
+     "Helvetica",
+     "Helvetica-Bold",
+     "Times-Roman"
+    ],
+    "pdf": "financial_statements/baseline.pdf",
+    "docx": "financial_statements/baseline.docx",
+    "seconds": 0.97,
+    "heuristics": {
+     "pages": 4.0,
+     "sparse_share": 0.0,
+     "alike_share": 0.0,
+     "page_variety": 1.0,
+     "type_contrast": 1.0,
+     "image_share": 0.0,
+     "last_page_ink": 0.322
+    }
+   },
+   "seconds": 8.22,
+   "peak_mb": 21.8,
+   "renders": 4,
+   "plain_pages": 4,
+   "recommended": "financial_data",
+   "reasons": [
+    "Financial / Data-Driven: fit 4.6 for this document, measured index 78.54",
+    "financial statements for investors and auditors: base fit 3",
+    "4 tables need exact, dense setting",
+    "chosen from fit rules and page measurements; no person has judged it",
+    "not chosen: Corporate Conservative (fit 2, index 78.14)",
+    "not chosen: Executive Premium (fit 1, index 77.29)"
+   ],
+   "fallback": false,
+   "variants": [
+    {
+     "id": "financial_data",
+     "name": "Financial / Data-Driven",
+     "status": "valid",
+     "sheet": "financial_statements/financial_data-pdf.jpg",
+     "docx_sheet": "financial_statements/financial_data-docx.jpg",
+     "pdf_pages": 3,
+     "docx_pages": 3,
+     "pdf_kb": 29,
+     "docx_kb": 100,
+     "fonts": [
+      "Helvetica",
+      "Helvetica-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "financial_statements/financial_data.pdf",
+     "docx": "financial_statements/financial_data.docx",
+     "seconds": 2.19,
+     "renders": 1,
+     "fit": 4.6,
+     "index": 78.54,
+     "heuristics": {
+      "pages": 3.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.59,
+      "image_share": 0.0,
+      "last_page_ink": 0.292
+     },
+     "hard_failures": [],
+     "refinements": [],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "masthead",
+     "bands": "filled",
+     "typography": "Helvetica headings, Helvetica 9.2/1.36",
+     "rhythm": [
+      "rule/summary",
+      "slab/data",
+      "slab/data",
+      "slab/data",
+      "slab/data",
+      "quiet/appendix"
+     ],
+     "decisions": [
+      "contents: about 2.2 pages needs no contents page",
+      "cover: masthead, type only"
+     ],
+     "differs_from": {
+      "corporate_conservative": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ],
+      "executive_premium": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ]
+     }
+    },
+    {
+     "id": "corporate_conservative",
+     "name": "Corporate Conservative",
+     "status": "valid",
+     "sheet": "financial_statements/corporate_conservative-pdf.jpg",
+     "docx_sheet": "financial_statements/corporate_conservative-docx.jpg",
+     "pdf_pages": 5,
+     "docx_pages": 5,
+     "pdf_kb": 31,
+     "docx_kb": 111,
+     "fonts": [
+      "Helvetica",
+      "Helvetica-Bold",
+      "Times-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "financial_statements/corporate_conservative.pdf",
+     "docx": "financial_statements/corporate_conservative.docx",
+     "seconds": 2.69,
+     "renders": 1,
+     "fit": 2.0,
+     "index": 78.14,
+     "heuristics": {
+      "pages": 5.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.45,
+      "image_share": 0.0,
+      "last_page_ink": 0.134
+     },
+     "hard_failures": [],
+     "refinements": [],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "type_centered",
+     "bands": "line",
+     "typography": "Helvetica headings, Times-Roman 11/1.42",
+     "rhythm": [
+      "none/summary",
+      "none/data",
+      "none/data",
+      "none/data",
+      "none/data",
+      "quiet/appendix"
+     ],
+     "decisions": [
+      "contents: about 4.1 pages needs no contents page",
+      "cover: type_centered, type only"
+     ],
+     "differs_from": {
+      "financial_data": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ],
+      "executive_premium": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ]
+     }
+    },
+    {
+     "id": "executive_premium",
+     "name": "Executive Premium",
+     "status": "valid",
+     "sheet": "financial_statements/executive_premium-pdf.jpg",
+     "docx_sheet": "financial_statements/executive_premium-docx.jpg",
+     "pdf_pages": 5,
+     "docx_pages": 5,
+     "pdf_kb": 30,
+     "docx_kb": 108,
+     "fonts": [
+      "Helvetica",
+      "Times-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "financial_statements/executive_premium.pdf",
+     "docx": "financial_statements/executive_premium.docx",
+     "seconds": 2.32,
+     "renders": 1,
+     "fit": 1.0,
+     "index": 77.29,
+     "heuristics": {
+      "pages": 5.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.15,
+      "image_share": 0.0,
+      "last_page_ink": 0.288
+     },
+     "hard_failures": [],
+     "refinements": [],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "full",
+     "bands": "quiet",
+     "typography": "Times-Roman headings, Times-Roman 11/1.58",
+     "rhythm": [
+      "rule/summary",
+      "rule/data",
+      "rule/data",
+      "rule/data",
+      "rule/data",
+      "quiet/appendix"
+     ],
+     "decisions": [
+      "contents: about 4.8 pages needs no contents page",
+      "cover: full, type only"
+     ],
+     "differs_from": {
+      "financial_data": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ],
+      "corporate_conservative": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "document": "board_paper",
+   "title": "board_paper",
+   "baseline": {
+    "sheet": "board_paper/baseline-pdf.jpg",
+    "docx_sheet": "board_paper/baseline-docx.jpg",
+    "pdf_pages": 2,
+    "docx_pages": 2,
+    "pdf_kb": 6,
+    "docx_kb": 38,
+    "fonts": [
+     "Helvetica",
+     "Helvetica-Bold"
+    ],
+    "pdf": "board_paper/baseline.pdf",
+    "docx": "board_paper/baseline.docx",
+    "seconds": 0.05,
+    "heuristics": {
+     "pages": 2.0,
+     "sparse_share": 0.0,
+     "alike_share": 0.0,
+     "page_variety": 1.0,
+     "type_contrast": 1.0,
+     "image_share": 0.0,
+     "last_page_ink": 0.344
+    }
+   },
+   "seconds": 1.46,
+   "peak_mb": 5.8,
+   "renders": 4,
+   "plain_pages": 2,
+   "recommended": "corporate_conservative",
+   "reasons": [
+    "Corporate Conservative: fit 3 for this document, measured index 77.77",
+    "board paper for directors: base fit 3",
+    "chosen from fit rules and page measurements; no person has judged it",
+    "not chosen: Financial / Data-Driven (fit 2, index 78.54)",
+    "not chosen: Executive Premium (fit 0, index 76.86)"
+   ],
+   "fallback": false,
+   "variants": [
+    {
+     "id": "corporate_conservative",
+     "name": "Corporate Conservative",
+     "status": "valid",
+     "sheet": "board_paper/corporate_conservative-pdf.jpg",
+     "docx_sheet": "board_paper/corporate_conservative-docx.jpg",
+     "pdf_pages": 2,
+     "docx_pages": 2,
+     "pdf_kb": 6,
+     "docx_kb": 40,
+     "fonts": [
+      "Helvetica",
+      "Helvetica-Bold",
+      "Times-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "board_paper/corporate_conservative.pdf",
+     "docx": "board_paper/corporate_conservative.docx",
+     "seconds": 0.53,
+     "renders": 1,
+     "fit": 3.0,
+     "index": 77.77,
+     "heuristics": {
+      "pages": 2.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.32,
+      "image_share": 0.0,
+      "last_page_ink": 0.24
+     },
+     "hard_failures": [],
+     "refinements": [],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "masthead",
+     "bands": "line",
+     "typography": "Helvetica headings, Times-Roman 11/1.42",
+     "rhythm": [
+      "none/summary",
+      "none/data",
+      "none/data",
+      "none/narrative",
+      "none/narrative"
+     ],
+     "decisions": [
+      "contents: about 2.4 pages needs no contents page",
+      "cover: masthead, type only",
+      "cover: about 2.4 pages is too short for a cover page, so the title opens page one"
+     ],
+     "differs_from": {
+      "financial_data": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ],
+      "executive_premium": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ]
+     }
+    },
+    {
+     "id": "financial_data",
+     "name": "Financial / Data-Driven",
+     "status": "valid",
+     "sheet": "board_paper/financial_data-pdf.jpg",
+     "docx_sheet": "board_paper/financial_data-docx.jpg",
+     "pdf_pages": 2,
+     "docx_pages": 2,
+     "pdf_kb": 5,
+     "docx_kb": 41,
+     "fonts": [
+      "Helvetica",
+      "Helvetica-Bold"
+     ],
+     "pdf": "board_paper/financial_data.pdf",
+     "docx": "board_paper/financial_data.docx",
+     "seconds": 0.45,
+     "renders": 1,
+     "fit": 2.0,
+     "index": 78.54,
+     "heuristics": {
+      "pages": 2.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.59,
+      "image_share": 0.0,
+      "last_page_ink": 0.211
+     },
+     "hard_failures": [],
+     "refinements": [],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "masthead",
+     "bands": "filled",
+     "typography": "Helvetica headings, Helvetica 9.2/1.36",
+     "rhythm": [
+      "rule/summary",
+      "slab/data",
+      "slab/data",
+      "slab/narrative",
+      "slab/narrative"
+     ],
+     "decisions": [
+      "contents: about 0.9 pages needs no contents page",
+      "cover: masthead, type only"
+     ],
+     "differs_from": {
+      "corporate_conservative": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ],
+      "executive_premium": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ]
+     }
+    },
+    {
+     "id": "executive_premium",
+     "name": "Executive Premium",
+     "status": "valid",
+     "sheet": "board_paper/executive_premium-pdf.jpg",
+     "docx_sheet": "board_paper/executive_premium-docx.jpg",
+     "pdf_pages": 2,
+     "docx_pages": 2,
+     "pdf_kb": 6,
+     "docx_kb": 40,
+     "fonts": [
+      "Helvetica",
+      "Times-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "board_paper/executive_premium.pdf",
+     "docx": "board_paper/executive_premium.docx",
+     "seconds": 0.42,
+     "renders": 1,
+     "fit": 0.0,
+     "index": 76.86,
+     "heuristics": {
+      "pages": 2.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.0,
+      "image_share": 0.0,
+      "last_page_ink": 0.322
+     },
+     "hard_failures": [],
+     "refinements": [],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "masthead",
+     "bands": "quiet",
+     "typography": "Times-Roman headings, Times-Roman 11/1.58",
+     "rhythm": [
+      "rule/summary",
+      "rule/data",
+      "rule/data",
+      "rule/narrative",
+      "rule/narrative"
+     ],
+     "decisions": [
+      "contents: about 2.8 pages needs no contents page",
+      "cover: masthead, type only",
+      "cover: about 2.8 pages is too short for a cover page, so the title opens page one"
+     ],
+     "differs_from": {
+      "corporate_conservative": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ],
+      "financial_data": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "document": "technical_manual",
+   "title": "technical_manual",
+   "baseline": {
+    "sheet": "technical_manual/baseline-pdf.jpg",
+    "docx_sheet": "technical_manual/baseline-docx.jpg",
+    "pdf_pages": 4,
+    "docx_pages": 3,
+    "pdf_kb": 52,
+    "docx_kb": 41,
+    "fonts": [
+     "Helvetica",
+     "Helvetica-Bold",
+     "Helvetica-Oblique",
+     "JetBrainsMono-Regular"
+    ],
+    "pdf": "technical_manual/baseline.pdf",
+    "docx": "technical_manual/baseline.docx",
+    "seconds": 0.27,
+    "heuristics": {
+     "pages": 4.0,
+     "sparse_share": 0.0,
+     "alike_share": 0.0,
+     "page_variety": 1.0,
+     "type_contrast": 1.0,
+     "image_share": 0.076,
+     "last_page_ink": 0.233
+    }
+   },
+   "seconds": 5.84,
+   "peak_mb": 42.5,
+   "renders": 8,
+   "plain_pages": 4,
+   "recommended": "financial_data",
+   "reasons": [
+    "Financial / Data-Driven: fit 3.6 for this document, measured index 85.05",
+    "manual for technicians: base fit 2",
+    "4 tables need exact, dense setting",
+    "chosen from fit rules and page measurements; no person has judged it",
+    "not chosen: Corporate Conservative (fit 3, index 80.88)",
+    "not chosen: Executive Premium (fit 0.3, index 81.14)"
+   ],
+   "fallback": false,
+   "variants": [
+    {
+     "id": "financial_data",
+     "name": "Financial / Data-Driven",
+     "status": "valid",
+     "sheet": "technical_manual/financial_data-pdf.jpg",
+     "docx_sheet": "technical_manual/financial_data-docx.jpg",
+     "pdf_pages": 3,
+     "docx_pages": 3,
+     "pdf_kb": 51,
+     "docx_kb": 44,
+     "fonts": [
+      "Helvetica",
+      "Helvetica-Bold",
+      "Helvetica-Oblique",
+      "JetBrainsMono-Regular"
+     ],
+     "pdf": "technical_manual/financial_data.pdf",
+     "docx": "technical_manual/financial_data.docx",
+     "seconds": 1.01,
+     "renders": 1,
+     "fit": 3.6,
+     "index": 85.05,
+     "heuristics": {
+      "pages": 3.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.59,
+      "image_share": 0.122,
+      "last_page_ink": 0.366
+     },
+     "hard_failures": [],
+     "refinements": [],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "masthead",
+     "bands": "filled",
+     "typography": "Helvetica headings, Helvetica 9.2/1.36",
+     "rhythm": [
+      "rule/data",
+      "slab/narrative",
+      "slab/data",
+      "slab/narrative",
+      "slab/data",
+      "quiet/appendix"
+     ],
+     "decisions": [
+      "contents: about 2.0 pages needs no contents page",
+      "cover: masthead, type only"
+     ],
+     "differs_from": {
+      "corporate_conservative": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ],
+      "executive_premium": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ]
+     }
+    },
+    {
+     "id": "corporate_conservative",
+     "name": "Corporate Conservative",
+     "status": "valid",
+     "sheet": "technical_manual/corporate_conservative-pdf.jpg",
+     "docx_sheet": "technical_manual/corporate_conservative-docx.jpg",
+     "pdf_pages": 5,
+     "docx_pages": 4,
+     "pdf_kb": 53,
+     "docx_kb": 43,
+     "fonts": [
+      "Helvetica",
+      "Helvetica-Bold",
+      "Helvetica-Oblique",
+      "JetBrainsMono-Regular",
+      "Times-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "technical_manual/corporate_conservative.pdf",
+     "docx": "technical_manual/corporate_conservative.docx",
+     "seconds": 2.26,
+     "renders": 3,
+     "fit": 3.0,
+     "index": 80.88,
+     "heuristics": {
+      "pages": 5.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.45,
+      "image_share": 0.06,
+      "last_page_ink": 0.102
+     },
+     "hard_failures": [],
+     "refinements": [
+      "kept: last page holds 47 words: let 'Appendix: specifications' follow on (index 80.84)",
+      "kept: last page holds 47 words: tightened spacing to pull it back (index 80.88)"
+     ],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "type_centered",
+     "bands": "line",
+     "typography": "Helvetica headings, Times-Roman 11/1.42",
+     "rhythm": [
+      "none/data",
+      "none/narrative",
+      "none/data",
+      "none/narrative",
+      "none/data",
+      "quiet/appendix"
+     ],
+     "decisions": [
+      "contents: about 3.8 pages needs no contents page",
+      "cover: type_centered, type only"
+     ],
+     "differs_from": {
+      "financial_data": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ],
+      "executive_premium": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ]
+     }
+    },
+    {
+     "id": "executive_premium",
+     "name": "Executive Premium",
+     "status": "valid",
+     "sheet": "technical_manual/executive_premium-pdf.jpg",
+     "docx_sheet": "technical_manual/executive_premium-docx.jpg",
+     "pdf_pages": 5,
+     "docx_pages": 5,
+     "pdf_kb": 53,
+     "docx_kb": 44,
+     "fonts": [
+      "Helvetica",
+      "Helvetica-Oblique",
+      "JetBrainsMono-Regular",
+      "Times-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "technical_manual/executive_premium.pdf",
+     "docx": "technical_manual/executive_premium.docx",
+     "seconds": 2.33,
+     "renders": 3,
+     "fit": 0.3,
+     "index": 81.14,
+     "heuristics": {
+      "pages": 5.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.6,
+      "image_share": 0.053,
+      "last_page_ink": 0.112
+     },
+     "hard_failures": [],
+     "refinements": [
+      "kept: last page holds 38 words: let 'Appendix: specifications' follow on (index 81.14)",
+      "undone: last page holds 38 words: tightened spacing to pull it back (index fell to 81.1)"
+     ],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "full",
+     "bands": "quiet",
+     "typography": "Times-Roman headings, Times-Roman 11/1.58",
+     "rhythm": [
+      "rule/data",
+      "rule/narrative",
+      "rule/data",
+      "rule/narrative",
+      "rule/data",
+      "quiet/appendix"
+     ],
+     "decisions": [
+      "contents: about 4.5 pages needs no contents page",
+      "cover: full, type only"
+     ],
+     "differs_from": {
+      "financial_data": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ],
+      "corporate_conservative": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "document": "research_paper",
+   "title": "research_paper",
+   "baseline": {
+    "sheet": "research_paper/baseline-pdf.jpg",
+    "docx_sheet": "research_paper/baseline-docx.jpg",
+    "pdf_pages": 3,
+    "docx_pages": 3,
+    "pdf_kb": 22,
+    "docx_kb": 63,
+    "fonts": [
+     "Helvetica",
+     "Helvetica-Bold",
+     "Helvetica-Oblique",
+     "Times-Roman"
+    ],
+    "pdf": "research_paper/baseline.pdf",
+    "docx": "research_paper/baseline.docx",
+    "seconds": 0.52,
+    "heuristics": {
+     "pages": 3.0,
+     "sparse_share": 0.0,
+     "alike_share": 0.0,
+     "page_variety": 1.0,
+     "type_contrast": 1.0,
+     "image_share": 0.0,
+     "last_page_ink": 0.381
+    }
+   },
+   "seconds": 6.11,
+   "peak_mb": 8.7,
+   "renders": 7,
+   "plain_pages": 3,
+   "recommended": "corporate_conservative",
+   "reasons": [
+    "Corporate Conservative: fit 3 for this document, measured index 78.14",
+    "research for researchers: base fit 3",
+    "chosen from fit rules and page measurements; no person has judged it",
+    "not chosen: Financial / Data-Driven (fit 1.8, index 79.07)",
+    "not chosen: Executive Premium (fit 0.3, index 77.29)"
+   ],
+   "fallback": false,
+   "variants": [
+    {
+     "id": "corporate_conservative",
+     "name": "Corporate Conservative",
+     "status": "valid",
+     "sheet": "research_paper/corporate_conservative-pdf.jpg",
+     "docx_sheet": "research_paper/corporate_conservative-docx.jpg",
+     "pdf_pages": 4,
+     "docx_pages": 4,
+     "pdf_kb": 22,
+     "docx_kb": 65,
+     "fonts": [
+      "Helvetica",
+      "Helvetica-Bold",
+      "Times-Bold",
+      "Times-Italic",
+      "Times-Roman"
+     ],
+     "pdf": "research_paper/corporate_conservative.pdf",
+     "docx": "research_paper/corporate_conservative.docx",
+     "seconds": 1.25,
+     "renders": 1,
+     "fit": 3.0,
+     "index": 78.14,
+     "heuristics": {
+      "pages": 4.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.45,
+      "image_share": 0.0,
+      "last_page_ink": 0.135
+     },
+     "hard_failures": [],
+     "refinements": [],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "type_centered",
+     "bands": "line",
+     "typography": "Helvetica headings, Times-Roman 11/1.42",
+     "rhythm": [
+      "none/narrative",
+      "none/data",
+      "none/data",
+      "none/narrative",
+      "none/narrative",
+      "quiet/appendix"
+     ],
+     "decisions": [
+      "contents: about 3.3 pages needs no contents page",
+      "cover: type_centered, type only"
+     ],
+     "differs_from": {
+      "financial_data": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ],
+      "executive_premium": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ]
+     }
+    },
+    {
+     "id": "financial_data",
+     "name": "Financial / Data-Driven",
+     "status": "valid",
+     "sheet": "research_paper/financial_data-pdf.jpg",
+     "docx_sheet": "research_paper/financial_data-docx.jpg",
+     "pdf_pages": 3,
+     "docx_pages": 2,
+     "pdf_kb": 21,
+     "docx_kb": 66,
+     "fonts": [
+      "Helvetica",
+      "Helvetica-Bold",
+      "Helvetica-Oblique",
+      "Times-Roman"
+     ],
+     "pdf": "research_paper/financial_data.pdf",
+     "docx": "research_paper/financial_data.docx",
+     "seconds": 2.43,
+     "renders": 3,
+     "fit": 1.8,
+     "index": 79.07,
+     "heuristics": {
+      "pages": 3.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 2.07,
+      "image_share": 0.0,
+      "last_page_ink": 0.083
+     },
+     "hard_failures": [],
+     "refinements": [
+      "kept: last page holds 45 words: let 'References' follow on (index 79.07)",
+      "kept: last page holds 45 words: tightened spacing to pull it back (index 79.07)"
+     ],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "masthead",
+     "bands": "filled",
+     "typography": "Helvetica headings, Helvetica 9.2/1.36",
+     "rhythm": [
+      "rule/narrative",
+      "slab/data",
+      "slab/data",
+      "slab/narrative",
+      "slab/narrative",
+      "quiet/appendix"
+     ],
+     "decisions": [
+      "contents: about 1.6 pages needs no contents page",
+      "cover: masthead, type only"
+     ],
+     "differs_from": {
+      "corporate_conservative": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ],
+      "executive_premium": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ]
+     }
+    },
+    {
+     "id": "executive_premium",
+     "name": "Executive Premium",
+     "status": "valid",
+     "sheet": "research_paper/executive_premium-pdf.jpg",
+     "docx_sheet": "research_paper/executive_premium-docx.jpg",
+     "pdf_pages": 5,
+     "docx_pages": 5,
+     "pdf_kb": 22,
+     "docx_kb": 66,
+     "fonts": [
+      "Helvetica",
+      "Times-Bold",
+      "Times-Italic",
+      "Times-Roman"
+     ],
+     "pdf": "research_paper/executive_premium.pdf",
+     "docx": "research_paper/executive_premium.docx",
+     "seconds": 1.89,
+     "renders": 2,
+     "fit": 0.3,
+     "index": 77.29,
+     "heuristics": {
+      "pages": 5.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.15,
+      "image_share": 0.0,
+      "last_page_ink": 0.239
+     },
+     "hard_failures": [],
+     "refinements": [
+      "kept: 5 pages against about 3 in plain setting: sections now follow on (index 77.29)"
+     ],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "full",
+     "bands": "quiet",
+     "typography": "Times-Roman headings, Times-Roman 11/1.58",
+     "rhythm": [
+      "rule/narrative",
+      "rule/data",
+      "rule/data",
+      "rule/narrative",
+      "rule/narrative",
+      "quiet/appendix"
+     ],
+     "decisions": [
+      "contents: about 3.9 pages needs no contents page",
+      "cover: full, type only"
+     ],
+     "differs_from": {
+      "corporate_conservative": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ],
+      "financial_data": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "document": "proposal",
+   "title": "proposal",
+   "baseline": {
+    "sheet": "proposal/baseline-pdf.jpg",
+    "docx_sheet": "proposal/baseline-docx.jpg",
+    "pdf_pages": 4,
+    "docx_pages": 3,
+    "pdf_kb": 75,
+    "docx_kb": 78,
+    "fonts": [
+     "Helvetica",
+     "Helvetica-Bold",
+     "Helvetica-Oblique"
+    ],
+    "pdf": "proposal/baseline.pdf",
+    "docx": "proposal/baseline.docx",
+    "seconds": 0.43,
+    "heuristics": {
+     "pages": 4.0,
+     "sparse_share": 0.0,
+     "alike_share": 0.0,
+     "page_variety": 1.0,
+     "type_contrast": 2.75,
+     "image_share": 0.198,
+     "last_page_ink": 0.275
+    }
+   },
+   "seconds": 6.32,
+   "peak_mb": 40.0,
+   "renders": 6,
+   "plain_pages": 4,
+   "recommended": "editorial_modern",
+   "reasons": [
+    "Editorial Modern: fit 3.8 for this document, measured index 85.46",
+    "proposal for funders or clients: base fit 3",
+    "2 photographs can carry the composition",
+    "chosen from fit rules and page measurements; no person has judged it",
+    "not chosen: Executive Premium (fit 3.3, index 85.29)",
+    "not chosen: Corporate Conservative (fit 1, index 82.86)"
+   ],
+   "fallback": false,
+   "variants": [
+    {
+     "id": "editorial_modern",
+     "name": "Editorial Modern",
+     "status": "valid",
+     "sheet": "proposal/editorial_modern-pdf.jpg",
+     "docx_sheet": "proposal/editorial_modern-docx.jpg",
+     "pdf_pages": 3,
+     "docx_pages": 3,
+     "pdf_kb": 121,
+     "docx_kb": 81,
+     "fonts": [
+      "Helvetica",
+      "Helvetica-Bold",
+      "Helvetica-Oblique",
+      "Times-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "proposal/editorial_modern.pdf",
+     "docx": "proposal/editorial_modern.docx",
+     "seconds": 1.17,
+     "renders": 1,
+     "fit": 3.8,
+     "index": 85.46,
+     "heuristics": {
+      "pages": 3.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.21,
+      "image_share": 0.187,
+      "last_page_ink": 0.248
+     },
+     "hard_failures": [],
+     "refinements": [],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "masthead",
+     "bands": "folio",
+     "typography": "Helvetica headings, Times-Roman 10.5/1.5",
+     "rhythm": [
+      "hang/image: bleed image",
+      "hang/image: float start",
+      "hang/narrative",
+      "hang/data",
+      "hang/narrative"
+     ],
+     "decisions": [
+      "contents: about 2.1 pages needs no contents page",
+      "cover: masthead, type only",
+      "cover: about 2.1 pages is too short for a cover page, so the title opens page one"
+     ],
+     "differs_from": {
+      "executive_premium": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ],
+      "corporate_conservative": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ]
+     }
+    },
+    {
+     "id": "executive_premium",
+     "name": "Executive Premium",
+     "status": "valid",
+     "sheet": "proposal/executive_premium-pdf.jpg",
+     "docx_sheet": "proposal/executive_premium-docx.jpg",
+     "pdf_pages": 4,
+     "docx_pages": 4,
+     "pdf_kb": 162,
+     "docx_kb": 84,
+     "fonts": [
+      "Helvetica",
+      "Helvetica-Oblique",
+      "Times-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "proposal/executive_premium.pdf",
+     "docx": "proposal/executive_premium.docx",
+     "seconds": 1.83,
+     "renders": 1,
+     "fit": 3.3,
+     "index": 85.29,
+     "heuristics": {
+      "pages": 4.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.15,
+      "image_share": 0.322,
+      "last_page_ink": 0.267
+     },
+     "hard_failures": [],
+     "refinements": [],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "full",
+     "bands": "quiet",
+     "typography": "Times-Roman headings, Times-Roman 11/1.58",
+     "rhythm": [
+      "rule/image: image band",
+      "rule/image: float end",
+      "rule/narrative",
+      "rule/data",
+      "rule/narrative"
+     ],
+     "decisions": [
+      "contents: about 3.8 pages needs no contents page",
+      "cover: full, using the document's own photo 'C:\\\\Users\\\\LOQ\\\\AppData\\\\Local\\\\Temp\\\\m79-assets-etgpb80z\\\\coast2.png'"
+     ],
+     "differs_from": {
+      "editorial_modern": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ],
+      "corporate_conservative": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ]
+     }
+    },
+    {
+     "id": "corporate_conservative",
+     "name": "Corporate Conservative",
+     "status": "valid",
+     "sheet": "proposal/corporate_conservative-pdf.jpg",
+     "docx_sheet": "proposal/corporate_conservative-docx.jpg",
+     "pdf_pages": 5,
+     "docx_pages": 4,
+     "pdf_kb": 99,
+     "docx_kb": 82,
+     "fonts": [
+      "Helvetica",
+      "Helvetica-Bold",
+      "Helvetica-Oblique",
+      "Times-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "proposal/corporate_conservative.pdf",
+     "docx": "proposal/corporate_conservative.docx",
+     "seconds": 2.95,
+     "renders": 3,
+     "fit": 1.0,
+     "index": 82.86,
+     "heuristics": {
+      "pages": 5.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.45,
+      "image_share": 0.109,
+      "last_page_ink": 0.07
+     },
+     "hard_failures": [],
+     "refinements": [
+      "kept: last page holds 50 words: let 'Team' follow on (index 82.7)",
+      "kept: last page holds 50 words: tightened spacing to pull it back (index 82.86)"
+     ],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "type_centered",
+     "bands": "line",
+     "typography": "Helvetica headings, Times-Roman 11/1.42",
+     "rhythm": [
+      "none/image: column image",
+      "none/image: column image",
+      "none/narrative",
+      "none/data",
+      "none/narrative"
+     ],
+     "decisions": [
+      "contents: about 3.2 pages needs no contents page",
+      "cover: type_centered, type only"
+     ],
+     "differs_from": {
+      "editorial_modern": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ],
+      "executive_premium": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "document": "impact_report",
+   "title": "impact_report",
+   "baseline": {
+    "sheet": "impact_report/baseline-pdf.jpg",
+    "docx_sheet": "impact_report/baseline-docx.jpg",
+    "pdf_pages": 4,
+    "docx_pages": 4,
+    "pdf_kb": 90,
+    "docx_kb": 103,
+    "fonts": [
+     "Helvetica",
+     "Helvetica-Bold",
+     "Helvetica-Oblique",
+     "Times-Roman"
+    ],
+    "pdf": "impact_report/baseline.pdf",
+    "docx": "impact_report/baseline.docx",
+    "seconds": 0.76,
+    "heuristics": {
+     "pages": 4.0,
+     "sparse_share": 0.0,
+     "alike_share": 0.0,
+     "page_variety": 1.0,
+     "type_contrast": 2.75,
+     "image_share": 0.198,
+     "last_page_ink": 0.337
+    }
+   },
+   "seconds": 11.67,
+   "peak_mb": 68.9,
+   "renders": 8,
+   "plain_pages": 4,
+   "recommended": "editorial_modern",
+   "reasons": [
+    "Editorial Modern: fit 2.8 for this document, measured index 84.92",
+    "impact for supporters and funders: base fit 3",
+    "2 photographs can carry the composition",
+    "dense exhibits suit a narrow column less well",
+    "chosen from fit rules and page measurements; no person has judged it",
+    "not chosen: Executive Premium (fit 2.8, index 84.61)",
+    "not chosen: Corporate Conservative (fit 0.5, index 89.78)"
+   ],
+   "fallback": false,
+   "variants": [
+    {
+     "id": "editorial_modern",
+     "name": "Editorial Modern",
+     "status": "valid",
+     "sheet": "impact_report/editorial_modern-pdf.jpg",
+     "docx_sheet": "impact_report/editorial_modern-docx.jpg",
+     "pdf_pages": 4,
+     "docx_pages": 3,
+     "pdf_kb": 137,
+     "docx_kb": 107,
+     "fonts": [
+      "Helvetica",
+      "Helvetica-Bold",
+      "Helvetica-Oblique",
+      "Times-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "impact_report/editorial_modern.pdf",
+     "docx": "impact_report/editorial_modern.docx",
+     "seconds": 4.18,
+     "renders": 3,
+     "fit": 2.8,
+     "index": 84.92,
+     "heuristics": {
+      "pages": 4.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.21,
+      "image_share": 0.14,
+      "last_page_ink": 0.237
+     },
+     "hard_failures": [],
+     "refinements": [
+      "kept: last page holds 68 words: let 'How we spent your money' follow on (index 84.92)",
+      "undone: last page holds 68 words: tightened spacing to pull it back (index fell to 84.28)"
+     ],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "masthead",
+     "bands": "folio",
+     "typography": "Helvetica headings, Times-Roman 10.5/1.5",
+     "rhythm": [
+      "hang/image: bleed image",
+      "hang/data",
+      "hang/image: float start",
+      "hang/data",
+      "hang/narrative"
+     ],
+     "decisions": [
+      "contents: about 2.4 pages needs no contents page",
+      "cover: masthead, type only",
+      "cover: about 2.4 pages is too short for a cover page, so the title opens page one"
+     ],
+     "differs_from": {
+      "executive_premium": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ],
+      "corporate_conservative": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ]
+     }
+    },
+    {
+     "id": "executive_premium",
+     "name": "Executive Premium",
+     "status": "valid",
+     "sheet": "impact_report/executive_premium-pdf.jpg",
+     "docx_sheet": "impact_report/executive_premium-docx.jpg",
+     "pdf_pages": 5,
+     "docx_pages": 4,
+     "pdf_kb": 179,
+     "docx_kb": 109,
+     "fonts": [
+      "Helvetica",
+      "Helvetica-Oblique",
+      "Times-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "impact_report/executive_premium.pdf",
+     "docx": "impact_report/executive_premium.docx",
+     "seconds": 4.71,
+     "renders": 3,
+     "fit": 2.8,
+     "index": 84.61,
+     "heuristics": {
+      "pages": 5.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.15,
+      "image_share": 0.258,
+      "last_page_ink": 0.091
+     },
+     "hard_failures": [],
+     "refinements": [
+      "kept: last page holds 37 words: let 'What comes next' follow on (index 84.61)",
+      "kept: last page holds 37 words: tightened spacing to pull it back (index 84.61)"
+     ],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "full",
+     "bands": "quiet",
+     "typography": "Times-Roman headings, Times-Roman 11/1.58",
+     "rhythm": [
+      "rule/image: image band",
+      "rule/data",
+      "rule/image: float end",
+      "rule/data",
+      "rule/narrative"
+     ],
+     "decisions": [
+      "contents: about 4.1 pages needs no contents page",
+      "cover: full, using the document's own photo 'C:\\\\Users\\\\LOQ\\\\AppData\\\\Local\\\\Temp\\\\m79-assets-etgpb80z\\\\coast.png'"
+     ],
+     "differs_from": {
+      "editorial_modern": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ],
+      "corporate_conservative": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ]
+     }
+    },
+    {
+     "id": "corporate_conservative",
+     "name": "Corporate Conservative",
+     "status": "valid",
+     "sheet": "impact_report/corporate_conservative-pdf.jpg",
+     "docx_sheet": "impact_report/corporate_conservative-docx.jpg",
+     "pdf_pages": 5,
+     "docx_pages": 5,
+     "pdf_kb": 111,
+     "docx_kb": 108,
+     "fonts": [
+      "Helvetica",
+      "Helvetica-Bold",
+      "Helvetica-Oblique",
+      "Times-Bold",
+      "Times-Italic",
+      "Times-Roman"
+     ],
+     "pdf": "impact_report/corporate_conservative.pdf",
+     "docx": "impact_report/corporate_conservative.docx",
+     "seconds": 2.01,
+     "renders": 1,
+     "fit": 0.5,
+     "index": 89.78,
+     "heuristics": {
+      "pages": 5.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 3.49,
+      "image_share": 0.109,
+      "last_page_ink": 0.189
+     },
+     "hard_failures": [],
+     "refinements": [],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "type_centered",
+     "bands": "line",
+     "typography": "Helvetica headings, Times-Roman 11/1.42",
+     "rhythm": [
+      "none/image: column image",
+      "none/data",
+      "none/image: column image",
+      "none/data",
+      "none/narrative"
+     ],
+     "decisions": [
+      "contents: about 3.5 pages needs no contents page",
+      "cover: type_centered, type only"
+     ],
+     "differs_from": {
+      "editorial_modern": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ],
+      "executive_premium": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "document": "policy_brief",
+   "title": "policy_brief",
+   "baseline": {
+    "sheet": "policy_brief/baseline-pdf.jpg",
+    "docx_sheet": "policy_brief/baseline-docx.jpg",
+    "pdf_pages": 2,
+    "docx_pages": 2,
+    "pdf_kb": 17,
+    "docx_kb": 58,
+    "fonts": [
+     "Helvetica",
+     "Helvetica-Bold",
+     "Times-Roman"
+    ],
+    "pdf": "policy_brief/baseline.pdf",
+    "docx": "policy_brief/baseline.docx",
+    "seconds": 0.49,
+    "heuristics": {
+     "pages": 2.0,
+     "sparse_share": 0.0,
+     "alike_share": 0.0,
+     "page_variety": 1.0,
+     "type_contrast": 1.0,
+     "image_share": 0.0,
+     "last_page_ink": 0.293
+    }
+   },
+   "seconds": 5.74,
+   "peak_mb": 15.8,
+   "renders": 8,
+   "plain_pages": 2,
+   "recommended": "financial_data",
+   "reasons": [
+    "Financial / Data-Driven: fit 2 for this document, measured index 78.54",
+    "report for general professional readers: base fit 2",
+    "chosen from fit rules and page measurements; no person has judged it",
+    "not chosen: Corporate Conservative (fit 2, index 76.59)",
+    "not chosen: Editorial Modern (fit 1, index 76.82)"
+   ],
+   "fallback": false,
+   "variants": [
+    {
+     "id": "corporate_conservative",
+     "name": "Corporate Conservative",
+     "status": "valid",
+     "sheet": "policy_brief/corporate_conservative-pdf.jpg",
+     "docx_sheet": "policy_brief/corporate_conservative-docx.jpg",
+     "pdf_pages": 3,
+     "docx_pages": 2,
+     "pdf_kb": 18,
+     "docx_kb": 60,
+     "fonts": [
+      "Helvetica",
+      "Helvetica-Bold",
+      "Times-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "policy_brief/corporate_conservative.pdf",
+     "docx": "policy_brief/corporate_conservative.docx",
+     "seconds": 2.14,
+     "renders": 3,
+     "fit": 2.0,
+     "index": 76.59,
+     "heuristics": {
+      "pages": 3.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.32,
+      "image_share": 0.0,
+      "last_page_ink": 0.066
+     },
+     "hard_failures": [],
+     "refinements": [
+      "kept: last page holds 40 words: let 'Recommendation' follow on (index 76.55)",
+      "kept: last page holds 40 words: tightened spacing to pull it back (index 76.59)"
+     ],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "masthead",
+     "bands": "line",
+     "typography": "Helvetica headings, Times-Roman 11/1.42",
+     "rhythm": [
+      "none/summary",
+      "none/data",
+      "none/data",
+      "none/summary"
+     ],
+     "decisions": [
+      "contents: about 2.4 pages needs no contents page",
+      "cover: masthead, type only",
+      "cover: about 2.4 pages is too short for a cover page, so the title opens page one"
+     ],
+     "differs_from": {
+      "financial_data": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ],
+      "editorial_modern": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ]
+     }
+    },
+    {
+     "id": "financial_data",
+     "name": "Financial / Data-Driven",
+     "status": "valid",
+     "sheet": "policy_brief/financial_data-pdf.jpg",
+     "docx_sheet": "policy_brief/financial_data-docx.jpg",
+     "pdf_pages": 2,
+     "docx_pages": 2,
+     "pdf_kb": 17,
+     "docx_kb": 61,
+     "fonts": [
+      "Helvetica",
+      "Helvetica-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "policy_brief/financial_data.pdf",
+     "docx": "policy_brief/financial_data.docx",
+     "seconds": 1.06,
+     "renders": 1,
+     "fit": 2.0,
+     "index": 78.54,
+     "heuristics": {
+      "pages": 2.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.59,
+      "image_share": 0.0,
+      "last_page_ink": 0.24
+     },
+     "hard_failures": [],
+     "refinements": [],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "masthead",
+     "bands": "filled",
+     "typography": "Helvetica headings, Helvetica 9.2/1.36",
+     "rhythm": [
+      "rule/summary",
+      "slab/data",
+      "slab/data",
+      "slab/summary"
+     ],
+     "decisions": [
+      "contents: about 1.0 pages needs no contents page",
+      "cover: masthead, type only"
+     ],
+     "differs_from": {
+      "corporate_conservative": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ],
+      "editorial_modern": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ]
+     }
+    },
+    {
+     "id": "editorial_modern",
+     "name": "Editorial Modern",
+     "status": "valid",
+     "sheet": "policy_brief/editorial_modern-pdf.jpg",
+     "docx_sheet": "policy_brief/editorial_modern-docx.jpg",
+     "pdf_pages": 3,
+     "docx_pages": 2,
+     "pdf_kb": 18,
+     "docx_kb": 61,
+     "fonts": [
+      "Helvetica",
+      "Helvetica-Bold",
+      "Times-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "policy_brief/editorial_modern.pdf",
+     "docx": "policy_brief/editorial_modern.docx",
+     "seconds": 2.1,
+     "renders": 3,
+     "fit": 1.0,
+     "index": 76.82,
+     "heuristics": {
+      "pages": 3.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.21,
+      "image_share": 0.0,
+      "last_page_ink": 0.093
+     },
+     "hard_failures": [],
+     "refinements": [
+      "kept: last page holds 26 words: let 'Recommendation' follow on (index 76.82)",
+      "kept: last page holds 26 words: tightened spacing to pull it back (index 76.82)"
+     ],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "masthead",
+     "bands": "folio",
+     "typography": "Helvetica headings, Times-Roman 10.5/1.5",
+     "rhythm": [
+      "hang/summary",
+      "hang/data",
+      "hang/data",
+      "hang/summary"
+     ],
+     "decisions": [
+      "contents: about 1.3 pages needs no contents page",
+      "cover: masthead, type only",
+      "cover: about 1.3 pages is too short for a cover page, so the title opens page one"
+     ],
+     "differs_from": {
+      "corporate_conservative": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ],
+      "financial_data": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "document": "arabic_annual",
+   "title": "arabic_annual",
+   "baseline": {
+    "sheet": "arabic_annual/baseline-pdf.jpg",
+    "docx_sheet": "arabic_annual/baseline-docx.jpg",
+    "pdf_pages": 4,
+    "docx_pages": 4,
+    "pdf_kb": 124,
+    "docx_kb": 70,
+    "fonts": [
+     "Amiri-Bold",
+     "Amiri-Regular",
+     "Helvetica",
+     "Helvetica-Bold"
+    ],
+    "pdf": "arabic_annual/baseline.pdf",
+    "docx": "arabic_annual/baseline.docx",
+    "seconds": 0.75,
+    "heuristics": {
+     "pages": 4.0,
+     "sparse_share": 0.0,
+     "alike_share": 0.0,
+     "page_variety": 1.0,
+     "type_contrast": 1.52,
+     "image_share": 0.142,
+     "last_page_ink": 0.239
+    }
+   },
+   "seconds": 14.12,
+   "peak_mb": 288.1,
+   "renders": 10,
+   "plain_pages": 4,
+   "recommended": "executive_premium",
+   "reasons": [
+    "Executive Premium: fit 3.8 for this document, measured index 91.46",
+    "annual report for stakeholders and the public: base fit 3",
+    "2 photographs can carry the composition",
+    "chosen from fit rules and page measurements; no person has judged it",
+    "not chosen: Arabic / Bilingual Institutional (fit 3.8, index 86.55)",
+    "not chosen: Editorial Modern (fit 2.3, index 85.89)"
+   ],
+   "fallback": false,
+   "variants": [
+    {
+     "id": "arabic_institutional",
+     "name": "Arabic / Bilingual Institutional",
+     "status": "valid",
+     "sheet": "arabic_annual/arabic_institutional-pdf.jpg",
+     "docx_sheet": "arabic_annual/arabic_institutional-docx.jpg",
+     "pdf_pages": 6,
+     "docx_pages": 6,
+     "pdf_kb": 168,
+     "docx_kb": 76,
+     "fonts": [
+      "Amiri-Bold",
+      "Amiri-Regular",
+      "Helvetica",
+      "Times-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "arabic_annual/arabic_institutional.pdf",
+     "docx": "arabic_annual/arabic_institutional.docx",
+     "seconds": 4.21,
+     "renders": 3,
+     "fit": 3.8,
+     "index": 86.55,
+     "heuristics": {
+      "pages": 6.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.74,
+      "image_share": 0.152,
+      "last_page_ink": 0.104
+     },
+     "hard_failures": [],
+     "refinements": [
+      "kept: 6 pages against about 4 in plain setting: sections now follow on (index 86.43)",
+      "kept: last page holds 40 words: tightened spacing to pull it back (index 86.55)"
+     ],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "split",
+     "bands": "institutional",
+     "typography": "Times-Roman headings, Times-Roman 12.3/1.65",
+     "rhythm": [
+      "slab/summary",
+      "slab/summary",
+      "slab/image: image band",
+      "slab/image: image band",
+      "slab/data",
+      "quiet/appendix"
+     ],
+     "decisions": [
+      "contents: about 5.0 pages needs no contents page",
+      "cover: split, using the document's own photo 'C:\\\\Users\\\\LOQ\\\\AppData\\\\Local\\\\Temp\\\\m79-assets-etgpb80z\\\\coast.png'"
+     ],
+     "differs_from": {
+      "executive_premium": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ],
+      "editorial_modern": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ]
+     }
+    },
+    {
+     "id": "executive_premium",
+     "name": "Executive Premium",
+     "status": "valid",
+     "sheet": "arabic_annual/executive_premium-pdf.jpg",
+     "docx_sheet": "arabic_annual/executive_premium-docx.jpg",
+     "pdf_pages": 8,
+     "docx_pages": 8,
+     "pdf_kb": 171,
+     "docx_kb": 78,
+     "fonts": [
+      "Amiri-Bold",
+      "Amiri-Regular",
+      "Helvetica",
+      "Times-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "arabic_annual/executive_premium.pdf",
+     "docx": "arabic_annual/executive_premium.docx",
+     "seconds": 4.66,
+     "renders": 3,
+     "fit": 3.8,
+     "index": 91.46,
+     "heuristics": {
+      "pages": 8.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 4.34,
+      "image_share": 0.174,
+      "last_page_ink": 0.098
+     },
+     "hard_failures": [],
+     "refinements": [
+      "undone: 8 pages against about 4 in plain setting: dropped the opening pages (index fell to 89.72)",
+      "undone: 8 pages against about 4 in plain setting: sections now follow on (index fell to 89.72)"
+     ],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "full",
+     "bands": "quiet",
+     "typography": "Times-Roman headings, Times-Roman 12.5/1.65",
+     "rhythm": [
+      "rule/summary",
+      "performance page/figures",
+      "page/image: image band",
+      "rule/image: image band",
+      "rule/data",
+      "quiet/appendix"
+     ],
+     "decisions": [
+      "contents: about 5.4 pages needs no contents page",
+      "cover: full, using the document's own photo 'C:\\\\Users\\\\LOQ\\\\AppData\\\\Local\\\\Temp\\\\m79-assets-etgpb80z\\\\coast.png'"
+     ],
+     "differs_from": {
+      "arabic_institutional": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ],
+      "editorial_modern": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ]
+     }
+    },
+    {
+     "id": "editorial_modern",
+     "name": "Editorial Modern",
+     "status": "valid",
+     "sheet": "arabic_annual/editorial_modern-pdf.jpg",
+     "docx_sheet": "arabic_annual/editorial_modern-docx.jpg",
+     "pdf_pages": 6,
+     "docx_pages": 6,
+     "pdf_kb": 158,
+     "docx_kb": 74,
+     "fonts": [
+      "Amiri-Bold",
+      "Amiri-Regular",
+      "Helvetica",
+      "Times-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "arabic_annual/editorial_modern.pdf",
+     "docx": "arabic_annual/editorial_modern.docx",
+     "seconds": 4.76,
+     "renders": 3,
+     "fit": 2.3,
+     "index": 85.89,
+     "heuristics": {
+      "pages": 6.0,
+      "sparse_share": 0.2,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 2.9,
+      "image_share": 0.265,
+      "last_page_ink": 0.279
+     },
+     "hard_failures": [],
+     "refinements": [
+      "undone: page 4 ended early: let 'الموارد البشرية' follow on instead of opening a page (index fell to 84.86)",
+      "undone: 6 pages against about 4 in plain setting: sections now follow on (index fell to 84.86)"
+     ],
+     "observations": [
+      "page 4: 74% blank below the content"
+     ],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "image_top",
+     "bands": "folio",
+     "typography": "Helvetica headings, Times-Roman 12/1.65",
+     "rhythm": [
+      "hang/summary",
+      "hang/summary",
+      "hang/image: bleed image",
+      "hang/image: bleed image",
+      "hang/data",
+      "quiet/appendix"
+     ],
+     "decisions": [
+      "contents: about 3.5 pages needs no contents page",
+      "cover: image_top, using the document's own photo 'C:\\\\Users\\\\LOQ\\\\AppData\\\\Local\\\\Temp\\\\m79-assets-etgpb80z\\\\coast.png'"
+     ],
+     "differs_from": {
+      "arabic_institutional": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ],
+      "executive_premium": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "document": "arabic_financial",
+   "title": "arabic_financial",
+   "baseline": {
+    "sheet": "arabic_financial/baseline-pdf.jpg",
+    "docx_sheet": "arabic_financial/baseline-docx.jpg",
+    "pdf_pages": 2,
+    "docx_pages": 2,
+    "pdf_kb": 58,
+    "docx_kb": 56,
+    "fonts": [
+     "Amiri-Bold",
+     "Amiri-Regular",
+     "Helvetica",
+     "Helvetica-Bold",
+     "Times-Roman"
+    ],
+    "pdf": "arabic_financial/baseline.pdf",
+    "docx": "arabic_financial/baseline.docx",
+    "seconds": 0.69,
+    "heuristics": {
+     "pages": 2.0,
+     "sparse_share": 0.0,
+     "alike_share": 0.0,
+     "page_variety": 1.0,
+     "type_contrast": 1.52,
+     "image_share": 0.0,
+     "last_page_ink": 0.354
+    }
+   },
+   "seconds": 4.56,
+   "peak_mb": 7.6,
+   "renders": 4,
+   "plain_pages": 2,
+   "recommended": "financial_data",
+   "reasons": [
+    "Financial / Data-Driven: fit 3.8 for this document, measured index 78.54",
+    "financial statements for investors and auditors: base fit 3",
+    "2 tables need exact, dense setting",
+    "chosen from fit rules and page measurements; no person has judged it",
+    "not chosen: Arabic / Bilingual Institutional (fit 3.8, index 77.77)",
+    "not chosen: Corporate Conservative (fit 2, index 78.14)"
+   ],
+   "fallback": false,
+   "variants": [
+    {
+     "id": "arabic_institutional",
+     "name": "Arabic / Bilingual Institutional",
+     "status": "valid",
+     "sheet": "arabic_financial/arabic_institutional-pdf.jpg",
+     "docx_sheet": "arabic_financial/arabic_institutional-docx.jpg",
+     "pdf_pages": 2,
+     "docx_pages": 3,
+     "pdf_kb": 56,
+     "docx_kb": 58,
+     "fonts": [
+      "Amiri-Bold",
+      "Amiri-Regular",
+      "Helvetica",
+      "Times-Roman"
+     ],
+     "pdf": "arabic_financial/arabic_institutional.pdf",
+     "docx": "arabic_financial/arabic_institutional.docx",
+     "seconds": 1.29,
+     "renders": 1,
+     "fit": 3.8,
+     "index": 77.77,
+     "heuristics": {
+      "pages": 2.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.32,
+      "image_share": 0.0,
+      "last_page_ink": 0.397
+     },
+     "hard_failures": [],
+     "refinements": [],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "masthead",
+     "bands": "institutional",
+     "typography": "Times-Roman headings, Times-Roman 12.3/1.65",
+     "rhythm": [
+      "rule/summary",
+      "slab/data",
+      "slab/data",
+      "quiet/appendix"
+     ],
+     "decisions": [
+      "contents: about 1.9 pages needs no contents page",
+      "cover: masthead, type only",
+      "cover: about 1.9 pages is too short for a cover page, so the title opens page one"
+     ],
+     "differs_from": {
+      "financial_data": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ],
+      "corporate_conservative": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ]
+     }
+    },
+    {
+     "id": "financial_data",
+     "name": "Financial / Data-Driven",
+     "status": "valid",
+     "sheet": "arabic_financial/financial_data-pdf.jpg",
+     "docx_sheet": "arabic_financial/financial_data-docx.jpg",
+     "pdf_pages": 2,
+     "docx_pages": 2,
+     "pdf_kb": 59,
+     "docx_kb": 59,
+     "fonts": [
+      "Amiri-Bold",
+      "Amiri-Regular",
+      "Helvetica",
+      "Times-Roman"
+     ],
+     "pdf": "arabic_financial/financial_data.pdf",
+     "docx": "arabic_financial/financial_data.docx",
+     "seconds": 1.24,
+     "renders": 1,
+     "fit": 3.8,
+     "index": 78.54,
+     "heuristics": {
+      "pages": 2.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.59,
+      "image_share": 0.0,
+      "last_page_ink": 0.335
+     },
+     "hard_failures": [],
+     "refinements": [],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "masthead",
+     "bands": "filled",
+     "typography": "Helvetica headings, Helvetica 10.7/1.65",
+     "rhythm": [
+      "rule/summary",
+      "slab/data",
+      "slab/data",
+      "quiet/appendix"
+     ],
+     "decisions": [
+      "contents: about 1.5 pages needs no contents page",
+      "cover: masthead, type only"
+     ],
+     "differs_from": {
+      "arabic_institutional": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ],
+      "corporate_conservative": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ]
+     }
+    },
+    {
+     "id": "corporate_conservative",
+     "name": "Corporate Conservative",
+     "status": "valid",
+     "sheet": "arabic_financial/corporate_conservative-pdf.jpg",
+     "docx_sheet": "arabic_financial/corporate_conservative-docx.jpg",
+     "pdf_pages": 3,
+     "docx_pages": 4,
+     "pdf_kb": 57,
+     "docx_kb": 58,
+     "fonts": [
+      "Amiri-Bold",
+      "Amiri-Regular",
+      "Helvetica",
+      "Times-Roman"
+     ],
+     "pdf": "arabic_financial/corporate_conservative.pdf",
+     "docx": "arabic_financial/corporate_conservative.docx",
+     "seconds": 1.52,
+     "renders": 1,
+     "fit": 2.0,
+     "index": 78.14,
+     "heuristics": {
+      "pages": 3.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.45,
+      "image_share": 0.0,
+      "last_page_ink": 0.312
+     },
+     "hard_failures": [],
+     "refinements": [],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "type_centered",
+     "bands": "line",
+     "typography": "Helvetica headings, Times-Roman 12.5/1.65",
+     "rhythm": [
+      "none/summary",
+      "none/data",
+      "none/data",
+      "quiet/appendix"
+     ],
+     "decisions": [
+      "contents: about 3.4 pages needs no contents page",
+      "cover: type_centered, type only"
+     ],
+     "differs_from": {
+      "arabic_institutional": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ],
+      "financial_data": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "document": "bilingual_institutional",
+   "title": "bilingual_institutional",
+   "baseline": {
+    "sheet": "bilingual_institutional/baseline-pdf.jpg",
+    "docx_sheet": "bilingual_institutional/baseline-docx.jpg",
+    "pdf_pages": 3,
+    "docx_pages": 3,
+    "pdf_kb": 113,
+    "docx_kb": 67,
+    "fonts": [
+     "Amiri-Bold",
+     "Amiri-Regular",
+     "Helvetica",
+     "Helvetica-Bold",
+     "Helvetica-Oblique"
+    ],
+    "pdf": "bilingual_institutional/baseline.pdf",
+    "docx": "bilingual_institutional/baseline.docx",
+    "seconds": 0.48,
+    "heuristics": {
+     "pages": 3.0,
+     "sparse_share": 0.0,
+     "alike_share": 0.0,
+     "page_variety": 1.0,
+     "type_contrast": 1.0,
+     "image_share": 0.19,
+     "last_page_ink": 0.293
+    }
+   },
+   "seconds": 5.24,
+   "peak_mb": 114.3,
+   "renders": 6,
+   "plain_pages": 3,
+   "recommended": "arabic_institutional",
+   "reasons": [
+    "Arabic / Bilingual Institutional: fit 3.8 for this document, measured index 82.62",
+    "report for general professional readers: base fit 0.3",
+    "written in Arabic or in two languages",
+    "chosen from fit rules and page measurements; no person has judged it",
+    "not chosen: Executive Premium (fit 2.8, index 81.23)",
+    "not chosen: Corporate Conservative (fit 2, index 83.37)"
+   ],
+   "fallback": false,
+   "variants": [
+    {
+     "id": "arabic_institutional",
+     "name": "Arabic / Bilingual Institutional",
+     "status": "valid",
+     "sheet": "bilingual_institutional/arabic_institutional-pdf.jpg",
+     "docx_sheet": "bilingual_institutional/arabic_institutional-docx.jpg",
+     "pdf_pages": 3,
+     "docx_pages": 3,
+     "pdf_kb": 125,
+     "docx_kb": 72,
+     "fonts": [
+      "Amiri-Bold",
+      "Amiri-Regular",
+      "Helvetica",
+      "Helvetica-Oblique",
+      "Times-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "bilingual_institutional/arabic_institutional.pdf",
+     "docx": "bilingual_institutional/arabic_institutional.docx",
+     "seconds": 1.22,
+     "renders": 1,
+     "fit": 3.8,
+     "index": 82.62,
+     "heuristics": {
+      "pages": 3.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.32,
+      "image_share": 0.091,
+      "last_page_ink": 0.251
+     },
+     "hard_failures": [],
+     "refinements": [],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "masthead",
+     "bands": "institutional",
+     "typography": "Times-Roman headings, Times-Roman 10.8/1.55",
+     "rhythm": [
+      "rule/summary: image band",
+      "slab/summary",
+      "slab/image: float start",
+      "slab/data"
+     ],
+     "decisions": [
+      "contents: about 2.1 pages needs no contents page",
+      "cover: masthead, type only",
+      "cover: about 2.1 pages is too short for a cover page, so the title opens page one"
+     ],
+     "differs_from": {
+      "executive_premium": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ],
+      "corporate_conservative": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ]
+     }
+    },
+    {
+     "id": "executive_premium",
+     "name": "Executive Premium",
+     "status": "valid",
+     "sheet": "bilingual_institutional/executive_premium-pdf.jpg",
+     "docx_sheet": "bilingual_institutional/executive_premium-docx.jpg",
+     "pdf_pages": 3,
+     "docx_pages": 3,
+     "pdf_kb": 120,
+     "docx_kb": 72,
+     "fonts": [
+      "Amiri-Bold",
+      "Amiri-Regular",
+      "Helvetica",
+      "Helvetica-Oblique",
+      "Times-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "bilingual_institutional/executive_premium.pdf",
+     "docx": "bilingual_institutional/executive_premium.docx",
+     "seconds": 2.22,
+     "renders": 3,
+     "fit": 2.8,
+     "index": 81.23,
+     "heuristics": {
+      "pages": 3.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.0,
+      "image_share": 0.082,
+      "last_page_ink": 0.178
+     },
+     "hard_failures": [],
+     "refinements": [
+      "kept: last page holds 70 words: let 'Finance | المالية' follow on (index 81.23)",
+      "kept: last page holds 70 words: tightened spacing to pull it back (index 81.23)"
+     ],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "masthead",
+     "bands": "quiet",
+     "typography": "Times-Roman headings, Times-Roman 11/1.58",
+     "rhythm": [
+      "rule/summary: image band",
+      "rule/summary",
+      "rule/image: float end",
+      "rule/data"
+     ],
+     "decisions": [
+      "contents: about 2.3 pages needs no contents page",
+      "cover: masthead, type only",
+      "cover: about 2.3 pages is too short for a cover page, so the title opens page one"
+     ],
+     "differs_from": {
+      "arabic_institutional": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ],
+      "corporate_conservative": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ]
+     }
+    },
+    {
+     "id": "corporate_conservative",
+     "name": "Corporate Conservative",
+     "status": "valid",
+     "sheet": "bilingual_institutional/corporate_conservative-pdf.jpg",
+     "docx_sheet": "bilingual_institutional/corporate_conservative-docx.jpg",
+     "pdf_pages": 4,
+     "docx_pages": 4,
+     "pdf_kb": 121,
+     "docx_kb": 71,
+     "fonts": [
+      "Amiri-Regular",
+      "Helvetica",
+      "Helvetica-Bold",
+      "Helvetica-Oblique",
+      "Times-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "bilingual_institutional/corporate_conservative.pdf",
+     "docx": "bilingual_institutional/corporate_conservative.docx",
+     "seconds": 1.37,
+     "renders": 1,
+     "fit": 2.0,
+     "index": 83.37,
+     "heuristics": {
+      "pages": 4.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.45,
+      "image_share": 0.098,
+      "last_page_ink": 0.131
+     },
+     "hard_failures": [],
+     "refinements": [],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "type_centered",
+     "bands": "line",
+     "typography": "Helvetica headings, Times-Roman 11/1.42",
+     "rhythm": [
+      "none/summary: column image",
+      "none/summary",
+      "none/image: column image",
+      "none/data"
+     ],
+     "decisions": [
+      "contents: about 3.0 pages needs no contents page",
+      "cover: type_centered, type only"
+     ],
+     "differs_from": {
+      "arabic_institutional": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ],
+      "executive_premium": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "document": "sustainability_report",
+   "title": "sustainability_report",
+   "baseline": {
+    "sheet": "sustainability_report/baseline-pdf.jpg",
+    "docx_sheet": "sustainability_report/baseline-docx.jpg",
+    "pdf_pages": 4,
+    "docx_pages": 3,
+    "pdf_kb": 58,
+    "docx_kb": 100,
+    "fonts": [
+     "Helvetica",
+     "Helvetica-Bold",
+     "Helvetica-Oblique",
+     "Times-Roman"
+    ],
+    "pdf": "sustainability_report/baseline.pdf",
+    "docx": "sustainability_report/baseline.docx",
+    "seconds": 0.97,
+    "heuristics": {
+     "pages": 4.0,
+     "sparse_share": 0.0,
+     "alike_share": 0.0,
+     "page_variety": 1.0,
+     "type_contrast": 2.75,
+     "image_share": 0.076,
+     "last_page_ink": 0.183
+    }
+   },
+   "seconds": 10.52,
+   "peak_mb": 59.4,
+   "renders": 6,
+   "plain_pages": 4,
+   "recommended": "financial_data",
+   "reasons": [
+    "Financial / Data-Driven: fit 2.8 for this document, measured index 84.68",
+    "sustainability for stakeholders and assurers: base fit 2",
+    "2 tables need exact, dense setting",
+    "chosen from fit rules and page measurements; no person has judged it",
+    "not chosen: Executive Premium (fit 2.4, index 85.29)",
+    "not chosen: Editorial Modern (fit 1.9, index 84.55)"
+   ],
+   "fallback": false,
+   "variants": [
+    {
+     "id": "financial_data",
+     "name": "Financial / Data-Driven",
+     "status": "valid",
+     "sheet": "sustainability_report/financial_data-pdf.jpg",
+     "docx_sheet": "sustainability_report/financial_data-docx.jpg",
+     "pdf_pages": 3,
+     "docx_pages": 3,
+     "pdf_kb": 55,
+     "docx_kb": 97,
+     "fonts": [
+      "Helvetica",
+      "Helvetica-Bold",
+      "Helvetica-Oblique",
+      "Times-Roman"
+     ],
+     "pdf": "sustainability_report/financial_data.pdf",
+     "docx": "sustainability_report/financial_data.docx",
+     "seconds": 4.68,
+     "renders": 3,
+     "fit": 2.8,
+     "index": 84.68,
+     "heuristics": {
+      "pages": 3.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 2.19,
+      "image_share": 0.083,
+      "last_page_ink": 0.129
+     },
+     "hard_failures": [],
+     "refinements": [
+      "kept: last page holds 57 words: tightened spacing to pull it back (index 84.68)",
+      "kept: last page holds 57 words: tightened spacing to pull it back (index 84.68)"
+     ],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "masthead",
+     "bands": "filled",
+     "typography": "Helvetica headings, Helvetica 9.2/1.36",
+     "rhythm": [
+      "rule/data",
+      "slab/data",
+      "slab/image: image band",
+      "slab/data",
+      "quiet/appendix"
+     ],
+     "decisions": [
+      "contents: about 1.9 pages needs no contents page",
+      "cover: masthead, type only"
+     ],
+     "differs_from": {
+      "executive_premium": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ],
+      "editorial_modern": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ]
+     }
+    },
+    {
+     "id": "executive_premium",
+     "name": "Executive Premium",
+     "status": "valid",
+     "sheet": "sustainability_report/executive_premium-pdf.jpg",
+     "docx_sheet": "sustainability_report/executive_premium-docx.jpg",
+     "pdf_pages": 5,
+     "docx_pages": 5,
+     "pdf_kb": 82,
+     "docx_kb": 103,
+     "fonts": [
+      "Helvetica",
+      "Helvetica-Oblique",
+      "Times-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "sustainability_report/executive_premium.pdf",
+     "docx": "sustainability_report/executive_premium.docx",
+     "seconds": 2.54,
+     "renders": 1,
+     "fit": 2.4,
+     "index": 85.29,
+     "heuristics": {
+      "pages": 5.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.15,
+      "image_share": 0.24,
+      "last_page_ink": 0.321
+     },
+     "hard_failures": [],
+     "refinements": [],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "full",
+     "bands": "quiet",
+     "typography": "Times-Roman headings, Times-Roman 11/1.58",
+     "rhythm": [
+      "rule/data",
+      "rule/data",
+      "rule/image: image band",
+      "rule/data",
+      "quiet/appendix"
+     ],
+     "decisions": [
+      "contents: about 4.4 pages needs no contents page",
+      "cover: full, using the document's own photo 'C:\\\\Users\\\\LOQ\\\\AppData\\\\Local\\\\Temp\\\\m79-assets-etgpb80z\\\\works.png'"
+     ],
+     "differs_from": {
+      "financial_data": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ],
+      "editorial_modern": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ]
+     }
+    },
+    {
+     "id": "editorial_modern",
+     "name": "Editorial Modern",
+     "status": "valid",
+     "sheet": "sustainability_report/editorial_modern-pdf.jpg",
+     "docx_sheet": "sustainability_report/editorial_modern-docx.jpg",
+     "pdf_pages": 4,
+     "docx_pages": 4,
+     "pdf_kb": 58,
+     "docx_kb": 100,
+     "fonts": [
+      "Helvetica",
+      "Helvetica-Bold",
+      "Helvetica-Oblique",
+      "Times-Bold",
+      "Times-Roman"
+     ],
+     "pdf": "sustainability_report/editorial_modern.pdf",
+     "docx": "sustainability_report/editorial_modern.docx",
+     "seconds": 2.32,
+     "renders": 1,
+     "fit": 1.9,
+     "index": 84.55,
+     "heuristics": {
+      "pages": 4.0,
+      "sparse_share": 0.0,
+      "alike_share": 0.0,
+      "page_variety": 1.0,
+      "type_contrast": 1.21,
+      "image_share": 0.133,
+      "last_page_ink": 0.314
+     },
+     "hard_failures": [],
+     "refinements": [],
+     "observations": [],
+     "unverified": [
+      "Microsoft Word not run"
+     ],
+     "cover": "masthead",
+     "bands": "folio",
+     "typography": "Helvetica headings, Times-Roman 10.5/1.5",
+     "rhythm": [
+      "hang/data",
+      "hang/data",
+      "hang/image: bleed image",
+      "hang/data",
+      "quiet/appendix"
+     ],
+     "decisions": [
+      "contents: about 2.6 pages needs no contents page",
+      "cover: masthead, type only",
+      "cover: about 2.6 pages is too short for a cover page, so the title opens page one"
+     ],
+     "differs_from": {
+      "financial_data": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer",
+       "tables"
+      ],
+      "executive_premium": [
+       "composition",
+       "typography",
+       "image treatment",
+       "page rhythm",
+       "density",
+       "header and footer"
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

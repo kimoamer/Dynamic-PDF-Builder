@@ -32,6 +32,7 @@ from .. import policy as _policy
 from ..assets import load_image
 from ..core.inline import parse_inline, plain_text
 from ..core.normalize import SemanticDocument, coerce_child, is_rtl_text
+from ..design.archetypes import ink as _ink, mix as _mix
 from ..design.tokens import compile_tokens
 from ..media import (LOW_RESOLUTION_DPI, check_resolution, fit_image, flow_box, ingest, normal_mode,
                      physical_side)
@@ -450,12 +451,72 @@ class DocxRenderer(ArchetypeDocx):
             num = ".".join(str(n) for n in self.heading_counters[:idx + 1] if n > 0)
             text = f"{num}  {text}"
         p = self._para(c, f"Heading {lvl}", b.text)
-        if (b.hints or {}).get("break_before"):
+        hints = b.hints or {}
+        if hints.get("break_before") or hints.get("drop"):
             p.paragraph_format.page_break_before = True
-        self._runs(p, text, color=b.color)
+        if hints.get("opener") or hints.get("scale") or hints.get("drop"):
+            self._art_heading(p, text, b, lvl, hints)
+        else:
+            self._runs(p, text, color=b.color)
         if b.id:
             F.add_bookmark(p, F.bookmark_name(b.id), self.bm)
         self.headings_rendered.append(plain_text(text))
+
+    def _art_heading(self, p, text, b, lvl, hints):
+        """A real Word heading dressed as the art direction asked: it stays in the outline
+        and the text stays editable."""
+        from docx.oxml import OxmlElement
+        size = self.tokens.heading_sizes[lvl - 1] * float(hints.get("scale", 1.0))
+        dark = _ink(self.theme) if self.theme is not None else self.tokens.colors["primary"]
+        kind = hints.get("opener")
+        color = b.color
+        if kind == "slab":
+            p.style = self._slab_style(lvl, hints.get("fill") or dark)
+            F.set_paragraph_shading(p, hints.get("fill") or dark)
+            color = "#FFFFFF"
+            p.paragraph_format.space_after = Pt(self.tokens.paragraph_after + 8)
+        elif kind == "rule" or hints.get("rule"):
+            F.set_paragraph_border(p, "top", hints.get("rule") or dark, int(float(hints.get("rule_width", 2.5)) * 8), 8)
+        if hints.get("hang"):
+            pf = p.paragraph_format
+            if self.rtl_doc:
+                pf.right_indent = Pt(-float(hints["hang"]))
+            else:
+                pf.left_indent = Pt(-float(hints["hang"]))
+        if hints.get("drop"):
+            frame = self.content_height_pt() * float(hints["drop"])
+            p.paragraph_format.space_before = Pt(frame)
+        if getattr(self, "_float_open", False):      # a heading starts below a floating picture
+            self._float_open = False
+            br = OxmlElement("w:br")
+            br.set(qn("w:type"), "textWrapping")
+            br.set(qn("w:clear"), "all")
+            p.add_run()._r.append(br)
+        self._runs(p, text, color=color, size=size)
+        F.order_paragraph_properties(p)
+
+    def _slab_style(self, lvl: int, fill: str):
+        """LibreOffice ignores direct shading on a heading style and would leave white text
+        on white, so the band lives in a style. It keeps the heading's outline level."""
+        from docx.enum.style import WD_STYLE_TYPE
+        from docx.oxml import OxmlElement
+        name = f"Heading {lvl} Band {fill.lstrip('#').upper()}"
+        styles = self.doc.styles
+        if name in [s.name for s in styles]:
+            return styles[name]
+        style = styles.add_style(name, WD_STYLE_TYPE.PARAGRAPH)
+        style.base_style = styles[f"Heading {lvl}"]
+        style.quick_style = True
+        F.set_paragraph_shading(style, fill)
+        pPr = style.element.get_or_add_pPr()
+        level = OxmlElement("w:outlineLvl")
+        level.set(qn("w:val"), str(lvl - 1))
+        pPr.append(level)
+        return style
+
+    def content_height_pt(self) -> float:
+        s = self.doc.sections[-1]
+        return s.page_height.pt - s.top_margin.pt - s.bottom_margin.pt
 
     def _b_paragraph(self, c, b):
         if (b.hints or {}).get("lead"):
@@ -637,12 +698,14 @@ class DocxRenderer(ArchetypeDocx):
             F.set_cant_split(row)
             for ci, h in enumerate(headers):
                 cell = row.cells[ci]
-                F.set_cell_shading(cell, hdr_bg)
+                if not hints.get("design"):
+                    F.set_cell_shading(cell, hdr_bg)
                 p = self._para(cell, "Table Text", str(h))
                 if ci in numeric_cols:
                     p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
                 p.paragraph_format.keep_with_next = True
-                self._runs(p, str(h), bold=True, color=hdr_fg, size=size)
+                self._runs(p, str(h), bold=True, size=size,
+                           color=self.tokens.colors["text_primary"] if hints.get("design") else hdr_fg)
             r0 = 1
         alt = self.tokens.colors.get("table_row_alt", "#F7F9FC")
         all_rows = rows + ([list(b.footer_row)] if b.footer_row else [])
@@ -653,7 +716,7 @@ class DocxRenderer(ArchetypeDocx):
             for ci in range(ncols):
                 val = str(data[ci]) if ci < len(data) else ""
                 cell = row.cells[ci]
-                if b.style == "striped" and ri % 2 == 1 and not is_footer:
+                if b.style == "striped" and ri % 2 == 1 and not is_footer and not hints.get("design"):
                     F.set_cell_shading(cell, alt)
                 p = self._para(cell, "Table Text", val)
                 if ci in numeric_cols:
@@ -674,7 +737,33 @@ class DocxRenderer(ArchetypeDocx):
                 t.columns[ci].width = Pt(wv)
                 for row in t.rows:
                     row.cells[ci].width = Pt(wv)
+        if hints.get("design"):
+            self._art_table(t, hints, has_header, bool(b.footer_row))
         self._spacer_after(c)
+
+    def _art_table(self, t, hints, has_header, has_footer):
+        """Rules and tone in place of a grid, cell by cell so that Word keeps them."""
+        dark = _ink(self.theme) if self.theme is not None else self.tokens.colors["primary"]
+        hair = self.tokens.colors["border"]
+        ledger = hints["design"] == "ledger"
+        F.set_table_borders(t, size=0)
+        last = len(t.rows) - 1
+        current = hints.get("current_col")
+        for ri, row in enumerate(t.rows):
+            head = has_header and ri == 0
+            for ci, cell in enumerate(row.cells):
+                sides = {"bottom": ("single", 3, hair), "left": None, "right": None}
+                if head:
+                    sides["bottom"] = ("single", 8, dark)
+                    if ledger:
+                        sides["top"] = ("single", 12, dark)
+                if ledger and ri == last:
+                    sides["bottom"] = ("single", 12, dark)
+                if has_footer and ri == last:
+                    sides["top"] = ("single", 8, dark)
+                F.set_cell_borders(cell, **sides)
+                if current == ci:
+                    F.set_cell_shading(cell, _mix(dark, "#FFFFFF", 0.9))
 
     # ─── code / quote / callout ───
 
@@ -700,7 +789,34 @@ class DocxRenderer(ArchetypeDocx):
                 F.set_run_shading(r, "3A3F58")
         self._spacer_after(c)
 
+    def _statement(self, c, b, hints):
+        whole_page = hints.get("statement") == "page"
+        base = self.tokens.body_size
+        rtl = self.rtl_doc or is_rtl_text(b.text)
+        p = self._para(c, "Normal", b.text)
+        if whole_page:
+            p.paragraph_format.page_break_before = True
+            p.paragraph_format.space_before = Pt(self.content_height_pt() * float(hints.get("drop", 0.34)))
+        else:
+            p.paragraph_format.space_before = Pt(self.tokens.paragraph_after * 2)
+        p.paragraph_format.keep_with_next = bool(b.attribution)
+        p.paragraph_format.keep_together = True
+        p.paragraph_format.space_after = Pt(8)
+        dark = hints.get("color") or (_ink(self.theme) if self.theme is not None else self.tokens.colors["primary"])
+        F.set_paragraph_border(p, "top", hints.get("rule") or self.tokens.colors["accent"], 24, 12)
+        self._runs(p, b.text, size=base * float(hints.get("scale", 2.5 if whole_page else 1.7)), color=dark,
+                   bold=hints.get("weight") == "bold" or None)
+        if b.attribution:
+            a = self._para(c, "Normal", b.attribution)
+            self._runs(a, b.attribution if F.has_complex_script(b.attribution) else f"— {b.attribution}",
+                       color=self.tokens.colors["text_secondary"])
+            a.alignment = WD_ALIGN_PARAGRAPH.RIGHT if rtl and not self.rtl_doc else None
+        if whole_page:
+            self._page_break(c)
+
     def _b_quote(self, c, b):
+        if (b.hints or {}).get("statement"):
+            return self._statement(c, b, b.hints)
         for part in b.text.split("\n"):
             if part.strip():
                 self._runs(self._para(c, "Quote", part), part)
@@ -839,6 +955,7 @@ class DocxRenderer(ArchetypeDocx):
         para.paragraph_format.space_after = Pt(3)
         M.add_drawing(para.add_run(), asset, f, t, alt, self.next_shape())
         self._figure_caption(cell, b)
+        self._float_open = True
 
     def _b_page_media(self, c, b):
         if b.scope not in ("once", "cover"):
@@ -934,7 +1051,42 @@ class DocxRenderer(ArchetypeDocx):
 
     # ─── data display ───
 
+    def _art_metrics(self, c, b, style):
+        band = style == "band"
+        dark = _ink(self.theme) if self.theme is not None else self.tokens.colors["primary"]
+        n = max(1, len(b.metrics))
+        t = c.add_table(rows=1, cols=n)
+        F.set_table_width_pct(t, 100)
+        F.set_table_borders(t, size=0)
+        F.set_table_cell_margins(t, 100, 100, 100 if band else 0, 140)
+        F.set_cant_split(t.rows[0])
+        if self.rtl_doc:
+            F.set_table_bidi(t)
+        fg = "#FFFFFF" if band else dark
+        muted = "#FFFFFF" if band else self.tokens.colors["text_secondary"]
+        scale = float((b.hints or {}).get("value_scale", 2.5 if n <= 3 else 2.1))
+        section = self.doc.sections[-1]
+        room = (section.page_width - section.left_margin - section.right_margin) / 12700 / n - 14
+        longest = max(len(m.value) for m in b.metrics) if b.metrics else 1
+        scale = max(1.3, min(scale, room / (longest * 0.56 * self.tokens.body_size)))
+        for i, m in enumerate(b.metrics):
+            cell = t.rows[0].cells[i]
+            if band:
+                F.set_cell_shading(cell, dark)
+            else:
+                F.set_cell_borders(cell, top=("single", 16, dark))
+            for text, size, color, bold in ((m.value, self.tokens.body_size * scale, fg, True),
+                                            (m.label, self.tokens.body_size * 0.86, muted, None),
+                                            (m.delta, self.tokens.body_size * 0.8, muted, True)):
+                if text:
+                    p = self._para(cell, "Normal", text)
+                    p.paragraph_format.space_after = Pt(1)
+                    self._runs(p, text, size=size, color=color, bold=bold)
+        self._spacer_after(c)
+
     def _b_metric_row(self, c, b):
+        if (b.hints or {}).get("style"):
+            return self._art_metrics(c, b, b.hints["style"])
         n = max(1, len(b.metrics))
         t = c.add_table(rows=1, cols=n)
         F.set_table_width_pct(t, 100)
@@ -1122,9 +1274,26 @@ class DocxRenderer(ArchetypeDocx):
                 F.clear_style_slant_and_tracking(run)
         return p
 
+    def _masthead(self, c, b):
+        """A short document's title block: a shaded cell, with live text."""
+        dark = b.background_color or (_ink(self.theme) if self.theme is not None else self.tokens.colors["primary"])
+        ink = b.text_color or "#FFFFFF"
+        cell = self._boxed(c, dark)
+        scale = float((b.hints or {}).get("title_scale", 2.5))
+        p = self._para(cell, "Title", b.title)
+        self._runs(p, b.title, size=self.tokens.body_size * scale, color=ink)
+        for text, size in ((b.subtitle, 1.15), (b.author, 0.9)):
+            if text:
+                q = self._para(cell, "Normal", text)
+                q.paragraph_format.space_after = Pt(2)
+                self._runs(q, text, size=self.tokens.body_size * size, color=ink)
+
     def _designed_cover(self, c, b):
         """A cover with a backdrop: page-anchored drawings behind live text."""
-        from ..layout.cover import cover_plan
+        from ..layout.cover import cover_plan, title_drop
+        hints = b.hints or {}
+        if hints.get("masthead"):
+            return self._masthead(c, b)
         geo = M.page_geometry(self, self.doc.sections[0])
         rtl = self.rtl_doc or is_rtl_text(b.title)
         layout, split, layers, ink = cover_plan(b, geo, rtl, self.col)
@@ -1164,8 +1333,13 @@ class DocxRenderer(ArchetypeDocx):
             except DynamicPDFError as e:
                 self.col.fail("asset_failed", f"Cover logo: {e}", e)
         title = setup(self._para(c, "Title", b.title))
-        title.paragraph_format.space_before = Pt(max(24, frame_h * (0.30 if layout == "centered" else 0.46) - used))
-        self._runs(title, b.title, color=ink)
+        title.paragraph_format.space_before = Pt(max(24, title_drop(b, layout, frame_h, geo.height, geo.top) - used))
+        if hints.get("rule"):
+            F.set_paragraph_border(title, "top", hints["rule"], 24, 14)
+        if hints.get("title_scale"):
+            self._runs(title, b.title, color=ink, size=self.tokens.body_size * self.tokens_h1_ratio() * float(hints["title_scale"]))
+        else:
+            self._runs(title, b.title, color=ink)
         if b.subtitle:
             sub = setup(self._subtitle(c, b.subtitle, color=ink))
             sub.paragraph_format.space_after = Pt(18)
@@ -1175,6 +1349,9 @@ class DocxRenderer(ArchetypeDocx):
                 p.paragraph_format.space_after = Pt(2)
                 self._runs(p, txt, color=ink or self.tokens.colors["text_secondary"])
         self._page_break(c)
+
+    def tokens_h1_ratio(self) -> float:
+        return self.tokens.heading_sizes[0] / self.tokens.body_size
 
     def _b_cover_page(self, c, b):
         if b.background_image or b.background_color or b.layout:
