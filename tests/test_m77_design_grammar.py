@@ -443,5 +443,6 @@ class TestWordSheets:
     def test_word_check_adds_no_preference_rows(self):
         check = json.load(open("training/ai_preferences/batches/seed-001/word-check.json", encoding="utf-8"))
         assert check["reviewer_type"] == "ai" and "not a preference evaluation" in check["note"]
-        rows = open("training/ai_preferences/ai-preferences.jsonl", encoding="utf-8").read().splitlines()
+        rows = [line for line in open("training/ai_preferences/ai-preferences.jsonl", encoding="utf-8")
+                if json.loads(line)["batch"] == "seed-001"]
         assert len(rows) == 36

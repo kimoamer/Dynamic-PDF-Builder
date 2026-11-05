@@ -41,30 +41,44 @@ def _corpus():
     return module
 
 
-def generate(batch_dir: str, docs: Optional[List[str]] = None, n: int = 4, grammar: bool = True) -> dict:
-    """Render ``n`` designs per document into ``batch_dir`` and write candidates.jsonl."""
+PLAIN = "@plain"                # a candidate rendered without the grammar
+
+
+def generate(batch_dir: str, docs: Optional[List[str]] = None, n: int = 4, grammar: bool = True,
+             baseline: bool = False) -> dict:
+    """Render ``n`` designs per document into ``batch_dir`` and write candidates.jsonl.
+    ``baseline`` also renders each design without the grammar, under the id ``<design>@plain``,
+    so a comparison can set a design against itself with and without the rules. A baseline
+    identical to its grammar design is dropped: there would be nothing to compare."""
     from dynamic_pdf.intelligence.variant_ranker import variant_features
+
+    from .layout_facts import measure
     corpus = _corpus()
     assets = corpus.make_assets(os.path.join(batch_dir, "assets"))
     rows = []
     for name in docs or list(corpus.DOCUMENTS):
         builder, brand = corpus.DOCUMENTS[name](assets)
         source = builder.build().model_dump_json().encode("utf-8")
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            made = builder.design_variants(n=n, brand=brand, grammar=grammar or None)
-        for v in made.variants:
-            if not v.valid:
-                continue
-            base = os.path.join(batch_dir, "renders", name)
-            os.makedirs(base, exist_ok=True)
-            for ext, blob in (("pdf", v.pdf), ("docx", v.docx)):
-                with open(os.path.join(base, f"{v.id}.{ext}"), "wb") as f:
-                    f.write(blob)
-            rows.append({"document": name, "document_hash": _sha(source), "candidate": v.id, "pdf_sha256": _sha(v.pdf),
-                         "docx_sha256": _sha(v.docx), "pages": v.report.pages, "grammar_rules": v.report.grammar_rules,
-                         "grammar_version": v.report.grammar_version, "deterministic_pick": made.recommended is v,
-                         "features": variant_features(v)})
+        seen = set()
+        for rules, suffix in [(grammar or None, "")] + ([(None, PLAIN)] if baseline else []):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                made = builder.design_variants(n=n, brand=brand, grammar=rules)
+            for v in made.variants:
+                if not v.valid or _sha(v.pdf) in seen:
+                    continue
+                seen.add(_sha(v.pdf))
+                candidate = v.id + suffix
+                base = os.path.join(batch_dir, "renders", name)
+                os.makedirs(base, exist_ok=True)
+                for ext, blob in (("pdf", v.pdf), ("docx", v.docx)):
+                    with open(os.path.join(base, f"{candidate}.{ext}"), "wb") as f:
+                        f.write(blob)
+                rows.append({"document": name, "document_hash": _sha(source), "candidate": candidate, "design": v.id,
+                             "pdf_sha256": _sha(v.pdf), "docx_sha256": _sha(v.docx), "pages": v.report.pages,
+                             "grammar_rules": v.report.grammar_rules, "grammar_version": v.report.grammar_version,
+                             "deterministic_pick": made.recommended is v, "features": variant_features(v),
+                             "layout_facts": measure(v.pdf, made.stats.get("plain_pages"))})
     with open(os.path.join(batch_dir, "candidates.jsonl"), "w", encoding="utf-8", newline="\n") as f:
         for r in rows:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
@@ -114,23 +128,32 @@ def blind_sheet(a_pdf: str, b_pdf: str, out: str, width: int = 240, limit: int =
     return {"pages_shown": [len(a), len(b)], "pages_total": [na, nb], "shown_px": width}
 
 
-def sheets(batch_dir: str, pairs_per_doc: int = 2, seed: int = 79, repeats: int = 1, source: str = "pdf") -> dict:
+def _choose(rows: List[dict], count: int, rng: random.Random) -> list:
+    """Pairs for one document. Each design against its own baseline comes first, so a rule's effect
+    is judged with the art direction held still; the rest are random pairs of different designs."""
+    pairs = list(itertools.combinations(rows, 2))
+    rng.shuffle(pairs)
+    own = [p for p in pairs if p[0].get("design", p[0]["candidate"]) == p[1].get("design", p[1]["candidate"])]
+    other = [p for p in pairs if p not in own]
+    return (own[:max(1, count // 2)] + other)[:count]
+
+
+def sheets(batch_dir: str, pairs_per_doc: int = 2, seed: int = 79, repeats: int = 1, source: str = "pdf",
+           docs: Optional[List[str]] = None) -> dict:
     """Blind comparison sheets. ``repeats`` pairs per document come back later with sides swapped.
     ``source="word"`` draws the DOCX pages from ``preferences word`` into sheets-word/ with its own key."""
     rng = random.Random(seed)
     cands = _jsonl(os.path.join(batch_dir, "candidates.jsonl"))
     by: Dict[str, List[dict]] = {}
     for c in cands:
-        by.setdefault(c["document"], []).append(c)
+        if docs is None or c["document"] in docs:
+            by.setdefault(c["document"], []).append(c)
     word = source == "word"
     out = os.path.join(batch_dir, "sheets-word" if word else "sheets")
     os.makedirs(out, exist_ok=True)
     plan = []
     for doc, rows in sorted(by.items()):
-        pairs = list(itertools.combinations(rows, 2))
-        rng.shuffle(pairs)
-        chosen = pairs[:pairs_per_doc]
-        for a, b in chosen:
+        for a, b in _choose(rows, pairs_per_doc, rng):
             if rng.random() < 0.5:
                 a, b = b, a
             plan.append((doc, a, b, False))
@@ -138,7 +161,7 @@ def sheets(batch_dir: str, pairs_per_doc: int = 2, seed: int = 79, repeats: int 
     rng.shuffle(plan)
     key = []
     for i, (doc, a, b, repeat) in enumerate(plan, 1):
-        cid = f"cmp-{i:03d}"
+        cid = f"{'w' if word else 'cmp'}-{i:03d}"
         path = os.path.join(out, cid + ".jpg")
         def rendered(c):
             if word:
@@ -150,17 +173,19 @@ def sheets(batch_dir: str, pairs_per_doc: int = 2, seed: int = 79, repeats: int 
     return {"sheets": len(key), "folder": out}
 
 
-def record(batch_dir: str, answers: str, dataset: str, *, model: str, date: str, method: str) -> dict:
+def record(batch_dir: str, answers: str, dataset: str, *, model: str, date: str, method: str,
+           source: str = "pdf") -> dict:
     """Join answers to the key, and append the dataset rows.
 
     An answer row: ``{comparison, preferred, criteria, justification, confidence, pages, formats_inspected}``.
     ``pages`` cites pages on the sheet as ``A3`` or ``B1``."""
-    key = {k["comparison"]: k for k in _load(os.path.join(batch_dir, "key.json"))["comparisons"]}
+    word = source == "word"
+    key = {k["comparison"]: k for k in _load(os.path.join(batch_dir, "key-word.json" if word else "key.json"))["comparisons"]}
     cands = {(c["document"], c["candidate"]): c for c in _jsonl(os.path.join(batch_dir, "candidates.jsonl"))}
     rows = []
     for ans in _jsonl(answers):
         k = key.get(ans["comparison"])
-        if k is None or not os.path.exists(os.path.join(batch_dir, "sheets", ans["comparison"] + ".jpg")):
+        if k is None or not os.path.exists(os.path.join(batch_dir, "sheets-word" if word else "sheets", ans["comparison"] + ".jpg")):
             raise SystemExit(f"{ans['comparison']}: no such sheet; a comparison not seen cannot be recorded")
         if ans["preferred"] not in ANSWERS or ans["confidence"] not in CONFIDENCE:
             raise SystemExit(f"{ans['comparison']}: bad answer")
@@ -176,7 +201,7 @@ def record(batch_dir: str, answers: str, dataset: str, *, model: str, date: str,
                      "b": {"candidate": b["candidate"], "pdf_sha256": b["pdf_sha256"], "docx_sha256": b["docx_sha256"]},
                      "preferred": ans["preferred"], "criteria": ans.get("criteria") or {},
                      "justification": ans.get("justification", ""), "confidence": ans["confidence"],
-                     "supporting_pages": ans.get("pages") or [], "formats_inspected": ans.get("formats_inspected") or ["pdf"],
+                     "supporting_pages": ans.get("pages") or [], "formats_inspected": ans.get("formats_inspected") or (["word"] if word else ["pdf"]),
                      "pages_shown": k["pages_shown"], "pages_total": k["pages_total"], "shown_px": k["shown_px"],
                      "reversed_repeat": k["reversed_repeat"], "reviewer_type": "ai", "model": model, "review_date": date,
                      "evaluation_method": method, "grammar_version": a.get("grammar_version")})
@@ -201,7 +226,7 @@ def check(dataset: str) -> dict:
     bad = [r.get("comparison") for r in rows if r.get("reviewer_type") != "ai" or not r.get("model")]
     if bad:
         raise SystemExit(f"rows that do not say they are AI work: {bad}")
-    pair = lambda r: (r["document"], frozenset((r["a"]["candidate"], r["b"]["candidate"])))  # noqa: E731
+    pair = lambda r: (r["batch"], r["document"], frozenset((r["a"]["candidate"], r["b"]["candidate"])))  # noqa: E731
     first = {pair(r): r for r in rows if not r["reversed_repeat"]}
     same = differ = 0
     flips = []
