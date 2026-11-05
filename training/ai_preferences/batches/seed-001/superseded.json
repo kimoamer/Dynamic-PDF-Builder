@@ -1,0 +1,41 @@
+{
+ "reason": "Found by blind review: at long titles cover.low_title_field cut the title and pushed the rest of the cover onto a white second page. Rule limited to 32 characters and the engine now checks for this. These rows stay on record; training skips them.",
+ "candidates": [
+  {
+   "document": "annual_report",
+   "candidate": "editorial_modern"
+  },
+  {
+   "document": "annual_report",
+   "candidate": "executive_premium"
+  },
+  {
+   "document": "arabic_annual",
+   "candidate": "editorial_modern"
+  },
+  {
+   "document": "arabic_annual",
+   "candidate": "executive_premium"
+  },
+  {
+   "document": "financial_statements",
+   "candidate": "editorial_modern"
+  },
+  {
+   "document": "financial_statements",
+   "candidate": "executive_premium"
+  },
+  {
+   "document": "research_paper",
+   "candidate": "executive_premium"
+  },
+  {
+   "document": "sustainability_report",
+   "candidate": "executive_premium"
+  },
+  {
+   "document": "technical_manual",
+   "candidate": "executive_premium"
+  }
+ ]
+}

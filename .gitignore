@@ -2,3 +2,12 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 test-results.xml
+
+# learning pipeline: renders and trained models stay local
+training/models/*
+!training/models/README.md
+training/ai_preferences/batches/*/renders/
+training/ai_preferences/batches/*/assets/
+training/ai_preferences/batches/*/sheets*/
+training/ai_preferences/batches/*/word/
+training/ai_preferences/batches/*/key-word.json

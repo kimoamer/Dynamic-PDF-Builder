@@ -54,6 +54,8 @@ class VariantReport(BaseModel):
     refinements: List[str] = Field(default_factory=list)
     office: Optional[Dict] = None
     unverified: List[str] = Field(default_factory=list)
+    grammar_rules: List[str] = Field(default_factory=list)   # approved rules this design used
+    grammar_version: Optional[str] = None
 
 
 @dataclass
@@ -328,8 +330,17 @@ class _Runner:
 
 def generate_variants(source, *, policy=None, brand: Optional[BrandKit] = None, base_theme=None, n: int = 3,
                       families: Optional[Sequence[str]] = None, budget: Optional[VariantBudget] = None,
-                      office: bool = False) -> VariantSet:
-    """Up to ``n`` (3–5) designs of ``source`` and a recommendation."""
+                      office: bool = False, grammar=None, grammar_rules: Optional[Sequence[str]] = None,
+                      ranker_model: Optional[str] = None) -> VariantSet:
+    """Up to ``n`` (3–5) designs of ``source`` and a recommendation.
+
+    ``grammar`` is ``True`` for the packaged approved grammar, a path, or a ``Grammar``.
+    A design the grammar breaks falls back to the same direction without it.
+
+    ``ranker_model`` names a trained ranker for the valid designs. It never runs by itself,
+    and ``stats["selection"]`` says which selector chose. Any problem keeps the fixed rule."""
+    from ..design.grammar import resolve
+    grammar = resolve(grammar)
     budget = budget or VariantBudget()
     if not 1 <= n <= len(DIRECTIONS):
         raise ValueError(f"n must be between 1 and {len(DIRECTIONS)}")
@@ -349,9 +360,13 @@ def generate_variants(source, *, policy=None, brand: Optional[BrandKit] = None, 
                        if f not in {r[0].id for r in ranked}]
         else:
             chosen = ranked[:n]
-        variants = [run.run(d, fit, why) for d, fit, why in chosen]
+        variants = [_with_grammar(run, grammar, grammar_rules, brief, d, fit, why) for d, fit, why in chosen]
     valid = [v for v in variants if v.valid]
     best = max(valid, key=lambda v: v.report.fit * 6 + v.report.index, default=None)
+    selection = {"selector": "deterministic", "model": None}
+    if best is not None and ranker_model:
+        from .variant_ranker import choose
+        best, selection = choose(valid, best, ranker_model)
     if best is None:
         reasons = ["no design passed the hard gates: keep the stable designed output"]
     else:
@@ -365,8 +380,50 @@ def generate_variants(source, *, policy=None, brand: Optional[BrandKit] = None, 
         if v.report.status == "rejected":
             reasons.append(f"rejected: {v.name}: {'; '.join(v.report.hard_failures[:3])}")
     stats = {"renders": run.renders, "seconds": round(time.monotonic() - run.start, 2),
-             "budget": budget.model_dump(), "plain_pages": base_pages}
+             "budget": budget.model_dump(), "plain_pages": base_pages, "selection": selection}
     return VariantSet(variants, best, reasons, fallback=best is None, stats=stats)
+
+
+def _with_grammar(run: _Runner, grammar, only, brief, direction, fit, why) -> Variant:
+    """One design, following the grammar when given one."""
+    from ..design.grammar import overlay
+    if grammar is None:
+        return run.run(direction, fit, why)
+    changed, rules = overlay(grammar, direction, brief, run.sem.meta.title or "", only)
+    if not rules:
+        return run.run(direction, fit, why)
+    v = run.run(changed, fit, why)
+    spilled = any(r.startswith("cover.") for r in rules) and _cover_spilled(v.pdf)
+    if v.valid and not spilled:
+        v.report.grammar_rules, v.report.grammar_version = rules, grammar.version
+        if v.plan:
+            v.plan.decisions += [f"grammar {grammar.version}: {r}" for r in rules]
+        return v
+    fallback = run.run(direction, fit, why)
+    fallback.report.observations.append(
+        f"grammar {grammar.version}: {', '.join(rules)} failed the hard gates, so this design does without them")
+    return fallback
+
+
+def _cover_spilled(pdf: Optional[bytes]) -> bool:
+    """A cover too tall for its page leaves white type on a white second page, which no text check sees."""
+    try:
+        import pymupdf
+    except ImportError:
+        return False
+    if not pdf:
+        return False
+    with pymupdf.open(stream=pdf, filetype="pdf") as doc:
+        if doc.page_count < 2:
+            return False
+        page = doc[1]
+        spans = [x for block in page.get_text("dict")["blocks"] for line in block.get("lines", []) for x in line["spans"]]
+        for span in spans:
+            if span["color"] >= 0xF0F0F0 and span["text"].strip():
+                pix = page.get_pixmap(clip=pymupdf.Rect(span["bbox"]), colorspace=pymupdf.csGRAY, alpha=False)
+                if min(pix.samples, default=255) > 200:         # nothing behind it: this type cannot be seen
+                    return True
+    return False
 
 
 def _profile(sem) -> str:

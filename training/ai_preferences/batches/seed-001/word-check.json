@@ -1,0 +1,17 @@
+{
+ "note": "A format check of this batch in Microsoft Word, not a preference evaluation. No row in ai-preferences.jsonl comes from it. The pairs had already been judged from their PDFs, so this view was neither blind nor independent.",
+ "word_build": "16.0.17932",
+ "date": "2026-11-05",
+ "reviewer_type": "ai",
+ "model": "claude-opus-5-5",
+ "docx_exported": 48,
+ "docx_failed": 0,
+ "page_count_same_as_pdf": 34,
+ "page_count_one_fewer_than_pdf": 14,
+ "sheets_viewed": ["cmp-001", "cmp-010", "cmp-020"],
+ "seen": [
+  "cmp-010: the superseded low-title design with a 37-character title also shows an empty second page in Word, so the defect found in the PDF is not PDF-only.",
+  "cmp-010: on the same design a heading is left at the foot of a page, away from the image after it.",
+  "cmp-001: the references heading appears twice in both designs, so neither design causes it."
+ ]
+}

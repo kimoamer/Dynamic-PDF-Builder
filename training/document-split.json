@@ -1,0 +1,28 @@
+{
+ "note": "Documents are grouped into families of similar purpose, so a family is never split between training and evaluation.",
+ "families": {
+  "annual": [
+   "annual_report",
+   "arabic_annual",
+   "sustainability_report",
+   "impact_report"
+  ],
+  "financial": [
+   "financial_statements",
+   "arabic_financial"
+  ],
+  "governance": [
+   "board_paper",
+   "policy_brief",
+   "bilingual_institutional"
+  ],
+  "technical": [
+   "technical_manual",
+   "research_paper",
+   "proposal"
+  ]
+ },
+ "evaluation_families": [
+  "governance"
+ ]
+}

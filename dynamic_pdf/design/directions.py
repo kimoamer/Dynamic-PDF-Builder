@@ -154,6 +154,13 @@ def page_system(direction: Direction, *, company: Optional[str], logo: Optional[
                           footer=Band(rows=[BandRow(start=[label], end=[numbers], size=7.5, color=muted,
                                                     rule_below=False)]),
                           values=values, edge_distance=0, body_gap=16)
+    if kind == "dual_filled":                     # only a grammar rule asks for this
+        def bar(start, end):
+            return Band(rows=[BandRow(start=start, end=end, size=7.5, bold=True, color="#FFFFFF", fill=primary)],
+                        bleed=True, padding=5)
+        foot = label or "{section}"
+        return PageSystem(header=bar([title], ["{section}"]), footer=bar([foot], [numbers]),
+                          even_footer=bar([numbers], [foot]), values=values, edge_distance=0, body_gap=16)
     head = BandRow(start=mark or [label], end=[title if mark or label != title else "{section}"], size=8.5,
                    color=primary, rule_below=True, rule_color=accent, rule_width=1.2)
     foot = BandRow(start=[label], center=["{page}"], end=["{section}"], size=8, color=muted)

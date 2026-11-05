@@ -1,0 +1,3854 @@
+{
+ "format": "dynamic-pdf-builder/m77-layout-family-catalog",
+ "version": "1.0.0",
+ "note": "Page counts and measures are measured. Families are an AI reviewer's assignment, not a human label. weighted_pages counts a repeated template once per document.",
+ "precision": {
+  "sampled": 80,
+  "agreed": 55,
+  "rate": 0.688,
+  "method": "four pages per family, seed 77, drawn from pages not yet seen closely, viewed at 780 px; families that failed were corrected only on the pages seen"
+ },
+ "families": [
+  {
+   "id": "notes_references",
+   "description": "Notes, references or endnotes",
+   "definition": "Notes, references, glossaries and credits.",
+   "measured": {
+    "pages": 134,
+    "weighted_pages": 75.1,
+    "documents": 6,
+    "independent_source_groups": 6,
+    "directions": {
+     "ltr": 106,
+     "rtl": 12,
+     "bilingual": 16
+    },
+    "columns": {
+     "2": 4,
+     "1": 78,
+     "3": 1,
+     "0": 51
+    },
+    "measures": {
+     "text_share": {
+      "n": 134,
+      "p25": 0.29,
+      "median": 0.41,
+      "p75": 0.492
+     },
+     "image_share": {
+      "n": 134,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "largest_image": {
+      "n": 134,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "table_share": {
+      "n": 134,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.115
+     },
+     "vector_share": {
+      "n": 134,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.004
+     },
+     "ink": {
+      "n": 134,
+      "p25": 0.086,
+      "median": 0.115,
+      "p75": 0.154
+     },
+     "chars": {
+      "n": 134,
+      "p25": 1904.0,
+      "median": 2707.5,
+      "p75": 3807.25
+     },
+     "max_size_pt": {
+      "n": 134,
+      "p25": 10.0,
+      "median": 12.5,
+      "p75": 16.0
+     },
+     "display_ratio": {
+      "n": 134,
+      "p25": 1.04,
+      "median": 1.25,
+      "p75": 1.68
+     },
+     "column_ratio": {
+      "n": 134,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "numeric_big": {
+      "n": 134,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "balance_lr": {
+      "n": 134,
+      "p25": 0.028,
+      "median": 0.188,
+      "p75": 0.286
+     },
+     "edge_contact": {
+      "n": 134,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "header_items": {
+      "n": 134,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "footer_items": {
+      "n": 134,
+      "p25": 1.0,
+      "median": 2.0,
+      "p75": 3.0
+     }
+    }
+   },
+   "ai_observation": {
+    "inspection_depth": {
+     "contact_sheet": 126,
+     "detail_2up": 4,
+     "detail_3up": 4
+    },
+    "family_source": {
+     "ai_contact_sheet": 126,
+     "ai_detail": 8
+    },
+    "precision_sample": {
+     "sampled": 4,
+     "agreed": 4,
+     "seen_as": {}
+    },
+    "evidence_pages": [
+     {
+      "ref": "ref-af94892827c8:39",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "Reference list continuation with hanging indent."
+     },
+     {
+      "ref": "ref-db25596332d2:183",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1100
+      ],
+      "note": "Financial note page: wide table then headings and text in one column."
+     },
+     {
+      "ref": "ref-82ccd1d81704:140",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "Note continuation: small table, heading, text, then an empty page."
+     },
+     {
+      "ref": "ref-cf936a817893:158",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1042
+      ],
+      "note": "Reference list with ornament rule under the heading."
+     },
+     {
+      "ref": "ref-0218e5046957:9",
+      "depth": "detail_3up",
+      "shown_px": [
+       520,
+       673
+      ],
+      "note": "Short reference list, remainder empty."
+     },
+     {
+      "ref": "ref-82ccd1d81704:148",
+      "depth": "detail_3up",
+      "shown_px": [
+       520,
+       673
+      ],
+      "note": "Abbreviation list in two aligned columns."
+     }
+    ]
+   },
+   "unverified": {
+    "human_reviewed_pages": 0,
+    "note": "Contact-sheet pages keep the family the measurements and notes gave them."
+   }
+  },
+  {
+   "id": "table_in_text",
+   "description": "Table set inside running text",
+   "definition": "Tables inside running text.",
+   "measured": {
+    "pages": 77,
+    "weighted_pages": 54.1,
+    "documents": 10,
+    "independent_source_groups": 10,
+    "directions": {
+     "ltr": 42,
+     "rtl": 30,
+     "bilingual": 5
+    },
+    "columns": {
+     "2": 32,
+     "1": 43,
+     "0": 2
+    },
+    "measures": {
+     "text_share": {
+      "n": 77,
+      "p25": 0.36,
+      "median": 0.44,
+      "p75": 0.52
+     },
+     "image_share": {
+      "n": 77,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.02
+     },
+     "largest_image": {
+      "n": 77,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.017
+     },
+     "table_share": {
+      "n": 77,
+      "p25": 0.106,
+      "median": 0.164,
+      "p75": 0.27
+     },
+     "vector_share": {
+      "n": 77,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "ink": {
+      "n": 77,
+      "p25": 0.139,
+      "median": 0.172,
+      "p75": 0.239
+     },
+     "chars": {
+      "n": 77,
+      "p25": 2115.5,
+      "median": 2756.0,
+      "p75": 3586.5
+     },
+     "max_size_pt": {
+      "n": 77,
+      "p25": 10.0,
+      "median": 11.0,
+      "p75": 15.75
+     },
+     "display_ratio": {
+      "n": 77,
+      "p25": 1.11,
+      "median": 1.25,
+      "p75": 1.83
+     },
+     "column_ratio": {
+      "n": 77,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "numeric_big": {
+      "n": 77,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "balance_lr": {
+      "n": 77,
+      "p25": -0.044,
+      "median": 0.061,
+      "p75": 0.164
+     },
+     "edge_contact": {
+      "n": 77,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "header_items": {
+      "n": 77,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "footer_items": {
+      "n": 77,
+      "p25": 1.0,
+      "median": 3.0,
+      "p75": 3.0
+     }
+    }
+   },
+   "ai_observation": {
+    "inspection_depth": {
+     "contact_sheet": 64,
+     "detail_2up": 7,
+     "detail_3up": 6
+    },
+    "family_source": {
+     "measured": 64,
+     "ai_detail": 7,
+     "measured_confirmed_detail": 6
+    },
+    "precision_sample": {
+     "sampled": 4,
+     "agreed": 4,
+     "seen_as": {}
+    },
+    "evidence_pages": [
+     {
+      "ref": "ref-0218e5046957:2",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "Journal column with a small ruled two-column table in the text."
+     },
+     {
+      "ref": "ref-0b2bf0ebc355:9",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1100
+      ],
+      "note": "Text above a light ruled table of three columns; family label was a misfire."
+     },
+     {
+      "ref": "ref-4bbfe8f46cb3:45",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       512
+      ],
+      "note": "Spread of long banded tables and text columns."
+     },
+     {
+      "ref": "ref-fb5a68768723:9",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "Audit statement: heading, text, then two-column coloured-head table with prose in cells."
+     },
+     {
+      "ref": "ref-7f52f49c5dd6:4",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1104
+      ],
+      "note": "Bilingual tables: row labels in both languages at opposite ends, figures in the centre."
+     },
+     {
+      "ref": "ref-82ccd1d81704:154",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "Definition table of prose: label column, tinted rows, full-width category bands."
+     }
+    ]
+   },
+   "unverified": {
+    "human_reviewed_pages": 0,
+    "note": "Contact-sheet pages keep the family the measurements and notes gave them."
+   }
+  },
+  {
+   "id": "single_column_text",
+   "description": "One text column",
+   "definition": "One text column.",
+   "measured": {
+    "pages": 93,
+    "weighted_pages": 46.9,
+    "documents": 8,
+    "independent_source_groups": 8,
+    "directions": {
+     "ltr": 44,
+     "rtl": 46,
+     "bilingual": 3
+    },
+    "columns": {
+     "1": 78,
+     "0": 15
+    },
+    "measures": {
+     "text_share": {
+      "n": 93,
+      "p25": 0.34,
+      "median": 0.41,
+      "p75": 0.505
+     },
+     "image_share": {
+      "n": 93,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "largest_image": {
+      "n": 93,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "table_share": {
+      "n": 93,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "vector_share": {
+      "n": 93,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "ink": {
+      "n": 93,
+      "p25": 0.113,
+      "median": 0.139,
+      "p75": 0.187
+     },
+     "chars": {
+      "n": 93,
+      "p25": 2384.0,
+      "median": 3091.0,
+      "p75": 3921.0
+     },
+     "max_size_pt": {
+      "n": 93,
+      "p25": 10.0,
+      "median": 11.0,
+      "p75": 15.75
+     },
+     "display_ratio": {
+      "n": 93,
+      "p25": 1.01,
+      "median": 1.19,
+      "p75": 1.68
+     },
+     "column_ratio": {
+      "n": 93,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "numeric_big": {
+      "n": 93,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "balance_lr": {
+      "n": 93,
+      "p25": -0.079,
+      "median": -0.005,
+      "p75": 0.141
+     },
+     "edge_contact": {
+      "n": 93,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "header_items": {
+      "n": 93,
+      "p25": 0.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "footer_items": {
+      "n": 93,
+      "p25": 0.0,
+      "median": 1.0,
+      "p75": 3.0
+     }
+    }
+   },
+   "ai_observation": {
+    "inspection_depth": {
+     "detail_2up": 3,
+     "contact_sheet": 76,
+     "detail_3up": 14
+    },
+    "family_source": {
+     "measured_confirmed_detail": 14,
+     "measured": 76,
+     "ai_detail": 3
+    },
+    "precision_sample": {
+     "sampled": 4,
+     "agreed": 3,
+     "seen_as": {
+      "section_opener": 1
+     }
+    },
+    "evidence_pages": [
+     {
+      "ref": "ref-0b2bf0ebc355:14",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1100
+      ],
+      "note": "Single wide column with small coloured headings."
+     },
+     {
+      "ref": "ref-af94892827c8:12",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "Short text at top of the page, remainder empty."
+     },
+     {
+      "ref": "ref-0218e5046957:7",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "Journal body column with bullets."
+     },
+     {
+      "ref": "ref-9325a2a9012f:13",
+      "depth": "detail_3up",
+      "shown_px": [
+       520,
+       736
+      ],
+      "note": "Numbered lists under glyph-marked subheads; classifier label of unequal columns is wrong here"
+     },
+     {
+      "ref": "ref-9325a2a9012f:15",
+      "depth": "detail_3up",
+      "shown_px": [
+       520,
+       736
+      ],
+      "note": "Single column with numbered list"
+     },
+     {
+      "ref": "ref-af94892827c8:28",
+      "depth": "detail_3up",
+      "shown_px": [
+       520,
+       673
+      ],
+      "note": "Dense single column."
+     }
+    ]
+   },
+   "unverified": {
+    "human_reviewed_pages": 0,
+    "note": "Contact-sheet pages keep the family the measurements and notes gave them."
+   }
+  },
+  {
+   "id": "financial_table",
+   "description": "Table filling most of the page",
+   "definition": "A page given over to a statement or a large numeric grid.",
+   "measured": {
+    "pages": 101,
+    "weighted_pages": 43.8,
+    "documents": 7,
+    "independent_source_groups": 7,
+    "directions": {
+     "ltr": 49,
+     "rtl": 41,
+     "bilingual": 11
+    },
+    "columns": {
+     "1": 32,
+     "0": 61,
+     "2": 8
+    },
+    "measures": {
+     "text_share": {
+      "n": 101,
+      "p25": 0.35,
+      "median": 0.4,
+      "p75": 0.47
+     },
+     "image_share": {
+      "n": 101,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.06
+     },
+     "largest_image": {
+      "n": 101,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.033
+     },
+     "table_share": {
+      "n": 101,
+      "p25": 0.435,
+      "median": 0.594,
+      "p75": 0.661
+     },
+     "vector_share": {
+      "n": 101,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "ink": {
+      "n": 101,
+      "p25": 0.179,
+      "median": 0.22,
+      "p75": 0.306
+     },
+     "chars": {
+      "n": 101,
+      "p25": 1725.5,
+      "median": 2644.0,
+      "p75": 3315.5
+     },
+     "max_size_pt": {
+      "n": 101,
+      "p25": 11.0,
+      "median": 11.0,
+      "p75": 15.0
+     },
+     "display_ratio": {
+      "n": 101,
+      "p25": 1.04,
+      "median": 1.16,
+      "p75": 1.73
+     },
+     "column_ratio": {
+      "n": 101,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "numeric_big": {
+      "n": 101,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "balance_lr": {
+      "n": 101,
+      "p25": -0.084,
+      "median": -0.016,
+      "p75": 0.063
+     },
+     "edge_contact": {
+      "n": 101,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "header_items": {
+      "n": 101,
+      "p25": 0.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "footer_items": {
+      "n": 101,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 3.0
+     }
+    }
+   },
+   "ai_observation": {
+    "inspection_depth": {
+     "contact_sheet": 88,
+     "detail_2up": 5,
+     "detail_3up": 8
+    },
+    "family_source": {
+     "measured": 88,
+     "measured_confirmed_detail": 7,
+     "ai_detail": 6
+    },
+    "precision_sample": {
+     "sampled": 4,
+     "agreed": 1,
+     "seen_as": {
+      "data_story": 2,
+      "table_in_text": 1
+     }
+    },
+    "evidence_pages": [
+     {
+      "ref": "ref-7f52f49c5dd6:28",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "Plain statement of position: rule under header block, notes column, bold current year, large empty lower half."
+     },
+     {
+      "ref": "ref-db25596332d2:135",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1100
+      ],
+      "note": "Income statement under a display heading; current-year column tinted and bold, light row rules, footnotes under table."
+     },
+     {
+      "ref": "ref-82ccd1d81704:123",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "Financial statement: title stack, indented line items, two value columns, comparative column tinted, double rules on totals."
+     },
+     {
+      "ref": "ref-82ccd1d81704:126",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "Same statement system as other pages: prior-period column carried on a grey band."
+     },
+     {
+      "ref": "ref-7f52f49c5dd6:13",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1104
+      ],
+      "note": "Full-page ruled grid repeating rows of a vote record. Data table, not financial content."
+     },
+     {
+      "ref": "ref-9325a2a9012f:10",
+      "depth": "detail_3up",
+      "shown_px": [
+       520,
+       736
+      ],
+      "note": "Table on the lower 60% of the page; repeated year band in tint separates groups"
+     }
+    ]
+   },
+   "unverified": {
+    "human_reviewed_pages": 0,
+    "note": "Contact-sheet pages keep the family the measurements and notes gave them."
+   }
+  },
+  {
+   "id": "image_inset",
+   "description": "Text page carrying smaller images",
+   "definition": "Text page with one or more contained images.",
+   "measured": {
+    "pages": 151,
+    "weighted_pages": 42.6,
+    "documents": 7,
+    "independent_source_groups": 7,
+    "directions": {
+     "ltr": 59,
+     "rtl": 88,
+     "bilingual": 4
+    },
+    "columns": {
+     "2": 103,
+     "1": 43,
+     "0": 5
+    },
+    "measures": {
+     "text_share": {
+      "n": 151,
+      "p25": 0.35,
+      "median": 0.43,
+      "p75": 0.52
+     },
+     "image_share": {
+      "n": 151,
+      "p25": 0.06,
+      "median": 0.1,
+      "p75": 0.15
+     },
+     "largest_image": {
+      "n": 151,
+      "p25": 0.033,
+      "median": 0.083,
+      "p75": 0.139
+     },
+     "table_share": {
+      "n": 151,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "vector_share": {
+      "n": 151,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "ink": {
+      "n": 151,
+      "p25": 0.237,
+      "median": 0.293,
+      "p75": 0.343
+     },
+     "chars": {
+      "n": 151,
+      "p25": 2205.0,
+      "median": 2882.0,
+      "p75": 3259.0
+     },
+     "max_size_pt": {
+      "n": 151,
+      "p25": 11.0,
+      "median": 15.0,
+      "p75": 16.0
+     },
+     "display_ratio": {
+      "n": 151,
+      "p25": 1.07,
+      "median": 1.2,
+      "p75": 1.68
+     },
+     "column_ratio": {
+      "n": 151,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.02
+     },
+     "numeric_big": {
+      "n": 151,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "balance_lr": {
+      "n": 151,
+      "p25": -0.018,
+      "median": 0.071,
+      "p75": 0.26
+     },
+     "edge_contact": {
+      "n": 151,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 1.0
+     },
+     "header_items": {
+      "n": 151,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 2.0
+     },
+     "footer_items": {
+      "n": 151,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 3.0
+     }
+    }
+   },
+   "ai_observation": {
+    "inspection_depth": {
+     "contact_sheet": 142,
+     "detail_2up": 3,
+     "detail_3up": 6
+    },
+    "family_source": {
+     "measured": 142,
+     "ai_detail": 2,
+     "measured_confirmed_detail": 7
+    },
+    "precision_sample": {
+     "sampled": 4,
+     "agreed": 2,
+     "seen_as": {
+      "table_in_text": 1,
+      "card_grid": 1
+     }
+    },
+    "evidence_pages": [
+     {
+      "ref": "ref-4bbfe8f46cb3:38",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       512
+      ],
+      "note": "Spread: four text columns with one wide photograph above two of them and a tinted link box."
+     },
+     {
+      "ref": "ref-82ccd1d81704:21",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "Tinted page with three inset photographs at the start of the text, captions below each."
+     },
+     {
+      "ref": "ref-cf936a817893:165",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1042
+      ],
+      "note": "Two columns with tinted callouts, a photograph and an icon band at the column foot."
+     },
+     {
+      "ref": "ref-4bbfe8f46cb3:34",
+      "depth": "detail_3up",
+      "shown_px": [
+       520,
+       341
+      ],
+      "note": "Spread: two wide photographs with tinted callouts, text columns under them, section label coloured."
+     },
+     {
+      "ref": "ref-9325a2a9012f:7",
+      "depth": "detail_3up",
+      "shown_px": [
+       520,
+       736
+      ],
+      "note": "Cyan three-circle diagram centred with title above and Latin source line below, then text"
+     },
+     {
+      "ref": "ref-cf936a817893:107",
+      "depth": "detail_3up",
+      "shown_px": [
+       520,
+       694
+      ],
+      "note": "Tinted page: radial diagram and photograph stacked in one column, text in the other."
+     }
+    ]
+   },
+   "unverified": {
+    "human_reviewed_pages": 0,
+    "note": "Contact-sheet pages keep the family the measurements and notes gave them."
+   }
+  },
+  {
+   "id": "image_split",
+   "description": "Page divided between image and text",
+   "definition": "Image and text share the page in large zones.",
+   "measured": {
+    "pages": 94,
+    "weighted_pages": 33.0,
+    "documents": 5,
+    "independent_source_groups": 5,
+    "directions": {
+     "ltr": 28,
+     "rtl": 61,
+     "bilingual": 5
+    },
+    "columns": {
+     "2": 42,
+     "1": 48,
+     "0": 4
+    },
+    "measures": {
+     "text_share": {
+      "n": 94,
+      "p25": 0.247,
+      "median": 0.3,
+      "p75": 0.36
+     },
+     "image_share": {
+      "n": 94,
+      "p25": 0.237,
+      "median": 0.32,
+      "p75": 0.46
+     },
+     "largest_image": {
+      "n": 94,
+      "p25": 0.226,
+      "median": 0.279,
+      "p75": 0.425
+     },
+     "table_share": {
+      "n": 94,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "vector_share": {
+      "n": 94,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "ink": {
+      "n": 94,
+      "p25": 0.352,
+      "median": 0.41,
+      "p75": 0.584
+     },
+     "chars": {
+      "n": 94,
+      "p25": 1658.5,
+      "median": 2018.5,
+      "p75": 2477.25
+     },
+     "max_size_pt": {
+      "n": 94,
+      "p25": 11.0,
+      "median": 15.5,
+      "p75": 22.0
+     },
+     "display_ratio": {
+      "n": 94,
+      "p25": 1.07,
+      "median": 1.505,
+      "p75": 2.32
+     },
+     "column_ratio": {
+      "n": 94,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.04
+     },
+     "numeric_big": {
+      "n": 94,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "balance_lr": {
+      "n": 94,
+      "p25": -0.013,
+      "median": 0.015,
+      "p75": 0.456
+     },
+     "edge_contact": {
+      "n": 94,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 1.0
+     },
+     "header_items": {
+      "n": 94,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 2.0
+     },
+     "footer_items": {
+      "n": 94,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 3.0
+     }
+    }
+   },
+   "ai_observation": {
+    "inspection_depth": {
+     "contact_sheet": 91,
+     "detail_2up": 1,
+     "detail_3up": 2
+    },
+    "family_source": {
+     "measured": 91,
+     "measured_confirmed_detail": 3
+    },
+    "precision_sample": {
+     "sampled": 4,
+     "agreed": 1,
+     "seen_as": {
+      "multi_column_text": 1,
+      "infographic": 2
+     }
+    },
+    "evidence_pages": [
+     {
+      "ref": "ref-4bbfe8f46cb3:16",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       512
+      ],
+      "note": "Spread: full-height photograph on one page with a tinted text panel overlaid; title, table and text on the other."
+     },
+     {
+      "ref": "ref-4bbfe8f46cb3:32",
+      "depth": "detail_3up",
+      "shown_px": [
+       520,
+       341
+      ],
+      "note": "Spread: large photograph at the top of one page, text columns under it, narrow tinted callout."
+     },
+     {
+      "ref": "ref-82ccd1d81704:102",
+      "depth": "contact_sheet",
+      "shown_px": [
+       480,
+       621
+      ],
+      "note": "feature yellow band+still white hi h"
+     },
+     {
+      "ref": "ref-82ccd1d81704:107",
+      "depth": "contact_sheet",
+      "shown_px": [
+       480,
+       621
+      ],
+      "note": "data yellow band+table white hi h | bottom 25 percent empty"
+     },
+     {
+      "ref": "ref-af94892827c8:17",
+      "depth": "contact_sheet",
+      "shown_px": [
+       480,
+       621
+      ],
+      "note": "two stacked maps white hi h | figure head right, source line below"
+     },
+     {
+      "ref": "ref-af94892827c8:36",
+      "depth": "contact_sheet",
+      "shown_px": [
+       480,
+       621
+      ],
+      "note": "tinted box with top rule, bubble chart, body white hi h"
+     }
+    ]
+   },
+   "unverified": {
+    "human_reviewed_pages": 0,
+    "note": "Contact-sheet pages keep the family the measurements and notes gave them."
+   }
+  },
+  {
+   "id": "multi_column_text",
+   "description": "Two or more equal text columns",
+   "definition": "Two or more text columns, including parallel language columns.",
+   "measured": {
+    "pages": 138,
+    "weighted_pages": 28.7,
+    "documents": 6,
+    "independent_source_groups": 6,
+    "directions": {
+     "ltr": 43,
+     "rtl": 86,
+     "bilingual": 9
+    },
+    "columns": {
+     "2": 133,
+     "1": 1,
+     "0": 4
+    },
+    "measures": {
+     "text_share": {
+      "n": 138,
+      "p25": 0.47,
+      "median": 0.51,
+      "p75": 0.56
+     },
+     "image_share": {
+      "n": 138,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "largest_image": {
+      "n": 138,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "table_share": {
+      "n": 138,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "vector_share": {
+      "n": 138,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.024
+     },
+     "ink": {
+      "n": 138,
+      "p25": 0.176,
+      "median": 0.193,
+      "p75": 0.231
+     },
+     "chars": {
+      "n": 138,
+      "p25": 3521.0,
+      "median": 3977.0,
+      "p75": 4745.25
+     },
+     "max_size_pt": {
+      "n": 138,
+      "p25": 10.0,
+      "median": 12.0,
+      "p75": 22.0
+     },
+     "display_ratio": {
+      "n": 138,
+      "p25": 1.22,
+      "median": 1.26,
+      "p75": 2.32
+     },
+     "column_ratio": {
+      "n": 138,
+      "p25": 1.0,
+      "median": 1.01,
+      "p75": 1.02
+     },
+     "numeric_big": {
+      "n": 138,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "balance_lr": {
+      "n": 138,
+      "p25": -0.055,
+      "median": -0.006,
+      "p75": 0.07
+     },
+     "edge_contact": {
+      "n": 138,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "header_items": {
+      "n": 138,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 2.0
+     },
+     "footer_items": {
+      "n": 138,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 3.0
+     }
+    }
+   },
+   "ai_observation": {
+    "inspection_depth": {
+     "contact_sheet": 125,
+     "detail_2up": 7,
+     "detail_3up": 6
+    },
+    "family_source": {
+     "measured": 125,
+     "measured_confirmed_detail": 5,
+     "ai_detail": 8
+    },
+    "precision_sample": {
+     "sampled": 4,
+     "agreed": 4,
+     "seen_as": {}
+    },
+    "evidence_pages": [
+     {
+      "ref": "ref-db25596332d2:74",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1100
+      ],
+      "note": "Two text columns of unequal fill. Not asymmetric in structure."
+     },
+     {
+      "ref": "ref-7f52f49c5dd6:7",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1104
+      ],
+      "note": "Parallel bilingual columns: the two languages in matching columns, each aligned to its own direction."
+     },
+     {
+      "ref": "ref-0b2bf0ebc355:5",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1100
+      ],
+      "note": "Two columns with a ruled callout box."
+     },
+     {
+      "ref": "ref-db25596332d2:64",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1100
+      ],
+      "note": "Two columns with coloured capitals headings."
+     },
+     {
+      "ref": "ref-fb5a68768723:27",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       552
+      ],
+      "note": "Landscape four-column comparison of two language versions in ruled columns. No image."
+     },
+     {
+      "ref": "ref-cf936a817893:359",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1042
+      ],
+      "note": "Two columns, tinted callout, icon band at the foot of one column."
+     }
+    ]
+   },
+   "unverified": {
+    "human_reviewed_pages": 0,
+    "note": "Contact-sheet pages keep the family the measurements and notes gave them."
+   }
+  },
+  {
+   "id": "infographic",
+   "description": "Diagram or infographic led page",
+   "definition": "A diagram or drawn figure leads the page.",
+   "measured": {
+    "pages": 25,
+    "weighted_pages": 20.0,
+    "documents": 5,
+    "independent_source_groups": 5,
+    "directions": {
+     "ltr": 8,
+     "rtl": 17
+    },
+    "columns": {
+     "3": 1,
+     "0": 3,
+     "2": 15,
+     "1": 6
+    },
+    "measures": {
+     "text_share": {
+      "n": 25,
+      "p25": 0.185,
+      "median": 0.27,
+      "p75": 0.315
+     },
+     "image_share": {
+      "n": 25,
+      "p25": 0.0,
+      "median": 0.06,
+      "p75": 0.36
+     },
+     "largest_image": {
+      "n": 25,
+      "p25": 0.0,
+      "median": 0.033,
+      "p75": 0.361
+     },
+     "table_share": {
+      "n": 25,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "vector_share": {
+      "n": 25,
+      "p25": 0.107,
+      "median": 0.293,
+      "p75": 0.44
+     },
+     "ink": {
+      "n": 25,
+      "p25": 0.18,
+      "median": 0.248,
+      "p75": 0.277
+     },
+     "chars": {
+      "n": 25,
+      "p25": 945.0,
+      "median": 1901.0,
+      "p75": 2282.5
+     },
+     "max_size_pt": {
+      "n": 25,
+      "p25": 12.0,
+      "median": 16.0,
+      "p75": 22.0
+     },
+     "display_ratio": {
+      "n": 25,
+      "p25": 1.18,
+      "median": 1.68,
+      "p75": 2.32
+     },
+     "column_ratio": {
+      "n": 25,
+      "p25": 1.0,
+      "median": 1.01,
+      "p75": 1.015
+     },
+     "numeric_big": {
+      "n": 25,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "balance_lr": {
+      "n": 25,
+      "p25": -0.078,
+      "median": 0.008,
+      "p75": 0.141
+     },
+     "edge_contact": {
+      "n": 25,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "header_items": {
+      "n": 25,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 2.0
+     },
+     "footer_items": {
+      "n": 25,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 3.0
+     }
+    }
+   },
+   "ai_observation": {
+    "inspection_depth": {
+     "contact_sheet": 21,
+     "detail_2up": 4
+    },
+    "family_source": {
+     "ai_contact_sheet": 3,
+     "ai_detail": 4,
+     "measured": 18
+    },
+    "precision_sample": {
+     "sampled": 4,
+     "agreed": 2,
+     "seen_as": {
+      "data_story": 2
+     }
+    },
+    "evidence_pages": [
+     {
+      "ref": "ref-0218e5046957:3",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "One large workflow figure with caption, under the journal mark. Vector figure, not an image split."
+     },
+     {
+      "ref": "ref-4bbfe8f46cb3:4",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       512
+      ],
+      "note": "Spread: circular photographs each paired with one large figure and caption, tinted page, text box."
+     },
+     {
+      "ref": "ref-db25596332d2:12",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1100
+      ],
+      "note": "Two white panels on a gradient: pill labels in a three column grid, icon row beneath."
+     },
+     {
+      "ref": "ref-db25596332d2:58",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1100
+      ],
+      "note": "Two text columns above a large tinted organisation diagram. No photograph."
+     },
+     {
+      "ref": "ref-cf936a817893:152",
+      "depth": "contact_sheet",
+      "shown_px": [
+       480,
+       641
+      ],
+      "note": "section title, wide text, tinted-head bar chart, wide photo foot white hi h"
+     },
+     {
+      "ref": "ref-cf936a817893:181",
+      "depth": "contact_sheet",
+      "shown_px": [
+       480,
+       641
+      ],
+      "note": "framed panel with colour box, ornament, photo, coloured title, bullets white hi h"
+     }
+    ]
+   },
+   "unverified": {
+    "human_reviewed_pages": 0,
+    "note": "Contact-sheet pages keep the family the measurements and notes gave them."
+   }
+  },
+  {
+   "id": "data_story",
+   "description": "Chart with commentary",
+   "definition": "Charts with commentary and sources.",
+   "measured": {
+    "pages": 23,
+    "weighted_pages": 16.7,
+    "documents": 5,
+    "independent_source_groups": 5,
+    "directions": {
+     "ltr": 2,
+     "rtl": 21
+    },
+    "columns": {
+     "1": 14,
+     "2": 9
+    },
+    "measures": {
+     "text_share": {
+      "n": 23,
+      "p25": 0.24,
+      "median": 0.34,
+      "p75": 0.38
+     },
+     "image_share": {
+      "n": 23,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "largest_image": {
+      "n": 23,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "table_share": {
+      "n": 23,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.087
+     },
+     "vector_share": {
+      "n": 23,
+      "p25": 0.118,
+      "median": 0.171,
+      "p75": 0.223
+     },
+     "ink": {
+      "n": 23,
+      "p25": 0.151,
+      "median": 0.202,
+      "p75": 0.234
+     },
+     "chars": {
+      "n": 23,
+      "p25": 1657.0,
+      "median": 2038.0,
+      "p75": 2806.0
+     },
+     "max_size_pt": {
+      "n": 23,
+      "p25": 10.5,
+      "median": 11.0,
+      "p75": 16.0
+     },
+     "display_ratio": {
+      "n": 23,
+      "p25": 1.0,
+      "median": 1.16,
+      "p75": 1.68
+     },
+     "column_ratio": {
+      "n": 23,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.02
+     },
+     "numeric_big": {
+      "n": 23,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "balance_lr": {
+      "n": 23,
+      "p25": -0.085,
+      "median": -0.027,
+      "p75": 0.262
+     },
+     "edge_contact": {
+      "n": 23,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "header_items": {
+      "n": 23,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "footer_items": {
+      "n": 23,
+      "p25": 0.0,
+      "median": 1.0,
+      "p75": 2.0
+     }
+    }
+   },
+   "ai_observation": {
+    "inspection_depth": {
+     "detail_2up": 8,
+     "contact_sheet": 14,
+     "detail_3up": 1
+    },
+    "family_source": {
+     "ai_detail": 5,
+     "measured": 14,
+     "measured_confirmed_detail": 4
+    },
+    "precision_sample": {
+     "sampled": 4,
+     "agreed": 4,
+     "seen_as": {}
+    },
+    "evidence_pages": [
+     {
+      "ref": "ref-82ccd1d81704:6",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "Chart matrix: six small bar charts in two columns with figure titles. Strong reuse candidate."
+     },
+     {
+      "ref": "ref-af94892827c8:29",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "Two stacked bar charts with a shared legend and a short paragraph below. No table."
+     },
+     {
+      "ref": "ref-cf936a817893:149",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1042
+      ],
+      "note": "Two charts under tinted caption bars, two text columns at the foot."
+     },
+     {
+      "ref": "ref-cf936a817893:174",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1042
+      ],
+      "note": "Heading, two text columns, then three small charts sharing one caption bar, icon band at the foot."
+     },
+     {
+      "ref": "ref-db25596332d2:112",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1100
+      ],
+      "note": "Chart, commentary and a banded table on one page. Mixed; the chart leads."
+     },
+     {
+      "ref": "ref-af94892827c8:19",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "Text with chart below, legend under chart."
+     }
+    ]
+   },
+   "unverified": {
+    "human_reviewed_pages": 0,
+    "note": "Contact-sheet pages keep the family the measurements and notes gave them."
+   }
+  },
+  {
+   "id": "full_bleed_image",
+   "description": "Image filling the page",
+   "definition": "An image reaches the page edges and takes most of the page.",
+   "measured": {
+    "pages": 29,
+    "weighted_pages": 16.7,
+    "documents": 5,
+    "independent_source_groups": 5,
+    "directions": {
+     "ltr": 8,
+     "unknown": 17,
+     "rtl": 1,
+     "bilingual": 3
+    },
+    "columns": {
+     "0": 23,
+     "2": 2,
+     "1": 4
+    },
+    "measures": {
+     "text_share": {
+      "n": 29,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.24
+     },
+     "image_share": {
+      "n": 29,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "largest_image": {
+      "n": 29,
+      "p25": 0.889,
+      "median": 1.006,
+      "p75": 1.006
+     },
+     "table_share": {
+      "n": 29,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "vector_share": {
+      "n": 29,
+      "p25": 0.0,
+      "median": 0.166,
+      "p75": 0.166
+     },
+     "ink": {
+      "n": 29,
+      "p25": 0.366,
+      "median": 0.745,
+      "p75": 0.897
+     },
+     "chars": {
+      "n": 29,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 1387.5
+     },
+     "max_size_pt": {
+      "n": 12,
+      "p25": 11.9,
+      "median": 15.05,
+      "p75": 23.0
+     },
+     "display_ratio": {
+      "n": 12,
+      "p25": 1.202,
+      "median": 1.24,
+      "p75": 2.435
+     },
+     "column_ratio": {
+      "n": 29,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "numeric_big": {
+      "n": 29,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "balance_lr": {
+      "n": 29,
+      "p25": -0.004,
+      "median": 0.047,
+      "p75": 0.115
+     },
+     "edge_contact": {
+      "n": 29,
+      "p25": 0.83,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "header_items": {
+      "n": 29,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "footer_items": {
+      "n": 29,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     }
+    }
+   },
+   "ai_observation": {
+    "inspection_depth": {
+     "detail_2up": 3,
+     "contact_sheet": 26
+    },
+    "family_source": {
+     "measured_confirmed_detail": 3,
+     "measured": 26
+    },
+    "precision_sample": {
+     "sampled": 4,
+     "agreed": 3,
+     "seen_as": {
+      "image_inset": 1
+     }
+    },
+    "evidence_pages": [
+     {
+      "ref": "ref-4bbfe8f46cb3:3",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       512
+      ],
+      "note": "Spread: photograph filling about three quarters with title over it, colour panel at the start carrying text."
+     },
+     {
+      "ref": "ref-db25596332d2:8",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1100
+      ],
+      "note": "Photograph upper half, curved colour field below carrying heading and body in reversed text."
+     },
+     {
+      "ref": "ref-cf936a817893:90",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1042
+      ],
+      "note": "Photograph filling the page with a dot motif in the lower corner, no text."
+     },
+     {
+      "ref": "ref-82ccd1d81704:2",
+      "depth": "contact_sheet",
+      "shown_px": [
+       480,
+       621
+      ],
+      "note": "values centred text+diagram white mid h | wheel diagram, spaced caps head"
+     },
+     {
+      "ref": "ref-82ccd1d81704:46",
+      "depth": "contact_sheet",
+      "shown_px": [
+       480,
+       621
+      ],
+      "note": "data grouped bullets+gradient goal bands white hi h"
+     },
+     {
+      "ref": "ref-cf936a817893:160",
+      "depth": "contact_sheet",
+      "shown_px": [
+       480,
+       641
+      ],
+      "note": "spread-left full-bleed photo with dots photo lo h"
+     }
+    ]
+   },
+   "unverified": {
+    "human_reviewed_pages": 0,
+    "note": "Contact-sheet pages keep the family the measurements and notes gave them."
+   }
+  },
+  {
+   "id": "back_cover",
+   "description": "Closing page: colophon, contact or back cover",
+   "definition": "Closing page: logo, address, links or colophon.",
+   "measured": {
+    "pages": 15,
+    "weighted_pages": 14.5,
+    "documents": 9,
+    "independent_source_groups": 7,
+    "directions": {
+     "ltr": 9,
+     "rtl": 6
+    },
+    "columns": {
+     "0": 3,
+     "1": 11,
+     "2": 1
+    },
+    "measures": {
+     "text_share": {
+      "n": 15,
+      "p25": 0.14,
+      "median": 0.22,
+      "p75": 0.3
+     },
+     "image_share": {
+      "n": 15,
+      "p25": 0.06,
+      "median": 0.48,
+      "p75": 1.0
+     },
+     "largest_image": {
+      "n": 15,
+      "p25": 0.033,
+      "median": 0.478,
+      "p75": 1.0
+     },
+     "table_share": {
+      "n": 15,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "vector_share": {
+      "n": 15,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "ink": {
+      "n": 15,
+      "p25": 0.115,
+      "median": 0.382,
+      "p75": 0.521
+     },
+     "chars": {
+      "n": 15,
+      "p25": 755.0,
+      "median": 898.0,
+      "p75": 1286.0
+     },
+     "max_size_pt": {
+      "n": 15,
+      "p25": 14.0,
+      "median": 22.5,
+      "p75": 22.5
+     },
+     "display_ratio": {
+      "n": 15,
+      "p25": 1.24,
+      "median": 2.14,
+      "p75": 2.14
+     },
+     "column_ratio": {
+      "n": 15,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "numeric_big": {
+      "n": 15,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "balance_lr": {
+      "n": 15,
+      "p25": -0.062,
+      "median": 0.086,
+      "p75": 0.1
+     },
+     "edge_contact": {
+      "n": 15,
+      "p25": 0.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "header_items": {
+      "n": 15,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 1.0
+     },
+     "footer_items": {
+      "n": 15,
+      "p25": 0.0,
+      "median": 2.0,
+      "p75": 2.0
+     }
+    }
+   },
+   "ai_observation": {
+    "inspection_depth": {
+     "contact_sheet": 4,
+     "detail_2up": 3,
+     "detail_3up": 8
+    },
+    "family_source": {
+     "ai_contact_sheet": 2,
+     "measured": 2,
+     "ai_detail": 7,
+     "measured_confirmed_detail": 4
+    },
+    "precision_sample": {
+     "sampled": 4,
+     "agreed": 3,
+     "seen_as": {
+      "letter": 1
+     }
+    },
+    "evidence_pages": [
+     {
+      "ref": "ref-4bbfe8f46cb3:48",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       512
+      ],
+      "note": "Colophon split: colour panel with legal text, white half with title and links."
+     },
+     {
+      "ref": "ref-82ccd1d81704:161",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "Back cover with thumbnails and links grid on a faint background."
+     },
+     {
+      "ref": "ref-af94892827c8:42",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "Tinted back cover, summary text top, QR and logos at the foot."
+     },
+     {
+      "ref": "ref-582bd105b7d9:4",
+      "depth": "detail_3up",
+      "shown_px": [
+       520,
+       735
+      ],
+      "note": "Contact details beside note cards and one dark card; lower 45% is a bleed photo band with scrim and repeated title"
+     },
+     {
+      "ref": "ref-582bd105b7d9:8",
+      "depth": "detail_3up",
+      "shown_px": [
+       520,
+       735
+      ],
+      "note": "Arabic mirror of page 4; closing band text starts at the right edge"
+     },
+     {
+      "ref": "ref-82ccd1d81704:162",
+      "depth": "detail_3up",
+      "shown_px": [
+       520,
+       673
+      ],
+      "note": "Colour field back cover with a centred logo and address at the lower third."
+     }
+    ]
+   },
+   "unverified": {
+    "human_reviewed_pages": 0,
+    "note": "Contact-sheet pages keep the family the measurements and notes gave them."
+   }
+  },
+  {
+   "id": "editorial_asymmetric",
+   "description": "Unequal columns or an offset text block",
+   "definition": "Unequal columns or offset blocks. Precision was low: one of four sampled pages held up.",
+   "measured": {
+    "pages": 34,
+    "weighted_pages": 14.3,
+    "documents": 4,
+    "independent_source_groups": 4,
+    "directions": {
+     "ltr": 16,
+     "rtl": 18
+    },
+    "columns": {
+     "2": 19,
+     "1": 15
+    },
+    "measures": {
+     "text_share": {
+      "n": 34,
+      "p25": 0.27,
+      "median": 0.45,
+      "p75": 0.502
+     },
+     "image_share": {
+      "n": 34,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "largest_image": {
+      "n": 34,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "table_share": {
+      "n": 34,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "vector_share": {
+      "n": 34,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.025
+     },
+     "ink": {
+      "n": 34,
+      "p25": 0.097,
+      "median": 0.176,
+      "p75": 0.26
+     },
+     "chars": {
+      "n": 34,
+      "p25": 2477.0,
+      "median": 3634.5,
+      "p75": 4189.75
+     },
+     "max_size_pt": {
+      "n": 34,
+      "p25": 9.375,
+      "median": 10.0,
+      "p75": 15.0
+     },
+     "display_ratio": {
+      "n": 34,
+      "p25": 1.022,
+      "median": 1.12,
+      "p75": 1.68
+     },
+     "column_ratio": {
+      "n": 34,
+      "p25": 1.0,
+      "median": 1.015,
+      "p75": 1.195
+     },
+     "numeric_big": {
+      "n": 34,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "balance_lr": {
+      "n": 34,
+      "p25": 0.052,
+      "median": 0.335,
+      "p75": 0.448
+     },
+     "edge_contact": {
+      "n": 34,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "header_items": {
+      "n": 34,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "footer_items": {
+      "n": 34,
+      "p25": 1.0,
+      "median": 3.0,
+      "p75": 3.0
+     }
+    }
+   },
+   "ai_observation": {
+    "inspection_depth": {
+     "contact_sheet": 33,
+     "detail_2up": 1
+    },
+    "family_source": {
+     "measured": 33,
+     "measured_confirmed_detail": 1
+    },
+    "precision_sample": {
+     "sampled": 4,
+     "agreed": 1,
+     "seen_as": {
+      "multi_column_text": 2,
+      "table_in_text": 1
+     }
+    },
+    "evidence_pages": [
+     {
+      "ref": "ref-4bbfe8f46cb3:33",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       512
+      ],
+      "note": "Spread: large heading offset across columns with a narrow tinted callout at the outer edge."
+     },
+     {
+      "ref": "ref-0b2bf0ebc355:23",
+      "depth": "contact_sheet",
+      "shown_px": [
+       455,
+       642
+      ],
+      "note": "data 1col tables+text white hi h | small tables interleaved with text, tinted emphasis column, footnotes"
+     },
+     {
+      "ref": "ref-4bbfe8f46cb3:13",
+      "depth": "contact_sheet",
+      "shown_px": [
+       480,
+       315
+      ],
+      "note": "table, donut, tint box, blue link box white hi m"
+     },
+     {
+      "ref": "ref-cf936a817893:2",
+      "depth": "contact_sheet",
+      "shown_px": [
+       480,
+       641
+      ],
+      "note": "imprint Arabic lower block, running head, code at foot white mid h"
+     },
+     {
+      "ref": "ref-cf936a817893:51",
+      "depth": "contact_sheet",
+      "shown_px": [
+       480,
+       641
+      ],
+      "note": "tinted side boxes in one column, text column, icon strip white hi h"
+     },
+     {
+      "ref": "ref-db25596332d2:100",
+      "depth": "contact_sheet",
+      "shown_px": [
+       455,
+       642
+      ],
+      "note": "data label-table 1col white mid-hi h"
+     }
+    ]
+   },
+   "unverified": {
+    "human_reviewed_pages": 0,
+    "note": "Contact-sheet pages keep the family the measurements and notes gave them."
+   }
+  },
+  {
+   "id": "card_grid",
+   "description": "Cards and tiles arranged on a grid",
+   "definition": "Repeating cards: portrait or picture with short text.",
+   "measured": {
+    "pages": 14,
+    "weighted_pages": 13.5,
+    "documents": 5,
+    "independent_source_groups": 3,
+    "directions": {
+     "ltr": 7,
+     "rtl": 7
+    },
+    "columns": {
+     "2": 3,
+     "1": 8,
+     "0": 3
+    },
+    "measures": {
+     "text_share": {
+      "n": 14,
+      "p25": 0.128,
+      "median": 0.165,
+      "p75": 0.235
+     },
+     "image_share": {
+      "n": 14,
+      "p25": 0.31,
+      "median": 0.31,
+      "p75": 0.38
+     },
+     "largest_image": {
+      "n": 14,
+      "p25": 0.305,
+      "median": 0.306,
+      "p75": 0.382
+     },
+     "table_share": {
+      "n": 14,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "vector_share": {
+      "n": 14,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "ink": {
+      "n": 14,
+      "p25": 0.205,
+      "median": 0.283,
+      "p75": 0.361
+     },
+     "chars": {
+      "n": 14,
+      "p25": 609.5,
+      "median": 775.0,
+      "p75": 942.25
+     },
+     "max_size_pt": {
+      "n": 14,
+      "p25": 19.5,
+      "median": 19.5,
+      "p75": 19.5
+     },
+     "display_ratio": {
+      "n": 14,
+      "p25": 1.86,
+      "median": 1.86,
+      "p75": 1.86
+     },
+     "column_ratio": {
+      "n": 14,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.008
+     },
+     "numeric_big": {
+      "n": 14,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "balance_lr": {
+      "n": 14,
+      "p25": -0.028,
+      "median": 0.011,
+      "p75": 0.036
+     },
+     "edge_contact": {
+      "n": 14,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "header_items": {
+      "n": 14,
+      "p25": 0.0,
+      "median": 0.5,
+      "p75": 1.0
+     },
+     "footer_items": {
+      "n": 14,
+      "p25": 1.0,
+      "median": 2.0,
+      "p75": 3.0
+     }
+    }
+   },
+   "ai_observation": {
+    "inspection_depth": {
+     "detail_2up": 1,
+     "detail_3up": 13
+    },
+    "family_source": {
+     "ai_detail": 14
+    },
+    "precision_sample": null,
+    "evidence_pages": [
+     {
+      "ref": "ref-db25596332d2:60",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1100
+      ],
+      "note": "Biography grid: portrait with rounded corner, name, role and text in repeating cards, two per row."
+     },
+     {
+      "ref": "ref-4bbfe8f46cb3:7",
+      "depth": "detail_3up",
+      "shown_px": [
+       520,
+       341
+      ],
+      "note": "Spread: six small photographs each heading a short text, in staggered columns, title on the end page."
+     },
+     {
+      "ref": "ref-582bd105b7d9:2",
+      "depth": "detail_3up",
+      "shown_px": [
+       520,
+       735
+      ],
+      "note": "Heading with short accent rule, standfirst, two cards, four icon cards, three rule-topped figure tiles, image band with caption"
+     },
+     {
+      "ref": "ref-582bd105b7d9:3",
+      "depth": "detail_3up",
+      "shown_px": [
+       520,
+       735
+      ],
+      "note": "Two columns of ruled lists beside a tinted map panel, four numbered step tiles, then a large image with a caption chip"
+     },
+     {
+      "ref": "ref-b7b9ddcb4981:2",
+      "depth": "detail_3up",
+      "shown_px": [
+       520,
+       735
+      ],
+      "note": "Heading with short accent rule, standfirst, two cards, four icon cards, three rule-topped figure tiles, image band with caption"
+     },
+     {
+      "ref": "ref-b7b9ddcb4981:3",
+      "depth": "detail_3up",
+      "shown_px": [
+       520,
+       735
+      ],
+      "note": "Two columns of ruled lists beside a tinted map panel, four numbered step tiles, then a large image with a caption chip"
+     }
+    ]
+   },
+   "unverified": {
+    "human_reviewed_pages": 0,
+    "note": "Contact-sheet pages keep the family the measurements and notes gave them."
+   }
+  },
+  {
+   "id": "letter",
+   "description": "Signed letter or message",
+   "definition": "Signed message from a named person.",
+   "measured": {
+    "pages": 30,
+    "weighted_pages": 12.3,
+    "documents": 4,
+    "independent_source_groups": 4,
+    "directions": {
+     "ltr": 30
+    },
+    "columns": {
+     "2": 2,
+     "1": 17,
+     "0": 11
+    },
+    "measures": {
+     "text_share": {
+      "n": 30,
+      "p25": 0.05,
+      "median": 0.36,
+      "p75": 0.53
+     },
+     "image_share": {
+      "n": 30,
+      "p25": 0.068,
+      "median": 0.09,
+      "p75": 0.138
+     },
+     "largest_image": {
+      "n": 30,
+      "p25": 0.033,
+      "median": 0.033,
+      "p75": 0.092
+     },
+     "table_share": {
+      "n": 30,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "vector_share": {
+      "n": 30,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "ink": {
+      "n": 30,
+      "p25": 0.198,
+      "median": 0.242,
+      "p75": 0.326
+     },
+     "chars": {
+      "n": 30,
+      "p25": 146.75,
+      "median": 2638.5,
+      "p75": 3070.75
+     },
+     "max_size_pt": {
+      "n": 30,
+      "p25": 12.5,
+      "median": 24.0,
+      "p75": 24.7
+     },
+     "display_ratio": {
+      "n": 30,
+      "p25": 1.0,
+      "median": 1.98,
+      "p75": 3.0
+     },
+     "column_ratio": {
+      "n": 30,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "numeric_big": {
+      "n": 30,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "balance_lr": {
+      "n": 30,
+      "p25": 0.052,
+      "median": 0.079,
+      "p75": 0.121
+     },
+     "edge_contact": {
+      "n": 30,
+      "p25": 0.791,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "header_items": {
+      "n": 30,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "footer_items": {
+      "n": 30,
+      "p25": 3.0,
+      "median": 3.0,
+      "p75": 3.0
+     }
+    }
+   },
+   "ai_observation": {
+    "inspection_depth": {
+     "detail_2up": 6,
+     "contact_sheet": 24
+    },
+    "family_source": {
+     "ai_detail": 6,
+     "ai_contact_sheet": 24
+    },
+    "precision_sample": {
+     "sampled": 4,
+     "agreed": 4,
+     "seen_as": {}
+    },
+    "evidence_pages": [
+     {
+      "ref": "ref-0b2bf0ebc355:2",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1100
+      ],
+      "note": "Letter opening page that carries a small boxed contents list; portrait with rounded edge, display heading, lead."
+     },
+     {
+      "ref": "ref-db25596332d2:85",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1100
+      ],
+      "note": "Letter opener: portrait crop, display heading, lead text, signature, boxed contents, second text column."
+     },
+     {
+      "ref": "ref-fb5a68768723:57",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       603
+      ],
+      "note": "Final signature page: logo and bilingual signature rows. Not a back cover."
+     },
+     {
+      "ref": "ref-db25596332d2:82",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1100
+      ],
+      "note": "Portrait, heading, lead at start; letter text in the end column with signature."
+     },
+     {
+      "ref": "ref-82ccd1d81704:10",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "Letter continuation with square bullets."
+     },
+     {
+      "ref": "ref-82ccd1d81704:121",
+      "depth": "contact_sheet",
+      "shown_px": [
+       480,
+       621
+      ],
+      "note": "embedded-letter framed white mid h"
+     }
+    ]
+   },
+   "unverified": {
+    "human_reviewed_pages": 0,
+    "note": "Contact-sheet pages keep the family the measurements and notes gave them."
+   }
+  },
+  {
+   "id": "section_opener",
+   "description": "Section or chapter opener",
+   "definition": "A page or strong band that starts a part. Little text, large type.",
+   "measured": {
+    "pages": 42,
+    "weighted_pages": 11.5,
+    "documents": 7,
+    "independent_source_groups": 7,
+    "directions": {
+     "ltr": 13,
+     "rtl": 13,
+     "bilingual": 16
+    },
+    "columns": {
+     "1": 4,
+     "0": 38
+    },
+    "measures": {
+     "text_share": {
+      "n": 42,
+      "p25": 0.068,
+      "median": 0.1,
+      "p75": 0.172
+     },
+     "image_share": {
+      "n": 42,
+      "p25": 0.33,
+      "median": 0.47,
+      "p75": 1.0
+     },
+     "largest_image": {
+      "n": 42,
+      "p25": 0.33,
+      "median": 0.47,
+      "p75": 1.005
+     },
+     "table_share": {
+      "n": 42,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "vector_share": {
+      "n": 42,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.188
+     },
+     "ink": {
+      "n": 42,
+      "p25": 0.292,
+      "median": 0.373,
+      "p75": 0.56
+     },
+     "chars": {
+      "n": 42,
+      "p25": 81.25,
+      "median": 110.0,
+      "p75": 166.25
+     },
+     "max_size_pt": {
+      "n": 42,
+      "p25": 38.85,
+      "median": 40.0,
+      "p75": 62.0
+     },
+     "display_ratio": {
+      "n": 42,
+      "p25": 4.04,
+      "median": 4.21,
+      "p75": 4.96
+     },
+     "column_ratio": {
+      "n": 42,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "numeric_big": {
+      "n": 42,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "balance_lr": {
+      "n": 42,
+      "p25": -0.843,
+      "median": -0.764,
+      "p75": -0.024
+     },
+     "edge_contact": {
+      "n": 42,
+      "p25": 0.337,
+      "median": 0.831,
+      "p75": 0.964
+     },
+     "header_items": {
+      "n": 42,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "footer_items": {
+      "n": 42,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     }
+    }
+   },
+   "ai_observation": {
+    "inspection_depth": {
+     "contact_sheet": 36,
+     "detail_2up": 5,
+     "detail_3up": 1
+    },
+    "family_source": {
+     "measured": 35,
+     "ai_contact_sheet": 1,
+     "ai_detail": 2,
+     "measured_confirmed_detail": 4
+    },
+    "precision_sample": {
+     "sampled": 4,
+     "agreed": 4,
+     "seen_as": {}
+    },
+    "evidence_pages": [
+     {
+      "ref": "ref-7f52f49c5dd6:25",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "Plain centred title block alone on the page: part divider without colour."
+     },
+     {
+      "ref": "ref-af94892827c8:3",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "Half title: label and two-line title start-aligned at mid height, one small note low on the page, nothing else."
+     },
+     {
+      "ref": "ref-db25596332d2:116",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1100
+      ],
+      "note": "Gradient full page with one rounded panel holding section title and page list, panel occupying the upper half at the end side."
+     },
+     {
+      "ref": "ref-fb5a68768723:6",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       439
+      ],
+      "note": "Landscape slide divider: dark field, centred heading block at the start half, image masked in a large shape at the end half."
+     },
+     {
+      "ref": "ref-cf936a817893:113",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1042
+      ],
+      "note": "White page, photograph strip on the end edge, goal icon above a large heading, rule, then large coloured title."
+     },
+     {
+      "ref": "ref-cf936a817893:179",
+      "depth": "detail_3up",
+      "shown_px": [
+       520,
+       694
+      ],
+      "note": "Goal opener: image strip on one edge with motif crossing it, icon, heading, rule, large title."
+     }
+    ]
+   },
+   "unverified": {
+    "human_reviewed_pages": 0,
+    "note": "Contact-sheet pages keep the family the measurements and notes gave them."
+   }
+  },
+  {
+   "id": "cover_image",
+   "description": "Cover led by an image or a full colour field",
+   "definition": "First page carried by a colour field, photograph or illustration, with little text.",
+   "measured": {
+    "pages": 14,
+    "weighted_pages": 10.0,
+    "documents": 10,
+    "independent_source_groups": 8,
+    "directions": {
+     "ltr": 5,
+     "bilingual": 3,
+     "rtl": 6
+    },
+    "columns": {
+     "0": 10,
+     "1": 4
+    },
+    "measures": {
+     "text_share": {
+      "n": 14,
+      "p25": 0.068,
+      "median": 0.085,
+      "p75": 0.103
+     },
+     "image_share": {
+      "n": 14,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "largest_image": {
+      "n": 14,
+      "p25": 0.934,
+      "median": 1.04,
+      "p75": 2.244
+     },
+     "table_share": {
+      "n": 14,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "vector_share": {
+      "n": 14,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "ink": {
+      "n": 14,
+      "p25": 0.582,
+      "median": 0.733,
+      "p75": 0.949
+     },
+     "chars": {
+      "n": 14,
+      "p25": 62.0,
+      "median": 216.0,
+      "p75": 278.0
+     },
+     "max_size_pt": {
+      "n": 14,
+      "p25": 21.0,
+      "median": 30.5,
+      "p75": 45.075
+     },
+     "display_ratio": {
+      "n": 14,
+      "p25": 2.0,
+      "median": 2.86,
+      "p75": 4.225
+     },
+     "column_ratio": {
+      "n": 14,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "numeric_big": {
+      "n": 14,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.25
+     },
+     "balance_lr": {
+      "n": 14,
+      "p25": -0.019,
+      "median": -0.001,
+      "p75": 0.058
+     },
+     "edge_contact": {
+      "n": 14,
+      "p25": 0.789,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "header_items": {
+      "n": 14,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.25
+     },
+     "footer_items": {
+      "n": 14,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     }
+    }
+   },
+   "ai_observation": {
+    "inspection_depth": {
+     "detail_2up": 5,
+     "contact_sheet": 3,
+     "detail_3up": 6
+    },
+    "family_source": {
+     "measured_confirmed_detail": 7,
+     "ai_detail": 4,
+     "measured": 3
+    },
+    "precision_sample": {
+     "sampled": 4,
+     "agreed": 4,
+     "seen_as": {}
+    },
+    "evidence_pages": [
+     {
+      "ref": "ref-7f52f49c5dd6:1",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1104
+      ],
+      "note": "Dark colour field, logo top centre, bilingual title lines stacked and centred, faint pattern lower third. No photograph."
+     },
+     {
+      "ref": "ref-82ccd1d81704:1",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "Photograph over the upper two thirds, curved colour panel below carrying a seal and the centred title; thin bracket frame."
+     },
+     {
+      "ref": "ref-af94892827c8:1",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "Illustrated ring occupying the page centre with the title inside the ring; bilingual-free, logo lower end."
+     },
+     {
+      "ref": "ref-cf936a817893:1",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1042
+      ],
+      "note": "Abstract dot motif sweeping the page, title top end in grey, logos lower end. Graphic rather than type led."
+     },
+     {
+      "ref": "ref-db25596332d2:2",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1100
+      ],
+      "note": "Gradient field with faint mark pattern; two-line title very large at lower start, sub-title below, logo at the bottom start."
+     },
+     {
+      "ref": "ref-582bd105b7d9:1",
+      "depth": "detail_3up",
+      "shown_px": [
+       520,
+       735
+      ],
+      "note": "Full-bleed photo, scrim to the foot, title block in lower third reading from the start edge, pale strip below with source and disclaimer"
+     }
+    ]
+   },
+   "unverified": {
+    "human_reviewed_pages": 0,
+    "note": "Contact-sheet pages keep the family the measurements and notes gave them."
+   }
+  },
+  {
+   "id": "contents",
+   "description": "Contents list",
+   "definition": "Contents and lists of figures.",
+   "measured": {
+    "pages": 10,
+    "weighted_pages": 8.4,
+    "documents": 5,
+    "independent_source_groups": 5,
+    "directions": {
+     "ltr": 5,
+     "rtl": 5
+    },
+    "columns": {
+     "1": 6,
+     "0": 1,
+     "2": 3
+    },
+    "measures": {
+     "text_share": {
+      "n": 10,
+      "p25": 0.203,
+      "median": 0.3,
+      "p75": 0.42
+     },
+     "image_share": {
+      "n": 10,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.595
+     },
+     "largest_image": {
+      "n": 10,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.447
+     },
+     "table_share": {
+      "n": 10,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "vector_share": {
+      "n": 10,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "ink": {
+      "n": 10,
+      "p25": 0.073,
+      "median": 0.168,
+      "p75": 0.499
+     },
+     "chars": {
+      "n": 10,
+      "p25": 1448.0,
+      "median": 1970.5,
+      "p75": 2462.25
+     },
+     "max_size_pt": {
+      "n": 10,
+      "p25": 14.125,
+      "median": 22.0,
+      "p75": 25.675
+     },
+     "display_ratio": {
+      "n": 10,
+      "p25": 1.175,
+      "median": 2.27,
+      "p75": 2.473
+     },
+     "column_ratio": {
+      "n": 10,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.01
+     },
+     "numeric_big": {
+      "n": 10,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "balance_lr": {
+      "n": 10,
+      "p25": -0.19,
+      "median": -0.05,
+      "p75": 0.075
+     },
+     "edge_contact": {
+      "n": 10,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 1.0
+     },
+     "header_items": {
+      "n": 10,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 1.0
+     },
+     "footer_items": {
+      "n": 10,
+      "p25": 0.0,
+      "median": 0.5,
+      "p75": 3.0
+     }
+    }
+   },
+   "ai_observation": {
+    "inspection_depth": {
+     "contact_sheet": 7,
+     "detail_2up": 3
+    },
+    "family_source": {
+     "measured": 5,
+     "ai_detail": 2,
+     "ai_contact_sheet": 2,
+     "measured_confirmed_detail": 1
+    },
+    "precision_sample": {
+     "sampled": 4,
+     "agreed": 3,
+     "seen_as": {
+      "letter": 1
+     }
+    },
+    "evidence_pages": [
+     {
+      "ref": "ref-4bbfe8f46cb3:2",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       512
+      ],
+      "note": "Spread: short contents list and text columns, photograph filling the other page."
+     },
+     {
+      "ref": "ref-af94892827c8:8",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "List of figures with dotted leaders and start-side labels."
+     },
+     {
+      "ref": "ref-82ccd1d81704:3",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "Photograph band over a colour title bar, two-column contents with leaders, notice box."
+     },
+     {
+      "ref": "ref-82ccd1d81704:18",
+      "depth": "contact_sheet",
+      "shown_px": [
+       480,
+       621
+      ],
+      "note": "opener photo-top+band 1col white mid h"
+     },
+     {
+      "ref": "ref-af94892827c8:7",
+      "depth": "contact_sheet",
+      "shown_px": [
+       480,
+       621
+      ],
+      "note": "toc Arabic title with vertical rule at right, dotted leaders white hi h"
+     },
+     {
+      "ref": "ref-cf936a817893:41",
+      "depth": "contact_sheet",
+      "shown_px": [
+       480,
+       641
+      ],
+      "note": "table end, notes, section title, 2col white hi h"
+     }
+    ]
+   },
+   "unverified": {
+    "human_reviewed_pages": 0,
+    "note": "Contact-sheet pages keep the family the measurements and notes gave them."
+   }
+  },
+  {
+   "id": "blank_or_notice",
+   "description": "Blank page or a short centred notice",
+   "definition": "Blank pages and legal notices.",
+   "measured": {
+    "pages": 29,
+    "weighted_pages": 6.0,
+    "documents": 3,
+    "independent_source_groups": 3,
+    "directions": {
+     "ltr": 25,
+     "unknown": 2,
+     "rtl": 2
+    },
+    "columns": {
+     "0": 29
+    },
+    "measures": {
+     "text_share": {
+      "n": 29,
+      "p25": 0.01,
+      "median": 0.02,
+      "p75": 0.02
+     },
+     "image_share": {
+      "n": 29,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "largest_image": {
+      "n": 29,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "table_share": {
+      "n": 29,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "vector_share": {
+      "n": 29,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "ink": {
+      "n": 29,
+      "p25": 0.005,
+      "median": 0.01,
+      "p75": 0.01
+     },
+     "chars": {
+      "n": 29,
+      "p25": 88.0,
+      "median": 137.0,
+      "p75": 137.0
+     },
+     "max_size_pt": {
+      "n": 27,
+      "p25": 10.0,
+      "median": 10.0,
+      "p75": 10.0
+     },
+     "display_ratio": {
+      "n": 27,
+      "p25": 1.25,
+      "median": 1.25,
+      "p75": 1.25
+     },
+     "column_ratio": {
+      "n": 29,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "numeric_big": {
+      "n": 29,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "balance_lr": {
+      "n": 29,
+      "p25": 0.0,
+      "median": 0.236,
+      "p75": 0.311
+     },
+     "edge_contact": {
+      "n": 29,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "header_items": {
+      "n": 29,
+      "p25": 0.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "footer_items": {
+      "n": 29,
+      "p25": 3.0,
+      "median": 3.0,
+      "p75": 3.0
+     }
+    }
+   },
+   "ai_observation": {
+    "inspection_depth": {
+     "detail_2up": 6,
+     "contact_sheet": 23
+    },
+    "family_source": {
+     "ai_detail": 4,
+     "ai_contact_sheet": 21,
+     "measured_confirmed_detail": 2,
+     "measured": 2
+    },
+    "precision_sample": {
+     "sampled": 4,
+     "agreed": 4,
+     "seen_as": {}
+    },
+    "evidence_pages": [
+     {
+      "ref": "ref-0b2bf0ebc355:1",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1104
+      ],
+      "note": "Not a cover: logo plus a disclaimer text page. Measured as cover by position only."
+     },
+     {
+      "ref": "ref-af94892827c8:2",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "Blank."
+     },
+     {
+      "ref": "ref-db25596332d2:1",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1100
+      ],
+      "note": "Not a cover: disclaimer text page with logo."
+     },
+     {
+      "ref": "ref-db25596332d2:120",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1100
+      ],
+      "note": "Intentionally blank notice with running head and footer."
+     },
+     {
+      "ref": "ref-af94892827c8:4",
+      "depth": "contact_sheet",
+      "shown_px": [
+       480,
+       621
+      ],
+      "note": "blank with QR at foot white lo h"
+     }
+    ]
+   },
+   "unverified": {
+    "human_reviewed_pages": 0,
+    "note": "Contact-sheet pages keep the family the measurements and notes gave them."
+   }
+  },
+  {
+   "id": "kpi_dashboard",
+   "description": "Figures or tiles set as a dashboard",
+   "definition": "A page led by a few large figures.",
+   "measured": {
+    "pages": 9,
+    "weighted_pages": 5.0,
+    "documents": 2,
+    "independent_source_groups": 2,
+    "directions": {
+     "ltr": 8,
+     "rtl": 1
+    },
+    "columns": {
+     "1": 9
+    },
+    "measures": {
+     "text_share": {
+      "n": 9,
+      "p25": 0.19,
+      "median": 0.21,
+      "p75": 0.435
+     },
+     "image_share": {
+      "n": 9,
+      "p25": 0.5,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "largest_image": {
+      "n": 9,
+      "p25": 0.53,
+      "median": 1.061,
+      "p75": 1.061
+     },
+     "table_share": {
+      "n": 9,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.306
+     },
+     "vector_share": {
+      "n": 9,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "ink": {
+      "n": 9,
+      "p25": 0.114,
+      "median": 0.268,
+      "p75": 0.278
+     },
+     "chars": {
+      "n": 9,
+      "p25": 775.0,
+      "median": 883.0,
+      "p75": 1783.0
+     },
+     "max_size_pt": {
+      "n": 9,
+      "p25": 24.0,
+      "median": 70.0,
+      "p75": 70.0
+     },
+     "display_ratio": {
+      "n": 9,
+      "p25": 3.0,
+      "median": 8.67,
+      "p75": 8.75
+     },
+     "column_ratio": {
+      "n": 9,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "numeric_big": {
+      "n": 9,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 12.5
+     },
+     "balance_lr": {
+      "n": 9,
+      "p25": 0.1,
+      "median": 0.307,
+      "p75": 0.34
+     },
+     "edge_contact": {
+      "n": 9,
+      "p25": 0.0,
+      "median": 0.169,
+      "p75": 0.216
+     },
+     "header_items": {
+      "n": 9,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "footer_items": {
+      "n": 9,
+      "p25": 3.0,
+      "median": 3.0,
+      "p75": 3.0
+     }
+    }
+   },
+   "ai_observation": {
+    "inspection_depth": {
+     "detail_2up": 4,
+     "contact_sheet": 5
+    },
+    "family_source": {
+     "ai_detail": 2,
+     "measured": 2,
+     "ai_contact_sheet": 3,
+     "measured_confirmed_detail": 2
+    },
+    "precision_sample": {
+     "sampled": 4,
+     "agreed": 4,
+     "seen_as": {}
+    },
+    "evidence_pages": [
+     {
+      "ref": "ref-4bbfe8f46cb3:8",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       512
+      ],
+      "note": "Spread: one hero figure in the end page with six regional figures in a ruled grid; dense table on the start page."
+     },
+     {
+      "ref": "ref-db25596332d2:37",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1100
+      ],
+      "note": "Performance table: four grouped tables where the current period column is tinted and set large. A table, read as a dashboard."
+     },
+     {
+      "ref": "ref-db25596332d2:18",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1100
+      ],
+      "note": "Same two-zone highlights page, different colour, as a repeated section device."
+     }
+    ]
+   },
+   "unverified": {
+    "human_reviewed_pages": 0,
+    "note": "Contact-sheet pages keep the family the measurements and notes gave them."
+   }
+  },
+  {
+   "id": "academic_opening",
+   "description": "Article first page with a metadata margin",
+   "definition": "Journal first page with a narrow metadata margin.",
+   "measured": {
+    "pages": 1,
+    "weighted_pages": 1.0,
+    "documents": 1,
+    "independent_source_groups": 1,
+    "directions": {
+     "ltr": 1
+    },
+    "columns": {
+     "1": 1
+    },
+    "measures": {
+     "text_share": {
+      "n": 1,
+      "p25": 0.46,
+      "median": 0.46,
+      "p75": 0.46
+     },
+     "image_share": {
+      "n": 1,
+      "p25": 0.01,
+      "median": 0.01,
+      "p75": 0.01
+     },
+     "largest_image": {
+      "n": 1,
+      "p25": 0.006,
+      "median": 0.006,
+      "p75": 0.006
+     },
+     "table_share": {
+      "n": 1,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "vector_share": {
+      "n": 1,
+      "p25": 0.013,
+      "median": 0.013,
+      "p75": 0.013
+     },
+     "ink": {
+      "n": 1,
+      "p25": 0.201,
+      "median": 0.201,
+      "p75": 0.201
+     },
+     "chars": {
+      "n": 1,
+      "p25": 3204.0,
+      "median": 3204.0,
+      "p75": 3204.0
+     },
+     "max_size_pt": {
+      "n": 1,
+      "p25": 12.0,
+      "median": 12.0,
+      "p75": 12.0
+     },
+     "display_ratio": {
+      "n": 1,
+      "p25": 1.2,
+      "median": 1.2,
+      "p75": 1.2
+     },
+     "column_ratio": {
+      "n": 1,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "numeric_big": {
+      "n": 1,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "balance_lr": {
+      "n": 1,
+      "p25": -0.092,
+      "median": -0.092,
+      "p75": -0.092
+     },
+     "edge_contact": {
+      "n": 1,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "header_items": {
+      "n": 1,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "footer_items": {
+      "n": 1,
+      "p25": 2.0,
+      "median": 2.0,
+      "p75": 2.0
+     }
+    }
+   },
+   "ai_observation": {
+    "inspection_depth": {
+     "detail_2up": 1
+    },
+    "family_source": {
+     "ai_detail": 1
+    },
+    "precision_sample": null,
+    "evidence_pages": [
+     {
+      "ref": "ref-0218e5046957:1",
+      "depth": "detail_2up",
+      "shown_px": [
+       780,
+       1010
+      ],
+      "note": "Journal first page: narrow metadata margin at the start, title block and body in a wide column, running footer. Not a cover."
+     }
+    ]
+   },
+   "unverified": {
+    "human_reviewed_pages": 0,
+    "note": "Contact-sheet pages keep the family the measurements and notes gave them."
+   }
+  },
+  {
+   "id": "cover_type",
+   "description": "Cover led by type",
+   "definition": "A cover carried by type alone. Only one page remains after close review; most candidates were notices.",
+   "measured": {
+    "pages": 1,
+    "weighted_pages": 1.0,
+    "documents": 1,
+    "independent_source_groups": 1,
+    "directions": {
+     "unknown": 1
+    },
+    "columns": {
+     "1": 1
+    },
+    "measures": {
+     "text_share": {
+      "n": 1,
+      "p25": 0.37,
+      "median": 0.37,
+      "p75": 0.37
+     },
+     "image_share": {
+      "n": 1,
+      "p25": 0.03,
+      "median": 0.03,
+      "p75": 0.03
+     },
+     "largest_image": {
+      "n": 1,
+      "p25": 0.007,
+      "median": 0.007,
+      "p75": 0.007
+     },
+     "table_share": {
+      "n": 1,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "vector_share": {
+      "n": 1,
+      "p25": 0.389,
+      "median": 0.389,
+      "p75": 0.389
+     },
+     "ink": {
+      "n": 1,
+      "p25": 0.115,
+      "median": 0.115,
+      "p75": 0.115
+     },
+     "chars": {
+      "n": 1,
+      "p25": 1684.0,
+      "median": 1684.0,
+      "p75": 1684.0
+     },
+     "max_size_pt": {
+      "n": 1,
+      "p25": 15.1,
+      "median": 15.1,
+      "p75": 15.1
+     },
+     "display_ratio": {
+      "n": 1,
+      "p25": 1.01,
+      "median": 1.01,
+      "p75": 1.01
+     },
+     "column_ratio": {
+      "n": 1,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.0
+     },
+     "numeric_big": {
+      "n": 1,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "balance_lr": {
+      "n": 1,
+      "p25": 0.025,
+      "median": 0.025,
+      "p75": 0.025
+     },
+     "edge_contact": {
+      "n": 1,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0
+     },
+     "header_items": {
+      "n": 1,
+      "p25": 14.0,
+      "median": 14.0,
+      "p75": 14.0
+     },
+     "footer_items": {
+      "n": 1,
+      "p25": 1.0,
+      "median": 1.0,
+      "p75": 1.0
+     }
+    }
+   },
+   "ai_observation": {
+    "inspection_depth": {
+     "contact_sheet": 1
+    },
+    "family_source": {
+     "measured": 1
+    },
+    "precision_sample": {
+     "sampled": 4,
+     "agreed": 0,
+     "seen_as": {
+      "blank_or_notice": 2,
+      "cover_image": 1,
+      "academic_opening": 1
+     }
+    },
+    "evidence_pages": [
+     {
+      "ref": "ref-9325a2a9012f:1",
+      "depth": "contact_sheet",
+      "shown_px": [
+       454,
+       642
+      ],
+      "note": "journal first page, ISSN header with vertical rules, bilingual title stack, dates rule, boxed abstract Arabic then English in one frame, page number at foot white mid h | bottom 15 percent empty"
+     }
+    ]
+   },
+   "unverified": {
+    "human_reviewed_pages": 0,
+    "note": "Contact-sheet pages keep the family the measurements and notes gave them."
+   }
+  }
+ ]
+}
