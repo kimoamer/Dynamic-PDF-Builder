@@ -21,7 +21,8 @@ from ..schema.blocks import (BulletListBlock, HeadingBlock, MetricItem, MetricRo
 from ..schema.theme import Theme
 from ..utils.color import contrast_ratio, hex_to_rgb, rgb_to_hex
 
-ARCHETYPE_TYPES = ("section_opener", "performance_page", "parallel_ledger")
+COMPOSITION_TYPES = ("image_text_panel", "figure_matrix", "paired_row_columns")
+ARCHETYPE_TYPES = ("section_opener", "performance_page", "parallel_ledger") + COMPOSITION_TYPES
 
 STRIP_RATIO = 0.30            # opener strip, share of the page width
 OPENER_TOPS = (0.36, 0.30, 0.24)
@@ -45,7 +46,7 @@ def face(theme: Theme, text: str, bold: bool = False, heading: bool = True) -> s
     """Registered font for one string: Arabic text takes the bundled Arabic face."""
     from ..fonts import get_font_name
     if is_rtl(text):
-        return get_font_name("Amiri", bold=bold)
+        return get_font_name(theme.typography.arabic_family or "Amiri", bold=bold)
     ty = theme.typography
     return get_font_name(ty.heading_family if heading else ty.body_family, bold=bold)
 
@@ -315,7 +316,8 @@ def plan_performance(b, theme: Theme, width: float, height: float) -> Performanc
             plan.notes.append(f"tile values are wide: {cols} columns")
         plan.tile_cols, plan.tile_rows = cols, math.ceil(n / cols)
     unit = text_width(theme, b.hero.value, 1.0, True) or 1.0
-    full = min(84.0, width * 0.6 / unit, height * 0.24 / 1.08)
+    room = (width * 0.64 - 12) * 0.94          # the hero's own column, less a margin for measuring
+    full = min(84.0, room / unit, height * 0.24 / 1.08)
     for keep_highlights in (True, False):
         if not keep_highlights:
             if not plan.highlights:
@@ -431,6 +433,32 @@ def lower(block) -> list:
         if block.highlights:
             out.append(BulletListBlock(items=list(block.highlights)))
         return out
+    if t == "image_text_panel":
+        out = [ParagraphBlock(text=block.eyebrow)] if block.eyebrow else []
+        if block.title:
+            out.append(HeadingBlock(text=block.title, level=3))
+        return out + [block.image] + [ParagraphBlock(text=p) for p in block.paragraphs]
+    if t == "figure_matrix":
+        out = [HeadingBlock(text=block.title, level=3)] if block.title else []
+        for f in block.figures:
+            if f.chart is not None:
+                out.append(f.chart if not f.title else f.chart.model_copy(update={"title": f.title}))
+            elif f.title:
+                out.append(ParagraphBlock(text=f.title))
+            line = " ".join(x for x in (f.value, f.label) if x)
+            if line:
+                out.append(ParagraphBlock(text=line))
+            if f.note:
+                out.append(NoteBlock(text=f.note))
+        if block.note:
+            out.append(NoteBlock(text=block.note))
+        return out
+    if t == "paired_row_columns":
+        out = []
+        for r in block.rows:
+            for text in filter(None, (r.first, r.second)):
+                out.append(HeadingBlock(text=text, level=3) if r.heading else ParagraphBlock(text=text))
+        return out
     if t == "parallel_ledger":
         out = []
         bilingual = any(r.label_alt for s in block.sections for r in s.rows)
@@ -465,3 +493,128 @@ def lowered(blocks: list) -> list:
         else:
             out.append(b)
     return out
+
+
+# ─── composition blocks ───
+
+def align(text: str) -> int:
+    """ReportLab alignment for one string: each language keeps to its own edge."""
+    return 2 if is_rtl(text) else 0
+
+
+def panel_treatment(block):
+    from ..schema.media import ImageTreatment
+    from .focal import focal_point
+    t = block.image.treatment
+    if t is not None and t.fit == "cover":
+        return t
+    fx, fy = focal_point(block.image.src)
+    return ImageTreatment(fit="cover", focal_x=fx, focal_y=fy)
+
+
+@dataclass
+class PanelPlan:
+    width: float
+    height: float
+    overlay: bool
+    fill: str
+    ink: str
+    pad: float
+    image_x: float
+    image_w: float
+    panel_x: float
+    panel_y: float
+    panel_w: float
+    panel_h: float
+    text_w: float
+    text_h: float = 0.0
+
+    def settle(self, text_h: float) -> None:
+        """The composition grows to hold its text; nothing is cut."""
+        self.text_h = text_h
+        need = text_h + 2 * self.pad
+        if self.overlay:
+            self.panel_h = max(self.panel_h, need)
+            self.height = max(self.height, self.panel_h + 2 * self.panel_y)
+        else:
+            self.height = max(self.height, need)
+            self.panel_h = self.height
+
+
+def plan_panel(b, theme: Theme, width: float) -> PanelPlan:
+    words = " ".join([b.title or "", *b.paragraphs])
+    rtl = is_rtl(words)
+    left = (b.side == "start") != rtl             # physical side of the panel
+    fill = b.panel_color or (ink(theme) if b.tone == "dark" else tint(theme, 0.92))
+    text = "#FFFFFF" if b.tone == "dark" else theme.colors.text_primary
+    height = b.height or width * 0.46
+    pad = 16.0
+    if b.layout == "overlay":
+        panel_w = width * 0.44
+        inset = 14.0
+        return PanelPlan(width, height, True, fill, text, pad, 0.0, width, inset if left else width - inset - panel_w,
+                         inset, panel_w, height - 2 * inset, panel_w - 2 * pad)
+    image_w = width * b.image_share
+    panel_w = width - image_w
+    return PanelPlan(width, height, False, fill, text, pad, panel_w if left else 0.0, image_w,
+                     0.0 if left else image_w, 0.0, panel_w, height, panel_w - 2 * pad)
+
+
+def panel_body(b, base: float) -> float:
+    """Text alone in a panel carries it, so it is set larger than text under a title."""
+    return base * (1.02 if b.title else 1.18)
+
+
+def estimate_panel_text(b, theme: Theme, width: float) -> float:
+    """The panel's text height for a renderer with no flowables to measure."""
+    base = theme.typography.base_size
+    total = 0.0
+    parts = [(b.eyebrow, base * 0.8, 1.3, 5), (b.title, base * 1.7, 1.2, 7)]
+    parts += [(p, panel_body(b, base), 1.45, 6) for p in b.paragraphs]
+    for text, size, ratio, gap in parts:
+        if text:
+            lines = max(1, -(-len(text) * size * 0.5 // width))
+            total += lines * size * leading(text, ratio) + gap
+    return total
+
+
+@dataclass
+class MatrixPlan:
+    columns: int
+    gap: float
+    cell_w: float
+    rows: list
+
+
+def plan_matrix(b, width: float) -> MatrixPlan:
+    gap = 14.0
+    cols = b.columns
+    rtl = any(is_rtl(cell_title(f) or f.label or "") for f in b.figures)
+    rows = []
+    for i in range(0, len(b.figures), cols):
+        row = list(b.figures[i:i + cols]) + [None] * (cols - len(b.figures[i:i + cols]))
+        rows.append(row[::-1] if rtl else row)
+    return MatrixPlan(cols, gap, width / cols - gap, rows)
+
+
+def cell_title(cell) -> Optional[str]:
+    return cell.title or (cell.chart.title if cell.chart is not None else None)
+
+
+def cell_chart(cell, width: float, height: float):
+    """The chart at cell size; its title moves to the cell, and no chart repeats it."""
+    data = cell.chart.data
+    single = isinstance(data, dict) and not any(isinstance(v, (list, tuple, dict)) for v in data.values())
+    return cell.chart.model_copy(update={"title": None, "width": width / 72, "height": height / 72,
+                                         "legend": cell.chart.legend and not single})
+
+
+def cell_align(cell) -> int:
+    """One edge for the whole cell, taken from its words: a figure alone says nothing of direction."""
+    return align(" ".join(filter(None, (cell_title(cell), cell.label, cell.note))))
+
+
+def paired_sides(first: str, second: str, rows) -> tuple:
+    """(left column, right column): the Arabic of a pair goes right, as the block's rows do."""
+    swap = any(is_rtl(r.first) and not is_rtl(r.second) for r in rows)
+    return (second, first) if swap else (first, second)

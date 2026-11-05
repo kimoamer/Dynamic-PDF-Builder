@@ -765,8 +765,7 @@
    "confidence": "medium",
    "failure_conditions": [
     "photographs that must be read at full width",
-    "short paragraphs that cannot wrap",
-    "a heading within the image height: Word sets it beside the image, the PDF below it"
+    "short paragraphs that cannot wrap"
    ],
    "safe_fallback": "The direction's own image placement, which the refinement step also falls back to.",
    "when": {
@@ -994,14 +993,17 @@
    ],
    "confidence": "medium",
    "failure_conditions": [
-    "series on different scales"
+    "charts of different kinds"
    ],
    "safe_fallback": "Charts one after another.",
-   "when": null,
-   "engine": null,
-   "requires": [
-    "figure_matrix"
-   ],
+   "when": {},
+   "engine": {
+    "direction": {},
+    "extras": {
+     "chart_matrix": 1
+    }
+   },
+   "requires": [],
    "measured_support": {
     "family_pages": 23,
     "weighted_pages": 16.7,
@@ -1078,8 +1080,8 @@
   },
   {
    "id": "editorial.overlaid_panel",
-   "name": "Tinted text panel over a photograph",
-   "slot": "image",
+   "name": "Text panel with a photograph",
+   "slot": "panel",
    "families": [
     "image_split",
     "full_bleed_image"
@@ -1123,14 +1125,19 @@
    ],
    "confidence": "medium",
    "failure_conditions": [
-    "busy photographs"
+    "text too long for the panel"
    ],
    "safe_fallback": "Text under the image.",
-   "when": null,
-   "engine": null,
-   "requires": [
-    "image_text_panel"
-   ],
+   "when": {
+    "min_photos": 2
+   },
+   "engine": {
+    "direction": {},
+    "extras": {
+     "image_panel": 1
+    }
+   },
+   "requires": [],
    "measured_support": {
     "family_pages": 123,
     "weighted_pages": 49.7,
@@ -1252,11 +1259,14 @@
     "unpaired text"
    ],
    "safe_fallback": "One language after the other.",
-   "when": null,
-   "engine": null,
-   "requires": [
-    "paired_row_columns"
-   ],
+   "when": {},
+   "engine": {
+    "direction": {},
+    "extras": {
+     "paired_columns": 1
+    }
+   },
+   "requires": [],
    "measured_support": {
     "family_pages": 138,
     "weighted_pages": 28.7,
@@ -1270,7 +1280,7 @@
   {
    "id": "bilingual.parallel_ledger",
    "name": "Figures once, labels from each language's edge",
-   "slot": "bilingual",
+   "slot": "bilingual_table",
    "families": [
     "table_in_text"
    ],
@@ -1303,13 +1313,18 @@
    ],
    "confidence": "high",
    "failure_conditions": [
-    "more than four periods"
+    "more than four periods",
+    "labels in one language only"
    ],
-   "safe_fallback": "Two separate tables.",
-   "when": null,
-   "engine": null,
+   "safe_fallback": "The table as written.",
+   "when": {},
+   "engine": {
+    "direction": {},
+    "extras": {
+     "ledger_tables": 1
+    }
+   },
    "requires": [],
-   "author_block": "parallel_ledger: already a block for authors; it needs paired labels, which no adapter can invent.",
    "measured_support": {
     "family_pages": 77,
     "weighted_pages": 54.1,
@@ -1452,11 +1467,8 @@
  ],
  "unsupported_primitives": {
   "figure_caption_band": "A tinted caption bar tied to a chart in both renderers.",
-  "figure_matrix": "A grid of equal chart cells with a shared title.",
   "card_grid": "Repeating equal-height cards that flow across pages.",
-  "image_text_panel": "A text panel layered over an image, with live text in PDF and DOCX.",
   "outer_margin_column": "A column outside the text frame that mirrors on facing pages.",
-  "paired_row_columns": "Rows that keep two language columns aligned paragraph by paragraph across pages.",
   "first_page_margin_column": "A first-page-only margin column.",
   "unequal_page_zones": "Named page zones of unequal width with text flowing from one to the other.",
   "foot_anchored_media": "A body image anchored to the page foot, with the text above it, in both renderers.",

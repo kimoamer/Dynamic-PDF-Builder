@@ -58,9 +58,9 @@ def heading_size(theme: Theme, level: int) -> float:
 
 
 def font_available(family: str) -> bool:
-    from ..fonts.manager import list_available_fonts, register_fonts
+    from ..fonts.manager import font_catalog, list_available_fonts, register_fonts
     register_fonts()
-    available = set(list_available_fonts()) | _BUNDLED_OR_BUILTIN
+    available = set(list_available_fonts()) | _BUNDLED_OR_BUILTIN | set(font_catalog())
     return family in available or f"{family}-Regular" in available
 
 

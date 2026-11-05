@@ -161,9 +161,7 @@ What Word showed:
 - **Page counts differ from the PDF.** The impact report is 5 pages in PDF and 4 in Word, with or
   without the rule. In the seed batch 14 of 48 designs came out one page shorter in Word (measured).
 - **`image.alternating_inset` differs from the PDF.** On page 4, "5 Environment" starts at x = 265 pt
-  in Word and 80 pt in the PDF, because Word sets a heading beside a float that is still running.
-  The renderer's float code was not changed, since that would touch default output. It is now a
-  failure condition on the rule.
+  in Word and 80 pt in the PDF, because Word set a heading beside a float that was still running (fixed in M7.10: any block that cannot wrap a float now starts below it).
 - **Arabic headings sit tight to the band's right edge in Word**, with and without the rule. This is
   existing M7.9 behaviour.
 

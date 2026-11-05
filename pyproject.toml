@@ -54,7 +54,7 @@ dev      = ["pytest>=8.0", "pymupdf>=1.23", "pikepdf>=8.0", "ruff>=0.3", "mypy>=
 include = ["dynamic_pdf*"]
 
 [tool.setuptools.package-data]
-dynamic_pdf = ["fonts/bundled/*.ttf", "fonts/bundled/LICENSES/*.txt", "design/approved_grammar.json"]
+dynamic_pdf = ["fonts/bundled/*.ttf", "fonts/bundled/catalog.json", "fonts/bundled/LICENSES/*.txt", "design/approved_grammar.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

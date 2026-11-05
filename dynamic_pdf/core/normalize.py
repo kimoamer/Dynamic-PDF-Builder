@@ -29,7 +29,7 @@ from .inline import plain_text
 RTL_LANGS = {"ar", "he", "fa", "ur", "ps", "sd", "yi", "dv", "ckb"}
 
 # Fields that never carry author-visible text
-_NON_TEXT_FIELDS = {
+_NON_TEXT_FIELDS = {"side", "tone", "panel_color", 
     "type", "id", "lang", "color", "bg_color", "fill_color", "stroke_color", "text_color",
     "border_color", "score_color", "style", "variant", "alignment", "src", "logo", "language",
     "format", "marker_style", "icon", "shape_type", "layout", "position", "sidebar_position",
@@ -257,6 +257,10 @@ def normalize(document: Document, *, source_kind: str = "api",
         elif t == "parallel_ledger":
             stats.tables += 1
             stats.table_rows += sum(len(s.rows) for s in b.sections)
+        elif t == "image_text_panel":
+            stats.figures += 1
+        elif t == "figure_matrix":
+            stats.charts += sum(1 for f in b.figures if f.chart is not None)
         elif t == "image":
             stats.figures += 1
         elif t == "chart":

@@ -10,6 +10,7 @@ from .schema.media import ImageTreatment, MediaPlacement, resolve_placement
 from .schema.page_system import PageSystem
 from .schema.enums import PageSize, Orientation
 from .schema.blocks import (
+    FigureMatrixBlock, ImageTextPanelBlock, PairedRowColumnsBlock,
     PageMediaBlock, PageSectionBlock,
     HeadingBlock, ParagraphBlock, RichTextBlock, BulletListBlock, NumberedListBlock,
     TableBlock, CodeBlock, ImageBlock, ChartBlock, MathBlock, MermaidBlock,
@@ -106,6 +107,7 @@ class DocumentBuilder:
     def __init__(self, theme: Optional[str] = None, policy: Optional[RenderPolicy] = None):
         self._theme_explicit = theme is not None
         self._theme = theme or "claude"
+        self._fonts: dict = {}
         self._meta = Meta()
         self._blocks: list = []
         self._policy = policy or RenderPolicy()
@@ -290,6 +292,11 @@ class DocumentBuilder:
     def _prepared_base(self):
         """(Document, Theme | None) ready for a renderer, applying the design plan."""
         doc, theme = self._prepared_inner()
+        if self._fonts:
+            from .themes import get_theme as _gt
+            theme = (theme or _gt(doc.theme)).model_copy(deep=True)
+            for key, family in self._fonts.items():
+                setattr(theme.typography, key, family)
         if self._qa_hints:
             doc = doc.model_copy(deep=True)
             for idx, hint in self._qa_hints.items():
@@ -422,6 +429,14 @@ class DocumentBuilder:
 
     def theme(self, name: str) -> 'DocumentBuilder':
         self._theme = name
+        return self
+
+    def fonts(self, heading: Optional[str] = None, body: Optional[str] = None,
+              arabic: Optional[str] = None) -> 'DocumentBuilder':
+        """Set the faces by family name; ``dynamic_pdf.fonts.list_font_families()`` names the
+        bundled ones. Bundled faces are embedded in the DOCX, so Word shows them too."""
+        self._fonts = {k: v for k, v in (("heading_family", heading), ("body_family", body),
+                                         ("arabic_family", arabic)) if v}
         return self
 
     def page_size(self, size: str) -> 'DocumentBuilder':
@@ -660,6 +675,21 @@ class DocumentBuilder:
     def parallel_ledger(self, periods: List[str], sections: List[Dict[str, Any]], **fields) -> 'DocumentBuilder':
         """Comparative figures stated once, labelled in one or two languages."""
         self._blocks.append(ParallelLedgerBlock(periods=periods, sections=sections, **fields))
+        return self
+
+    def image_text_panel(self, image: Dict[str, Any], paragraphs: List[str], **fields) -> 'DocumentBuilder':
+        """A picture with a live text panel beside it or laid over it (``layout="overlay"``)."""
+        self._blocks.append(ImageTextPanelBlock(image=image, paragraphs=paragraphs, **fields))
+        return self
+
+    def figure_matrix(self, figures: List[Dict[str, Any]], **fields) -> 'DocumentBuilder':
+        """Equal cells of charts or figures under one title."""
+        self._blocks.append(FigureMatrixBlock(figures=figures, **fields))
+        return self
+
+    def paired_row_columns(self, rows: List[Dict[str, Any]], **fields) -> 'DocumentBuilder':
+        """Text in two languages, aligned row by row; Arabic takes the right column."""
+        self._blocks.append(PairedRowColumnsBlock(rows=rows, **fields))
         return self
 
     def metric_row(self, metrics: List[Dict[str, str]]) -> 'DocumentBuilder':

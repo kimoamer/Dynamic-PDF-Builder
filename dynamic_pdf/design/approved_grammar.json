@@ -358,8 +358,7 @@
    "confidence": "medium",
    "failure_conditions": [
     "photographs that must be read at full width",
-    "short paragraphs that cannot wrap",
-    "a heading within the image height: Word sets it beside the image, the PDF below it"
+    "short paragraphs that cannot wrap"
    ],
    "safe_fallback": "The direction's own image placement, which the refinement step also falls back to.",
    "when": {
@@ -418,6 +417,130 @@
     "direction": {},
     "extras": {
      "closing_band": 0.34
+    }
+   }
+  },
+  {
+   "id": "chart.small_multiples",
+   "name": "Matrix of small charts",
+   "slot": "chart",
+   "page_roles": [
+    "data pages"
+   ],
+   "required_elements": [
+    "several charts of one kind"
+   ],
+   "layout_constraints": [
+    {
+     "statement": "Equal cells, shared scale, each with its own short title.",
+     "source": "ai_observation"
+    }
+   ],
+   "rtl_behavior": "Reading order of the cells runs from the right.",
+   "confidence": "medium",
+   "failure_conditions": [
+    "charts of different kinds"
+   ],
+   "safe_fallback": "Charts one after another.",
+   "when": {},
+   "engine": {
+    "direction": {},
+    "extras": {
+     "chart_matrix": 1
+    }
+   }
+  },
+  {
+   "id": "editorial.overlaid_panel",
+   "name": "Text panel with a photograph",
+   "slot": "panel",
+   "page_roles": [
+    "feature openings"
+   ],
+   "required_elements": [
+    "large photograph",
+    "short text"
+   ],
+   "layout_constraints": [
+    {
+     "statement": "The panel covers a quiet part of the photograph; never a face.",
+     "source": "ai_observation"
+    }
+   ],
+   "rtl_behavior": "Panel moves to the reading-start side.",
+   "confidence": "medium",
+   "failure_conditions": [
+    "text too long for the panel"
+   ],
+   "safe_fallback": "Text under the image.",
+   "when": {
+    "min_photos": 2
+   },
+   "engine": {
+    "direction": {},
+    "extras": {
+     "image_panel": 1
+    }
+   }
+  },
+  {
+   "id": "bilingual.parallel_columns",
+   "name": "Parallel language columns",
+   "slot": "bilingual",
+   "page_roles": [
+    "bilingual body text"
+   ],
+   "required_elements": [
+    "paired paragraphs in two languages"
+   ],
+   "layout_constraints": [
+    {
+     "statement": "Paired paragraphs start on the same line; each column aligns to its own direction.",
+     "source": "ai_observation"
+    }
+   ],
+   "rtl_behavior": "Arabic takes the right column and aligns right; English takes the left and aligns left.",
+   "confidence": "high",
+   "failure_conditions": [
+    "unpaired text"
+   ],
+   "safe_fallback": "One language after the other.",
+   "when": {},
+   "engine": {
+    "direction": {},
+    "extras": {
+     "paired_columns": 1
+    }
+   }
+  },
+  {
+   "id": "bilingual.parallel_ledger",
+   "name": "Figures once, labels from each language's edge",
+   "slot": "bilingual_table",
+   "page_roles": [
+    "bilingual financial tables"
+   ],
+   "required_elements": [
+    "labels in both languages"
+   ],
+   "layout_constraints": [
+    {
+     "statement": "Figures sit in the centre; each language labels from its own outer edge.",
+     "source": "ai_observation"
+    }
+   ],
+   "rtl_behavior": "Both directions on one row.",
+   "confidence": "high",
+   "failure_conditions": [
+    "more than four periods",
+    "labels in one language only"
+   ],
+   "safe_fallback": "The table as written.",
+   "when": {},
+   "engine": {
+    "direction": {},
+    "extras": {
+     "ledger_tables": 1
     }
    }
   }

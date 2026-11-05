@@ -503,6 +503,56 @@ class ParallelLedgerBlock(BaseBlock):
     emphasis: int = 0                         # index of the emphasised period
     label_header: Optional[str] = None
     label_header_alt: Optional[str] = None
+    title_first: bool = False                 # one section: its title stands above the column heads
+
+
+class ImageTextPanelBlock(BaseBlock):
+    """A picture with a live text panel beside it (``split``) or laid over it (``overlay``)."""
+    type: Literal["image_text_panel"] = "image_text_panel"
+    image: ImageBlock
+    paragraphs: List[str] = Field(default_factory=list)
+    title: Optional[str] = None
+    eyebrow: Optional[str] = None
+    layout: Literal["split", "overlay"] = "split"
+    side: Literal["start", "end"] = "start"   # where the panel sits, in reading direction
+    image_share: float = Field(0.6, ge=0.3, le=0.75)
+    height: Optional[float] = Field(None, gt=0)
+    panel_color: Optional[str] = None
+    tone: Literal["dark", "tint"] = "dark"
+
+
+class FigureCell(BaseModel):
+    """One cell of a matrix: a chart, or a figure with its label."""
+    title: Optional[str] = None
+    chart: Optional[ChartBlock] = None
+    value: Optional[str] = None
+    label: Optional[str] = None
+    note: Optional[str] = None
+
+
+class FigureMatrixBlock(BaseBlock):
+    """Equal cells under one title; cells run from the reading edge."""
+    type: Literal["figure_matrix"] = "figure_matrix"
+    figures: List[FigureCell]
+    title: Optional[str] = None
+    note: Optional[str] = None
+    columns: int = Field(2, ge=2, le=4)
+    cell_height: float = Field(120.0, gt=0)
+
+
+class PairedRow(BaseModel):
+    first: str
+    second: str
+    heading: bool = False
+
+
+class PairedRowColumnsBlock(BaseBlock):
+    """Text in two languages, row by row; Arabic takes the right column."""
+    type: Literal["paired_row_columns"] = "paired_row_columns"
+    rows: List[PairedRow]
+    header_first: Optional[str] = None
+    header_second: Optional[str] = None
+
 
 # ─────────────────────── Discriminated Union ───────────────────────
 
@@ -522,6 +572,7 @@ Block = Annotated[
         TwoColumnBlock, ThreeColumnBlock, SidebarBlock,
         BadgeBlock, ShapeBlock, QRCodeBlock, IntroductionPageBlock,
         SectionOpenerBlock, PerformancePageBlock, ParallelLedgerBlock,
+        ImageTextPanelBlock, FigureMatrixBlock, PairedRowColumnsBlock,
         PageMediaBlock, PageSectionBlock,
     ],
     Field(discriminator="type")

@@ -128,6 +128,8 @@ def build_content_ledger(doc, assets=None, theme=None) -> ContentLedger:
         digests.append((i, kind, _digest(block)))
         if kind == "image":
             hashes.append((f"block:{i}", _asset_hash(block.src, assets)))
+        elif kind == "image_text_panel":
+            hashes.append((f"block:{i}", _asset_hash(block.image.src, assets)))
     meta = tuple((name, str(getattr(doc.meta, name, "") or "")) for name in _META_FIELDS)
     bands, band_texts = (), ()
     system = doc.meta.page_system

@@ -525,10 +525,205 @@ def sustainability_report(a):
     return b, {"name": "Brightwater Foods", "primary": "#1F6F54", "accent": "#E3A72F", "logo": a["logo"]}
 
 
+def harbour_feature(a):
+    b = DocumentBuilder()
+    b.meta(title="The Long Tide", subject="A year on the Saltmere waterfront", author="Saltmere Harbour Trust")
+    section(b, "A working shore",
+            "Saltmere has earned its living from the water for three centuries, and the shore still looks like it. Nets dry beside the slipways, and the ferry horn sets the hours for the whole town.",
+            lambda b: photo(b, a["coast"], "Evening over the outer mole.", "Trust archive", hero=True),
+            "When the old fish market closed, nobody expected the quay to come back. Ten years later it holds a boatyard, a cooperative smokehouse and a school of navigation for local teenagers.",
+            "Most of that change came from small decisions rather than one grand plan. Each tenant signed a short lease, and each lease asked for one thing: that the public could walk the water's edge.")
+    section(b, "The people of the quay",
+            lambda b: photo(b, a["works"], "Shed four, repaired by its own tenants.", "Trust archive"),
+            "Shed four was a ruin in 2019. Its tenants rebuilt the roof themselves and now repair forty boats a year for owners along the estuary.",
+            "Ines Marlow runs the yard with her two brothers, and she takes on one apprentice every spring. Three of those apprentices now run yards of their own, and two of them came back to the quay.",
+            "The smokehouse works on a different rhythm, with early starts and short days. Its seven members share one oven, one van and a long argument about the right kind of oak.")
+    section(b, "Weather and water",
+            lambda b: photo(b, a["coast2"], "The new tidal gate at slack water.", "Trust archive"),
+            "Two winters of surge tides changed the argument about flood defence. The new tidal gate closes in eleven minutes and has already held back four storms.",
+            "The gate cost less than a sea wall and leaves the view alone. It also needs a crew, which gave the harbour six permanent jobs and an excuse to keep the old lookout tower open.",
+            lambda b: b.quote("You cannot wall off a town that lives from the water."),
+            "Engineers expect the sea to rise a further twenty centimetres by mid-century. The gate was built for twice that, and the trust has set aside money each year for its upkeep.")
+    section(b, "What comes next",
+            lambda b: photo(b, a["field"], "Saltings at the north end, planted in 2024.", "Trust archive"),
+            "The north saltings were replanted last year and already shelter wading birds through the winter. Volunteers count them every month and publish the numbers on the harbour wall.",
+            "Next year the trust will open the lookout tower as a small museum of the estuary. Its first exhibition will be the logbooks of the harbour masters, read aloud by their descendants.")
+    return b, {"name": "Saltmere Harbour Trust", "primary": "#1E4D5C", "accent": "#C8553D", "logo": a["logo"]}
+
+
+def transit_data_story(a):
+    b = DocumentBuilder()
+    b.meta(title="Moving Brackwater", subject="Regional transit data review 2025", author="Brackwater Transit Authority")
+    section(b, "How the year looked",
+            "Ridership passed its pre-pandemic level for the first time, with the strongest growth on the two new tram lines. Reliability improved on every mode, though buses still lag at the evening peak.",
+            lambda b: b.metric_row([{"label": "Trips", "value": "148m"}, {"label": "On time", "value": "91%"}, {"label": "Satisfaction", "value": "78%"}]),
+            lambda b: b.heading("Trips by mode, millions", 2),
+            bars("Tram", {"2022": 31, "2023": 38, "2024": 44, "2025": 52}),
+            bars("Bus", {"2022": 62, "2023": 66, "2024": 68, "2025": 71}),
+            bars("Ferry", {"2022": 7, "2023": 8, "2024": 9, "2025": 9}),
+            bars("Cycle hire", {"2022": 9, "2023": 11, "2024": 14, "2025": 16}),
+            "Trams now carry more than a third of all trips. Bus growth has slowed as passengers move to the tram corridors, which is what the network plan intended.")
+    section(b, "Reliability",
+            "Punctuality rose on every mode. The largest gain came from signal priority at forty junctions on the eastern corridor, where tram journey times fell by nine percent.",
+            lambda b: b.heading("Share of services on time, percent", 2),
+            line("Morning peak", {"Q1": 86, "Q2": 88, "Q3": 90, "Q4": 92}),
+            line("Evening peak", {"Q1": 79, "Q2": 81, "Q3": 84, "Q4": 85}),
+            line("Off peak", {"Q1": 93, "Q2": 94, "Q3": 94, "Q4": 95}),
+            "The evening peak remains the weak point. Crews finishing their shifts at five o'clock leave gaps on the longest routes, and the new rosters address that from April.",
+            table(["Line", "Trips (m)", "On time", "Cost per trip"],
+                  [["Tram 1", "29.4", "94%", "1.10"], ["Tram 2", "22.6", "93%", "1.24"], ["Bus 12", "8.1", "86%", "1.92"], ["Bus 40", "6.7", "84%", "2.05"], ["Harbour ferry", "9.2", "96%", "3.40"]],
+                  caption="Busiest services, 2025"))
+    section(b, "Who rides",
+            "A new travel survey reached eleven thousand residents. Younger riders use trams and cycle hire most; older riders still prefer the bus, and they value a seat more than speed.",
+            lambda b: b.heading("Share of residents who use each mode weekly, percent", 2),
+            bars("Under 30", {"Tram": 48, "Bus": 31, "Cycle": 22}),
+            bars("30 to 59", {"Tram": 37, "Bus": 29, "Cycle": 12}),
+            bars("60 and over", {"Tram": 21, "Bus": 44, "Cycle": 3}),
+            "Fare capping reached full coverage in June. Riders on low incomes now pay no more than the weekly cap, and four in ten of them reached it at least once.")
+    section(b, "Costs and carbon",
+            "Operating cost per trip fell for the second year as ridership grew faster than service hours. Electric vehicles now run a little over half of all bus kilometres.",
+            lambda b: b.heading("Two measures of efficiency", 2),
+            line("Operating cost per trip", {"2022": 2.3, "2023": 2.1, "2024": 1.9, "2025": 1.8}),
+            line("Grams of carbon per passenger kilometre", {"2022": 62, "2023": 55, "2024": 47, "2025": 41}),
+            "The authority will publish these figures every quarter from next year, with the raw data, so that residents can check the claims made here.")
+    return b, {"name": "Brackwater Transit Authority", "primary": "#20407A", "accent": "#E0A030", "logo": a["logo"]}
+
+
+def arabic_city_feature(a):
+    b = DocumentBuilder()
+    b.direction("rtl")
+    b.meta(title="مدينة على الضفتين", subject="عام في حياة واحة النخيل", author="بلدية واحة النخيل")
+    section(b, "ذاكرة المكان",
+            "نشأت واحة النخيل حول عين ماء قديمة، ثم امتدت على ضفتي الوادي جيلًا بعد جيل. وما زالت الأسواق القديمة تفتح أبوابها مع أذان الفجر، وما زال أهل المدينة يقيسون المسافات بعدد البساتين.",
+            lambda b: photo(b, a["coast"], "غروب الشمس على ضفة الوادي الشرقية.", "أرشيف البلدية", hero=True),
+            "حين أغلقت السوق القديمة قبل عشر سنوات، ظن كثيرون أن زمنها انتهى. لكن الحرفيين عادوا إليها واحدًا تلو الآخر، حتى امتلأت دكاكينها من جديد بالنحاس والخوص والعطور.",
+            "لم يأت هذا التحول من خطة كبرى، بل من قرارات صغيرة متتابعة. فقد خفضت البلدية إيجار الدكاكين لكل من يعلّم حرفته لشاب من أبناء الحي.")
+    section(b, "أهل السوق",
+            lambda b: photo(b, a["works"], "ورشة النحاس بعد ترميم سقفها.", "أرشيف البلدية"),
+            "كانت ورشة النحاس مهجورة قبل خمسة أعوام. أعاد أصحابها بناء سقفها بأيديهم، وهي اليوم تدرّب اثني عشر شابًا كل عام على مهنة كادت تندثر.",
+            "يدير العم صالح الورشة منذ أربعين عامًا، ويقول إن الصنعة لا تُحفظ في الكتب بل في الأيدي. وقد افتتح ثلاثة من تلاميذه ورشًا خاصة بهم في الأحياء المجاورة.",
+            "أما سوق العطارين فله إيقاع آخر، إذ يبدأ بعد العصر ويمتد حتى منتصف الليل. ويتشارك أصحابه مخزنًا واحدًا وعربة واحدة وجدلًا طويلًا حول أفضل أنواع اللبان.")
+    section(b, "الماء والبساتين",
+            lambda b: photo(b, a["coast2"], "قناة الري الجديدة عند موسم الفيضان.", "أرشيف البلدية"),
+            "غيّر فيضانان متتاليان طريقة تفكير المدينة في الماء. فأُعيد فتح الأفلاج القديمة إلى جانب قناة جديدة، ونجت البساتين من أربع موجات سيول خلال عامين.",
+            "كلفت القناة أقل مما كان متوقعًا، ولم تحجب منظر الوادي عن أهله. ووفرت كذلك ست وظائف دائمة لحراس الماء، وهي مهنة قديمة عادت بعد غياب طويل.",
+            lambda b: b.quote("لا تُبنى مدينة تعيش من الماء بالجدران وحدها."),
+            "يتوقع المهندسون أن تزداد حدة السيول في العقود القادمة. لذلك صُممت القناة لتحمل ضعف أعلى منسوب مسجّل، وخصصت البلدية ميزانية سنوية لصيانتها.")
+    section(b, "ما ينتظرنا",
+            lambda b: photo(b, a["field"], "البساتين الشمالية بعد زراعتها في عام ٢٠٢٤.", "أرشيف البلدية"),
+            "زُرعت البساتين الشمالية في العام الماضي، وصارت تؤوي الطيور المهاجرة طوال الشتاء. ويعدّها المتطوعون كل شهر وينشرون الأرقام على جدار السوق.",
+            "ستفتتح البلدية في العام القادم برج المراقبة القديم متحفًا صغيرًا للوادي. وسيضم معرضه الأول سجلات حراس الماء، يقرؤها أحفادهم بأصواتهم.")
+    return b, {"name": "بلدية واحة النخيل", "primary": "#2F5D50", "accent": "#B8782E", "logo": a["logo"]}
+
+
+def arabic_health_data(a):
+    b = DocumentBuilder()
+    b.direction("rtl")
+    b.meta(title="صحة المجتمع بالأرقام", subject="التقرير الإحصائي السنوي ٢٠٢٥", author="هيئة الرعاية الصحية الأولية")
+    section(b, "ملامح العام",
+            "ارتفع عدد المراجعين في مراكز الرعاية الأولية للعام الثالث على التوالي، وتراجع متوسط زمن الانتظار بعد توسيع المواعيد المسائية. وما زالت المراكز الريفية بحاجة إلى مزيد من الأطباء.",
+            lambda b: b.metric_row([{"label": "مراجعة", "value": "٢٫٤ مليون"}, {"label": "مركزًا صحيًا", "value": "٦٨"}, {"label": "نسبة الرضا", "value": "٨٤٪"}]),
+            lambda b: b.heading("المراجعات حسب نوع الخدمة بالألف", 2),
+            bars("طب الأسرة", {"2022": 910, "2023": 980, "2024": 1040, "2025": 1120}),
+            bars("الأمومة والطفولة", {"2022": 310, "2023": 330, "2024": 345, "2025": 362}),
+            bars("الأمراض المزمنة", {"2022": 420, "2023": 470, "2024": 515, "2025": 560}),
+            bars("الصحة النفسية", {"2022": 60, "2023": 84, "2024": 112, "2025": 146}),
+            "تضاعفت مراجعات الصحة النفسية تقريبًا خلال ثلاث سنوات، بعد إدخال الخدمة في جميع المراكز الكبرى. ويعكس ذلك استعدادًا أكبر لدى الناس لطلب المساعدة.")
+    section(b, "جودة الخدمة",
+            "تحسّن زمن الانتظار في كل المناطق. وجاء أكبر تحسن من نظام الحجز الإلكتروني الذي عُمّم في شهر مارس، إذ انخفض متوسط الانتظار في المراكز الحضرية بنسبة الربع.",
+            lambda b: b.heading("متوسط زمن الانتظار بالدقائق", 2),
+            line("المراكز الحضرية", {"الربع ١": 42, "الربع ٢": 37, "الربع ٣": 33, "الربع ٤": 31}),
+            line("المراكز الريفية", {"الربع ١": 55, "الربع ٢": 52, "الربع ٣": 48, "الربع ٤": 46}),
+            "لا تزال الفجوة بين المدينة والريف قائمة، ويعود معظمها إلى نقص أطباء الأسرة. وستبدأ الهيئة في الخريف برنامج حوافز للعمل في المناطق البعيدة.",
+            table(["المنطقة", "المراكز", "المراجعات بالألف", "الأطباء لكل ألف"],
+                  [["الوسطى", "٢٤", "٩٨٠", "١٫٤"], ["الشمالية", "١٨", "٦١٠", "١٫١"], ["الساحلية", "١٥", "٥٢٠", "١٫٠"], ["الجنوبية", "١١", "٢٩٠", "٠٫٧"]],
+                  caption="الخدمات حسب المنطقة في عام ٢٠٢٥"))
+    section(b, "الوقاية",
+            "بلغت تغطية التطعيم للأطفال مستوى غير مسبوق، وزادت الفحوص المبكرة للسكري بعد الحملة التي نُفذت في أماكن العمل. وتراجع معدل التدخين بين الشباب للعام الخامس.",
+            lambda b: b.heading("مؤشرات الوقاية بالنسبة المئوية", 2),
+            line("تغطية التطعيم", {"2022": 91, "2023": 93, "2024": 95, "2025": 97}),
+            line("الفحص المبكر للسكري", {"2022": 38, "2023": 44, "2024": 51, "2025": 58}),
+            line("التدخين بين الشباب", {"2022": 22, "2023": 20, "2024": 18, "2025": 16}),
+            "ستنشر الهيئة هذه الأرقام كل ربع سنة ابتداءً من العام القادم، مع البيانات الكاملة لكل منطقة، حتى يتمكن الباحثون والجمهور من مراجعتها.")
+    return b, {"name": "هيئة الرعاية الصحية الأولية", "primary": "#124E66", "accent": "#2E9C8F", "logo": a["logo"]}
+
+
+def bilingual_ports_review(a):
+    b = DocumentBuilder()
+    b.meta(title="Northern Ports Authority | هيئة الموانئ الشمالية", subject="Annual review 2025 | المراجعة السنوية ٢٠٢٥", author="Northern Ports Authority")
+    section(b, "Chair's statement | كلمة الرئيس",
+            "The year tested our ports and our people. Two storms closed the northern terminal for nine days, and yet cargo volumes ended the year higher than any year on record.",
+            "كان هذا العام اختبارًا لموانئنا ولفرق العمل فيها. فقد أغلقت عاصفتان المحطة الشمالية تسعة أيام، ومع ذلك أنهينا العام بأعلى حجم مناولة في تاريخ الهيئة.",
+            "We owe that result to the crews who reopened the berths ahead of schedule, and to customers who stayed with us while they did.",
+            "ويعود الفضل في ذلك إلى الطواقم التي أعادت فتح الأرصفة قبل الموعد المحدد، وإلى العملاء الذين ظلوا معنا طوال تلك الفترة.",
+            "This review sets out what we delivered, what it cost and what we intend to change, in both of our working languages.",
+            "وتعرض هذه المراجعة ما أنجزناه وما كلّفنا وما ننوي تغييره، باللغتين اللتين نعمل بهما.",
+            lambda b: photo(b, a["coast"], "The northern terminal at first light | المحطة الشمالية عند الفجر", "Authority archive", hero=True))
+    section(b, "Operations | العمليات",
+            "Container traffic grew by seven percent, led by the new weekly service to the eastern ports. Average ship turnaround fell to twenty-two hours.",
+            "نمت حركة الحاويات بنسبة سبعة في المئة، مدفوعة بالخدمة الأسبوعية الجديدة إلى الموانئ الشرقية. وتراجع متوسط زمن بقاء السفن إلى اثنتين وعشرين ساعة.",
+            "Bulk cargo held steady, while the passenger terminal welcomed its millionth traveller of the year in November.",
+            "وحافظت البضائع السائبة على مستواها، واستقبلت محطة الركاب مسافرها المليون لهذا العام في شهر نوفمبر.",
+            lambda b: b.metric_row([{"label": "Containers | حاويات", "value": "1.84m"}, {"label": "Ship calls | سفن", "value": "6,210"}, {"label": "Turnaround | زمن البقاء", "value": "22h"}]),
+            bars("Containers, thousands | الحاويات بالألف", {"2022": 1490, "2023": 1610, "2024": 1720, "2025": 1840}),
+            bars("Ship calls | عدد السفن", {"2022": 5400, "2023": 5720, "2024": 5980, "2025": 6210}))
+    section(b, "Finance | المالية",
+            "Revenue rose in line with volumes, and the storm repairs were met from the reserve set aside for that purpose.",
+            "ارتفعت الإيرادات بما يتناسب مع أحجام المناولة، وغُطيت إصلاحات العواصف من الاحتياطي المخصص لذلك.",
+            table(["Item", "2025", "2024", "2023", "البند"],
+                  [["Port dues", "412.6", "388.1", "361.4", "رسوم الموانئ"], ["Handling income", "298.3", "281.9", "264.0", "إيرادات المناولة"],
+                   ["Property rent", "86.5", "82.2", "79.8", "إيجارات العقارات"], ["Operating costs", "(517.9)", "(489.4)", "(466.2)", "تكاليف التشغيل"],
+                   ["Storm repairs", "(31.4)", "-", "-", "إصلاحات العواصف"]],
+                  caption="Income statement, million | قائمة الدخل بالمليون", footer=["Surplus", "248.1", "262.8", "239.0", "الفائض"]),
+            table(["Item", "2025", "2024", "البند"],
+                  [["Cash and deposits", "640.2", "598.7", "النقد والودائع"], ["Port assets", "4,118.0", "3,962.5", "أصول الموانئ"], ["Borrowings", "(902.4)", "(948.1)", "القروض"]],
+                  caption="Financial position, million | المركز المالي بالمليون", footer=["Net assets", "3,855.8", "3,613.1", "صافي الأصول"]))
+    section(b, "People and safety | الأفراد والسلامة",
+            "No serious injury was recorded for the second year running. Women now hold one in five operational roles, up from one in nine five years ago.",
+            "لم تُسجل أي إصابة خطيرة للعام الثاني على التوالي. وتشغل النساء الآن وظيفة من كل خمس وظائف تشغيلية، بعد أن كانت واحدة من كل تسع قبل خمس سنوات.",
+            lambda b: photo(b, a["works"], "Apprentices in the crane workshop | المتدربون في ورشة الرافعات", "Authority archive"),
+            "The apprenticeship scheme took on sixty new starters, and for the first time it included training in both languages at every grade.",
+            "استقبل برنامج التدريب ستين متدربًا جديدًا، وشمل لأول مرة تدريبًا باللغتين في جميع المستويات.")
+    return b, {"name": "Northern Ports Authority", "primary": "#173F5F", "accent": "#C99A2E", "logo": a["logo"]}
+
+
+def bilingual_water_compact(a):
+    b = DocumentBuilder()
+    b.meta(title="The Two Rivers Compact | ميثاق النهرين", subject="Progress report 2025 | تقرير التقدم ٢٠٢٥", author="Two Rivers Water Council")
+    section(b, "Why a compact | لماذا الميثاق",
+            "Seven towns share two rivers, and none of them can manage the water alone. The compact gives each town a fair allocation and a seat at one table.",
+            "تتقاسم سبع بلدات نهرين، ولا تستطيع أي منها إدارة الماء بمفردها. ويمنح الميثاق كل بلدة حصة عادلة ومقعدًا على طاولة واحدة.",
+            "Three years on, the council can report that withdrawals have fallen while farm output has held steady.",
+            "وبعد ثلاث سنوات، يستطيع المجلس أن يعلن تراجع كميات السحب مع ثبات الإنتاج الزراعي.")
+    section(b, "Allocations | الحصص",
+            "Every town stayed within its allocation for the first time. Metering now covers nine in ten farm intakes, so the figures below are measured rather than estimated.",
+            "التزمت كل البلدات بحصصها لأول مرة. وتغطي العدادات الآن تسعة من كل عشرة مآخذ زراعية، فالأرقام أدناه مقيسة لا مقدّرة.",
+            table(["Use", "2025", "2024", "الاستخدام"],
+                  [["Farming", "212", "231", "الزراعة"], ["Towns", "64", "66", "البلدات"], ["Industry", "18", "21", "الصناعة"], ["River flow reserve", "96", "78", "احتياطي جريان النهر"]],
+                  caption="Allocation by use, million cubic metres | الحصص حسب الاستخدام بالمليون متر مكعب", footer=["Total", "390", "396", "الإجمالي"]),
+            line("Withdrawals | كميات السحب", {"2022": 342, "2023": 331, "2024": 318, "2025": 294}),
+            line("Farm output index | مؤشر الإنتاج الزراعي", {"2022": 100, "2023": 101, "2024": 99, "2025": 102}))
+    section(b, "The rivers themselves | النهران",
+            "Summer flow at the lower gauge rose by a quarter, and the first trout in twenty years were recorded above the old weir.",
+            "ارتفع الجريان الصيفي عند المقياس السفلي بمقدار الربع، وسُجلت أول أسماك سلمون مرقط منذ عشرين عامًا فوق السد القديم.",
+            lambda b: photo(b, a["coast2"], "The lower gauge in August | المقياس السفلي في أغسطس", "Council archive"),
+            "Replanting along the banks continues, and landowners have now fenced forty kilometres of riverside against cattle.",
+            "ويتواصل التشجير على الضفتين، وقد سيّج ملاك الأراضي حتى الآن أربعين كيلومترًا من ضفاف النهر لحمايتها من الماشية.")
+    section(b, "Next steps | الخطوات القادمة",
+            "The council will review allocations next spring, using three full years of measured data for the first time.",
+            "سيراجع المجلس الحصص في الربيع القادم، مستندًا لأول مرة إلى بيانات مقيسة لثلاث سنوات كاملة.",
+            "Two more towns have asked to join the compact, and their request will go to a public hearing in each of the seven towns.",
+            "وقد طلبت بلدتان أخريان الانضمام إلى الميثاق، وسيُعرض طلبهما في جلسة علنية في كل بلدة من البلدات السبع.")
+    return b, {"name": "Two Rivers Water Council", "primary": "#1F5F6B", "accent": "#8A6D3B", "logo": a["logo"]}
+
+
 DOCUMENTS = {
     "annual_report": annual_report, "financial_statements": financial_statements, "board_paper": board_paper,
     "technical_manual": technical_manual, "research_paper": research_paper, "proposal": proposal,
     "impact_report": impact_report, "policy_brief": policy_brief, "arabic_annual": arabic_annual,
     "arabic_financial": arabic_financial, "bilingual_institutional": bilingual_institutional,
-    "sustainability_report": sustainability_report,
+    "sustainability_report": sustainability_report, "harbour_feature": harbour_feature,
+    "transit_data_story": transit_data_story, "arabic_city_feature": arabic_city_feature,
+    "arabic_health_data": arabic_health_data, "bilingual_ports_review": bilingual_ports_review,
+    "bilingual_water_compact": bilingual_water_compact,
 }

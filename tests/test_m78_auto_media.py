@@ -253,7 +253,7 @@ def test_evidence_recipes_stay_inconclusive():
     assert {r.status for r in EVIDENCE_RECIPES.values()} == {"inconclusive"}
 
 
-@pytest.mark.parametrize("name", ["statement_page", "editorial_sink", "image_slab_divider", "figure_matrix"])
+@pytest.mark.parametrize("name", ["statement_page", "editorial_sink", "image_slab_divider"])
 def test_unbuilt_archetypes_are_unsupported(name):
     assert ARCHETYPE_CAPABILITIES[name].status == "unsupported"
 

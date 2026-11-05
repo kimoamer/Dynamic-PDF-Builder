@@ -21,6 +21,7 @@ from ..schema.enums import PageSize, Orientation
 from ..schema.theme import Theme
 from ..themes import get_theme
 from ..fonts import register_fonts, get_font_name
+from ..fonts.manager import set_arabic_face
 from .factory import create_flowables, RenderContext
 from .. import policy as _policy
 from ..policy import RenderPolicy, DiagnosticCollector
@@ -140,7 +141,8 @@ class _BidiCanvas(Canvas):
             return text, None
         from .factory import _apply_rtl
         from ..fonts import get_font_name
-        font = get_font_name("Amiri", bold="Bold" in self._fontname)
+        from ..fonts.manager import current_arabic_face
+        font = get_font_name(current_arabic_face(), bold="Bold" in self._fontname)
         return _apply_rtl(text), font
 
     def _draw(self, fn, x, y, text, *a, **k):
@@ -346,7 +348,8 @@ class _EngineDocTemplate(BaseDocTemplate):
         if _ARABIC_BASE.search(text):
             from .factory import _apply_rtl
             from ..fonts import get_font_name
-            entry = f'<font name="{get_font_name("Amiri")}">{xml_escape(_apply_rtl(text))}</font>'
+            from ..fonts.manager import current_arabic_face
+            entry = f'<font name="{get_font_name(current_arabic_face())}">{xml_escape(_apply_rtl(text))}</font>'
         self.notify('TOCEntry', (level - 1, entry, self.page, key))
 
 
@@ -1116,6 +1119,7 @@ class LayoutEngine:
     def render(self, output) -> None:
         register_fonts()
         theme = self.theme
+        set_arabic_face(theme.typography.arabic_family)
         sp = theme.spacing
         hf = theme.header_footer
         pagesize = self._get_pagesize()

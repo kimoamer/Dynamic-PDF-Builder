@@ -16,8 +16,6 @@ from .archetypes import mix
 from .profile import Profile
 from .recipes import DesignRecipe
 
-_SERIF = "Times-Roman"
-_SANS = "Helvetica"
 
 
 @dataclass(frozen=True)
@@ -28,6 +26,7 @@ class Direction:
     base_theme: str
     heading_family: str
     body_family: str
+    arabic_family: str
     base_size: float
     line_height: float
     heading_scale: Tuple[float, ...]
@@ -66,47 +65,47 @@ class Direction:
             heading_family=self.heading_family, base_size=size, line_height=height,
             heading_scale=list(self.heading_scale), density=self.density * density,
             margins=self.margins_for(rtl), drop_cap=self.drop_cap and not rtl,
-            section_numbering=self.numbered and not rtl, toc="auto", toc_min_headings=self.toc_min,
+            section_numbering=self.numbered, toc="auto", toc_min_headings=self.toc_min,
             heading_ramp_locked=True, notes=[f"art direction: {self.name}"])
 
 
 DIRECTIONS: Dict[str, Direction] = {d.id: d for d in (
     Direction(
-        id="corporate_conservative", name="Corporate Conservative",
+        id="corporate_conservative", name="Corporate Conservative", arabic_family="IBM Plex Sans Arabic",
         summary="Formal and restrained: centred type cover, numbered sections, serif text, quiet rules.",
-        base_theme="modern_minimal", heading_family=_SANS, body_family=_SERIF, base_size=11, line_height=1.42,
+        base_theme="modern_minimal", heading_family="Open Sans", body_family="Source Serif 4", base_size=11, line_height=1.42,
         heading_scale=(1.75, 1.32, 1.14, 1.05, 1.0, 0.95), density=1.0, margins=(76, 70, 74, 74),
         primary="#1F3A5F", accent="#8A6D3B", cover="type_centered", opener="none", kpi="tiles", table="open",
         hero_image="inline", side_image=0.0, side_alternates=False, statement="plain", bands="line",
         numbered=True, toc_min=4),
     Direction(
-        id="editorial_modern", name="Editorial Modern",
+        id="editorial_modern", name="Editorial Modern", arabic_family="Markazi Text",
         summary="Magazine rhythm: wide start margin, headings hung into it, images that bleed or float.",
-        base_theme="modern_minimal", heading_family=_SANS, body_family=_SERIF, base_size=10.5, line_height=1.5,
+        base_theme="modern_minimal", heading_family="Montserrat", body_family="Spectral", base_size=10.5, line_height=1.5,
         heading_scale=(2.9, 1.5, 1.2, 1.05, 1.0, 0.95), density=1.1, margins=(66, 66, 150, 58),
         primary="#17191E", accent="#D1495B", cover="image_top", opener="hang", kpi="ruled", table="open",
         hero_image="bleed", side_image=0.5, side_alternates=True, statement="inline", bands="folio",
         drop_cap=True, lead=True, toc_min=8, hang=96.0, break_major=True),
     Direction(
-        id="executive_premium", name="Executive Premium",
+        id="executive_premium", name="Executive Premium", arabic_family="El Messiri",
         summary="Dark full cover, generous space, section opening pages, figures and statements given a page.",
-        base_theme="modern_minimal", heading_family=_SERIF, body_family=_SERIF, base_size=11, line_height=1.58,
+        base_theme="modern_minimal", heading_family="EB Garamond", body_family="EB Garamond", base_size=11.5, line_height=1.5,
         heading_scale=(2.5, 1.5, 1.2, 1.05, 1.0, 0.95), density=1.28, margins=(92, 84, 88, 88),
         primary="#14283C", accent="#B58B3C", cover="full", opener="page", kpi="hero_page", table="open",
         hero_image="band", side_image=0.44, side_alternates=False, statement="page", bands="quiet",
         lead=True, toc_min=5, break_major=True),
     Direction(
-        id="financial_data", name="Financial / Data-Driven",
+        id="financial_data", name="Financial / Data-Driven", arabic_family="Tajawal",
         summary="Dense and exact: masthead instead of a cover, filled running header, ledger tables, KPI bands.",
-        base_theme="modern_minimal", heading_family=_SANS, body_family=_SANS, base_size=9.2, line_height=1.36,
+        base_theme="modern_minimal", heading_family="Barlow", body_family="Barlow", base_size=9.6, line_height=1.36,
         heading_scale=(1.7, 1.3, 1.12, 1.03, 1.0, 0.95), density=0.82, margins=(50, 50, 50, 50),
         primary="#123B5D", accent="#1E8C7A", cover="masthead", opener="slab", kpi="band", table="ledger",
         hero_image="band", side_image=0.34, side_alternates=False, statement="plain", bands="filled",
         toc_min=9),
     Direction(
-        id="arabic_institutional", name="Arabic / Bilingual Institutional",
+        id="arabic_institutional", name="Arabic / Bilingual Institutional", arabic_family="Noto Naskh Arabic",
         summary="Mirrored institutional page: image panel cover, full-width slabs, organisation on every page.",
-        base_theme="modern_minimal", heading_family=_SERIF, body_family=_SERIF, base_size=10.8, line_height=1.55,
+        base_theme="modern_minimal", heading_family="Noto Serif", body_family="Noto Serif", base_size=10.4, line_height=1.55,
         heading_scale=(1.9, 1.4, 1.18, 1.05, 1.0, 0.95), density=1.08, margins=(78, 72, 72, 72),
         primary="#0E5A4F", accent="#B8862D", cover="split", opener="slab", kpi="ruled", table="ledger",
         hero_image="band", side_image=0.42, side_alternates=True, statement="inline", bands="institutional",

@@ -34,8 +34,8 @@ class VariantBudget(BaseModel):
     """Limits for one ``design_variants`` call. ReportLab cannot be stopped mid-render, so
     time is checked between renders; a design that starts in time may finish after it."""
 
-    max_renders: int = Field(14, ge=1)
-    max_refinements: int = Field(2, ge=0)        # per design
+    max_renders: int = Field(40, ge=1)
+    max_refinements: int = Field(5, ge=0)        # per design
     max_seconds: float = Field(120.0, gt=0)
     max_output_mb: float = Field(160.0, gt=0)    # PDF and DOCX bytes held at once
 
@@ -114,7 +114,8 @@ class VariantSet:
 
 def _words(text: str) -> frozenset:
     """Words of a line up to reversal: extraction may turn Arabic words and lines around."""
-    return frozenset(min(w, w[::-1]) for w in _fold(text).split())
+    clean = re.sub(r"[^\w\s]", " ", _fold(text))     # a title's colon may extract as its own span
+    return frozenset(min(w, w[::-1]) for w in clean.split())
 
 
 def _initials(doc, theme) -> List[str]:
@@ -141,6 +142,7 @@ def _intended(plan: ArtDirectionPlan, pdf_pages, opener_titles: Sequence[str]) -
 
 
 SHORT_LAST_WORDS = 70
+SHORT_TAIL = 0.55                     # blank share under the last content of the last page
 
 
 def _title_on(line: str, titles: Sequence[str]) -> Optional[str]:
@@ -178,10 +180,28 @@ def _next_refinement(critique, adjust: Adjust, plan: ArtDirectionPlan, titles: S
     if n >= max(4, base_pages * 1.5) and adjust.major_breaks:
         return (replace(adjust, major_breaks=False),
                 f"{n} pages against about {base_pages} in plain setting: sections now follow on")
-    if last and n > 1 and (last.ink < 0.06 or last.words <= SHORT_LAST_WORDS) and adjust.density > 0.86:
-        return (replace(adjust, density=round(adjust.density * 0.93, 3)),
-                f"last page holds {last.words} words: tightened spacing to pull it back")
+    if not _faults(critique, base_pages):
+        return None
+    if n >= max(3, base_pages * 1.5) and adjust.hero_page:
+        return (replace(adjust, hero_page=False),
+                f"{n} pages against about {base_pages} in plain setting: figures join their section")
+    why = f"{n} pages, the last with {last.words} words"
+    if adjust.exhibits > 0.76:
+        return (replace(adjust, exhibits=round(adjust.exhibits * 0.87, 3)),
+                f"{why}: made image bands and charts smaller to pull it back")
+    if adjust.density > 0.8:
+        return (replace(adjust, density=round(adjust.density * 0.9, 3)),
+                f"{why}: tightened spacing to pull it back")
     return None
+
+
+def _faults(critique, base_pages: int) -> int:
+    """Measured page problems a design should not keep: a last page with little on it, and a
+    document that grew by half. Each is a fact about the pages, not a quality grade."""
+    pages = critique.pages
+    n = len(pages)
+    short = n > 1 and pages[-1].tail >= SHORT_TAIL
+    return int(short) + int(n >= max(3, base_pages * 1.5))
 
 
 class _Runner:
@@ -242,7 +262,8 @@ class _Runner:
             rep.renders += 1
             t_critique = self._look(t_made, t_pdf, titles)
             adjust = trial                        # a rejected change is not tried again
-            if t_critique.index >= critique.index:
+            before, after = _faults(critique, self.base_pages), _faults(t_critique, self.base_pages)
+            if after < before or (after == before and t_critique.index >= critique.index):
                 made, pdf, geo, critique = t_made, t_pdf, t_geo, t_critique
                 steps.append(f"kept: {step[1]} (index {critique.index})")
             else:
@@ -384,6 +405,10 @@ def generate_variants(source, *, policy=None, brand: Optional[BrandKit] = None, 
     return VariantSet(variants, best, reasons, fallback=best is None, stats=stats)
 
 
+COMPOSITION_MARKS = {"chart.small_multiples": "matrix:", "editorial.overlaid_panel": "panel:",
+                     "bilingual.parallel_columns": "paired columns:", "bilingual.parallel_ledger": "ledger:"}
+
+
 def _with_grammar(run: _Runner, grammar, only, brief, direction, fit, why) -> Variant:
     """One design, following the grammar when given one."""
     from ..design.grammar import overlay
@@ -395,14 +420,31 @@ def _with_grammar(run: _Runner, grammar, only, brief, direction, fit, why) -> Va
     v = run.run(changed, fit, why)
     spilled = any(r.startswith("cover.") for r in rules) and _cover_spilled(v.pdf)
     if v.valid and not spilled:
+        rules = [r for r in rules if _took_effect(r, v.plan)]
         v.report.grammar_rules, v.report.grammar_version = rules, grammar.version
         if v.plan:
             v.plan.decisions += [f"grammar {grammar.version}: {r}" for r in rules]
         return v
+    if v.valid and spilled:                       # the cover alone was at fault; keep the other rules
+        kept = [r for r in rules if not r.startswith("cover.")]
+        if kept:
+            changed, rules = overlay(grammar, direction, brief, run.sem.meta.title or "", kept)
+            v = run.run(changed, fit, why)
+            if v.valid:
+                v.report.grammar_rules = [r for r in rules if _took_effect(r, v.plan)]
+                v.report.grammar_version = grammar.version
+                v.report.observations.append(f"grammar {grammar.version}: cover rule dropped, the title spilled")
+                return v
     fallback = run.run(direction, fit, why)
     fallback.report.observations.append(
         f"grammar {grammar.version}: {', '.join(rules)} failed the hard gates, so this design does without them")
     return fallback
+
+
+def _took_effect(rule: str, plan) -> bool:
+    """A composition rule counts only where the document had the structure for it."""
+    mark = COMPOSITION_MARKS.get(rule)
+    return not mark or not plan or any(d.startswith(mark) for d in plan.decisions)
 
 
 def _cover_spilled(pdf: Optional[bytes]) -> bool:

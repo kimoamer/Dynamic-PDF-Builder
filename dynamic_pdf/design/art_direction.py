@@ -18,7 +18,10 @@ from pydantic import BaseModel, Field
 
 from ..core.content_ledger import build_content_ledger
 from ..core.normalize import SemanticDocument, is_rtl_text
-from ..schema.blocks import (CoverPageBlock, HeadingBlock, ImageBlock, PerformanceFigure, PerformancePageBlock,
+from ..fonts.manager import covering_face
+from ..schema.blocks import (CoverPageBlock, FigureCell, FigureMatrixBlock, HeadingBlock, ImageBlock, ImageTextPanelBlock,
+                             LedgerRow, LedgerSection, PairedRow, PairedRowColumnsBlock, ParallelLedgerBlock,
+                             PerformanceFigure, PerformancePageBlock,
                              SectionOpenerBlock)
 from ..schema.media import ImageTreatment, MediaPlacement
 from ..schema.theme import Theme
@@ -26,6 +29,7 @@ from . import BrandKit, DesignPlan, apply_brand, apply_plan, apply_recipe, compi
 from .archetypes import ink as dark_ink
 from .archetypes import mix
 from .directions import DIRECTIONS, Direction, page_system, palette
+from .focal import focal_point
 
 _SUMMARY = re.compile(r"summary|highlight|overview|letter|foreword|recommendation|at a glance|in brief|in numbers"
                       r"|كلمة|ملخص|أبرز|رسالت", re.I)
@@ -61,6 +65,12 @@ _FIT: Dict[str, Dict[str, float]] = {
     "report": {"corporate_conservative": 2, "executive_premium": 2, "editorial_modern": 2, "financial_data": 2},
 }
 MAX_CHAPTERS = 8
+MAX_PANELS = 2
+MIN_PANEL_GAP = 6              # blocks between panels, so a composition stays an event
+PANEL_WORDS = 60
+OVERLAY_DIRECTIONS = ("editorial_modern", "executive_premium")
+_MARKUP = re.compile(r"[*<\[`]")
+_FIGURE = re.compile(r"[-+(]?[\d٠-٩][\d٠-٩.,٫٬ ]*[)%٪]?|[—–-]")
 MIN_CONTENTS_PAGES = 6
 
 
@@ -133,6 +143,7 @@ class Adjust:
     side_images: bool = True
     statement_pages: bool = True
     major_breaks: bool = True
+    exhibits: float = 1.0          # image bands and charts, as a share of their planned height
     no_break: frozenset = field(default_factory=frozenset)   # sections that follow on instead of opening a page
 
 
@@ -294,7 +305,7 @@ def _cover(sem, d: Direction, brief: DocumentBrief, primary: str, accent: str, l
         c.hints = {"title_scale": 1.5, "rule": accent, "drop": 0.52}
     elif kind == "image_top":
         c.layout, c.background_image = "left_aligned", photo.src
-        c.background_treatment = ImageTreatment(fit="cover")
+        c.background_treatment = _cover_crop(photo.src)
         c.hints = {"image_top": d.extras.get("cover_image_top", 0.6), "title_scale": d.extras.get("cover_title_scale", 1.0)}
         if d.extras.get("cover_panel"):           # the page behind the title becomes a colour panel
             c.background_color, c.text_color = primary, "#FFFFFF"
@@ -302,7 +313,7 @@ def _cover(sem, d: Direction, brief: DocumentBrief, primary: str, accent: str, l
             c.layout = "centered"
     elif kind == "split":
         c.layout, c.background_image, c.logo = "split", photo.src, logo
-        c.background_treatment = ImageTreatment(fit="cover")
+        c.background_treatment = _cover_crop(photo.src)
         c.hints = {"title_scale": 1.25, "rule": accent, "drop": 0.34}
     elif kind == "colour_panel":
         c.layout, c.background_color, c.text_color = "left_aligned", primary, "#FFFFFF"
@@ -312,7 +323,7 @@ def _cover(sem, d: Direction, brief: DocumentBrief, primary: str, accent: str, l
         c.layout, c.background_color, c.text_color = "left_aligned", primary, "#FFFFFF"
         if photo is not None:
             c.background_image = photo.src
-            c.background_treatment = ImageTreatment(fit="cover")
+            c.background_treatment = _cover_crop(photo.src)
             c.overlay_color, c.overlay_opacity = primary, 0.62
         c.hints = {"title_scale": 1.15, "rule": accent, "drop": 0.56}
     sem.blocks.insert(0, c)
@@ -322,6 +333,12 @@ def _cover(sem, d: Direction, brief: DocumentBrief, primary: str, accent: str, l
     if short and d.cover != "masthead":
         plan.decisions.append(f"cover: about {brief.estimated_pages} pages is too short for a cover page, "
                               "so the title opens page one")
+
+
+def _cover_crop(src) -> ImageTreatment:
+    """Fill the box, cropping around the subject of the picture rather than its middle."""
+    fx, fy = focal_point(src)
+    return ImageTreatment(fit="cover", focal_x=fx, focal_y=fy)
 
 
 def _photo(b: ImageBlock, d: Direction, section: SectionBrief, side: str, adjust: Adjust,
@@ -336,21 +353,23 @@ def _photo(b: ImageBlock, d: Direction, section: SectionBrief, side: str, adjust
         b.placement = MediaPlacement(mode="floating", horizontal=side, width_ratio=d.side_image)
         return f"float {side}"
     if compact and crop:                          # following on: a band that fits under what came before
-        b.placement = MediaPlacement(width_ratio=1.0, height_ratio=0.28, bleed=d.hero_image == "bleed")
-        b.treatment = ImageTreatment(fit="cover")
+        b.placement = MediaPlacement(width_ratio=1.0, height_ratio=0.28 * adjust.exhibits,
+                                     bleed=d.hero_image == "bleed")
+        b.treatment = _cover_crop(b.src)
         return "image band, following on"
     if d.hero_image == "bleed":
         b.placement = MediaPlacement(width_ratio=1.0, bleed=True)
         return "bleed image"
     if d.hero_image == "band" and crop:
-        b.placement = MediaPlacement(width_ratio=1.0, height_ratio=0.34)
-        b.treatment = ImageTreatment(fit="cover")
+        b.placement = MediaPlacement(width_ratio=1.0, height_ratio=0.34 * adjust.exhibits)
+        b.treatment = _cover_crop(b.src)
         return "image band"
-    b.placement = MediaPlacement(width_ratio=0.82 if d.id == "corporate_conservative" else 1.0)
+    b.placement = MediaPlacement(width_ratio=(0.82 if d.id == "corporate_conservative" else 1.0) * adjust.exhibits)
     return "column image"
 
 
-def _chart(b, d: Direction, primary: str, muted: str) -> None:
+def _chart(b, d: Direction, primary: str, muted: str, adjust: Adjust) -> None:
+    b.height = b.height * adjust.exhibits
     if b.colors:
         return
     data = b.data if isinstance(b.data, dict) else {}
@@ -360,9 +379,9 @@ def _chart(b, d: Direction, primary: str, muted: str) -> None:
     else:
         b.colors = [primary]
     if d.id == "financial_data":
-        b.height = min(b.height, 2.7)
+        b.height = min(b.height, 2.7 * adjust.exhibits)
     elif d.id in ("editorial_modern", "executive_premium"):
-        b.height = min(b.height, 3.3)
+        b.height = min(b.height, 3.3 * adjust.exhibits)
 
 
 def _table(b, d: Direction) -> None:
@@ -434,7 +453,7 @@ def _apply_sections(sem, d: Direction, brief: DocumentBrief, primary: str, accen
             _hint(heading, opener="rule", rule=accent, rule_width=1.2, weight="regular")
         if s.role == "appendix":
             opener = "quiet"
-            if brief.estimated_pages >= 5:
+            if brief.estimated_pages >= 5 and adjust.major_breaks:
                 _hint(heading, break_before="if_not_empty")
             if d.opener != "none":
                 _hint(heading, scale=0.72)
@@ -494,7 +513,11 @@ def _apply_sections(sem, d: Direction, brief: DocumentBrief, primary: str, accen
                 side_flip = not side_flip
                 side = "end" if not (d.side_alternates and side_flip) else "start"
             elif b.type == "chart":
-                _chart(b, d, primary, mix(primary, "#FFFFFF", 0.62))
+                _chart(b, d, primary, mix(primary, "#FFFFFF", 0.62), adjust)
+            elif b.type == "figure_matrix":
+                for cell in b.figures:
+                    if cell.chart is not None:
+                        _chart(cell.chart, d, primary, mix(primary, "#FFFFFF", 0.62), adjust)
             elif b.type == "table":
                 _table(b, d)
             elif b.type == "metric_row" and d.kpi in ("ruled", "band"):
@@ -515,6 +538,104 @@ def _apply_sections(sem, d: Direction, brief: DocumentBrief, primary: str, accen
     sem.blocks = [replace.get(i, b) for i, b in enumerate(blocks) if i not in remove]
 
 
+def _plain_text(text: str) -> bool:
+    return not _MARKUP.search(text or "")
+
+
+def _pair(a, b) -> bool:
+    """Two paragraphs that say one thing in two languages."""
+    return (a.type == b.type == "paragraph" and is_rtl_text(a.text) != is_rtl_text(b.text)
+            and _plain_text(a.text) and _plain_text(b.text))
+
+
+def _ledger(b) -> Optional[ParallelLedgerBlock]:
+    """A table labelled in a language at each edge, with only figures between. The labels must
+    already be there: this moves them, and writes none."""
+    h = b.headers
+    if (b.type != "table" or not b.caption or b.table_number or not 3 <= len(h) <= 6
+            or is_rtl_text(h[0]) == is_rtl_text(h[-1])):
+        return None
+    rows = [*b.rows, *([b.footer_row] if b.footer_row else [])]
+    if len(rows) < 2 or any(len(r) != len(h) for r in rows):
+        return None
+    if any(not _FIGURE.fullmatch(c.strip()) for r in rows for c in r[1:-1]):
+        return None
+    last = len(b.rows)
+    lines = [LedgerRow(label=r[0], label_alt=r[-1], values=r[1:-1], total=i >= last) for i, r in enumerate(rows)]
+    return ParallelLedgerBlock(periods=h[1:-1], label_header=h[0], label_header_alt=h[-1], title_first=True,
+                               sections=[LedgerSection(title=b.caption, rows=lines)])
+
+
+def _matrix(charts, adjust: Adjust) -> FigureMatrixBlock:
+    columns = 3 if len(charts) % 3 == 0 else 2
+    return FigureMatrixBlock(figures=[FigureCell(chart=c) for c in charts], columns=columns,
+                             cell_height=(104.0 if columns == 3 else 128.0) * adjust.exhibits)
+
+
+def _panel(b, text: str, d: Direction, count: int, primary: str, rtl: bool) -> ImageTextPanelBlock:
+    """Overlay keeps the panel off the picture's subject; a split alternates down the document."""
+    overlay = d.id in OVERLAY_DIRECTIONS
+    if overlay:
+        left = focal_point(b.src)[0] >= 0.5
+        side = "start" if left != rtl else "end"
+    else:
+        side = "start" if count % 2 == 0 else "end"
+    return ImageTextPanelBlock(image=b, paragraphs=[text], layout="overlay" if overlay else "split", side=side,
+                               panel_color=primary, tone="dark")
+
+
+def _compose(sem, d: Direction, primary: str, adjust: Adjust, plan: ArtDirectionPlan, rtl: bool) -> None:
+    """Grammar compositions, where the document already has the structure each one needs."""
+    e = d.extras
+    if not any(e.get(k) for k in ("image_panel", "chart_matrix", "paired_columns", "ledger_tables")):
+        return
+    blocks, out, i = sem.blocks, [], 0
+    panels, since_panel, appendix = 0, MIN_PANEL_GAP, False
+    while i < len(blocks):
+        b = blocks[i]
+        since_panel += 1
+        if b.type == "heading" and b.level == 1:
+            appendix = bool(_APPENDIX.search(b.text))
+        if e.get("chart_matrix") and b.type == "chart":
+            j = i
+            while j < len(blocks) and blocks[j].type == "chart" and blocks[j].chart_type == b.chart_type:
+                j += 1
+            if j - i >= 2:
+                out.append(_matrix(blocks[i:j], adjust))
+                plan.decisions.append(f"matrix: {j - i} charts of one kind in equal cells")
+                i = j
+                continue
+        if e.get("paired_columns") and i + 1 < len(blocks) and _pair(b, blocks[i + 1]):
+            j = i
+            rows = []
+            while j + 1 < len(blocks) and _pair(blocks[j], blocks[j + 1]):
+                rows.append(PairedRow(first=blocks[j].text, second=blocks[j + 1].text))
+                j += 2
+            out.append(PairedRowColumnsBlock(rows=rows))
+            plan.decisions.append(f"paired columns: {len(rows)} paragraphs in two languages, row by row")
+            i = j
+            continue
+        if e.get("ledger_tables") and b.type == "table":
+            made = _ledger(b)
+            if made:
+                out.append(made)
+                plan.decisions.append("ledger: figures once, labelled from each language's edge")
+                i += 1
+                continue
+        if (e.get("image_panel") and _is_photo(b) and not appendix and panels < MAX_PANELS
+                and since_panel >= MIN_PANEL_GAP and i + 1 < len(blocks) and blocks[i + 1].type == "paragraph"
+                and 12 <= _words(blocks[i + 1].text) <= PANEL_WORDS and _plain_text(blocks[i + 1].text)):
+            out.append(_panel(b, blocks[i + 1].text, d, panels, primary, rtl))
+            plan.decisions.append("panel: a photograph and the short text after it set as one composition")
+            panels += 1
+            since_panel = 0
+            i += 2
+            continue
+        out.append(b)
+        i += 1
+    sem.blocks = out
+
+
 def _closing_band(blocks, last: List[int], remove: set, d: Direction, plan: ArtDirectionPlan) -> None:
     """A last photograph that may be cropped becomes a band across the page, where it falls."""
     kept = [i for i in last if i not in remove]
@@ -524,8 +645,14 @@ def _closing_band(blocks, last: List[int], remove: set, d: Direction, plan: ArtD
     if b.width or b.height:
         return
     b.placement = MediaPlacement(width_ratio=1.0, height_ratio=d.extras["closing_band"], bleed=True)
-    b.treatment = ImageTreatment(fit="cover")
+    b.treatment = _cover_crop(b.src)
     plan.decisions.append(f"image {b.src!r}: closes the document as a band across the page")
+
+
+def _arabic_chars(sem) -> str:
+    """Characters of this document that the Arabic face has to draw."""
+    text = str(sem.meta.model_dump()) + "".join(str(b.model_dump()) for b in sem.blocks)
+    return "".join(sorted({c for c in text if "؀" <= c <= "ۿ" or c in "%¹²³"}))
 
 
 def direct(sem: SemanticDocument, direction: Direction, *, brand: Optional[BrandKit] = None,
@@ -546,7 +673,8 @@ def direct(sem: SemanticDocument, direction: Direction, *, brand: Optional[Brand
     theme.decorations.heading_accent_bar = False
     theme.decorations.table_row_alternating = d.table == "default"
     if rtl or sem.stats.bilingual:
-        theme.typography.arabic_family = theme.typography.arabic_family or "Amiri"
+        if theme.typography.arabic_family in (None, "Amiri"):
+            theme.typography.arabic_family = covering_face(d.arabic_family, _arabic_chars(sem))
     tokens = compile_tokens(theme)
     design = DesignPlan(decision=base.decision, recipe=recipe, theme=theme, tokens=tokens,
                         section_numbering=recipe.section_numbering or sem.meta.section_numbering, notes=notes)
@@ -566,6 +694,7 @@ def direct(sem: SemanticDocument, direction: Direction, *, brand: Optional[Brand
         out.blocks = [b for b in out.blocks if b.type != "table_of_contents"]
         plan.decisions.append(f"contents: about {brief.estimated_pages} pages needs no contents page")
     _cover(out, d, brief, primary, accent, logo, plan)
+    _compose(out, d, primary, adjust, plan, rtl)
     _apply_sections(out, d, brief, primary, accent, muted, adjust, plan, rtl)
     if brief.author_bands:
         plan.bands = "the author's own page system"
