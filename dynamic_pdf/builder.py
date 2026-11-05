@@ -337,21 +337,31 @@ class DocumentBuilder:
                 _gt(self._theme) if self._theme_explicit else None, self._policy)}
         return self._gate_cache[key]
 
-    def design_variants(self, n: int = 3, families=None, brand=None, budget=None, office: bool = False):
+    def design_variants(self, n: int = 3, families=None, brand=None, budget=None, office: bool = False,
+                        grammar=None, grammar_rules=None, ranker_model=None):
         """Several complete designs of this document, each a different art direction, and
         a recommendation among those that pass the hard gates.
 
         ``families`` names directions from ``dynamic_pdf.design.directions.DIRECTIONS`` in
         place of the automatic choice. ``office=True`` also opens each DOCX in LibreOffice.
         Nothing about this builder's own output changes. If no design passes,
-        ``fallback`` is True and ``render()`` remains the stable result."""
+        ``fallback`` is True and ``render()`` remains the stable result.
+
+        ``grammar=True`` follows the packaged approved design grammar, and a path follows
+        another approved file; ``grammar_rules`` limits it to named rules. Each report lists
+        the rules a design used in ``grammar_rules``. Without it nothing changes.
+
+        ``ranker_model`` names a trained variant ranker whose gate passed. It only reorders
+        designs that passed the hard gates, and ``stats["selection"]`` says which selector
+        chose. A missing or refused model leaves the fixed selection in place."""
         from .design import BrandKit
         from .intelligence.variants import generate_variants
         from .themes import get_theme as _gt
         kit = brand if brand is None or isinstance(brand, BrandKit) else BrandKit(**brand)
         return generate_variants(self.build(), policy=self._policy, brand=kit or self._brand,
                                  base_theme=_gt(self._theme) if self._theme_explicit else None, n=n,
-                                 families=families, budget=budget, office=office)
+                                 families=families, budget=budget, office=office, grammar=grammar,
+                                 grammar_rules=grammar_rules, ranker_model=ranker_model)
 
     def design_explain(self) -> dict:
         """Why each style/layout decision was made (profile, reasons, recipe)."""

@@ -1,0 +1,12 @@
+{
+ "reference_dir": "D:/Dynamic-PDF-Design-References",
+ "inbox": "D:/Dynamic-PDF-Design-References/00-Inbox",
+ "analysis_dir": "D:/Dynamic-PDF-Design-References-analysis",
+ "grammar_file": "docs/m77-design-grammar/design-grammar.json",
+ "grammar_approvals": "docs/m77-design-grammar/grammar-approvals.json",
+ "packaged_grammar": "dynamic_pdf/design/approved_grammar.json",
+ "ai_preferences": "training/ai_preferences",
+ "human_preferences": "training/human_preferences",
+ "models": "training/models",
+ "document_split": "training/document-split.json"
+}

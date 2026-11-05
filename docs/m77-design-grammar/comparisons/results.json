@@ -1,0 +1,1406 @@
+{
+ "note": "Measurements only. No statement here says a design looks better.",
+ "grammar": "1.0.0",
+ "demonstrations": [
+  {
+   "rule": "cover.photo_over_panel",
+   "document": "annual_report",
+   "direction": "corporate_conservative",
+   "focus": "cover",
+   "baseline_valid": true,
+   "valid": true,
+   "rules_reported": [
+    "cover.photo_over_panel"
+   ],
+   "observations": [],
+   "applied": true,
+   "pixels": {
+    "compared": 6,
+    "pages_changed": 1,
+    "largest_change": 0.996,
+    "mean_change": 0.166,
+    "change_by_page": [
+     0.996,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "extra_pages": 0
+   },
+   "pdf": {
+    "baseline_pages": 6,
+    "pages": 6
+   },
+   "docx": {
+    "baseline": {
+     "anchored_drawings": 0,
+     "inline_drawings": 5,
+     "shaded_cells_and_paragraphs": 4,
+     "media_files": 5,
+     "header_footer_parts": 4,
+     "tables": 3,
+     "bytes": 133913
+    },
+    "with_rule": {
+     "anchored_drawings": 2,
+     "inline_drawings": 4,
+     "shaded_cells_and_paragraphs": 4,
+     "media_files": 4,
+     "header_footer_parts": 4,
+     "tables": 3,
+     "bytes": 132221
+    },
+    "office_pages": {
+     "baseline": 6,
+     "with_rule": 6,
+     "pixels": {
+      "compared": 6,
+      "pages_changed": 1,
+      "largest_change": 0.996,
+      "mean_change": 0.166,
+      "change_by_page": [
+       0.996,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "extra_pages": 0
+     },
+     "note": "as LibreOffice sets it; this proves nothing about Microsoft Word"
+    },
+    "word": {
+     "baseline": 6,
+     "with_rule": 6,
+     "pixels": {
+      "compared": 6,
+      "pages_changed": 1,
+      "largest_change": 0.996,
+      "mean_change": 0.166,
+      "extra_pages": 0
+     }
+    }
+   }
+  },
+  {
+   "rule": "cover.low_title_field",
+   "document": "impact_report",
+   "direction": "executive_premium",
+   "focus": "cover",
+   "baseline_valid": true,
+   "valid": true,
+   "rules_reported": [
+    "cover.low_title_field"
+   ],
+   "observations": [],
+   "applied": true,
+   "pixels": {
+    "compared": 5,
+    "pages_changed": 1,
+    "largest_change": 0.233,
+    "mean_change": 0.047,
+    "change_by_page": [
+     0.233,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "extra_pages": 0
+   },
+   "pdf": {
+    "baseline_pages": 5,
+    "pages": 5
+   },
+   "docx": {
+    "baseline": {
+     "anchored_drawings": 3,
+     "inline_drawings": 3,
+     "shaded_cells_and_paragraphs": 0,
+     "media_files": 4,
+     "header_footer_parts": 4,
+     "tables": 3,
+     "bytes": 111413
+    },
+    "with_rule": {
+     "anchored_drawings": 1,
+     "inline_drawings": 3,
+     "shaded_cells_and_paragraphs": 0,
+     "media_files": 4,
+     "header_footer_parts": 4,
+     "tables": 3,
+     "bytes": 111312
+    },
+    "office_pages": {
+     "baseline": 4,
+     "with_rule": 4,
+     "pixels": {
+      "compared": 4,
+      "pages_changed": 1,
+      "largest_change": 0.241,
+      "mean_change": 0.06,
+      "change_by_page": [
+       0.241,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "extra_pages": 0
+     },
+     "note": "as LibreOffice sets it; this proves nothing about Microsoft Word"
+    },
+    "word": {
+     "baseline": 4,
+     "with_rule": 4,
+     "pixels": {
+      "compared": 4,
+      "pages_changed": 1,
+      "largest_change": 0.224,
+      "mean_change": 0.056,
+      "extra_pages": 0
+     }
+    }
+   }
+  },
+  {
+   "rule": "cover.low_title_field",
+   "document": "arabic_annual",
+   "direction": "arabic_institutional",
+   "focus": "cover",
+   "baseline_valid": true,
+   "valid": true,
+   "rules_reported": [
+    "cover.low_title_field"
+   ],
+   "observations": [],
+   "applied": true,
+   "pixels": {
+    "compared": 6,
+    "pages_changed": 1,
+    "largest_change": 0.692,
+    "mean_change": 0.115,
+    "change_by_page": [
+     0.692,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "extra_pages": 0
+   },
+   "pdf": {
+    "baseline_pages": 6,
+    "pages": 6
+   },
+   "docx": {
+    "baseline": {
+     "anchored_drawings": 1,
+     "inline_drawings": 3,
+     "shaded_cells_and_paragraphs": 5,
+     "media_files": 3,
+     "header_footer_parts": 4,
+     "tables": 3,
+     "bytes": 77651
+    },
+    "with_rule": {
+     "anchored_drawings": 1,
+     "inline_drawings": 2,
+     "shaded_cells_and_paragraphs": 5,
+     "media_files": 3,
+     "header_footer_parts": 4,
+     "tables": 3,
+     "bytes": 77788
+    },
+    "office_pages": {
+     "baseline": 6,
+     "with_rule": 6,
+     "pixels": {
+      "compared": 6,
+      "pages_changed": 1,
+      "largest_change": 0.691,
+      "mean_change": 0.115,
+      "change_by_page": [
+       0.691,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "extra_pages": 0
+     },
+     "note": "as LibreOffice sets it; this proves nothing about Microsoft Word"
+    },
+    "word": {
+     "baseline": 6,
+     "with_rule": 6,
+     "pixels": {
+      "compared": 6,
+      "pages_changed": 1,
+      "largest_change": 0.692,
+      "mean_change": 0.115,
+      "extra_pages": 0
+     }
+    }
+   }
+  },
+  {
+   "rule": "opener.edge_strip_page",
+   "document": "annual_report",
+   "direction": "corporate_conservative",
+   "focus": "openers",
+   "baseline_valid": true,
+   "valid": true,
+   "rules_reported": [
+    "opener.edge_strip_page"
+   ],
+   "observations": [],
+   "applied": true,
+   "pixels": {
+    "compared": 6,
+    "pages_changed": 5,
+    "largest_change": 0.353,
+    "mean_change": 0.22,
+    "change_by_page": [
+     0.0,
+     0.128,
+     0.353,
+     0.307,
+     0.243,
+     0.291
+    ],
+    "extra_pages": 2
+   },
+   "pdf": {
+    "baseline_pages": 6,
+    "pages": 8
+   },
+   "docx": {
+    "baseline": {
+     "anchored_drawings": 0,
+     "inline_drawings": 5,
+     "shaded_cells_and_paragraphs": 4,
+     "media_files": 5,
+     "header_footer_parts": 4,
+     "tables": 3,
+     "bytes": 133913
+    },
+    "with_rule": {
+     "anchored_drawings": 14,
+     "inline_drawings": 5,
+     "shaded_cells_and_paragraphs": 4,
+     "media_files": 5,
+     "header_footer_parts": 8,
+     "tables": 3,
+     "bytes": 137148
+    },
+    "office_pages": {
+     "baseline": 6,
+     "with_rule": 8,
+     "pixels": {
+      "compared": 6,
+      "pages_changed": 5,
+      "largest_change": 0.364,
+      "mean_change": 0.223,
+      "change_by_page": [
+       0.0,
+       0.125,
+       0.364,
+       0.299,
+       0.274,
+       0.275
+      ],
+      "extra_pages": 2
+     },
+     "note": "as LibreOffice sets it; this proves nothing about Microsoft Word"
+    },
+    "word": {
+     "baseline": 6,
+     "with_rule": 8,
+     "pixels": {
+      "compared": 6,
+      "pages_changed": 5,
+      "largest_change": 0.354,
+      "mean_change": 0.222,
+      "extra_pages": 2
+     }
+    }
+   }
+  },
+  {
+   "rule": "kpi.hero_and_grid",
+   "document": "annual_report",
+   "direction": "corporate_conservative",
+   "focus": "figures",
+   "baseline_valid": true,
+   "valid": true,
+   "rules_reported": [
+    "kpi.hero_and_grid"
+   ],
+   "observations": [],
+   "applied": true,
+   "pixels": {
+    "compared": 6,
+    "pages_changed": 5,
+    "largest_change": 0.339,
+    "mean_change": 0.18,
+    "change_by_page": [
+     0.0,
+     0.023,
+     0.333,
+     0.339,
+     0.306,
+     0.076
+    ],
+    "extra_pages": 1
+   },
+   "pdf": {
+    "baseline_pages": 6,
+    "pages": 7
+   },
+   "docx": {
+    "baseline": {
+     "anchored_drawings": 0,
+     "inline_drawings": 5,
+     "shaded_cells_and_paragraphs": 4,
+     "media_files": 5,
+     "header_footer_parts": 4,
+     "tables": 3,
+     "bytes": 133913
+    },
+    "with_rule": {
+     "anchored_drawings": 0,
+     "inline_drawings": 5,
+     "shaded_cells_and_paragraphs": 0,
+     "media_files": 5,
+     "header_footer_parts": 4,
+     "tables": 4,
+     "bytes": 134090
+    },
+    "office_pages": {
+     "baseline": 6,
+     "with_rule": 7,
+     "pixels": {
+      "compared": 6,
+      "pages_changed": 5,
+      "largest_change": 0.349,
+      "mean_change": 0.183,
+      "change_by_page": [
+       0.0,
+       0.023,
+       0.331,
+       0.349,
+       0.297,
+       0.095
+      ],
+      "extra_pages": 1
+     },
+     "note": "as LibreOffice sets it; this proves nothing about Microsoft Word"
+    },
+    "word": {
+     "baseline": 6,
+     "with_rule": 7,
+     "pixels": {
+      "compared": 6,
+      "pages_changed": 5,
+      "largest_change": 0.355,
+      "mean_change": 0.182,
+      "extra_pages": 1
+     }
+    }
+   }
+  },
+  {
+   "rule": "table.current_period_ledger",
+   "document": "financial_statements",
+   "direction": "executive_premium",
+   "focus": "tables",
+   "baseline_valid": true,
+   "valid": true,
+   "rules_reported": [
+    "table.current_period_ledger"
+   ],
+   "observations": [],
+   "applied": true,
+   "pixels": {
+    "compared": 5,
+    "pages_changed": 0,
+    "largest_change": 0.016,
+    "mean_change": 0.009,
+    "change_by_page": [
+     0.0,
+     0.009,
+     0.008,
+     0.013,
+     0.016
+    ],
+    "extra_pages": 0
+   },
+   "pdf": {
+    "baseline_pages": 5,
+    "pages": 5
+   },
+   "docx": {
+    "baseline": {
+     "anchored_drawings": 1,
+     "inline_drawings": 2,
+     "shaded_cells_and_paragraphs": 0,
+     "media_files": 2,
+     "header_footer_parts": 4,
+     "tables": 5,
+     "bytes": 110091
+    },
+    "with_rule": {
+     "anchored_drawings": 1,
+     "inline_drawings": 2,
+     "shaded_cells_and_paragraphs": 21,
+     "media_files": 2,
+     "header_footer_parts": 4,
+     "tables": 5,
+     "bytes": 110201
+    },
+    "office_pages": {
+     "baseline": 5,
+     "with_rule": 5,
+     "pixels": {
+      "compared": 5,
+      "pages_changed": 1,
+      "largest_change": 0.021,
+      "mean_change": 0.013,
+      "change_by_page": [
+       0.0,
+       0.021,
+       0.019,
+       0.018,
+       0.01
+      ],
+      "extra_pages": 0
+     },
+     "note": "as LibreOffice sets it; this proves nothing about Microsoft Word"
+    },
+    "word": {
+     "baseline": 5,
+     "with_rule": 5,
+     "pixels": {
+      "compared": 5,
+      "pages_changed": 0,
+      "largest_change": 0.016,
+      "mean_change": 0.012,
+      "extra_pages": 0
+     }
+    }
+   }
+  },
+  {
+   "rule": "bands.dense_filled_head_foot",
+   "document": "financial_statements",
+   "direction": "financial_data",
+   "focus": "bands",
+   "baseline_valid": true,
+   "valid": true,
+   "rules_reported": [
+    "bands.dense_filled_head_foot"
+   ],
+   "observations": [],
+   "applied": true,
+   "pixels": {
+    "compared": 3,
+    "pages_changed": 2,
+    "largest_change": 0.037,
+    "mean_change": 0.024,
+    "change_by_page": [
+     0.0,
+     0.036,
+     0.037
+    ],
+    "extra_pages": 0
+   },
+   "pdf": {
+    "baseline_pages": 3,
+    "pages": 3
+   },
+   "docx": {
+    "baseline": {
+     "anchored_drawings": 0,
+     "inline_drawings": 2,
+     "shaded_cells_and_paragraphs": 30,
+     "media_files": 2,
+     "header_footer_parts": 4,
+     "tables": 6,
+     "bytes": 102642
+    },
+    "with_rule": {
+     "anchored_drawings": 0,
+     "inline_drawings": 2,
+     "shaded_cells_and_paragraphs": 30,
+     "media_files": 2,
+     "header_footer_parts": 6,
+     "tables": 6,
+     "bytes": 106231
+    },
+    "office_pages": {
+     "baseline": 3,
+     "with_rule": 3,
+     "pixels": {
+      "compared": 3,
+      "pages_changed": 2,
+      "largest_change": 0.034,
+      "mean_change": 0.022,
+      "change_by_page": [
+       0.0,
+       0.034,
+       0.033
+      ],
+      "extra_pages": 0
+     },
+     "note": "as LibreOffice sets it; this proves nothing about Microsoft Word"
+    },
+    "word": {
+     "baseline": 3,
+     "with_rule": 3,
+     "pixels": {
+      "compared": 3,
+      "pages_changed": 2,
+      "largest_change": 0.034,
+      "mean_change": 0.023,
+      "extra_pages": 0
+     }
+    }
+   }
+  },
+  {
+   "rule": "bands.dense_filled_head_foot",
+   "document": "arabic_annual",
+   "direction": "financial_data",
+   "focus": "bands",
+   "baseline_valid": true,
+   "valid": true,
+   "rules_reported": [
+    "bands.dense_filled_head_foot"
+   ],
+   "observations": [],
+   "applied": true,
+   "pixels": {
+    "compared": 4,
+    "pages_changed": 3,
+    "largest_change": 0.042,
+    "mean_change": 0.031,
+    "change_by_page": [
+     0.0,
+     0.042,
+     0.042,
+     0.042
+    ],
+    "extra_pages": 0
+   },
+   "pdf": {
+    "baseline_pages": 4,
+    "pages": 4
+   },
+   "docx": {
+    "baseline": {
+     "anchored_drawings": 0,
+     "inline_drawings": 2,
+     "shaded_cells_and_paragraphs": 9,
+     "media_files": 2,
+     "header_footer_parts": 4,
+     "tables": 4,
+     "bytes": 75017
+    },
+    "with_rule": {
+     "anchored_drawings": 0,
+     "inline_drawings": 2,
+     "shaded_cells_and_paragraphs": 9,
+     "media_files": 2,
+     "header_footer_parts": 6,
+     "tables": 4,
+     "bytes": 78791
+    },
+    "office_pages": {
+     "baseline": 4,
+     "with_rule": 4,
+     "pixels": {
+      "compared": 4,
+      "pages_changed": 3,
+      "largest_change": 0.036,
+      "mean_change": 0.027,
+      "change_by_page": [
+       0.0,
+       0.036,
+       0.036,
+       0.036
+      ],
+      "extra_pages": 0
+     },
+     "note": "as LibreOffice sets it; this proves nothing about Microsoft Word"
+    },
+    "word": {
+     "baseline": 4,
+     "with_rule": 4,
+     "pixels": {
+      "compared": 4,
+      "pages_changed": 3,
+      "largest_change": 0.042,
+      "mean_change": 0.031,
+      "extra_pages": 0
+     }
+    }
+   }
+  },
+  {
+   "rule": "image.alternating_inset",
+   "document": "annual_report",
+   "direction": "corporate_conservative",
+   "focus": "images",
+   "baseline_valid": true,
+   "valid": true,
+   "rules_reported": [
+    "image.alternating_inset"
+   ],
+   "observations": [],
+   "applied": true,
+   "pixels": {
+    "compared": 6,
+    "pages_changed": 5,
+    "largest_change": 0.236,
+    "mean_change": 0.081,
+    "change_by_page": [
+     0.0,
+     0.044,
+     0.039,
+     0.236,
+     0.094,
+     0.071
+    ],
+    "extra_pages": 0
+   },
+   "pdf": {
+    "baseline_pages": 6,
+    "pages": 6
+   },
+   "docx": {
+    "baseline": {
+     "anchored_drawings": 0,
+     "inline_drawings": 5,
+     "shaded_cells_and_paragraphs": 4,
+     "media_files": 5,
+     "header_footer_parts": 4,
+     "tables": 3,
+     "bytes": 133913
+    },
+    "with_rule": {
+     "anchored_drawings": 0,
+     "inline_drawings": 5,
+     "shaded_cells_and_paragraphs": 4,
+     "media_files": 5,
+     "header_footer_parts": 4,
+     "tables": 4,
+     "bytes": 134085
+    },
+    "office_pages": {
+     "baseline": 6,
+     "with_rule": 6,
+     "pixels": {
+      "compared": 6,
+      "pages_changed": 5,
+      "largest_change": 0.208,
+      "mean_change": 0.084,
+      "change_by_page": [
+       0.0,
+       0.083,
+       0.038,
+       0.208,
+       0.117,
+       0.058
+      ],
+      "extra_pages": 0
+     },
+     "note": "as LibreOffice sets it; this proves nothing about Microsoft Word"
+    },
+    "word": {
+     "baseline": 6,
+     "with_rule": 6,
+     "pixels": {
+      "compared": 6,
+      "pages_changed": 5,
+      "largest_change": 0.218,
+      "mean_change": 0.078,
+      "extra_pages": 0
+     }
+    }
+   }
+  },
+  {
+   "rule": "closing.image_band",
+   "document": "sustainability_report",
+   "direction": "corporate_conservative",
+   "focus": "images",
+   "baseline_valid": true,
+   "valid": true,
+   "rules_reported": [
+    "closing.image_band"
+   ],
+   "observations": [],
+   "applied": true,
+   "pixels": {
+    "compared": 5,
+    "pages_changed": 1,
+    "largest_change": 0.144,
+    "mean_change": 0.029,
+    "change_by_page": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.144
+    ],
+    "extra_pages": 0
+   },
+   "pdf": {
+    "baseline_pages": 5,
+    "pages": 5
+   },
+   "docx": {
+    "baseline": {
+     "anchored_drawings": 0,
+     "inline_drawings": 5,
+     "shaded_cells_and_paragraphs": 3,
+     "media_files": 5,
+     "header_footer_parts": 4,
+     "tables": 3,
+     "bytes": 136916
+    },
+    "with_rule": {
+     "anchored_drawings": 1,
+     "inline_drawings": 4,
+     "shaded_cells_and_paragraphs": 3,
+     "media_files": 5,
+     "header_footer_parts": 4,
+     "tables": 3,
+     "bytes": 137140
+    },
+    "office_pages": {
+     "baseline": 5,
+     "with_rule": 5,
+     "pixels": {
+      "compared": 5,
+      "pages_changed": 1,
+      "largest_change": 0.153,
+      "mean_change": 0.031,
+      "change_by_page": [
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.153
+      ],
+      "extra_pages": 0
+     },
+     "note": "as LibreOffice sets it; this proves nothing about Microsoft Word"
+    },
+    "word": {
+     "baseline": 5,
+     "with_rule": 5,
+     "pixels": {
+      "compared": 5,
+      "pages_changed": 1,
+      "largest_change": 0.148,
+      "mean_change": 0.03,
+      "extra_pages": 0
+     }
+    }
+   }
+  }
+ ],
+ "whole_corpus": [
+  {
+   "document": "annual_report",
+   "valid": [
+    3,
+    3
+   ],
+   "fell_back": 0,
+   "designs": [
+    {
+     "direction": "executive_premium",
+     "rules": [
+      "kpi.hero_and_grid",
+      "table.current_period_ledger",
+      "closing.image_band"
+     ],
+     "pages": [
+      9,
+      9
+     ],
+     "pages_changed": 0
+    },
+    {
+     "direction": "editorial_modern",
+     "rules": [
+      "kpi.hero_and_grid",
+      "table.current_period_ledger",
+      "closing.image_band"
+     ],
+     "pages": [
+      6,
+      6
+     ],
+     "pages_changed": 0
+    },
+    {
+     "direction": "financial_data",
+     "rules": [
+      "cover.photo_over_panel",
+      "opener.edge_strip_page",
+      "kpi.hero_and_grid",
+      "table.current_period_ledger",
+      "bands.dense_filled_head_foot",
+      "image.alternating_inset",
+      "closing.image_band"
+     ],
+     "pages": [
+      4,
+      3
+     ],
+     "pages_changed": 3
+    }
+   ]
+  },
+  {
+   "document": "financial_statements",
+   "valid": [
+    3,
+    3
+   ],
+   "fell_back": 0,
+   "designs": [
+    {
+     "direction": "financial_data",
+     "rules": [
+      "kpi.ruled_strip",
+      "table.current_period_ledger",
+      "bands.dense_filled_head_foot"
+     ],
+     "pages": [
+      3,
+      3
+     ],
+     "pages_changed": 3
+    },
+    {
+     "direction": "corporate_conservative",
+     "rules": [
+      "kpi.ruled_strip",
+      "table.current_period_ledger",
+      "bands.dense_filled_head_foot"
+     ],
+     "pages": [
+      5,
+      5
+     ],
+     "pages_changed": 4
+    },
+    {
+     "direction": "executive_premium",
+     "rules": [
+      "kpi.ruled_strip",
+      "table.current_period_ledger"
+     ],
+     "pages": [
+      5,
+      5
+     ],
+     "pages_changed": 0
+    }
+   ]
+  },
+  {
+   "document": "board_paper",
+   "valid": [
+    3,
+    3
+   ],
+   "fell_back": 0,
+   "designs": [
+    {
+     "direction": "corporate_conservative",
+     "rules": [
+      "kpi.ruled_strip",
+      "table.current_period_ledger"
+     ],
+     "pages": [
+      2,
+      2
+     ],
+     "pages_changed": 1
+    },
+    {
+     "direction": "financial_data",
+     "rules": [
+      "kpi.ruled_strip",
+      "table.current_period_ledger"
+     ],
+     "pages": [
+      2,
+      2
+     ],
+     "pages_changed": 1
+    },
+    {
+     "direction": "executive_premium",
+     "rules": [
+      "kpi.ruled_strip",
+      "table.current_period_ledger"
+     ],
+     "pages": [
+      2,
+      2
+     ],
+     "pages_changed": 0
+    }
+   ]
+  },
+  {
+   "document": "technical_manual",
+   "valid": [
+    3,
+    3
+   ],
+   "fell_back": 0,
+   "designs": [
+    {
+     "direction": "financial_data",
+     "rules": [
+      "table.current_period_ledger",
+      "bands.dense_filled_head_foot"
+     ],
+     "pages": [
+      3,
+      3
+     ],
+     "pages_changed": 2
+    },
+    {
+     "direction": "corporate_conservative",
+     "rules": [
+      "table.current_period_ledger",
+      "bands.dense_filled_head_foot"
+     ],
+     "pages": [
+      5,
+      5
+     ],
+     "pages_changed": 4
+    },
+    {
+     "direction": "executive_premium",
+     "rules": [
+      "table.current_period_ledger"
+     ],
+     "pages": [
+      5,
+      5
+     ],
+     "pages_changed": 3
+    }
+   ]
+  },
+  {
+   "document": "research_paper",
+   "valid": [
+    3,
+    3
+   ],
+   "fell_back": 0,
+   "designs": [
+    {
+     "direction": "corporate_conservative",
+     "rules": [
+      "table.current_period_ledger"
+     ],
+     "pages": [
+      4,
+      4
+     ],
+     "pages_changed": 0
+    },
+    {
+     "direction": "financial_data",
+     "rules": [
+      "table.current_period_ledger"
+     ],
+     "pages": [
+      3,
+      3
+     ],
+     "pages_changed": 0
+    },
+    {
+     "direction": "executive_premium",
+     "rules": [
+      "table.current_period_ledger"
+     ],
+     "pages": [
+      5,
+      5
+     ],
+     "pages_changed": 0
+    }
+   ]
+  },
+  {
+   "document": "proposal",
+   "valid": [
+    3,
+    3
+   ],
+   "fell_back": 0,
+   "designs": [
+    {
+     "direction": "editorial_modern",
+     "rules": [
+      "cover.low_title_field",
+      "table.current_period_ledger",
+      "closing.image_band"
+     ],
+     "pages": [
+      3,
+      3
+     ],
+     "pages_changed": 0
+    },
+    {
+     "direction": "executive_premium",
+     "rules": [
+      "cover.low_title_field",
+      "table.current_period_ledger",
+      "closing.image_band"
+     ],
+     "pages": [
+      4,
+      4
+     ],
+     "pages_changed": 1
+    },
+    {
+     "direction": "corporate_conservative",
+     "rules": [
+      "cover.photo_over_panel",
+      "table.current_period_ledger",
+      "bands.dense_filled_head_foot",
+      "image.alternating_inset",
+      "closing.image_band"
+     ],
+     "pages": [
+      5,
+      4
+     ],
+     "pages_changed": 4
+    }
+   ]
+  },
+  {
+   "document": "impact_report",
+   "valid": [
+    3,
+    3
+   ],
+   "fell_back": 0,
+   "designs": [
+    {
+     "direction": "editorial_modern",
+     "rules": [
+      "cover.low_title_field",
+      "kpi.ruled_strip",
+      "table.current_period_ledger",
+      "closing.image_band"
+     ],
+     "pages": [
+      4,
+      4
+     ],
+     "pages_changed": 0
+    },
+    {
+     "direction": "executive_premium",
+     "rules": [
+      "cover.low_title_field",
+      "kpi.ruled_strip",
+      "table.current_period_ledger",
+      "closing.image_band"
+     ],
+     "pages": [
+      5,
+      5
+     ],
+     "pages_changed": 1
+    },
+    {
+     "direction": "corporate_conservative",
+     "rules": [
+      "cover.photo_over_panel",
+      "kpi.ruled_strip",
+      "table.current_period_ledger",
+      "bands.dense_filled_head_foot",
+      "image.alternating_inset",
+      "closing.image_band"
+     ],
+     "pages": [
+      5,
+      4
+     ],
+     "pages_changed": 4
+    }
+   ]
+  },
+  {
+   "document": "policy_brief",
+   "valid": [
+    3,
+    3
+   ],
+   "fell_back": 0,
+   "designs": [
+    {
+     "direction": "corporate_conservative",
+     "rules": [
+      "table.current_period_ledger"
+     ],
+     "pages": [
+      3,
+      3
+     ],
+     "pages_changed": 0
+    },
+    {
+     "direction": "financial_data",
+     "rules": [
+      "table.current_period_ledger"
+     ],
+     "pages": [
+      2,
+      2
+     ],
+     "pages_changed": 0
+    },
+    {
+     "direction": "editorial_modern",
+     "rules": [
+      "table.current_period_ledger"
+     ],
+     "pages": [
+      3,
+      3
+     ],
+     "pages_changed": 0
+    }
+   ]
+  },
+  {
+   "document": "arabic_annual",
+   "valid": [
+    3,
+    3
+   ],
+   "fell_back": 0,
+   "designs": [
+    {
+     "direction": "arabic_institutional",
+     "rules": [
+      "cover.photo_over_panel",
+      "kpi.ruled_strip",
+      "table.current_period_ledger",
+      "image.alternating_inset",
+      "closing.image_band"
+     ],
+     "pages": [
+      6,
+      6
+     ],
+     "pages_changed": 1
+    },
+    {
+     "direction": "executive_premium",
+     "rules": [
+      "kpi.ruled_strip",
+      "table.current_period_ledger",
+      "closing.image_band"
+     ],
+     "pages": [
+      8,
+      7
+     ],
+     "pages_changed": 6
+    },
+    {
+     "direction": "editorial_modern",
+     "rules": [
+      "kpi.ruled_strip",
+      "table.current_period_ledger",
+      "closing.image_band"
+     ],
+     "pages": [
+      6,
+      6
+     ],
+     "pages_changed": 0
+    }
+   ]
+  },
+  {
+   "document": "arabic_financial",
+   "valid": [
+    3,
+    3
+   ],
+   "fell_back": 0,
+   "designs": [
+    {
+     "direction": "arabic_institutional",
+     "rules": [
+      "kpi.ruled_strip",
+      "table.current_period_ledger"
+     ],
+     "pages": [
+      2,
+      2
+     ],
+     "pages_changed": 0
+    },
+    {
+     "direction": "financial_data",
+     "rules": [
+      "kpi.ruled_strip",
+      "table.current_period_ledger"
+     ],
+     "pages": [
+      2,
+      2
+     ],
+     "pages_changed": 1
+    },
+    {
+     "direction": "corporate_conservative",
+     "rules": [
+      "kpi.ruled_strip",
+      "table.current_period_ledger"
+     ],
+     "pages": [
+      3,
+      3
+     ],
+     "pages_changed": 1
+    }
+   ]
+  },
+  {
+   "document": "bilingual_institutional",
+   "valid": [
+    3,
+    3
+   ],
+   "fell_back": 0,
+   "designs": [
+    {
+     "direction": "arabic_institutional",
+     "rules": [
+      "cover.photo_over_panel",
+      "kpi.ruled_strip",
+      "table.current_period_ledger",
+      "image.alternating_inset",
+      "closing.image_band"
+     ],
+     "pages": [
+      3,
+      3
+     ],
+     "pages_changed": 1
+    },
+    {
+     "direction": "executive_premium",
+     "rules": [
+      "kpi.ruled_strip",
+      "table.current_period_ledger",
+      "closing.image_band"
+     ],
+     "pages": [
+      3,
+      3
+     ],
+     "pages_changed": 0
+    },
+    {
+     "direction": "corporate_conservative",
+     "rules": [
+      "cover.photo_over_panel",
+      "kpi.ruled_strip",
+      "table.current_period_ledger",
+      "image.alternating_inset",
+      "closing.image_band"
+     ],
+     "pages": [
+      4,
+      3
+     ],
+     "pages_changed": 2
+    }
+   ]
+  },
+  {
+   "document": "sustainability_report",
+   "valid": [
+    3,
+    3
+   ],
+   "fell_back": 0,
+   "designs": [
+    {
+     "direction": "financial_data",
+     "rules": [
+      "cover.photo_over_panel",
+      "kpi.ruled_strip",
+      "table.current_period_ledger",
+      "bands.dense_filled_head_foot",
+      "closing.image_band"
+     ],
+     "pages": [
+      3,
+      3
+     ],
+     "pages_changed": 3
+    },
+    {
+     "direction": "executive_premium",
+     "rules": [
+      "kpi.ruled_strip",
+      "table.current_period_ledger",
+      "closing.image_band"
+     ],
+     "pages": [
+      5,
+      5
+     ],
+     "pages_changed": 0
+    },
+    {
+     "direction": "editorial_modern",
+     "rules": [
+      "kpi.ruled_strip",
+      "table.current_period_ledger",
+      "closing.image_band"
+     ],
+     "pages": [
+      4,
+      4
+     ],
+     "pages_changed": 0
+    }
+   ]
+  }
+ ],
+ "word_version": "Microsoft Word 16.0.17932"
+}

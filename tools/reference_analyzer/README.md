@@ -189,3 +189,10 @@ are weak, and what remains unverified.
 The records hold page IDs, hashes and written notes only: no page images, no extracted text. Scores are opinions about
 visual quality and are not measurements. Each page records how it was seen: `full_size`, `enlarged` or
 `contact_sheet`.
+
+## Design grammar (M7.7)
+
+`graphs`, `coverage`, `detail_sheets`, `review_sheets`, `grammar_rules`, `grammar_build` and `gallery`
+turn the corpus into the grammar in `docs/m77-design-grammar/`. Run them through
+`python -m tools.design_learning`, described in `docs/LEARNING_PIPELINE.md`. Results and limits are in
+`docs/m77-design-grammar/design-learning-report.md`.

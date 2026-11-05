@@ -295,14 +295,19 @@ def _cover(sem, d: Direction, brief: DocumentBrief, primary: str, accent: str, l
     elif kind == "image_top":
         c.layout, c.background_image = "left_aligned", photo.src
         c.background_treatment = ImageTreatment(fit="cover")
-        c.hints = {"image_top": 0.6, "title_scale": 1.0}
+        c.hints = {"image_top": d.extras.get("cover_image_top", 0.6), "title_scale": d.extras.get("cover_title_scale", 1.0)}
+        if d.extras.get("cover_panel"):           # the page behind the title becomes a colour panel
+            c.background_color, c.text_color = primary, "#FFFFFF"
+        if d.extras.get("cover_centred"):
+            c.layout = "centered"
     elif kind == "split":
         c.layout, c.background_image, c.logo = "split", photo.src, logo
         c.background_treatment = ImageTreatment(fit="cover")
         c.hints = {"title_scale": 1.25, "rule": accent, "drop": 0.34}
     elif kind == "colour_panel":
         c.layout, c.background_color, c.text_color = "left_aligned", primary, "#FFFFFF"
-        c.hints = {"title_scale": 1.3, "rule": accent, "drop": 0.42}
+        c.hints = {"title_scale": d.extras.get("cover_title_scale", 1.3), "rule": accent,
+                   "drop": d.extras.get("cover_title_drop", 0.42)}
     else:                                       # "full": the darkest, quietest cover
         c.layout, c.background_color, c.text_color = "left_aligned", primary, "#FFFFFF"
         if photo is not None:
@@ -505,7 +510,22 @@ def _apply_sections(sem, d: Direction, brief: DocumentBrief, primary: str, accen
                     why.append("a short sentence closes the section: given the whole page")
         plan.sections.append(SectionTreatment(section=heading.text, role=s.role, opener=opener,
                                               composition=composition, reasons=why))
+    if d.extras.get("closing_band") and secs:
+        _closing_band(blocks, secs[-1][1], remove, d, plan)
     sem.blocks = [replace.get(i, b) for i, b in enumerate(blocks) if i not in remove]
+
+
+def _closing_band(blocks, last: List[int], remove: set, d: Direction, plan: ArtDirectionPlan) -> None:
+    """A last photograph that may be cropped becomes a band across the page, where it falls."""
+    kept = [i for i in last if i not in remove]
+    b = blocks[kept[-1]] if kept else None
+    if b is None or b.type != "image" or not _is_photo(b) or not (b.intent and b.intent.crop_allowed):
+        return
+    if b.width or b.height:
+        return
+    b.placement = MediaPlacement(width_ratio=1.0, height_ratio=d.extras["closing_band"], bleed=True)
+    b.treatment = ImageTreatment(fit="cover")
+    plan.decisions.append(f"image {b.src!r}: closes the document as a band across the page")
 
 
 def direct(sem: SemanticDocument, direction: Direction, *, brand: Optional[BrandKit] = None,
