@@ -2,10 +2,14 @@
 Font Manager — registers bundled fonts and resolves deterministic fallbacks.
 Thread-safe: only registers once. Rendering never downloads fonts.
 """
+import contextvars
+import json
 import os
 import logging
 import threading
 import urllib.request
+from functools import lru_cache
+from typing import Dict, List, Optional
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
@@ -24,6 +28,55 @@ FONT_URLS = {
 _lock = threading.Lock()
 _registered = False
 _available_fonts: set = set()
+_arabic_face = contextvars.ContextVar("dynamic_pdf_arabic_face", default="Amiri")
+
+
+@lru_cache(maxsize=1)
+def font_catalog() -> Dict[str, dict]:
+    """The open-licence families shipped with the package, by family name. They are registered
+    when first used, so a document pays only for the fonts it sets."""
+    path = os.path.join(BUNDLED_DIR, "catalog.json")
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def list_font_families(script: Optional[str] = None) -> List[str]:
+    """Bundled family names, for ``theme.typography``: ``"arabic"``, ``"latin"`` or both."""
+    return sorted(k for k, v in font_catalog().items() if script in (None, v["script"]))
+
+
+def _use_family(family: str) -> None:
+    """Register one catalog family and tie its styles together for bold and italic markup."""
+    from reportlab.lib.fonts import addMapping
+    with _lock:
+        if family in _available_fonts:
+            return
+        files = font_catalog()[family]["files"]
+        names = {style: family if style == "regular" else f"{family}-{style.title()}" for style in files}
+        for style, name in names.items():
+            _try_register(name, files[style])
+        regular = names["regular"]
+        bold = names.get("bold", regular)
+        italic = names.get("italic", regular)
+        for name in names.values():
+            addMapping(name, 0, 0, regular)
+            addMapping(name, 1, 0, bold)
+            addMapping(name, 0, 1, italic)
+            addMapping(name, 1, 1, bold)
+
+
+def set_arabic_face(family: Optional[str]) -> None:
+    """The face Arabic text takes in the render under way."""
+    _arabic_face.set(family or "Amiri")
+
+
+def current_arabic_face() -> str:
+    family = _arabic_face.get()
+    if family in font_catalog():
+        _use_family(family)
+    return family
 
 
 def ensure_fonts_downloaded():
@@ -86,8 +139,9 @@ def register_fonts():
             addMapping("Amiri-Bold", 1, 1, "Amiri-Bold")
 
         # Auto-register any manually placed fonts in the bundled dir
+        catalogued = {n for v in font_catalog().values() for n in v["files"].values()}
         for fname in os.listdir(BUNDLED_DIR):
-            if fname.endswith(".ttf"):
+            if fname.endswith(".ttf") and fname not in catalogued:
                 name = fname.replace(".ttf", "")
                 if name not in _available_fonts:
                     _try_register(name, fname)
@@ -116,6 +170,15 @@ def register_custom_font(name: str, path: str) -> bool:
 
 def get_font_name(family: str, bold: bool = False, italic: bool = False) -> str:
     """Get a registered font name, with bulletproof Helvetica fallback."""
+    if family in font_catalog():
+        _use_family(family)
+        if bold and f"{family}-Bold" in _available_fonts:
+            return f"{family}-Bold"
+        if italic and f"{family}-Italic" in _available_fonts:
+            return f"{family}-Italic"
+        if family in _available_fonts:
+            return family
+
     # JetBrains Mono
     if family in ("JetBrains Mono", "JetBrains Mono-Bold"):
         if bold and "JetBrains Mono-Bold" in _available_fonts:

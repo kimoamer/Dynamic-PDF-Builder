@@ -106,6 +106,7 @@ class DocumentBuilder:
     def __init__(self, theme: Optional[str] = None, policy: Optional[RenderPolicy] = None):
         self._theme_explicit = theme is not None
         self._theme = theme or "claude"
+        self._fonts: dict = {}
         self._meta = Meta()
         self._blocks: list = []
         self._policy = policy or RenderPolicy()
@@ -290,6 +291,11 @@ class DocumentBuilder:
     def _prepared_base(self):
         """(Document, Theme | None) ready for a renderer, applying the design plan."""
         doc, theme = self._prepared_inner()
+        if self._fonts:
+            from .themes import get_theme as _gt
+            theme = (theme or _gt(doc.theme)).model_copy(deep=True)
+            for key, family in self._fonts.items():
+                setattr(theme.typography, key, family)
         if self._qa_hints:
             doc = doc.model_copy(deep=True)
             for idx, hint in self._qa_hints.items():
@@ -422,6 +428,14 @@ class DocumentBuilder:
 
     def theme(self, name: str) -> 'DocumentBuilder':
         self._theme = name
+        return self
+
+    def fonts(self, heading: Optional[str] = None, body: Optional[str] = None,
+              arabic: Optional[str] = None) -> 'DocumentBuilder':
+        """Set the faces by family name; ``dynamic_pdf.fonts.list_font_families()`` names the
+        bundled ones. Bundled faces are embedded in the DOCX, so Word shows them too."""
+        self._fonts = {k: v for k, v in (("heading_family", heading), ("body_family", body),
+                                         ("arabic_family", arabic)) if v}
         return self
 
     def page_size(self, size: str) -> 'DocumentBuilder':

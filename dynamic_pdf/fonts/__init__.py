@@ -1,3 +1,3 @@
-from .manager import register_fonts, get_font_name
+from .manager import font_catalog, get_font_name, list_font_families, register_fonts
 
-__all__ = ["register_fonts", "get_font_name"]
+__all__ = ["font_catalog", "get_font_name", "list_font_families", "register_fonts"]

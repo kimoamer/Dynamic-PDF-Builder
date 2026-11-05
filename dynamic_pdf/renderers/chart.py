@@ -82,10 +82,11 @@ _ARABIC_TEXT = re.compile("[؀-ۿݐ-ݿ]")
 def _arabic_face() -> str:
     """Register the bundled Arabic face with Matplotlib once; returns its family name."""
     from matplotlib import font_manager
-    from ..fonts.manager import BUNDLED_DIR
-    name = "Amiri"
+    from ..fonts.manager import BUNDLED_DIR, current_arabic_face, font_catalog
+    name = current_arabic_face()
     if not any(f.name == name for f in font_manager.fontManager.ttflist):
-        for file in ("Amiri-Regular.ttf", "Amiri-Bold.ttf"):
+        files = font_catalog().get(name, {}).get("files", {}).values() or ("Amiri-Regular.ttf", "Amiri-Bold.ttf")
+        for file in files:
             font_manager.fontManager.addfont(os.path.join(BUNDLED_DIR, file))
     return name
 

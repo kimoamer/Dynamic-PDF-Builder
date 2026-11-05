@@ -45,7 +45,7 @@ def face(theme: Theme, text: str, bold: bool = False, heading: bool = True) -> s
     """Registered font for one string: Arabic text takes the bundled Arabic face."""
     from ..fonts import get_font_name
     if is_rtl(text):
-        return get_font_name("Amiri", bold=bold)
+        return get_font_name(theme.typography.arabic_family or "Amiri", bold=bold)
     ty = theme.typography
     return get_font_name(ty.heading_family if heading else ty.body_family, bold=bold)
 

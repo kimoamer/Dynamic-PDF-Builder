@@ -13,6 +13,7 @@ from docx.enum.text import WD_LINE_SPACING
 from docx.shared import Pt, RGBColor
 
 from ..design.tokens import DesignTokens
+from ..fonts.manager import font_catalog
 from ..schema.theme import Theme
 from .docx_fields import set_paragraph_shading, set_style_fonts
 
@@ -66,7 +67,9 @@ def configure_styles(doc, tokens: DesignTokens, theme: Theme, rtl: bool) -> None
     pf.space_before = Pt(0)
     pf.space_after = Pt(tokens.paragraph_after)
     pf.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
-    pf.line_spacing = round(tokens.line_height * 0.87, 2)   # Word "multiple" ≈ PDF leading/1.15
+    natural = font_catalog().get(arabic if rtl else tokens.fonts.body, {}).get("line")
+    # Word's "multiple" counts in the font's own line height; the PDF counts in its size
+    pf.line_spacing = max(0.9, round(tokens.line_height / natural, 2)) if natural else round(tokens.line_height * 0.87, 2)
     pf.widow_control = True
 
     bt = _style(doc, "Body Text", base="Normal")

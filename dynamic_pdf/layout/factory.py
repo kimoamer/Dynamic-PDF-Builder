@@ -24,6 +24,7 @@ from reportlab.platypus.tableofcontents import TableOfContents as _RLTableOfCont
 
 from ..schema.theme import Theme
 from ..fonts import get_font_name
+from ..fonts.manager import current_arabic_face
 from ..utils.errors import BlockRenderError, DynamicPDFError
 from .. import policy as _diag
 from ..assets import load_image as _load_image
@@ -47,7 +48,6 @@ def _is_rtl(text: str) -> bool:
 _ARABIC_RE = re.compile("[\u0600-\u06FF\u0750-\u077F]")
 # base letters + presentation forms produced by reshaping
 _ARABIC_SCRIPT_RE = re.compile("[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]")
-_AMIRI = "Amiri"
 
 
 _RESHAPER = None
@@ -252,7 +252,7 @@ def _glyph_fallback(text: str) -> str:
         if in_tag or ch.isascii():
             font = None
         elif _ARABIC_SCRIPT_RE.match(ch):
-            font = _AMIRI          # Arabic runs always get the Arabic face
+            font = current_arabic_face()          # Arabic runs always get the Arabic face
         elif unicodedata.bidirectional(ch) in ("R", "AL", "AN"):
             font = None
         else:

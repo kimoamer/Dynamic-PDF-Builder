@@ -26,6 +26,7 @@ from . import BrandKit, DesignPlan, apply_brand, apply_plan, apply_recipe, compi
 from .archetypes import ink as dark_ink
 from .archetypes import mix
 from .directions import DIRECTIONS, Direction, page_system, palette
+from .focal import focal_point
 
 _SUMMARY = re.compile(r"summary|highlight|overview|letter|foreword|recommendation|at a glance|in brief|in numbers"
                       r"|كلمة|ملخص|أبرز|رسالت", re.I)
@@ -133,6 +134,7 @@ class Adjust:
     side_images: bool = True
     statement_pages: bool = True
     major_breaks: bool = True
+    exhibits: float = 1.0          # image bands and charts, as a share of their planned height
     no_break: frozenset = field(default_factory=frozenset)   # sections that follow on instead of opening a page
 
 
@@ -294,7 +296,7 @@ def _cover(sem, d: Direction, brief: DocumentBrief, primary: str, accent: str, l
         c.hints = {"title_scale": 1.5, "rule": accent, "drop": 0.52}
     elif kind == "image_top":
         c.layout, c.background_image = "left_aligned", photo.src
-        c.background_treatment = ImageTreatment(fit="cover")
+        c.background_treatment = _cover_crop(photo.src)
         c.hints = {"image_top": d.extras.get("cover_image_top", 0.6), "title_scale": d.extras.get("cover_title_scale", 1.0)}
         if d.extras.get("cover_panel"):           # the page behind the title becomes a colour panel
             c.background_color, c.text_color = primary, "#FFFFFF"
@@ -302,7 +304,7 @@ def _cover(sem, d: Direction, brief: DocumentBrief, primary: str, accent: str, l
             c.layout = "centered"
     elif kind == "split":
         c.layout, c.background_image, c.logo = "split", photo.src, logo
-        c.background_treatment = ImageTreatment(fit="cover")
+        c.background_treatment = _cover_crop(photo.src)
         c.hints = {"title_scale": 1.25, "rule": accent, "drop": 0.34}
     elif kind == "colour_panel":
         c.layout, c.background_color, c.text_color = "left_aligned", primary, "#FFFFFF"
@@ -312,7 +314,7 @@ def _cover(sem, d: Direction, brief: DocumentBrief, primary: str, accent: str, l
         c.layout, c.background_color, c.text_color = "left_aligned", primary, "#FFFFFF"
         if photo is not None:
             c.background_image = photo.src
-            c.background_treatment = ImageTreatment(fit="cover")
+            c.background_treatment = _cover_crop(photo.src)
             c.overlay_color, c.overlay_opacity = primary, 0.62
         c.hints = {"title_scale": 1.15, "rule": accent, "drop": 0.56}
     sem.blocks.insert(0, c)
@@ -322,6 +324,12 @@ def _cover(sem, d: Direction, brief: DocumentBrief, primary: str, accent: str, l
     if short and d.cover != "masthead":
         plan.decisions.append(f"cover: about {brief.estimated_pages} pages is too short for a cover page, "
                               "so the title opens page one")
+
+
+def _cover_crop(src) -> ImageTreatment:
+    """Fill the box, cropping around the subject of the picture rather than its middle."""
+    fx, fy = focal_point(src)
+    return ImageTreatment(fit="cover", focal_x=fx, focal_y=fy)
 
 
 def _photo(b: ImageBlock, d: Direction, section: SectionBrief, side: str, adjust: Adjust,
@@ -336,21 +344,23 @@ def _photo(b: ImageBlock, d: Direction, section: SectionBrief, side: str, adjust
         b.placement = MediaPlacement(mode="floating", horizontal=side, width_ratio=d.side_image)
         return f"float {side}"
     if compact and crop:                          # following on: a band that fits under what came before
-        b.placement = MediaPlacement(width_ratio=1.0, height_ratio=0.28, bleed=d.hero_image == "bleed")
-        b.treatment = ImageTreatment(fit="cover")
+        b.placement = MediaPlacement(width_ratio=1.0, height_ratio=0.28 * adjust.exhibits,
+                                     bleed=d.hero_image == "bleed")
+        b.treatment = _cover_crop(b.src)
         return "image band, following on"
     if d.hero_image == "bleed":
         b.placement = MediaPlacement(width_ratio=1.0, bleed=True)
         return "bleed image"
     if d.hero_image == "band" and crop:
-        b.placement = MediaPlacement(width_ratio=1.0, height_ratio=0.34)
-        b.treatment = ImageTreatment(fit="cover")
+        b.placement = MediaPlacement(width_ratio=1.0, height_ratio=0.34 * adjust.exhibits)
+        b.treatment = _cover_crop(b.src)
         return "image band"
-    b.placement = MediaPlacement(width_ratio=0.82 if d.id == "corporate_conservative" else 1.0)
+    b.placement = MediaPlacement(width_ratio=(0.82 if d.id == "corporate_conservative" else 1.0) * adjust.exhibits)
     return "column image"
 
 
-def _chart(b, d: Direction, primary: str, muted: str) -> None:
+def _chart(b, d: Direction, primary: str, muted: str, adjust: Adjust) -> None:
+    b.height = b.height * adjust.exhibits
     if b.colors:
         return
     data = b.data if isinstance(b.data, dict) else {}
@@ -360,9 +370,9 @@ def _chart(b, d: Direction, primary: str, muted: str) -> None:
     else:
         b.colors = [primary]
     if d.id == "financial_data":
-        b.height = min(b.height, 2.7)
+        b.height = min(b.height, 2.7 * adjust.exhibits)
     elif d.id in ("editorial_modern", "executive_premium"):
-        b.height = min(b.height, 3.3)
+        b.height = min(b.height, 3.3 * adjust.exhibits)
 
 
 def _table(b, d: Direction) -> None:
@@ -434,7 +444,7 @@ def _apply_sections(sem, d: Direction, brief: DocumentBrief, primary: str, accen
             _hint(heading, opener="rule", rule=accent, rule_width=1.2, weight="regular")
         if s.role == "appendix":
             opener = "quiet"
-            if brief.estimated_pages >= 5:
+            if brief.estimated_pages >= 5 and adjust.major_breaks:
                 _hint(heading, break_before="if_not_empty")
             if d.opener != "none":
                 _hint(heading, scale=0.72)
@@ -494,7 +504,7 @@ def _apply_sections(sem, d: Direction, brief: DocumentBrief, primary: str, accen
                 side_flip = not side_flip
                 side = "end" if not (d.side_alternates and side_flip) else "start"
             elif b.type == "chart":
-                _chart(b, d, primary, mix(primary, "#FFFFFF", 0.62))
+                _chart(b, d, primary, mix(primary, "#FFFFFF", 0.62), adjust)
             elif b.type == "table":
                 _table(b, d)
             elif b.type == "metric_row" and d.kpi in ("ruled", "band"):
@@ -524,7 +534,7 @@ def _closing_band(blocks, last: List[int], remove: set, d: Direction, plan: ArtD
     if b.width or b.height:
         return
     b.placement = MediaPlacement(width_ratio=1.0, height_ratio=d.extras["closing_band"], bleed=True)
-    b.treatment = ImageTreatment(fit="cover")
+    b.treatment = _cover_crop(b.src)
     plan.decisions.append(f"image {b.src!r}: closes the document as a band across the page")
 
 
@@ -546,7 +556,8 @@ def direct(sem: SemanticDocument, direction: Direction, *, brand: Optional[Brand
     theme.decorations.heading_accent_bar = False
     theme.decorations.table_row_alternating = d.table == "default"
     if rtl or sem.stats.bilingual:
-        theme.typography.arabic_family = theme.typography.arabic_family or "Amiri"
+        if theme.typography.arabic_family in (None, "Amiri"):
+            theme.typography.arabic_family = d.arabic_family
     tokens = compile_tokens(theme)
     design = DesignPlan(decision=base.decision, recipe=recipe, theme=theme, tokens=tokens,
                         section_numbering=recipe.section_numbering or sem.meta.section_numbering, notes=notes)

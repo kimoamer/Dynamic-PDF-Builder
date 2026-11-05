@@ -3,7 +3,7 @@ include LICENSE
 include README.md
 
 # Include bundled font files (JetBrains Mono, Amiri)
-recursive-include dynamic_pdf/fonts/bundled *.ttf *.otf *.txt
+recursive-include dynamic_pdf/fonts/bundled *.ttf *.otf *.txt *.json
 
 # Include any JSON/YAML assets inside the package
 recursive-include dynamic_pdf *.json *.yaml *.yml

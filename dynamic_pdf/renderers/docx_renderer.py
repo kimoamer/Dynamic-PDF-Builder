@@ -42,12 +42,15 @@ from ..utils.errors import BlockRenderError, DynamicPDFError
 from . import docx_fields as F
 from . import docx_media as M
 from .docx_archetypes import ArchetypeDocx
+from ..fonts.manager import set_arabic_face
+from .docx_fonts import embed_fonts
 from .docx_styles import configure_styles, rgb, word_font
 
 _PAGE_SIZES_PT = {PageSize.A4: (595.28, 841.89), PageSize.LETTER: (612, 792),
                   PageSize.LEGAL: (612, 1008)}
 _VARIANT_COLORS = {"info": "info", "warning": "warning", "error": "error",
                    "success": "success", "tip": "tip", "danger": "error", "note": "info"}
+WRAPS_FLOAT = ("paragraph", "rich_text", "bullet_list", "numbered_list", "checklist")   # may sit beside a float
 _NUMERIC = re.compile(r"^[\s$€£¥%+\-−(),.\d٠-٩]+$")
 
 
@@ -75,6 +78,7 @@ class DocxRenderer(ArchetypeDocx):
 
     def render(self) -> bytes:
         doc = self.doc
+        set_arabic_face(self.theme.typography.arabic_family)
         configure_styles(doc, self.tokens, self.theme, self.rtl_doc)
         self.lists = F.ListNumbering(doc, indent_twips=int(self.tokens.list_indent * 20) or 360,
                                      bullet_font=word_font(self.tokens.fonts.body))
@@ -116,13 +120,27 @@ class DocxRenderer(ArchetypeDocx):
                     F.mirror_bidi_justification(part._element)
         buf = io.BytesIO()
         doc.save(buf)
-        return buf.getvalue()
+        fonts = self.tokens.fonts
+        return embed_fonts(buf.getvalue(), (fonts.heading, fonts.body, fonts.arabic))
 
     def _label(self, key):
         from ..i18n import label
         return label(key, "ar" if self.rtl_doc else self.sem.language)
 
+    def _clear_float(self, c) -> None:
+        """Word sets whatever follows a floating table beside it. A clearing break in a
+        paragraph of its own moves the next block below the float and keeps the break out
+        of a heading's text and the navigation pane."""
+        from docx.oxml import OxmlElement
+        self._float_open = False
+        br = OxmlElement("w:br")
+        br.set(qn("w:type"), "textWrapping")
+        br.set(qn("w:clear"), "all")
+        M.tiny_paragraph(c).add_run()._r.append(br)
+
     def _block_safe(self, container, block):
+        if getattr(self, "_float_open", False) and getattr(block, "type", "") not in WRAPS_FLOAT:
+            self._clear_float(container)
         try:
             self._block(container, block)
         except Exception as e:
@@ -465,7 +483,6 @@ class DocxRenderer(ArchetypeDocx):
     def _art_heading(self, p, text, b, lvl, hints):
         """A real Word heading dressed as the art direction asked: it stays in the outline
         and the text stays editable."""
-        from docx.oxml import OxmlElement
         size = self.tokens.heading_sizes[lvl - 1] * float(hints.get("scale", 1.0))
         dark = _ink(self.theme) if self.theme is not None else self.tokens.colors["primary"]
         kind = hints.get("opener")
@@ -486,12 +503,6 @@ class DocxRenderer(ArchetypeDocx):
         if hints.get("drop"):
             frame = self.content_height_pt() * float(hints["drop"])
             p.paragraph_format.space_before = Pt(frame)
-        if getattr(self, "_float_open", False):      # a heading starts below a floating picture
-            self._float_open = False
-            br = OxmlElement("w:br")
-            br.set(qn("w:type"), "textWrapping")
-            br.set(qn("w:clear"), "all")
-            p.add_run()._r.append(br)
         self._runs(p, text, color=color, size=size)
         F.order_paragraph_properties(p)
 

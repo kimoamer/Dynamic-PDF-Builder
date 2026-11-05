@@ -156,12 +156,12 @@ def test_arabic_institutional_only_for_right_to_left_work():
     assert "arabic_institutional" not in ltr and "arabic_institutional" in rtl
 
 
-def test_directions_do_not_number_right_to_left_headings():
+def test_directions_number_right_to_left_headings_too():
     from dynamic_pdf.design.profile import Profile
     profile = next(iter(Profile))
     d = DIRECTIONS["corporate_conservative"]
     assert d.recipe(profile, False, 1.0).section_numbering
-    assert not d.recipe(profile, True, 1.0).section_numbering
+    assert d.recipe(profile, True, 1.0).section_numbering
 
 
 def test_short_documents_lose_the_contents_page():
@@ -266,9 +266,11 @@ def test_short_last_section_is_asked_to_follow_on():
     assert "Team" in step[0].no_break and "last page" in step[1]
 
 
-def test_short_last_page_then_tightens_spacing():
-    c = _critique(_page(1), _page(2, words=40, ink=0.07, first="4 Team"))
+def test_short_last_page_then_shrinks_exhibits_then_tightens_spacing():
+    c = _critique(_page(1), _page(2, words=40, ink=0.07, first="4 Team", tail=0.7))
     step = _next_refinement(c, Adjust(no_break=frozenset({"Team"})), None, ["Team"], 2)
+    assert step[0].exhibits < 1.0
+    step = _next_refinement(c, Adjust(no_break=frozenset({"Team"}), exhibits=0.75), None, ["Team"], 2)
     assert step[0].density < 1.0
 
 
