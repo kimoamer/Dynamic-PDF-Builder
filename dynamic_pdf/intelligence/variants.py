@@ -34,7 +34,7 @@ class VariantBudget(BaseModel):
     """Limits for one ``design_variants`` call. ReportLab cannot be stopped mid-render, so
     time is checked between renders; a design that starts in time may finish after it."""
 
-    max_renders: int = Field(30, ge=1)
+    max_renders: int = Field(40, ge=1)
     max_refinements: int = Field(5, ge=0)        # per design
     max_seconds: float = Field(120.0, gt=0)
     max_output_mb: float = Field(160.0, gt=0)    # PDF and DOCX bytes held at once
@@ -142,7 +142,7 @@ def _intended(plan: ArtDirectionPlan, pdf_pages, opener_titles: Sequence[str]) -
 
 
 SHORT_LAST_WORDS = 70
-SHORT_TAIL = 0.6                      # blank share under the last content of the last page
+SHORT_TAIL = 0.55                     # blank share under the last content of the last page
 
 
 def _title_on(line: str, titles: Sequence[str]) -> Optional[str]:
@@ -405,6 +405,10 @@ def generate_variants(source, *, policy=None, brand: Optional[BrandKit] = None, 
     return VariantSet(variants, best, reasons, fallback=best is None, stats=stats)
 
 
+COMPOSITION_MARKS = {"chart.small_multiples": "matrix:", "editorial.overlaid_panel": "panel:",
+                     "bilingual.parallel_columns": "paired columns:", "bilingual.parallel_ledger": "ledger:"}
+
+
 def _with_grammar(run: _Runner, grammar, only, brief, direction, fit, why) -> Variant:
     """One design, following the grammar when given one."""
     from ..design.grammar import overlay
@@ -416,14 +420,31 @@ def _with_grammar(run: _Runner, grammar, only, brief, direction, fit, why) -> Va
     v = run.run(changed, fit, why)
     spilled = any(r.startswith("cover.") for r in rules) and _cover_spilled(v.pdf)
     if v.valid and not spilled:
+        rules = [r for r in rules if _took_effect(r, v.plan)]
         v.report.grammar_rules, v.report.grammar_version = rules, grammar.version
         if v.plan:
             v.plan.decisions += [f"grammar {grammar.version}: {r}" for r in rules]
         return v
+    if v.valid and spilled:                       # the cover alone was at fault; keep the other rules
+        kept = [r for r in rules if not r.startswith("cover.")]
+        if kept:
+            changed, rules = overlay(grammar, direction, brief, run.sem.meta.title or "", kept)
+            v = run.run(changed, fit, why)
+            if v.valid:
+                v.report.grammar_rules = [r for r in rules if _took_effect(r, v.plan)]
+                v.report.grammar_version = grammar.version
+                v.report.observations.append(f"grammar {grammar.version}: cover rule dropped, the title spilled")
+                return v
     fallback = run.run(direction, fit, why)
     fallback.report.observations.append(
         f"grammar {grammar.version}: {', '.join(rules)} failed the hard gates, so this design does without them")
     return fallback
+
+
+def _took_effect(rule: str, plan) -> bool:
+    """A composition rule counts only where the document had the structure for it."""
+    mark = COMPOSITION_MARKS.get(rule)
+    return not mark or not plan or any(d.startswith(mark) for d in plan.decisions)
 
 
 def _cover_spilled(pdf: Optional[bytes]) -> bool:

@@ -10,6 +10,7 @@ from .schema.media import ImageTreatment, MediaPlacement, resolve_placement
 from .schema.page_system import PageSystem
 from .schema.enums import PageSize, Orientation
 from .schema.blocks import (
+    FigureMatrixBlock, ImageTextPanelBlock, PairedRowColumnsBlock,
     PageMediaBlock, PageSectionBlock,
     HeadingBlock, ParagraphBlock, RichTextBlock, BulletListBlock, NumberedListBlock,
     TableBlock, CodeBlock, ImageBlock, ChartBlock, MathBlock, MermaidBlock,
@@ -674,6 +675,21 @@ class DocumentBuilder:
     def parallel_ledger(self, periods: List[str], sections: List[Dict[str, Any]], **fields) -> 'DocumentBuilder':
         """Comparative figures stated once, labelled in one or two languages."""
         self._blocks.append(ParallelLedgerBlock(periods=periods, sections=sections, **fields))
+        return self
+
+    def image_text_panel(self, image: Dict[str, Any], paragraphs: List[str], **fields) -> 'DocumentBuilder':
+        """A picture with a live text panel beside it or laid over it (``layout="overlay"``)."""
+        self._blocks.append(ImageTextPanelBlock(image=image, paragraphs=paragraphs, **fields))
+        return self
+
+    def figure_matrix(self, figures: List[Dict[str, Any]], **fields) -> 'DocumentBuilder':
+        """Equal cells of charts or figures under one title."""
+        self._blocks.append(FigureMatrixBlock(figures=figures, **fields))
+        return self
+
+    def paired_row_columns(self, rows: List[Dict[str, Any]], **fields) -> 'DocumentBuilder':
+        """Text in two languages, aligned row by row; Arabic takes the right column."""
+        self._blocks.append(PairedRowColumnsBlock(rows=rows, **fields))
         return self
 
     def metric_row(self, metrics: List[Dict[str, str]]) -> 'DocumentBuilder':

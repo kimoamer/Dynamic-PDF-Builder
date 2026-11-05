@@ -750,6 +750,30 @@ builder.watermark(text="DRAFT", opacity=0.08, color="#cccccc")
 builder.watermark(text="CONFIDENTIAL", opacity=0.12, color="#FF0000")
 ```
 
+### Compositions
+
+Three blocks draw a whole composition, with live text in both the PDF and the Word file. With
+`design_variants(grammar=True)` the engine uses them by itself where a document already has the
+structure: a photograph followed by short text, a run of charts of one kind, or paragraphs paired
+in two languages.
+
+```python
+# A picture with a text panel beside it, or laid over it with layout="overlay"
+builder.image_text_panel({"src": "quay.jpg", "alt_text": "The quay", "caption": "North quay"},
+                         ["The north quay reopened in March."],
+                         title="A quay rebuilt", layout="split", side="start", tone="dark")
+
+# Equal cells of charts or figures; cells run from the right in Arabic
+builder.figure_matrix([{"title": "Tram", "chart": {"chart_type": "bar", "data": {"2024": 44, "2025": 52}}},
+                       {"title": "Satisfaction", "value": "92%", "label": "of riders"}],
+                      title="The year in figures", columns=2)
+
+# Two languages, row by row; Arabic takes the right column
+builder.paired_row_columns([{"first": "Water", "second": "المياه", "heading": True},
+                            {"first": "English text", "second": "النص العربي"}],
+                           header_first="English", header_second="العربية")
+```
+
 ### Layout Utilities
 
 ```python
@@ -983,6 +1007,24 @@ Built-in fonts auto-downloaded on first run:
 Fallback to `Helvetica` / `Courier` if download fails.
 
 ---
+
+### Bundled families
+
+The package carries 23 Arabic and 22 Latin families, all under the SIL Open Font License, so a
+design looks the same on a machine with none of them installed. Word files embed the family
+they use. Licences sit in `dynamic_pdf/fonts/bundled/LICENSES/`, and `catalog.json` records the
+source of each family and whether it was changed.
+
+```python
+from dynamic_pdf.fonts import list_font_families
+
+list_font_families("arabic")     # Cairo, Tajawal, Noto Naskh Arabic, El Messiri, ...
+list_font_families("latin")      # Open Sans, Montserrat, EB Garamond, Barlow, ...
+
+builder.fonts(heading="Montserrat", body="Spectral", arabic="Markazi Text")
+```
+
+Bundled families load when first used. An unchanged document keeps its current fonts.
 
 ## Typography Standards
 

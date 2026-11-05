@@ -380,8 +380,12 @@ class ArchetypeDocx:
                 self._line(cells[1 + i], v, size, text if on or bold else muted, right=True,
                            bold=True if on or bold else None, ratio=1.25)
 
-        r = 0
-        head = t.rows[0]
+        top = 1 if b.title_first and len(b.sections) == 1 else 0     # where the column heads sit
+        r = -top
+        head = t.rows[top]
+        if top:
+            F.set_repeat_table_header(t.rows[0])
+            F.set_cant_split(t.rows[0])
         F.set_repeat_table_header(head)
         F.set_cant_split(head)
         cells = head.cells
@@ -411,6 +415,7 @@ class ArchetypeDocx:
                 bar = t.cell(r, 0).merge(t.cell(r, ncols - 1))
                 F.set_cell_shading(bar, dark)
                 self._line(bar, s.title, base * 1.02, "#ffffff", right=plan.rtl, bold=True).paragraph_format.keep_with_next = True
+            r += top
             for k, data in enumerate(s.rows):
                 r += 1
                 row = t.rows[r]
@@ -418,8 +423,8 @@ class ArchetypeDocx:
                 cells = row.cells
                 bold = data.total or None
                 p = self._line(cells[0], data.label, base, text, right=plan.rtl, bold=bold)
-                if k == 0:
-                    p.paragraph_format.keep_with_next = True   # a section bar keeps two rows with it
+                if k == 0 or (k + 2 == len(s.rows) and s.rows[-1].total):
+                    p.paragraph_format.keep_with_next = True   # a bar keeps two rows, a total the one above
                 if second and data.label_alt:
                     self._line(cells[-1], data.label_alt, base, text, right=True, bold=bold)
                 values(cells, data, data.total)

@@ -334,12 +334,13 @@ def _ledger(block, theme, ctx) -> list:
               [_text(theme, p, head_size, dark if i == block.emphasis else muted, 2, True) for i, p in enumerate(block.periods)])
     if plan.rtl:
         hdr[last_label] = label_cell(block.label_header, True, True, muted, head_size)
-    data = [hdr]
+    top = 1 if block.title_first and len(block.sections) == 1 else 0     # where the column heads sit
+    data = [] if top else [hdr]
     style = [
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("LEFTPADDING", (0, 0), (-1, -1), 6), ("RIGHTPADDING", (0, 0), (-1, -1), 6),
         ("TOPPADDING", (0, 0), (-1, -1), 4.5), ("BOTTOMPADDING", (0, 0), (-1, -1), 4.5),
-        ("LINEBELOW", (0, 0), (-1, 0), 0.75, HexColor(dark)),
+        ("LINEBELOW", (0, top), (-1, top), 0.75, HexColor(dark)),
         ("BACKGROUND", (emph, 0), (emph, -1), HexColor(A.tint(theme, 0.92))),
     ]
     split = (ncols - 1) // 2
@@ -358,6 +359,8 @@ def _ledger(block, theme, ctx) -> list:
         style += [("BACKGROUND", (0, r), (-1, r), HexColor(dark)),
                   ("NOSPLIT", (0, r), (-1, min(r + 2, r + len(s.rows))))]
         data.append(bar)
+        if top:
+            data.append(hdr)
         for row_data in s.rows:
             r = len(data)
             b = row_data.total
@@ -372,14 +375,15 @@ def _ledger(block, theme, ctx) -> list:
             data.append(row(left, end, values))
             style.append(("LINEBELOW", (0, r), (-1, r), 0.35, HexColor(theme.colors.border)))
             if b:
-                style.append(("LINEABOVE", (0, r), (-1, r), 0.9, HexColor(dark)))
+                style += [("LINEABOVE", (0, r), (-1, r), 0.9, HexColor(dark)),
+                          ("NOSPLIT", (0, r - 1), (-1, r))]      # a total never stands alone on a page
         if s.note:
             r = len(data)
             note = [""] * ncols
             note[0] = _text(theme, s.note, base * 0.82, muted, 2 if A.is_rtl(s.note) else 0, False, 1.3, False)
             style += [("SPAN", (0, r), (-1, r)), ("BACKGROUND", (0, r), (-1, r), HexColor(theme.colors.background))]
             data.append(note)
-    table = Table(data, colWidths=widths, repeatRows=1, splitByRow=1, hAlign="LEFT")
+    table = Table(data, colWidths=widths, repeatRows=1 + top, splitByRow=1, hAlign="LEFT")
     table.setStyle(TableStyle(style))
     return [table, Spacer(1, theme.spacing.block_gap)]
 

@@ -56,6 +56,75 @@
    "reviewer": null,
    "date": "2026-11-05",
    "human_approved": false
+  },
+  {
+   "rules": [
+    "bands.dense_filled_head_foot",
+    "bilingual.parallel_columns",
+    "bilingual.parallel_ledger",
+    "chart.small_multiples",
+    "closing.image_band",
+    "cover.low_title_field",
+    "cover.photo_over_panel",
+    "editorial.overlaid_panel",
+    "image.alternating_inset",
+    "kpi.hero_and_grid",
+    "kpi.ruled_strip",
+    "opener.edge_strip_page",
+    "table.current_period_ledger"
+   ],
+   "grammar_version": "1.0.0",
+   "reviewer_type": "ai",
+   "model": "claude-opus-5-5",
+   "reviewer": null,
+   "date": "2026-11-05",
+   "human_approved": false
+  },
+  {
+   "rules": [
+    "bands.dense_filled_head_foot",
+    "bilingual.parallel_columns",
+    "bilingual.parallel_ledger",
+    "chart.small_multiples",
+    "closing.image_band",
+    "cover.low_title_field",
+    "cover.photo_over_panel",
+    "editorial.overlaid_panel",
+    "image.alternating_inset",
+    "kpi.hero_and_grid",
+    "kpi.ruled_strip",
+    "opener.edge_strip_page",
+    "table.current_period_ledger"
+   ],
+   "grammar_version": "1.0.0",
+   "reviewer_type": "ai",
+   "model": "claude-opus-5-5",
+   "reviewer": null,
+   "date": "2026-11-05",
+   "human_approved": false
+  },
+  {
+   "rules": [
+    "bands.dense_filled_head_foot",
+    "bilingual.parallel_columns",
+    "bilingual.parallel_ledger",
+    "chart.small_multiples",
+    "closing.image_band",
+    "cover.low_title_field",
+    "cover.photo_over_panel",
+    "editorial.overlaid_panel",
+    "image.alternating_inset",
+    "kpi.hero_and_grid",
+    "kpi.ruled_strip",
+    "opener.edge_strip_page",
+    "table.current_period_ledger"
+   ],
+   "grammar_version": "1.0.0",
+   "reviewer_type": "ai",
+   "model": "claude-opus-5-5",
+   "reviewer": null,
+   "date": "2026-11-05",
+   "human_approved": false
   }
  ]
 }

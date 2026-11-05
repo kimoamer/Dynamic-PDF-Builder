@@ -1193,6 +1193,10 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
             return statement(block, theme, ctx)
         return _render_quote(block, theme)
 
+    if btype in ("image_text_panel", "figure_matrix", "paired_row_columns"):
+        from ..renderers.compositions import render_composition
+        return render_composition(block, theme, ctx)
+
     # ─── Layout archetypes (opt-in page compositions) ───
     if btype in ("section_opener", "performance_page", "parallel_ledger"):
         from ..renderers.archetypes import render_archetype

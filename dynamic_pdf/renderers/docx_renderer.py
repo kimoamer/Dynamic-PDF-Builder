@@ -42,6 +42,7 @@ from ..utils.errors import BlockRenderError, DynamicPDFError
 from . import docx_fields as F
 from . import docx_media as M
 from .docx_archetypes import ArchetypeDocx
+from .docx_compositions import CompositionDocx
 from ..fonts.manager import set_arabic_face
 from .docx_fonts import embed_fonts
 from .docx_styles import configure_styles, rgb, word_font
@@ -54,7 +55,7 @@ WRAPS_FLOAT = ("paragraph", "rich_text", "bullet_list", "numbered_list", "checkl
 _NUMERIC = re.compile(r"^[\s$€£¥%+\-−(),.\d٠-٩]+$")
 
 
-class DocxRenderer(ArchetypeDocx):
+class DocxRenderer(ArchetypeDocx, CompositionDocx):
     def __init__(self, sem: SemanticDocument, theme: Theme, collector=None):
         self.sem = sem
         self.theme = theme

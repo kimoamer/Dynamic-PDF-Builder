@@ -67,6 +67,42 @@ def _use_family(family: str) -> None:
             addMapping(name, 1, 1, bold)
 
 
+def covers(family: str, chars: str) -> bool:
+    """Whether a bundled family draws every one of these characters, in regular and bold."""
+    entry = font_catalog().get(family)
+    if entry is None:
+        return True                     # not ours to measure, as with Amiri and custom faces
+    from reportlab.pdfbase import pdfmetrics
+    _use_family(family)
+    for style in entry["files"]:
+        if style not in ("regular", "bold"):
+            continue
+        name = family if style == "regular" else f"{family}-Bold"
+        try:
+            glyphs = pdfmetrics.getFont(name).face.charToGlyph
+        except (KeyError, AttributeError):
+            return False
+        if any(ord(c) not in glyphs for c in chars):
+            return False
+    return True
+
+
+def covering_face(family: str, chars: str) -> str:
+    """The family itself when it can set these characters, or else the nearest that can.
+
+    A design's Arabic face must not turn a percent sign or a decimal separator into an empty box.
+    """
+    if covers(family, chars):
+        return family
+    catalog = font_catalog()
+    style = catalog.get(family, {}).get("style")
+    arabic = sorted(k for k, v in catalog.items() if v["script"] == "arabic")
+    for name in sorted(arabic, key=lambda k: catalog[k].get("style") != style):
+        if covers(name, chars):
+            return name
+    return family
+
+
 def set_arabic_face(family: Optional[str]) -> None:
     """The face Arabic text takes in the render under way."""
     _arabic_face.set(family or "Amiri")

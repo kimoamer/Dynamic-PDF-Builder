@@ -70,5 +70,7 @@ ARCHETYPE_CAPABILITIES: Dict[str, ArchetypeCapability] = {
     "statement_page": ArchetypeCapability(),
     "editorial_sink": ArchetypeCapability(),
     "image_slab_divider": ArchetypeCapability(),
-    "figure_matrix": ArchetypeCapability(),
+    "figure_matrix": _BUILT,
+    "image_text_panel": _BUILT,
+    "paired_row_columns": _BUILT,
 }

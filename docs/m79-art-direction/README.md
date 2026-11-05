@@ -10,7 +10,7 @@ from dynamic_pdf.intelligence.variants import VariantBudget
 result = builder.design_variants(
     n=3,                                  # من 1 إلى 5
     brand={"primary": "#0F5E73", "logo": "logo.png"},
-    budget=VariantBudget(max_renders=14, max_refinements=2, max_seconds=120),
+    budget=VariantBudget(max_renders=40, max_refinements=5, max_seconds=120),
     office=False,                         # True يفتح كل DOCX في LibreOffice
 )
 result.recommended        # أقوى تصميم صالح، أو None
