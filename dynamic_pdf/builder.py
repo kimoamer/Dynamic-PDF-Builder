@@ -337,6 +337,22 @@ class DocumentBuilder:
                 _gt(self._theme) if self._theme_explicit else None, self._policy)}
         return self._gate_cache[key]
 
+    def design_variants(self, n: int = 3, families=None, brand=None, budget=None, office: bool = False):
+        """Several complete designs of this document, each a different art direction, and
+        a recommendation among those that pass the hard gates.
+
+        ``families`` names directions from ``dynamic_pdf.design.directions.DIRECTIONS`` in
+        place of the automatic choice. ``office=True`` also opens each DOCX in LibreOffice.
+        Nothing about this builder's own output changes. If no design passes,
+        ``fallback`` is True and ``render()`` remains the stable result."""
+        from .design import BrandKit
+        from .intelligence.variants import generate_variants
+        from .themes import get_theme as _gt
+        kit = brand if brand is None or isinstance(brand, BrandKit) else BrandKit(**brand)
+        return generate_variants(self.build(), policy=self._policy, brand=kit or self._brand,
+                                 base_theme=_gt(self._theme) if self._theme_explicit else None, n=n,
+                                 families=families, budget=budget, office=office)
+
     def design_explain(self) -> dict:
         """Why each style/layout decision was made (profile, reasons, recipe)."""
         if self._design_mode is None and self._brand is None:

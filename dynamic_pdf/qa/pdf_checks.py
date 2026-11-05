@@ -37,6 +37,11 @@ def _matches(line: str, target_key: frozenset) -> bool:
     return bool(target_key) and target_key <= _key(line)
 
 
+def _contents_keys() -> list:
+    from ..i18n import LABELS
+    return [_key(v["toc"]) for v in LABELS.values()]
+
+
 def _overlap(a, b) -> float:
     x0, y0 = max(a[0], b[0]), max(a[1], b[1])
     x1, y1 = min(a[2], b[2]), min(a[3], b[3])
@@ -65,6 +70,7 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
     majors = [_key(h) for h in (major_headings or []) if _key(h)]
     head_keys = [_key(h) for h in (heading_texts or []) if _key(h)]
     page_firsts = []          # first body line text of each page
+    contents_keys = _contents_keys()
     page_texts = []
     image_bottoms = {}
     margins = margins or {}
@@ -151,13 +157,16 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
                 rep.findings.append(Finding(severity=ERROR, code="detached_caption", page=pno, bbox=last[0],
                                             text=lt, format=fmt,
                                             message=f"caption {lt[:40]!r} is separated from its table/figure"))
-        if not body and not has_image and doc.page_count > 1:
+        if not body and not has_image and len(drawn) < 3 and doc.page_count > 1:
             rep.findings.append(Finding(severity=ERROR, code="blank_page", page=pno, format=fmt,
                                         fixable=True, message="page has no content"))
         if body and pno < doc.page_count:
             last = max(body, key=lambda ln: ln[0][3])
             lk = _key(last[1])
-            if lk and any(hk == lk or (len(hk) >= 2 and hk <= lk and len(lk) <= len(hk) + 1)
+            # a contents page or an opening page's chapter strip lists headings; it does not strand one
+            listed = sum(_key(ln[1]) in head_keys for ln in body) >= 3
+            contents_page = listed or any(_matches(page_firsts[-1], k) for k in contents_keys)
+            if lk and not contents_page and any(hk == lk or (len(hk) >= 2 and hk <= lk and len(lk) <= len(hk) + 1)
                           for hk in head_keys):
                 rep.findings.append(Finding(severity=ERROR, code="stranded_heading", page=pno,
                                             bbox=last[0], text=last[1].strip(), format=fmt, fixable=True,

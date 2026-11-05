@@ -1,0 +1,75 @@
+{
+  "_about": "Notes written by an AI reviewer after viewing whole-document contact sheets at low resolution, PDF and LibreOffice DOCX. They are not human judgements. Fine typography cannot be judged at this size.",
+  "annual_report": {
+    "baseline": "Every page has the same composition: orange band, black footer, rainbow chart, a drop cap on each section, no cover.",
+    "executive_premium": "Photo cover, large hero figure on the performance page, quiet rules. Strongest presence, but 9 pages against 6 and some pages hold little. DOCX in LibreOffice follows the PDF closely.",
+    "editorial_modern": "Image-top cover, hanging text, a bleed band and grotesque headings: clearly a different publication. The band crop clips the top of the moon slightly.",
+    "financial_data": "Dense masthead, slabs and a KPI band in 4 pages. Reads as a data report, and is tight rather than elegant."
+  },
+  "financial_statements": {
+    "baseline": "Tables and charts are legible, but with the same band and rainbow bars as every other document.",
+    "financial_data": "Best fit: 3 pages, tinted current column, firm slabs. The last page holds a short table only.",
+    "corporate_conservative": "Formal and calm. Pages are half filled for a document this short.",
+    "executive_premium": "Dark cover and generous type look premium, though generous spacing costs two pages over financial_data."
+  },
+  "board_paper": {
+    "baseline": "Two tidy pages, but the drop cap on every section is out of place in a decision paper.",
+    "corporate_conservative": "Band title, numbered sections, ledger table. Suits the document.",
+    "financial_data": "Compact and clear. In DOCX only the last section reaches the second page, which looks thin.",
+    "executive_premium": "Serif headings under rules give a measured look on two pages."
+  },
+  "technical_manual": {
+    "baseline": "Usable; decoration adds nothing for a manual.",
+    "financial_data": "Compact with slabs: easiest to scan.",
+    "corporate_conservative": "Numbered sections suit a manual. The appendix sits alone on the last page.",
+    "executive_premium": "Dark cover feels heavy for a manual, and a table header caption moves with its table across a page."
+  },
+  "research_paper": {
+    "baseline": "References title is doubled because the block and the heading both print it. This comes from the source structure and remains in every design.",
+    "corporate_conservative": "Closest to a paper: centred cover, numbered sections, serif text.",
+    "financial_data": "Compact, but the last PDF page holds only the references.",
+    "executive_premium": "Largest growth and half-empty pages. The weakest fit for a paper."
+  },
+  "proposal": {
+    "baseline": "Large images and repeated drop caps; the last page is mostly empty.",
+    "editorial_modern": "Most convincing: hero band, hanging text, side image with wrapping. After the fix, headings in DOCX start below the float.",
+    "executive_premium": "Elegant cover. Page 2 ends early.",
+    "corporate_conservative": "Team sits alone on the last PDF page; refinement did not pull it back. Page 2 is half empty."
+  },
+  "impact_report": {
+    "baseline": "Same band and footer; one chart in rainbow colours.",
+    "editorial_modern": "Strong: masthead, bleed photograph, float image, large quote.",
+    "executive_premium": "Good cover and rhythm. Its last section is short.",
+    "corporate_conservative": "Sound, but the last PDF page is mostly empty."
+  },
+  "policy_brief": {
+    "baseline": "Two pages with a rainbow chart.",
+    "corporate_conservative": "Clear, but the recommendation sits alone on a near-empty third PDF page: refinement tried and failed. A weak ending for a brief.",
+    "financial_data": "Best of the three here: two full pages, recommendation included. In DOCX the last section is alone on page 2.",
+    "editorial_modern": "Bold headings, but the recommendation also sits alone on the last PDF page."
+  },
+  "arabic_annual": {
+    "baseline": "Arabic is correct and right aligned, but with the same band and footer as the English documents.",
+    "arabic_institutional": "Split cover and bleed slabs mirrored for Arabic: the most institutional. DOCX slabs are inset rather than bleeding; they were invisible before the band style fix.",
+    "executive_premium": "Opening page with a chapter strip and a large hero figure work well in Arabic. 8 pages against 4.",
+    "editorial_modern": "Large image bands, but page 4 holds three lines: refinement tried and the change was undone."
+  },
+  "arabic_financial": {
+    "baseline": "Tables correct; rainbow chart.",
+    "arabic_institutional": "Compact, slabs and last-bar emphasis. LibreOffice DOCX runs one page longer than the PDF.",
+    "financial_data": "Two dense pages with a KPI slab: the clearest for a financial statement.",
+    "corporate_conservative": "Now unnumbered in Arabic after a digit placed at the wrong end was seen. Calm, one page longer."
+  },
+  "bilingual_institutional": {
+    "baseline": "Both languages present and legible, no structure beyond the band.",
+    "arabic_institutional": "Slab headings carry both languages; finance table has a tinted column. Title line ends on the separator, a minor flaw.",
+    "executive_premium": "Serif headings suit the pairing and fit in three pages.",
+    "corporate_conservative": "Centred cover; metric labels are pale. The last page is short."
+  },
+  "sustainability_report": {
+    "baseline": "The last page is a split table, mostly empty.",
+    "financial_data": "Three pages, KPI slab, tinted column, last-bar emphasis. Clear, but the last page is mostly empty.",
+    "executive_premium": "Image-led cover, calm pages. Page 4 has a lower half left empty.",
+    "editorial_modern": "Bleed image and big headings give pace; the hanging indent makes columns feel narrow."
+  }
+}

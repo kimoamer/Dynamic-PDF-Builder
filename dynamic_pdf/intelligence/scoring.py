@@ -177,7 +177,8 @@ def score_layout(geo: Geometry, doc, theme, *, typography_errors: Optional[List[
             tail = [r for r in rs if r.role not in ("space", "decorative")][-1:] or rs[-1:]
             tail = tail[0]
             cont = [r for r in nxt if r.block == tail.block]
-            if tail.role == "heading" and not cont:
+            whole_page = types.get(tail.block) in ("section_opener", "performance_page")
+            if tail.role == "heading" and not cont and not whole_page:
                 errors.append(f"heading (block {tail.block}) stranded at bottom of page {p}")
             if tail.role == "caption" and cont:
                 errors.append(f"caption of block {tail.block} detached on page {p}")
