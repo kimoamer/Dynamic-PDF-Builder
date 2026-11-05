@@ -1,0 +1,192 @@
+{
+ "verdict": "not ready",
+ "gate": 200,
+ "rows": 180,
+ "usable": 85,
+ "train_usable": 62,
+ "held_out_usable": 23,
+ "excluded": {
+  "ties_or_abstentions": 31,
+  "low_confidence": 41,
+  "reversed_repeats": 48
+ },
+ "coverage": {
+  "documents": {
+   "research_paper": 6,
+   "proposal": 5,
+   "bilingual_institutional": 7,
+   "impact_report": 8,
+   "financial_statements": 3,
+   "annual_report": 5,
+   "policy_brief": 5,
+   "arabic_annual": 3,
+   "technical_manual": 5,
+   "board_paper": 5,
+   "arabic_financial": 2,
+   "bilingual_water_compact": 6,
+   "harbour_feature": 6,
+   "bilingual_ports_review": 4,
+   "transit_data_story": 3,
+   "arabic_city_feature": 6,
+   "arabic_health_data": 3,
+   "sustainability_report": 3
+  },
+  "families": {
+   "technical": 16,
+   "governance": 17,
+   "annual": 19,
+   "financial": 5,
+   "bilingual_review": 10,
+   "feature": 12,
+   "data_story": 6
+  },
+  "languages": {
+   "english": 54,
+   "bilingual": 17,
+   "arabic": 14
+  },
+  "formats": {
+   "pdf": 51,
+   "word": 34
+  },
+  "batches": {
+   "seed-001": 16,
+   "m710-001": 35,
+   "m710-002": 34
+  }
+ },
+ "consistency": {
+  "reversed_pairs": 48,
+  "agreed": 47,
+  "flipped": [
+   "cmp-046"
+  ],
+  "side_a_won": 59,
+  "clear_answers": 113,
+  "confidence": {
+   "medium": 109,
+   "high": 30,
+   "low": 41
+  }
+ },
+ "provenance": {
+  "reviewer_types": [
+   "ai"
+  ],
+  "models": [
+   "claude-opus-5-5"
+  ],
+  "missing_fields": {},
+  "rows_not_matching_a_render": [],
+  "with_layout_facts": 69
+ },
+ "leakage": {
+  "evaluation_families": [
+   "governance",
+   "data_story"
+  ],
+  "documents_in_both": [],
+  "hashes_in_both": [],
+  "documents_outside_the_split": [],
+  "note": "Families never cross the split, but all documents share the same generated pictures and author."
+ },
+ "signals": {
+  "grammar_against_own_baseline": {
+   "comparisons": 16,
+   "grammar_won": 11
+  },
+  "design_win_rate": {
+   "arabic_institutional": {
+    "won": 6,
+    "of": 10
+   },
+   "corporate_conservative": {
+    "won": 16,
+    "of": 32
+   },
+   "editorial_modern": {
+    "won": 15,
+    "of": 47
+   },
+   "executive_premium": {
+    "won": 32,
+    "of": 43
+   },
+   "financial_data": {
+    "won": 16,
+    "of": 38
+   }
+  },
+  "facts_most_tied_to_the_winner": [
+   {
+    "fact": "cover_colour_share",
+    "winner_higher": 40,
+    "differed": 50,
+    "share": 0.8
+   },
+   {
+    "fact": "both_scripts_side_by_side",
+    "winner_higher": 11,
+    "differed": 14,
+    "share": 0.79
+   },
+   {
+    "fact": "font_faces",
+    "winner_higher": 9,
+    "differed": 36,
+    "share": 0.25
+   },
+   {
+    "fact": "distinct_sizes",
+    "winner_higher": 46,
+    "differed": 62,
+    "share": 0.74
+   },
+   {
+    "fact": "opener_page_share",
+    "winner_higher": 33,
+    "differed": 48,
+    "share": 0.69
+   },
+   {
+    "fact": "band_words_spread",
+    "winner_higher": 17,
+    "differed": 52,
+    "share": 0.33
+   },
+   {
+    "fact": "short_pages_before_last",
+    "winner_higher": 10,
+    "differed": 29,
+    "share": 0.34
+   },
+   {
+    "fact": "last_page_words",
+    "winner_higher": 40,
+    "differed": 62,
+    "share": 0.65
+   },
+   {
+    "fact": "interior_gap_pages",
+    "winner_higher": 17,
+    "differed": 26,
+    "share": 0.65
+   },
+   {
+    "fact": "cover_words",
+    "winner_higher": 16,
+    "differed": 45,
+    "share": 0.36
+   }
+  ]
+ },
+ "weaknesses": [
+  "85 usable comparisons against a gate of 200: not enough to train",
+  "only 23 held-out comparisons: an agreement figure would be too noisy to trust",
+  "18 documents: all fictional, written by one author, sharing five generated pictures, so a model could learn this corpus and not design",
+  "one reviewer model: its taste and blind spots are in every row, and no human has checked them",
+  "30 of 180 answers are high confidence: thumbnails limit what can be seen",
+  "34 of 85 usable comparisons were judged on Word pages",
+  "16 usable comparisons predate the layout facts and lack them"
+ ]
+}

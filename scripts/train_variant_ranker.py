@@ -33,7 +33,7 @@ def read_jsonl(path):
 def usable(rows):
     """Clear AI answers only, without pairs that contradicted themselves."""
     def pair(r):
-        return r["document"], frozenset((r["a"]["candidate"], r["b"]["candidate"]))
+        return r["batch"], r["document"], frozenset((r["a"]["candidate"], r["b"]["candidate"]))    # batches render different code
 
     def won(r):
         return r["a"]["candidate"] if r["preferred"] == "A" else r["b"]["candidate"] if r["preferred"] == "B" else None

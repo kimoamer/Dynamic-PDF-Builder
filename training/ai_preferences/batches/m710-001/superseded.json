@@ -1,0 +1,65 @@
+{
+ "reason": "Designs set in an Arabic face that cannot draw a mark the document uses. Their judgments stay recorded and are left out of the usable count; the engine now picks a face that covers the document.",
+ "candidates": [
+  {
+   "document": "arabic_annual",
+   "candidate": "arabic_institutional",
+   "reason": "the design's Arabic face has no glyph for ³:Noto Naskh Arabic"
+  },
+  {
+   "document": "arabic_annual",
+   "candidate": "arabic_institutional@plain",
+   "reason": "the design's Arabic face has no glyph for ³:Noto Naskh Arabic"
+  },
+  {
+   "document": "arabic_annual",
+   "candidate": "editorial_modern",
+   "reason": "the design's Arabic face has no glyph for ٪:Markazi Text"
+  },
+  {
+   "document": "arabic_annual",
+   "candidate": "editorial_modern@plain",
+   "reason": "the design's Arabic face has no glyph for ٪:Markazi Text"
+  },
+  {
+   "document": "arabic_annual",
+   "candidate": "financial_data",
+   "reason": "the design's Arabic face has no glyph for ٫:Tajawal"
+  },
+  {
+   "document": "arabic_annual",
+   "candidate": "financial_data@plain",
+   "reason": "the design's Arabic face has no glyph for ٫:Tajawal"
+  },
+  {
+   "document": "arabic_financial",
+   "candidate": "editorial_modern",
+   "reason": "the design's Arabic face has no glyph for ٪:Markazi Text"
+  },
+  {
+   "document": "arabic_financial",
+   "candidate": "editorial_modern@plain",
+   "reason": "the design's Arabic face has no glyph for ٪:Markazi Text"
+  },
+  {
+   "document": "arabic_financial",
+   "candidate": "financial_data",
+   "reason": "the design's Arabic face has no glyph for ٫:Tajawal"
+  },
+  {
+   "document": "arabic_financial",
+   "candidate": "financial_data@plain",
+   "reason": "the design's Arabic face has no glyph for ٫:Tajawal"
+  },
+  {
+   "document": "arabic_health_data",
+   "candidate": "editorial_modern",
+   "reason": "the design's Arabic face has no glyph for ٪:Markazi Text"
+  },
+  {
+   "document": "arabic_health_data",
+   "candidate": "financial_data",
+   "reason": "the design's Arabic face has no glyph for ٫:Tajawal"
+  }
+ ]
+}

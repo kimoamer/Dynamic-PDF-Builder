@@ -20,9 +20,22 @@
    "technical_manual",
    "research_paper",
    "proposal"
+  ],
+  "feature": [
+   "harbour_feature",
+   "arabic_city_feature"
+  ],
+  "data_story": [
+   "transit_data_story",
+   "arabic_health_data"
+  ],
+  "bilingual_review": [
+   "bilingual_ports_review",
+   "bilingual_water_compact"
   ]
  },
  "evaluation_families": [
-  "governance"
+  "governance",
+  "data_story"
  ]
 }
