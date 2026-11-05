@@ -114,6 +114,8 @@ class MediaFlowable(Flowable):
 
 
 class _ZeroFlowable(Flowable):
+    _dpb_role = "decorative"
+
     def __init__(self):
         super().__init__()
         self.width = self.height = 0
@@ -251,12 +253,14 @@ class FloatPlaced(Flowable):
         narrow = self.width - self.fig_w - self.gutter
         fig_x = 0 if self.side == "left" else self.width - self.fig_w
         text_x = self.fig_w + self.gutter if self.side == "left" else 0
+        drawn = []
         y = self.height
         for f in self.figure:
             w, h = f.wrapOn(canv, self.fig_w, 1e6)
             y -= h
             x = fig_x + (self.fig_w - w) / 2 if getattr(f, "hAlign", "") == "CENTER" else fig_x
             f.drawOn(canv, x, y)
+            drawn.append((f, x, y, w, h, True))
             y -= f.getSpaceAfter()
         y = self.height
         for k, f in enumerate(self.beside):
@@ -265,7 +269,18 @@ class FloatPlaced(Flowable):
                 y -= f.getSpaceBefore()
             y -= h
             f.drawOn(canv, text_x, y)
+            drawn.append((f, text_x, y, narrow, h, False))
             y -= f.getSpaceAfter()
+        self._dpb_children = drawn
+
+
+def _pieces(source, parts):
+    """Pieces of a split flowable belong to the block ``source`` came from."""
+    for part in parts or []:
+        for attr in ("_dpb_block", "_dpb_role", "_dpb_level"):
+            if hasattr(source, attr) and not hasattr(part, attr):
+                setattr(part, attr, getattr(source, attr))
+    return parts
 
 
 class FloatRegion(Flowable):
@@ -309,7 +324,7 @@ class FloatRegion(Flowable):
                 used += gap + h + f.getSpaceAfter()
                 continue
             room = fig_h - used - gap
-            parts = f.split(narrow, room) if room > 0 and hasattr(f, "split") else []
+            parts = _pieces(f, f.split(narrow, room)) if room > 0 and hasattr(f, "split") else []
             if len(parts) >= 2:
                 head = parts[0]
                 used += gap + head.wrap(narrow, 1e6)[1]
@@ -329,7 +344,7 @@ class FloatRegion(Flowable):
             again = FloatRegion(self.figure, self.items[1:], self.fig_w, self.side, self.gutter)
             if h + first.getSpaceAfter() <= avail:
                 return [first, again]
-            parts = first.split(aw, avail) if hasattr(first, "split") else []
+            parts = _pieces(first, first.split(aw, avail)) if hasattr(first, "split") else []
             if len(parts) >= 2:
                 again.items = [*parts[1:], *self.items[1:]]
                 return [parts[0], again]

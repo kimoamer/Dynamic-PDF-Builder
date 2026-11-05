@@ -79,6 +79,8 @@ class PageSystem(BaseModel):
     values: Dict[str, str] = Field(default_factory=dict)   # {period}, {code}, {department}...
     edge_distance: float = Field(20, ge=0)       # page edge to the band
     body_gap: float = Field(10, ge=0)            # band to the body text
+    lossless: bool = False                       # never cut band text: reflow it, or refuse
+    optional_fields: List[str] = Field(default_factory=list)   # may be blank in a lossless band
 
     def bands(self):
         """Every band this system can draw, for measuring the page margins."""
