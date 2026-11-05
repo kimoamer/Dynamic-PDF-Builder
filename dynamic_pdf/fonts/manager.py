@@ -191,3 +191,11 @@ def get_font_name(family: str, bold: bool = False, italic: bool = False) -> str:
 def list_available_fonts() -> list:
     """Return sorted list of all registered font names."""
     return sorted(_available_fonts)
+
+
+def font_signature() -> str:
+    """Name and size of every bundled font, to tell one font set from another."""
+    if not os.path.isdir(BUNDLED_DIR):
+        return ""
+    names = sorted(n for n in os.listdir(BUNDLED_DIR) if n.lower().endswith((".ttf", ".otf")))
+    return ";".join(f"{n}:{os.path.getsize(os.path.join(BUNDLED_DIR, n))}" for n in names)

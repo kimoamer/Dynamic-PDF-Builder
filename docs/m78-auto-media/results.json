@@ -1,0 +1,997 @@
+{
+ "libreoffice": "LibreOffice 24.2.7.2 420(Build:2)",
+ "word": "not run",
+ "human_review": "none",
+ "cases": [
+  {
+   "case": "executive_narrative",
+   "off_identical": true,
+   "before": {
+    "strategy": "editorial",
+    "pdf_pages": 3,
+    "score": 91.64,
+    "docx_pages_libreoffice": 3
+   },
+   "after": {
+    "strategy": "media:mix",
+    "pdf_pages": 2,
+    "score": 99.29,
+    "docx_pages_libreoffice": 2,
+    "status": "ok",
+    "validation": {
+     "docx": "libreoffice (LibreOffice 24.2.7.2 420(Build:2)); pages 3 -> 2",
+     "pdf": "verified"
+    },
+    "fallback_reason": null
+   },
+   "changed": {
+    "pdf": true,
+    "docx": true
+   },
+   "seconds": 6.93,
+   "render_attempts": 3,
+   "candidates": [
+    {
+     "name": "baseline",
+     "rendered": true,
+     "pages": 3,
+     "score": 62.65,
+     "adjusted": null,
+     "legibility": null,
+     "outcome": "scored lower than the delivered layout"
+    },
+    {
+     "name": "media:mix",
+     "rendered": true,
+     "pages": 2,
+     "score": 99.29,
+     "adjusted": 99.29,
+     "legibility": 1.0,
+     "outcome": "delivered"
+    },
+    {
+     "name": "media:full_width",
+     "rendered": false,
+     "pages": null,
+     "score": null,
+     "adjusted": null,
+     "legibility": null,
+     "outcome": "not rendered (render budget)"
+    },
+    {
+     "name": "media:compact",
+     "rendered": false,
+     "pages": null,
+     "score": null,
+     "adjusted": null,
+     "legibility": null,
+     "outcome": "not rendered (render budget)"
+    },
+    {
+     "name": "grouped",
+     "rendered": false,
+     "pages": null,
+     "score": null,
+     "adjusted": null,
+     "legibility": null,
+     "outcome": "no plausible improvement predicted"
+    },
+    {
+     "name": "balanced",
+     "rendered": false,
+     "pages": null,
+     "score": null,
+     "adjusted": null,
+     "legibility": null,
+     "outcome": "no plausible improvement predicted"
+    },
+    {
+     "name": "compact",
+     "rendered": false,
+     "pages": null,
+     "score": null,
+     "adjusted": null,
+     "legibility": null,
+     "outcome": "no plausible improvement predicted"
+    },
+    {
+     "name": "editorial",
+     "rendered": true,
+     "pages": 3,
+     "score": 91.64,
+     "adjusted": 91.64,
+     "legibility": null,
+     "outcome": "scored lower than the delivered layout"
+    }
+   ],
+   "media_decisions": [
+    {
+     "name": "media:mix",
+     "style": "mix",
+     "policy_version": "m78.1",
+     "source_hash": "19f7cbbea8c0e2036f9f97a2fc7b653a99f60e364ef09b0cbac3dc131b35712e",
+     "decisions": [
+      {
+       "source_node_id": null,
+       "block": 2,
+       "anchor_group_id": "group-2",
+       "placement": "float_end",
+       "box": [
+        169.966,
+        null
+       ],
+       "fit": "contain",
+       "logical_side": "end",
+       "target_overrides": {},
+       "reason_codes": [
+        "measured_frame",
+        "aspect_kept",
+        "text_wraps_beside_image"
+       ],
+       "width_ratio": 0.38
+      }
+     ],
+     "rejected": [],
+     "metrics": {},
+     "reasons": [],
+     "lossless_bands": false,
+     "status": "accepted",
+     "reason": null
+    },
+    {
+     "name": "media:full_width",
+     "style": "full_width",
+     "policy_version": "m78.1",
+     "source_hash": "19f7cbbea8c0e2036f9f97a2fc7b653a99f60e364ef09b0cbac3dc131b35712e",
+     "decisions": [
+      {
+       "source_node_id": null,
+       "block": 2,
+       "anchor_group_id": "group-2",
+       "placement": "full_width",
+       "box": [
+        404.289,
+        null
+       ],
+       "fit": "contain",
+       "logical_side": null,
+       "target_overrides": {},
+       "reason_codes": [
+        "measured_frame",
+        "aspect_kept"
+       ],
+       "width_ratio": null
+      }
+     ],
+     "rejected": [],
+     "metrics": {},
+     "reasons": [],
+     "lossless_bands": false,
+     "status": "rejected",
+     "reason": "not rendered (render budget)"
+    },
+    {
+     "name": "media:compact",
+     "style": "compact",
+     "policy_version": "m78.1",
+     "source_hash": "19f7cbbea8c0e2036f9f97a2fc7b653a99f60e364ef09b0cbac3dc131b35712e",
+     "decisions": [
+      {
+       "source_node_id": null,
+       "block": 2,
+       "anchor_group_id": "group-2",
+       "placement": "inline",
+       "box": [
+        250.477,
+        null
+       ],
+       "fit": "contain",
+       "logical_side": null,
+       "target_overrides": {},
+       "reason_codes": [
+        "measured_frame",
+        "aspect_kept"
+       ],
+       "width_ratio": null
+      }
+     ],
+     "rejected": [],
+     "metrics": {},
+     "reasons": [],
+     "lossless_bands": false,
+     "status": "rejected",
+     "reason": "not rendered (render budget)"
+    }
+   ],
+   "gallery": {
+    "pdf_before": "executive_narrative-pdf-before.png",
+    "pdf_after": "executive_narrative-pdf-after.png",
+    "docx_before": "executive_narrative-docx-before.png",
+    "docx_after": "executive_narrative-docx-after.png"
+   }
+  },
+  {
+   "case": "technical_figure",
+   "off_identical": true,
+   "before": {
+    "strategy": "baseline",
+    "pdf_pages": 1,
+    "score": 98.86,
+    "docx_pages_libreoffice": 1
+   },
+   "after": {
+    "strategy": "baseline",
+    "pdf_pages": 1,
+    "score": 98.86,
+    "docx_pages_libreoffice": 1,
+    "status": "ok",
+    "validation": {
+     "pdf": "verified"
+    },
+    "fallback_reason": null
+   },
+   "changed": {
+    "pdf": false,
+    "docx": false
+   },
+   "seconds": 0.7,
+   "render_attempts": 3,
+   "candidates": [
+    {
+     "name": "baseline",
+     "rendered": true,
+     "pages": 1,
+     "score": 98.86,
+     "adjusted": null,
+     "legibility": null,
+     "outcome": "delivered"
+    },
+    {
+     "name": "media:mix",
+     "rendered": false,
+     "pages": null,
+     "score": null,
+     "adjusted": null,
+     "legibility": null,
+     "outcome": "not rendered (render budget)"
+    },
+    {
+     "name": "media:compact",
+     "rendered": false,
+     "pages": null,
+     "score": null,
+     "adjusted": null,
+     "legibility": null,
+     "outcome": "not rendered (render budget)"
+    },
+    {
+     "name": "grouped",
+     "rendered": true,
+     "pages": 1,
+     "score": 98.86,
+     "adjusted": 98.86,
+     "legibility": null,
+     "outcome": "below the baseline non-regression threshold"
+    },
+    {
+     "name": "balanced",
+     "rendered": true,
+     "pages": 1,
+     "score": 98.72,
+     "adjusted": 98.72,
+     "legibility": null,
+     "outcome": "below the baseline non-regression threshold"
+    },
+    {
+     "name": "compact",
+     "rendered": false,
+     "pages": null,
+     "score": null,
+     "adjusted": null,
+     "legibility": null,
+     "outcome": "not rendered (render budget)"
+    }
+   ],
+   "media_decisions": [
+    {
+     "name": "media:mix",
+     "style": "mix",
+     "policy_version": "m78.1",
+     "source_hash": "ba2e7f6a9cb12a57eba4f298d16cb13d13d08a1c4fc734a6b5ed3a9ea8227f24",
+     "decisions": [
+      {
+       "source_node_id": null,
+       "block": 2,
+       "anchor_group_id": "group-2",
+       "placement": "full_width",
+       "box": [
+        447.28,
+        null
+       ],
+       "fit": "contain",
+       "logical_side": null,
+       "target_overrides": {},
+       "reason_codes": [
+        "measured_frame",
+        "aspect_kept"
+       ],
+       "width_ratio": null
+      }
+     ],
+     "rejected": [],
+     "metrics": {},
+     "reasons": [],
+     "lossless_bands": false,
+     "status": "rejected",
+     "reason": "not rendered (render budget)"
+    },
+    {
+     "name": "media:compact",
+     "style": "compact",
+     "policy_version": "m78.1",
+     "source_hash": "ba2e7f6a9cb12a57eba4f298d16cb13d13d08a1c4fc734a6b5ed3a9ea8227f24",
+     "decisions": [
+      {
+       "source_node_id": null,
+       "block": 2,
+       "anchor_group_id": "group-2",
+       "placement": "inline",
+       "box": [
+        447.28,
+        null
+       ],
+       "fit": "contain",
+       "logical_side": null,
+       "target_overrides": {},
+       "reason_codes": [
+        "measured_frame",
+        "aspect_kept"
+       ],
+       "width_ratio": null
+      }
+     ],
+     "rejected": [],
+     "metrics": {},
+     "reasons": [],
+     "lossless_bands": false,
+     "status": "rejected",
+     "reason": "not rendered (render budget)"
+    }
+   ],
+   "gallery": {
+    "pdf_before": "technical_figure-pdf-before.png",
+    "pdf_after": "technical_figure-pdf-after.png",
+    "docx_before": "technical_figure-docx-before.png",
+    "docx_after": "technical_figure-docx-after.png"
+   }
+  },
+  {
+   "case": "arabic_dense_bands",
+   "off_identical": true,
+   "before": {
+    "strategy": "balanced",
+    "pdf_pages": 2,
+    "score": 99.69,
+    "docx_pages_libreoffice": 3
+   },
+   "after": {
+    "strategy": "balanced",
+    "pdf_pages": 2,
+    "score": 99.69,
+    "docx_pages_libreoffice": 3,
+    "status": "ok",
+    "validation": {
+     "pdf": "verified"
+    },
+    "fallback_reason": null
+   },
+   "changed": {
+    "pdf": false,
+    "docx": false
+   },
+   "seconds": 2.69,
+   "render_attempts": 3,
+   "candidates": [
+    {
+     "name": "baseline",
+     "rendered": true,
+     "pages": 3,
+     "score": 61.75,
+     "adjusted": null,
+     "legibility": null,
+     "outcome": "scored lower than the delivered layout"
+    },
+    {
+     "name": "media:mix",
+     "rendered": false,
+     "pages": null,
+     "score": null,
+     "adjusted": null,
+     "legibility": null,
+     "outcome": "not rendered (render budget)"
+    },
+    {
+     "name": "media:full_width",
+     "rendered": false,
+     "pages": null,
+     "score": null,
+     "adjusted": null,
+     "legibility": null,
+     "outcome": "not rendered (render budget)"
+    },
+    {
+     "name": "media:compact",
+     "rendered": false,
+     "pages": null,
+     "score": null,
+     "adjusted": null,
+     "legibility": null,
+     "outcome": "not rendered (render budget)"
+    },
+    {
+     "name": "grouped",
+     "rendered": false,
+     "pages": null,
+     "score": null,
+     "adjusted": null,
+     "legibility": null,
+     "outcome": "no plausible improvement predicted"
+    },
+    {
+     "name": "balanced",
+     "rendered": true,
+     "pages": 2,
+     "score": 99.69,
+     "adjusted": 99.69,
+     "legibility": null,
+     "outcome": "delivered"
+    },
+    {
+     "name": "compact",
+     "rendered": true,
+     "pages": 2,
+     "score": 98.78,
+     "adjusted": 98.78,
+     "legibility": null,
+     "outcome": "scored lower than the delivered layout"
+    }
+   ],
+   "media_decisions": [
+    {
+     "name": "media:mix",
+     "style": "mix",
+     "policy_version": "m78.1",
+     "source_hash": "a403a2e8571e6e374f8e20b5c9ba45673f214135346ecbde6dfa4dc2de93a0dd",
+     "decisions": [
+      {
+       "source_node_id": null,
+       "block": 2,
+       "anchor_group_id": "group-2",
+       "placement": "float_end",
+       "box": [
+        169.966,
+        null
+       ],
+       "fit": "contain",
+       "logical_side": "end",
+       "target_overrides": {},
+       "reason_codes": [
+        "measured_frame",
+        "aspect_kept",
+        "text_wraps_beside_image"
+       ],
+       "width_ratio": 0.38
+      }
+     ],
+     "rejected": [],
+     "metrics": {},
+     "reasons": [],
+     "lossless_bands": false,
+     "status": "rejected",
+     "reason": "not rendered (render budget)"
+    },
+    {
+     "name": "media:full_width",
+     "style": "full_width",
+     "policy_version": "m78.1",
+     "source_hash": "a403a2e8571e6e374f8e20b5c9ba45673f214135346ecbde6dfa4dc2de93a0dd",
+     "decisions": [
+      {
+       "source_node_id": null,
+       "block": 2,
+       "anchor_group_id": "group-2",
+       "placement": "full_width",
+       "box": [
+        379.233,
+        null
+       ],
+       "fit": "contain",
+       "logical_side": null,
+       "target_overrides": {},
+       "reason_codes": [
+        "measured_frame",
+        "aspect_kept"
+       ],
+       "width_ratio": null
+      }
+     ],
+     "rejected": [],
+     "metrics": {},
+     "reasons": [],
+     "lossless_bands": false,
+     "status": "rejected",
+     "reason": "not rendered (render budget)"
+    },
+    {
+     "name": "media:compact",
+     "style": "compact",
+     "policy_version": "m78.1",
+     "source_hash": "a403a2e8571e6e374f8e20b5c9ba45673f214135346ecbde6dfa4dc2de93a0dd",
+     "decisions": [
+      {
+       "source_node_id": null,
+       "block": 2,
+       "anchor_group_id": "group-2",
+       "placement": "inline",
+       "box": [
+        250.477,
+        null
+       ],
+       "fit": "contain",
+       "logical_side": null,
+       "target_overrides": {},
+       "reason_codes": [
+        "measured_frame",
+        "aspect_kept"
+       ],
+       "width_ratio": null
+      }
+     ],
+     "rejected": [],
+     "metrics": {},
+     "reasons": [],
+     "lossless_bands": false,
+     "status": "rejected",
+     "reason": "not rendered (render budget)"
+    }
+   ],
+   "gallery": {
+    "pdf_before": "arabic_dense_bands-pdf-before.png",
+    "pdf_after": "arabic_dense_bands-pdf-after.png",
+    "docx_before": "arabic_dense_bands-docx-before.png",
+    "docx_after": "arabic_dense_bands-docx-after.png"
+   }
+  },
+  {
+   "case": "near_page_end",
+   "off_identical": true,
+   "before": {
+    "strategy": "editorial",
+    "pdf_pages": 3,
+    "score": 86.77,
+    "docx_pages_libreoffice": 3
+   },
+   "after": {
+    "strategy": "media:mix",
+    "pdf_pages": 2,
+    "score": 99.52,
+    "docx_pages_libreoffice": 2,
+    "status": "ok",
+    "validation": {
+     "docx": "libreoffice (LibreOffice 24.2.7.2 420(Build:2)); pages 3 -> 2",
+     "pdf": "verified"
+    },
+    "fallback_reason": null
+   },
+   "changed": {
+    "pdf": true,
+    "docx": true
+   },
+   "seconds": 8.2,
+   "render_attempts": 3,
+   "candidates": [
+    {
+     "name": "baseline",
+     "rendered": true,
+     "pages": 3,
+     "score": 81.61,
+     "adjusted": null,
+     "legibility": null,
+     "outcome": "scored lower than the delivered layout"
+    },
+    {
+     "name": "media:mix",
+     "rendered": true,
+     "pages": 2,
+     "score": 99.52,
+     "adjusted": 99.52,
+     "legibility": 1.0,
+     "outcome": "delivered"
+    },
+    {
+     "name": "media:full_width",
+     "rendered": false,
+     "pages": null,
+     "score": null,
+     "adjusted": null,
+     "legibility": null,
+     "outcome": "not rendered (render budget)"
+    },
+    {
+     "name": "media:compact",
+     "rendered": false,
+     "pages": null,
+     "score": null,
+     "adjusted": null,
+     "legibility": null,
+     "outcome": "not rendered (render budget)"
+    },
+    {
+     "name": "grouped",
+     "rendered": false,
+     "pages": null,
+     "score": null,
+     "adjusted": null,
+     "legibility": null,
+     "outcome": "no plausible improvement predicted"
+    },
+    {
+     "name": "balanced",
+     "rendered": false,
+     "pages": null,
+     "score": null,
+     "adjusted": null,
+     "legibility": null,
+     "outcome": "no plausible improvement predicted"
+    },
+    {
+     "name": "compact",
+     "rendered": false,
+     "pages": null,
+     "score": null,
+     "adjusted": null,
+     "legibility": null,
+     "outcome": "no plausible improvement predicted"
+    },
+    {
+     "name": "editorial",
+     "rendered": true,
+     "pages": 3,
+     "score": 86.77,
+     "adjusted": 86.77,
+     "legibility": null,
+     "outcome": "scored lower than the delivered layout"
+    }
+   ],
+   "media_decisions": [
+    {
+     "name": "media:mix",
+     "style": "mix",
+     "policy_version": "m78.1",
+     "source_hash": "819458a4b5fc298f2518cbb9a2cae6ce690ed47f3219e7b896d004d356982ff2",
+     "decisions": [
+      {
+       "source_node_id": null,
+       "block": 5,
+       "anchor_group_id": "group-5",
+       "placement": "float_end",
+       "box": [
+        162.366,
+        null
+       ],
+       "fit": "contain",
+       "logical_side": "end",
+       "target_overrides": {},
+       "reason_codes": [
+        "measured_frame",
+        "aspect_kept",
+        "text_wraps_beside_image"
+       ],
+       "width_ratio": 0.38
+      }
+     ],
+     "rejected": [],
+     "metrics": {},
+     "reasons": [],
+     "lossless_bands": false,
+     "status": "accepted",
+     "reason": null
+    },
+    {
+     "name": "media:full_width",
+     "style": "full_width",
+     "policy_version": "m78.1",
+     "source_hash": "819458a4b5fc298f2518cbb9a2cae6ce690ed47f3219e7b896d004d356982ff2",
+     "decisions": [
+      {
+       "source_node_id": null,
+       "block": 5,
+       "anchor_group_id": "group-5",
+       "placement": "full_width",
+       "box": [
+        395.073,
+        null
+       ],
+       "fit": "contain",
+       "logical_side": null,
+       "target_overrides": {},
+       "reason_codes": [
+        "measured_frame",
+        "aspect_kept"
+       ],
+       "width_ratio": null
+      }
+     ],
+     "rejected": [],
+     "metrics": {},
+     "reasons": [],
+     "lossless_bands": false,
+     "status": "rejected",
+     "reason": "not rendered (render budget)"
+    },
+    {
+     "name": "media:compact",
+     "style": "compact",
+     "policy_version": "m78.1",
+     "source_hash": "819458a4b5fc298f2518cbb9a2cae6ce690ed47f3219e7b896d004d356982ff2",
+     "decisions": [
+      {
+       "source_node_id": null,
+       "block": 5,
+       "anchor_group_id": "group-5",
+       "placement": "inline",
+       "box": [
+        239.277,
+        null
+       ],
+       "fit": "contain",
+       "logical_side": null,
+       "target_overrides": {},
+       "reason_codes": [
+        "measured_frame",
+        "aspect_kept"
+       ],
+       "width_ratio": null
+      }
+     ],
+     "rejected": [],
+     "metrics": {},
+     "reasons": [],
+     "lossless_bands": false,
+     "status": "rejected",
+     "reason": "not rendered (render budget)"
+    }
+   ],
+   "gallery": {
+    "pdf_before": "near_page_end-pdf-before.png",
+    "pdf_after": "near_page_end-pdf-after.png",
+    "docx_before": "near_page_end-docx-before.png",
+    "docx_after": "near_page_end-docx-after.png"
+   }
+  },
+  {
+   "case": "short_bilingual",
+   "off_identical": true,
+   "before": {
+    "strategy": "baseline",
+    "pdf_pages": 1,
+    "score": 86.51,
+    "docx_pages_libreoffice": 1
+   },
+   "after": {
+    "strategy": "baseline",
+    "pdf_pages": 1,
+    "score": 86.51,
+    "docx_pages_libreoffice": 1,
+    "status": "ok",
+    "validation": {
+     "pdf": "verified"
+    },
+    "fallback_reason": null
+   },
+   "changed": {
+    "pdf": false,
+    "docx": false
+   },
+   "seconds": 0.44,
+   "render_attempts": 2,
+   "candidates": [
+    {
+     "name": "baseline",
+     "rendered": true,
+     "pages": 1,
+     "score": 86.51,
+     "adjusted": null,
+     "legibility": null,
+     "outcome": "delivered"
+    },
+    {
+     "name": "media:mix",
+     "rendered": true,
+     "pages": 1,
+     "score": 80.4,
+     "adjusted": 80.4,
+     "legibility": 1.0,
+     "outcome": "below the baseline non-regression threshold"
+    }
+   ],
+   "media_decisions": [
+    {
+     "name": "media:mix",
+     "style": "mix",
+     "policy_version": "m78.1",
+     "source_hash": "99a051a50315dff83ba4c01c6f9c8389db84509bf4b0c27c12c9a1b921a8ffc3",
+     "decisions": [
+      {
+       "source_node_id": null,
+       "block": 2,
+       "anchor_group_id": "group-2",
+       "placement": "inline",
+       "box": [
+        160.846,
+        null
+       ],
+       "fit": "contain",
+       "logical_side": null,
+       "target_overrides": {},
+       "reason_codes": [
+        "measured_frame",
+        "aspect_kept"
+       ],
+       "width_ratio": null
+      }
+     ],
+     "rejected": [],
+     "metrics": {},
+     "reasons": [],
+     "lossless_bands": false,
+     "status": "rejected",
+     "reason": "below the baseline non-regression threshold"
+    }
+   ],
+   "gallery": {
+    "pdf_before": "short_bilingual-pdf-before.png",
+    "pdf_after": "short_bilingual-pdf-after.png",
+    "docx_before": "short_bilingual-docx-before.png",
+    "docx_after": "short_bilingual-docx-after.png"
+   }
+  },
+  {
+   "case": "low_dpi",
+   "off_identical": true,
+   "before": {
+    "strategy": "baseline",
+    "pdf_pages": 1,
+    "score": 86.98,
+    "docx_pages_libreoffice": 1
+   },
+   "after": {
+    "strategy": "media:mix",
+    "pdf_pages": 1,
+    "score": 86.71,
+    "docx_pages_libreoffice": 1,
+    "status": "ok",
+    "validation": {
+     "docx": "libreoffice (LibreOffice 24.2.7.2 420(Build:2)); pages 1 -> 1",
+     "pdf": "verified"
+    },
+    "fallback_reason": null
+   },
+   "changed": {
+    "pdf": true,
+    "docx": true
+   },
+   "seconds": 6.93,
+   "render_attempts": 2,
+   "candidates": [
+    {
+     "name": "baseline",
+     "rendered": true,
+     "pages": 1,
+     "score": 86.98,
+     "adjusted": null,
+     "legibility": null,
+     "outcome": "scored lower than the delivered layout"
+    },
+    {
+     "name": "media:mix",
+     "rendered": true,
+     "pages": 1,
+     "score": 86.71,
+     "adjusted": 89.47,
+     "legibility": 1.0,
+     "outcome": "delivered"
+    }
+   ],
+   "media_decisions": [
+    {
+     "name": "media:mix",
+     "style": "mix",
+     "policy_version": "m78.1",
+     "source_hash": "53f091694f35d8e809b12e5cec7f1ae82a858d782d3bf954b7769643ee0a81c4",
+     "decisions": [
+      {
+       "source_node_id": null,
+       "block": 2,
+       "anchor_group_id": "group-2",
+       "placement": "inline",
+       "box": [
+        58.909,
+        null
+       ],
+       "fit": "contain",
+       "logical_side": null,
+       "target_overrides": {},
+       "reason_codes": [
+        "measured_frame",
+        "aspect_kept",
+        "dpi_limited"
+       ],
+       "width_ratio": null
+      }
+     ],
+     "rejected": [],
+     "metrics": {},
+     "reasons": [],
+     "lossless_bands": false,
+     "status": "accepted",
+     "reason": null
+    }
+   ],
+   "gallery": {
+    "pdf_before": "low_dpi-pdf-before.png",
+    "pdf_after": "low_dpi-pdf-after.png",
+    "docx_before": "low_dpi-docx-before.png",
+    "docx_after": "low_dpi-docx-after.png"
+   }
+  }
+ ],
+ "plan_previews": [
+  {
+   "case": "arabic_dense_bands",
+   "plan": "media:mix",
+   "placement": "float_end",
+   "width_pt": 169.966,
+   "pdf": "arabic_dense_bands-plan-pdf.png",
+   "docx": "arabic_dense_bands-plan-docx.png",
+   "pdf_pages": 2,
+   "docx_pages_libreoffice": 2
+  }
+ ],
+ "must_not_pass": {
+  "bands that cannot fit": {
+   "held": true,
+   "evidence": {
+    "status": "failed",
+    "reason": "band_content_unfit"
+   }
+  },
+  "Word required, no adapter": {
+   "held": true,
+   "evidence": {
+    "status": "unverified",
+    "strategy": "editorial",
+    "word": "unverified"
+   }
+  },
+  "broken asset": {
+   "held": true,
+   "evidence": {
+    "raised": "BlockRenderError"
+   }
+  },
+  "minimum width above the DPI limit": {
+   "held": true,
+   "evidence": {
+    "strategy": "baseline"
+   }
+  },
+  "explicit width": {
+   "held": true,
+   "evidence": {
+    "width": 180,
+    "strategy": "baseline"
+   }
+  }
+ }
+}

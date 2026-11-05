@@ -83,6 +83,14 @@ def check_source(ledger: ContentLedger, candidate: ContentLedger) -> LayerResult
     return _result("source", ledger.diff(candidate), [])
 
 
+def _set_length(text: str) -> int:
+    """Characters of ``text`` as set: shaping joins some Arabic letter pairs into one."""
+    if not _ARABIC_ANY.search(text):
+        return len(text)
+    from ..layout.factory import _apply_rtl
+    return len(_apply_rtl(text))
+
+
 def check_fragments(ledger: ContentLedger, geometry) -> LayerResult:
     """Every block was placed, once, and its pieces add up to its text."""
     failed: List[str] = []
@@ -101,7 +109,7 @@ def check_fragments(ledger: ContentLedger, geometry) -> LayerResult:
         if not pieces:
             unsure.append(f"block {e.block}: no text fragments were recorded")
             continue
-        got, want = pieces[-1][2], len(plain_text(e.text))
+        got, want = pieces[-1][2], _set_length(plain_text(e.text))
         if abs(got - want) <= len(pieces):
             continue
         message = f"block {e.block}: {got} characters placed, {want} in the source"
@@ -187,6 +195,23 @@ def check_pdf_content(ledger: ContentLedger, data: bytes) -> LayerResult:
     short = _arabic_tokens(source) - _arabic_tokens(page_text)
     unsure = [f"{sum(short.values())} Arabic words could not be matched in the extracted text"] if short else []
     return _result("pdf", failed, unsure)
+
+
+def same_extracted_words(first: bytes, second: bytes) -> Optional[bool]:
+    """Whether two PDFs use the same Arabic and Latin words. Shaping and extraction are
+    the same on both sides, so this holds where a comparison with the source cannot.
+    Counts and digits are left out: a shorter document repeats its bands and page
+    numbers fewer times. None when PyMuPDF is missing."""
+    try:
+        import pymupdf
+    except ImportError:
+        return None
+
+    def words(data: bytes) -> set:
+        with pymupdf.open(stream=data, filetype="pdf") as pdf:
+            text = "\n".join(page.get_text() for page in pdf)
+        return set(_arabic_tokens(text)) | {w for w in _LATIN.findall(_fold(text)) if w.isalpha()}
+    return words(first) == words(second)
 
 
 def check_preservation(ledger: ContentLedger, *, candidate: Optional[ContentLedger] = None, geometry=None,

@@ -2,6 +2,7 @@
 from pathlib import Path
 from PIL import Image, ImageDraw
 from dynamic_pdf import DocumentBuilder
+from dynamic_pdf.schema.media_intent import MediaIntent
 from dynamic_pdf.schema.page_system import Band, BandRow, Logo, PageSystem
 
 EN = ("The operations team inspected the production line and recorded each maintenance task. "
@@ -38,9 +39,9 @@ def assets(folder):
     return paths
 
 
-def image(b,src,kind="unknown",caption="Inspection record",**hints):
-    b.image(src,caption=caption,alt_text=caption,source="Fictional test fixture")
-    b._blocks[-1].hints={"media_kind":kind,**hints}
+def image(b,src,role="auto",caption="Inspection record",min_display_width_pt=None):
+    b.image(src,caption=caption,alt_text=caption,source="Fictional test fixture",
+            intent=MediaIntent(role=role,min_display_width_pt=min_display_width_pt))
 
 
 def make_case(name,a):
@@ -61,7 +62,7 @@ def make_case(name,a):
         for _ in range(9):b.paragraph(EN)
     elif name=="technical_figure":
         b.paragraph(EN)
-        image(b,a["screenshot"],"screenshot",min_display_width=350)
+        image(b,a["screenshot"],"screenshot",min_display_width_pt=350)
         b.paragraph(EN)
         b.table(["Step","Action","Check"],[[str(i),"Inspect equipment","Record result"] for i in range(1,9)])
     elif ar:
