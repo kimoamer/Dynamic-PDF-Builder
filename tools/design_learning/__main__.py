@@ -42,6 +42,7 @@ def main(argv=None) -> int:
     x.add_argument("--repeats", type=int, default=1)
     x.add_argument("--docs", help="only these documents, comma separated")
     x.add_argument("--source", choices=("pdf", "word"), default="pdf", help="word: DOCX pages as Microsoft Word lays them out")
+    x.add_argument("--plan", help="frozen balanced plan from reference_sampling plan; never reveal it to reviewers")
     x = gs.add_parser("word", help="render a batch's DOCX through Microsoft Word")
     x.add_argument("batch")
     x = gs.add_parser("record")
@@ -93,7 +94,7 @@ def main(argv=None) -> int:
             P.report(A.generate(work(args.batch), args.docs.split(",") if args.docs else None, args.n, baseline=args.baseline))
         elif args.step == "sheets":
             P.report(A.sheets(work(args.batch), args.pairs, repeats=args.repeats, source=args.source,
-                              docs=args.docs.split(",") if args.docs else None))
+                              docs=args.docs.split(",") if args.docs else None, plan=args.plan))
         elif args.step == "word":
             from .word import export
             P.report(export(os.path.join(work(args.batch), "renders"), os.path.join(work(args.batch), "word"), 300))
