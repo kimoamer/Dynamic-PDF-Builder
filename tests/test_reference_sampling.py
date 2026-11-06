@@ -114,6 +114,17 @@ def test_plan_refuses_source_hash_leakage(batch):
         S.plan(str(path), str(dataset), str(split), source="pdf")
 
 
+def test_frozen_plan_refuses_a_changed_holdout_split(batch, tmp_path):
+    path, dataset, split = batch
+    proposal = S.plan(str(path), str(dataset), str(split), source="pdf", count=2)
+    plan_file = tmp_path / "plan.json"
+    S.write_json(str(plan_file), proposal)
+    assert len(S.sheet_pairs(str(path), "pdf", str(plan_file))) == 2
+    split.write_text('{"families": {}, "evaluation_families": []}', encoding="utf-8")
+    with pytest.raises(ValueError, match="held-out family split changed"):
+        S.sheet_pairs(str(path), "pdf", str(plan_file))
+
+
 def test_word_requires_actual_word_build_not_a_pdf_masquerading_as_word(batch):
     path, dataset, split = batch
     with pytest.raises(ValueError, match="Word build/version evidence"):
