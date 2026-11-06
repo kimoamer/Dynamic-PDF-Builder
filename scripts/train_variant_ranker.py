@@ -111,7 +111,15 @@ def main(argv=None) -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--min-pairs", type=int, default=GATE["min_pairs"])
     ap.add_argument("--synthetic-fixture", action="store_true", help="tests only: marks the record, and the gate never passes")
+    ap.add_argument("--human-audit", help="separate traceable human quality review JSONL; never treated as AI labels")
+    ap.add_argument("--provenance", help="local document author/asset provenance JSON; required by preflight gate")
     a = ap.parse_args(argv)
+    # Fail before importing LightGBM, creating datasets or touching a model output.
+    # This gate complements (rather than replaces) the post-training evaluation gate.
+    from tools.design_learning.reference_sampling import audit
+    preflight = audit(a.dataset, a.batches, a.split, a.human_audit, a.provenance)
+    if not preflight["ready"]:
+        sys.exit("M7.7/M7.10 data-quality preflight blocked training: " + "; ".join(preflight["issues"]))
     try:
         import lightgbm  # noqa: F401
     except ImportError:
