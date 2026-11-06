@@ -394,8 +394,41 @@ def audit(dataset, batches, split_path, human_audit=None, provenance=None):
             "need at least 30 Arabic comparisons")
     require(sum(_lang(r["document"], candidates[(r["batch"], r["document"], r["a"]["candidate"])]) == "bilingual" for r in matching) >= 30,
             "need at least 30 bilingual comparisons")
-    require(sum("word" in (r.get("formats_inspected") or []) for r in matching) >= 100,
-            "need at least 100 comparisons reviewed on Word renders")
+    # Do not accept a claimed Word review without its actual locally verifiable files.
+    # All inspected formats must match both candidate identities and immutable renders.
+    manifest_cache = {}
+    render_cache = {}
+    locally_verified, verified_word = 0, 0
+    for r in matching:
+        formats = r.get("formats_inspected") or []
+        if not formats or any(fmt not in ("pdf", "word") for fmt in formats):
+            continue
+        batch_dir = os.path.join(batches, r["batch"])
+        valid = True
+        for fmt in formats:
+            word_ok = {}
+            if fmt == "word":
+                if batch_dir not in manifest_cache:
+                    file = os.path.join(batch_dir, "word", "word.json")
+                    info = load(file) if os.path.isfile(file) else {}
+                    manifest_cache[batch_dir] = {x["file"]: x for x in info.get("files", []) if x.get("ok")} if info.get("word_build") else {}
+                word_ok = manifest_cache[batch_dir]
+            for side in ("a", "b"):
+                c = candidates[(r["batch"], r["document"], r[side]["candidate"])]
+                key = (r["batch"], r["document"], c["candidate"], fmt)
+                if key not in render_cache:
+                    try:
+                        render_cache[key] = _media_ok(batch_dir, c, fmt, word_ok)
+                    except (ValueError, OSError, KeyError):
+                        render_cache[key] = False
+                if not render_cache[key]:
+                    valid = False
+        if valid:
+            locally_verified += 1
+            verified_word += "word" in formats
+    require(locally_verified == len(matching),
+            "all usable comparisons need hash-verified local renders in every inspected format")
+    require(verified_word >= 100, "need at least 100 locally verified Word comparisons")
     reviews = jsonl(human_audit) if human_audit else []
     unique_reviews = {(r.get("batch"), r.get("comparison")): r for r in rows}
     verified_humans = [h for h in reviews if h.get("reviewer_type") == "human" and h.get("reviewer") and
@@ -420,6 +453,7 @@ def audit(dataset, batches, split_path, human_audit=None, provenance=None):
             crossings += [(field, x) for x in fit_ids & test_ids if x]
         require(not crossings, f"provenance leakage across split: {crossings[:6]}")
     return {"ready": not problems, "usable": len(matching), "held_out": len(test),
+            "local_render_verified": locally_verified, "word_render_verified": verified_word,
             "human_audit": len({(h["batch"], h["comparison"]) for h in verified_humans}),
             "issues": problems, "note": "Quality readiness only. No model was trained; AI and human labels remain separate."}
 
