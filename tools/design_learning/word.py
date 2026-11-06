@@ -7,6 +7,7 @@ started here is ever stopped. Windows with Word installed only; nothing at runti
 from __future__ import annotations
 
 import glob
+import hashlib
 import json
 import os
 import re
@@ -49,7 +50,13 @@ def export(folder: str, out: str, limit: int = 60) -> Dict[str, object]:
                 run = subprocess.run(command, capture_output=True, text=True, timeout=limit)
                 found = re.search(r"pages (\d+)", run.stdout)
                 build = (re.search(r"version (\S+)", run.stdout) or [None, build])[1]
-                rows.append({"file": name, "pages": int(found.group(1)) if found else None, "ok": os.path.exists(target)})
+                ok = run.returncode == 0 and os.path.isfile(target) and bool(found)
+                def digest(filename):
+                    with open(filename, "rb") as content:
+                        return hashlib.sha256(content.read()).hexdigest()
+                rows.append({"file": name, "pages": int(found.group(1)) if found else None,
+                             "ok": ok, "docx_sha256": digest(path) if ok else None,
+                             "pdf_sha256": digest(target) if ok else None})
             except subprocess.TimeoutExpired:
                 rows.append({"file": name, "pages": None, "ok": False, "error": f"no result in {limit} seconds"})
                 if os.path.exists(pid_file):
