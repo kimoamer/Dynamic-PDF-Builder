@@ -135,7 +135,10 @@ def report(dataset: str, batches: str, split_path: str, out: Optional[str] = Non
         weaknesses.append(f"{len(good) - with_facts} usable comparisons predate the layout facts and lack them")
 
     result = {
-        "verdict": "ready" if len(good) >= GATE and not leaks and not unmatched else "not ready",
+        # The volume threshold is *not* permission to train or a sign-off on quality.
+        # The independent local audit additionally needs real Word evidence, human
+        # review, author/asset provenance, and strict split/hash isolation.
+        "verdict": "volume gate met; independent quality audit required" if len(good) >= GATE and not leaks and not unmatched else "not ready",
         "gate": GATE, "rows": len(rows), "usable": len(good), "train_usable": len(train), "held_out_usable": len(test),
         "excluded": {"ties_or_abstentions": sum(r["preferred"] in ("tie", "abstain") for r in rows),
                      "low_confidence": sum(r["confidence"] == "low" for r in rows),

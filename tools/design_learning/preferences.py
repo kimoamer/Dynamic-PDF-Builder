@@ -139,39 +139,55 @@ def _choose(rows: List[dict], count: int, rng: random.Random) -> list:
 
 
 def sheets(batch_dir: str, pairs_per_doc: int = 2, seed: int = 79, repeats: int = 1, source: str = "pdf",
-           docs: Optional[List[str]] = None) -> dict:
-    """Blind comparison sheets. ``repeats`` pairs per document come back later with sides swapped.
-    ``source="word"`` draws the DOCX pages from ``preferences word`` into sheets-word/ with its own key."""
+           docs: Optional[List[str]] = None, plan: Optional[str] = None) -> dict:
+    """Blind PDF/Word sheets; an optional frozen plan chooses balanced, verified pairs.
+
+    Plan contents must never be shown to the reviewing model/person. Missing, stale or
+    hash-mismatched render files stop the run before any answer can be recorded.
+    """
     rng = random.Random(seed)
-    cands = _jsonl(os.path.join(batch_dir, "candidates.jsonl"))
-    by: Dict[str, List[dict]] = {}
-    for c in cands:
-        if docs is None or c["document"] in docs:
-            by.setdefault(c["document"], []).append(c)
     word = source == "word"
     out = os.path.join(batch_dir, "sheets-word" if word else "sheets")
+    key_path = os.path.join(batch_dir, "key-word.json" if word else "key.json")
+    if plan:
+        from .reference_sampling import sheet_pairs
+        if os.path.exists(key_path):
+            raise SystemExit("the blind key already exists; use a fresh batch instead of overwriting reviewed sheets")
+        pairs = sheet_pairs(batch_dir, source, plan)
+        intended = {d for d, *_ in pairs}
+        plan_rows = list(pairs)
+        for doc in sorted(intended):
+            plan_rows += [(d, b, a, True) for (d, a, b, _) in pairs if d == doc][:repeats]
+    else:
+        cands = _jsonl(os.path.join(batch_dir, "candidates.jsonl"))
+        by: Dict[str, List[dict]] = {}
+        for c in cands:
+            if docs is None or c["document"] in docs:
+                by.setdefault(c["document"], []).append(c)
+        plan_rows = []
+        for doc, rows in sorted(by.items()):
+            for a, b in _choose(rows, pairs_per_doc, rng):
+                if rng.random() < 0.5:
+                    a, b = b, a
+                plan_rows.append((doc, a, b, False))
+            plan_rows += [(doc, b, a, True) for (d, a, b, _) in [p for p in plan_rows if p[0] == doc][:repeats]]
+    rng.shuffle(plan_rows)
     os.makedirs(out, exist_ok=True)
-    plan = []
-    for doc, rows in sorted(by.items()):
-        for a, b in _choose(rows, pairs_per_doc, rng):
-            if rng.random() < 0.5:
-                a, b = b, a
-            plan.append((doc, a, b, False))
-        plan += [(doc, b, a, True) for (d, a, b, _) in [p for p in plan if p[0] == doc][:repeats]]
-    rng.shuffle(plan)
     key = []
-    for i, (doc, a, b, repeat) in enumerate(plan, 1):
+    for i, (doc, a, b, repeat) in enumerate(plan_rows, 1):
         cid = f"{'w' if word else 'cmp'}-{i:03d}"
         path = os.path.join(out, cid + ".jpg")
+
         def rendered(c):
             if word:
                 return os.path.join(batch_dir, "word", f"{doc}__{c['candidate']}.pdf")
             return os.path.join(batch_dir, "renders", doc, c["candidate"] + ".pdf")
-        info = blind_sheet(rendered(a), rendered(b), path)
-        key.append({"comparison": cid, "document": doc, "a": a["candidate"], "b": b["candidate"], "reversed_repeat": repeat, **info})
-    _dump(os.path.join(batch_dir, "key-word.json" if word else "key.json"), {"note": "Do not open before the answers are written.", "comparisons": key})
-    return {"sheets": len(key), "folder": out}
 
+        info = blind_sheet(rendered(a), rendered(b), path)
+        key.append({"comparison": cid, "document": doc, "a": a["candidate"], "b": b["candidate"],
+                    "reversed_repeat": repeat, **info})
+    _dump(key_path, {"note": "Do not open before the answers are written.", "comparisons": key})
+    return {"sheets": len(key), "folder": out}
 
 def record(batch_dir: str, answers: str, dataset: str, *, model: str, date: str, method: str,
            source: str = "pdf") -> dict:
