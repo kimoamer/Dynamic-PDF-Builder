@@ -58,6 +58,8 @@ def main(argv=None) -> int:
     t = sub.add_parser("train", help="train the optional variant ranker (needs lightgbm)")
     t.add_argument("--name", required=True, help="model name under training/models")
     t.add_argument("--min-pairs", type=int, default=200)
+    t.add_argument("--human-audit", help="separate verified human-review JSONL, never AI training labels")
+    t.add_argument("--provenance", help="local source author/asset group manifest JSON")
     e = sub.add_parser("evaluate", help="read a model's training record and gate")
     e.add_argument("--name", required=True)
     c = sub.add_parser("trace", help="generate one fictional document and show the rules and selector that ran")
@@ -109,8 +111,13 @@ def main(argv=None) -> int:
     elif args.cmd == "train":
         script = os.path.join(P.ROOT, "scripts", "train_variant_ranker.py")
         out = os.path.join(p["models"], args.name + ".txt")
-        return subprocess.call([sys.executable, script, "--dataset", dataset, "--batches", os.path.join(p["ai_preferences"], "batches"),
-                                "--split", p["document_split"], "--out", out, "--min-pairs", str(args.min_pairs)])
+        argv_train = [sys.executable, script, "--dataset", dataset, "--batches", os.path.join(p["ai_preferences"], "batches"),
+                      "--split", p["document_split"], "--out", out, "--min-pairs", str(args.min_pairs)]
+        if args.human_audit:
+            argv_train += ["--human-audit", args.human_audit]
+        if args.provenance:
+            argv_train += ["--provenance", args.provenance]
+        return subprocess.call(argv_train)
     elif args.cmd == "trace":
         P.report(A.trace(args.document, not args.no_grammar, args.model))
     elif args.cmd == "evaluate":
