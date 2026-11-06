@@ -31,7 +31,7 @@ python -m tools.design_learning preferences generate m710-003 --n 4 --baseline
 python -m tools.design_learning preferences word m710-003
 ```
 
-Build a fresh plan for Word and a separate plan for PDF. Word is a real Microsoft Word export, not a LibreOffice substitute:
+Build a fresh plan for Word and a separate plan for PDF. Word is a real Microsoft Word export, not a LibreOffice substitute. The updated `preferences word` exporter records the source DOCX SHA-256 and Word-exported PDF SHA-256 for each file. Rerun it for new batches; legacy Word manifests without hashes are not accepted by the strict planner:
 
 ```powershell
 python -m tools.design_learning.reference_sampling plan `
@@ -65,6 +65,16 @@ python -m tools.design_learning.reference_sampling audit `
   --human-audit training/human_preferences/audit.jsonl `
   --provenance 'D:/Dynamic-PDF-Design-References-analysis/grammar/source-provenance.json'
 ```
+
+The same audit is enforced automatically by the CLI wrapper's `train` subcommand, with explicit local inputs:
+
+```powershell
+python -m tools.design_learning train --name ranker-future `
+  --human-audit training/human_preferences/audit.jsonl `
+  --provenance 'D:/Dynamic-PDF-Design-References-analysis/grammar/source-provenance.json'
+```
+
+**Do not run this training command with the current dataset.** It is shown only to document the future command's preflight contract and must refuse while the gate is incomplete.
 
 The trainer calls the same audit first. The audit returns nonzero (2) when **any** requirement is missing; no LightGBM import or training run is attempted. The conservative initial quality policy requires: 200 verified usable comparisons, 8 training documents, 3 evaluation documents with >=40 held-out judgments, >=30 Arabic, >=30 bilingual, >=100 Microsoft-Word-reviewed, measured facts and matching immutable hashes for every usable pair, 20 separately recorded human audit decisions, and at least 3 independent author groups and asset pools with no cross-split reuse. These are project policy defaults for review, not industry-standard guarantees or proof of preference quality.
 
