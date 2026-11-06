@@ -14,13 +14,11 @@ import os
 import random
 import re
 from collections import Counter, defaultdict
-from pathlib import Path
 
 FORMAT = "dynamic-pdf-builder/reference-feature-profiles-v1"
 PLAN_FORMAT = "dynamic-pdf-builder/blind-pair-plan-v1"
 SHARED = ("cover_image_share", "image_share_mean", "text_share_mean", "pages_without_image_share")
 CONTRAST = (*SHARED, "last_page_fill", "arabic_right_edge_share", "both_scripts_side_by_side")
-LANGUAGES = ("arabic", "bilingual", "english")
 LANG_WEIGHTS = {"arabic": 3.0, "bilingual": 2.6, "english": 1.0}
 SAFE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.@-]*$")
 
@@ -291,6 +289,7 @@ def plan(batch_dir, dataset, split_path, source="word", count=24, seed=79, max_p
         split_digest = hashlib.sha256(src.read()).hexdigest()
     return {"format": PLAN_FORMAT, "batch": batch, "source": source,
             "candidates_sha256": candidate_digest, "split_sha256": split_digest,
+            "split_source": os.path.abspath(split_path),
             "metadata_only": not require_media,
             "note": "Blind sheet input only; no labels, rankings, or human approval. Keep this key hidden from reviewers.",
             "word_build": word_version if source == "word" else None,
@@ -309,6 +308,12 @@ def sheet_pairs(batch_dir, source, plan_file):
         raise ValueError("plan is not render-ready; metadata-only plans cannot be judged")
     if planned.get("batch") != os.path.basename(os.path.abspath(batch_dir)) or planned.get("source") != source:
         raise ValueError("plan batch or inspected format does not match")
+    split_source = planned.get("split_source")
+    if not split_source or not os.path.isfile(split_source):
+        raise ValueError("frozen split manifest unavailable")
+    with open(split_source, "rb") as f:
+        if hashlib.sha256(f.read()).hexdigest() != planned.get("split_sha256"):
+            raise ValueError("held-out family split changed after planning")
     source_file = os.path.join(batch_dir, "candidates.jsonl")
     with open(source_file, "rb") as f:
         if hashlib.sha256(f.read()).hexdigest() != planned.get("candidates_sha256"):
