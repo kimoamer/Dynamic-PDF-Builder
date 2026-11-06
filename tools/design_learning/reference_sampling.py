@@ -22,6 +22,26 @@ CONTRAST = (*SHARED, "last_page_fill", "arabic_right_edge_share", "both_scripts_
 LANG_WEIGHTS = {"arabic": 3.0, "bilingual": 2.6, "english": 1.0}
 SAFE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.@-]*$")
 
+CATALOG_LANGUAGES = {"01-English": "english", "02-Arabic": "arabic", "03-Bilingual": "bilingual"}
+
+
+def _reference_language(doc, direction):
+    """Document-level catalog language, not the presence of a single foreign page.
+
+    File paths are read only to infer a coarse folder label; they are never
+    copied into the learned feature profiles.
+    """
+    category = str(doc.get("file") or "").replace("\\", "/").split("/")[0]
+    if category in CATALOG_LANGUAGES:
+        return CATALOG_LANGUAGES[category], "catalog_folder"
+    informative = direction["ltr"] + direction["rtl"] + direction["bilingual"]
+    if not informative:
+        return "unknown", "no_script_evidence"
+    if (direction["bilingual"] >= max(2, informative * .25) or
+            (direction["ltr"] >= informative * .2 and direction["rtl"] >= informative * .2)):
+        return "bilingual", "direction_distribution"
+    return ("arabic" if direction["rtl"] > direction["ltr"] else "english"), "direction_distribution"
+
 
 def load(path):
     with open(path, encoding="utf-8") as f:
@@ -81,10 +101,10 @@ def bridge(graphs, coverage=None):
         for p in ordered:
             weighted[p["family"]] += 1.0 / max(1, p.get("cluster_in_document") or 1)
         direction = Counter(p["direction"] for p in ordered)
-        language = ("bilingual" if direction["bilingual"] or (direction["rtl"] and direction["ltr"])
-                    else "arabic" if direction["rtl"] else "english" if direction["ltr"] else "unknown")
+        language, language_basis = _reference_language(doc, direction)
         result.append({
-            "document_id": did, "pages": len(ordered), "language_hint": language,
+            "document_id": did, "pages": len(ordered),
+            "language_hint": language, "language_basis": language_basis,
             "direction_pages": dict(sorted(direction.items())),
             "page_families": dict(sorted(family.items())),
             "cluster_weighted_families": {k: round(v, 4) for k, v in sorted(weighted.items())},
