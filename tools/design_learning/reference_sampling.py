@@ -167,10 +167,18 @@ def _media_ok(batch_dir, candidate, source, word_ok):
     if source == "word":
         name = candidate["document"] + "__" + candidate["candidate"]
         docx = os.path.join(batch_dir, "renders", candidate["document"], candidate["candidate"] + ".docx")
-        if name not in word_ok or not os.path.isfile(docx):
+        entry = word_ok.get(name)
+        if not entry or not os.path.isfile(docx):
+            return False
+        if not entry.get("docx_sha256") or not entry.get("pdf_sha256"):
+            return False
+        if entry["docx_sha256"] != candidate["docx_sha256"]:
             return False
         with open(docx, "rb") as f:
-            return hashlib.sha256(f.read()).hexdigest() == candidate["docx_sha256"]
+            source_ok = hashlib.sha256(f.read()).hexdigest() == entry["docx_sha256"]
+        with open(pdf, "rb") as f:
+            rendered_ok = hashlib.sha256(f.read()).hexdigest() == entry["pdf_sha256"]
+        return source_ok and rendered_ok
     with open(pdf, "rb") as f:
         return hashlib.sha256(f.read()).hexdigest() == candidate["pdf_sha256"]
 
@@ -217,12 +225,12 @@ def plan(batch_dir, dataset, split_path, source="word", count=24, seed=79, max_p
                 historic_pairs.add((r["document_hash"], frozenset((r["a"]["candidate"], r["b"]["candidate"]))))
             f = "pdf_sha256" if source == "pdf" else "docx_sha256"
             historic_visuals.add((r["document_hash"], frozenset((r["a"][f], r["b"][f]))))
-    word_ok = set()
+    word_ok = {}
     word_manifest = os.path.join(batch_dir, "word", "word.json")
     word_version = None
     if source == "word" and os.path.isfile(word_manifest):
         info = load(word_manifest)
-        word_ok = {x["file"] for x in info.get("files", []) if x.get("ok")}
+        word_ok = {x["file"]: x for x in info.get("files", []) if x.get("ok")}
         word_version = info.get("word_build")
     if source == "word" and require_media and not word_version:
         raise ValueError("Word build/version evidence missing; run preferences word first")
@@ -322,7 +330,7 @@ def sheet_pairs(batch_dir, source, plan_file):
         if hashlib.sha256(f.read()).hexdigest() != planned.get("candidates_sha256"):
             raise ValueError("candidate metadata changed after planning")
     candidates = {(c["document"], c["candidate"]): c for c in jsonl(source_file)}
-    word_ok = set()
+    word_ok = {}
     if source == "word":
         word_manifest = os.path.join(batch_dir, "word", "word.json")
         if not os.path.isfile(word_manifest):
@@ -330,7 +338,7 @@ def sheet_pairs(batch_dir, source, plan_file):
         info = load(word_manifest)
         if not info.get("word_build") or info["word_build"] != planned.get("word_build"):
             raise ValueError("Word version changed since planning")
-        word_ok = {r["file"] for r in info.get("files", []) if r.get("ok")}
+        word_ok = {r["file"]: r for r in info.get("files", []) if r.get("ok")}
     result = []
     seen = set()
     for row in planned["pairs"]:
