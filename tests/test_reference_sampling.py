@@ -134,6 +134,60 @@ def test_word_requires_actual_word_build_not_a_pdf_masquerading_as_word(batch):
     assert meta["source"] == "word"
 
 
+def test_pair_names_from_older_batches_do_not_hide_new_renders(batch):
+    path, dataset, split = batch
+    dataset.write_text(json.dumps({
+        "batch": "old-001", "document": "arabic_policy",
+        "document_hash": "arabic_policy-source", "formats_inspected": ["pdf"],
+        "a": {"candidate": "a", "pdf_sha256": "old-asset-a"},
+        "b": {"candidate": "b", "pdf_sha256": "old-asset-b"},
+    }) + "\n", encoding="utf-8")
+    result = S.plan(str(path), str(dataset), str(split), source="pdf", count=9, max_per_doc=3)
+    pairs = {(p["document"], frozenset((p["a"], p["b"]))) for p in result["pairs"]}
+    assert ("arabic_policy", frozenset(("a", "b"))) in pairs
+
+
+def test_word_manifest_requires_matching_source_and_export_hashes(batch, tmp_path):
+    path, dataset, split = batch
+    entries = S.jsonl(str(path / "candidates.jsonl"))
+    word_dir = path / "word"
+    word_dir.mkdir()
+    manifest = {"word_build": "16.0.17932", "files": []}
+    for c in entries:
+        doc, candidate = c["document"], c["candidate"]
+        source = path / "renders" / doc / (candidate + ".docx")
+        export = word_dir / (doc + "__" + candidate + ".pdf")
+        payload = (doc + candidate).encode()
+        source.write_bytes(payload)
+        export.write_bytes(payload)
+        manifest["files"].append({
+            "file": doc + "__" + candidate, "ok": True,
+            "docx_sha256": c["docx_sha256"], "pdf_sha256": hashlib.sha256(payload).hexdigest()})
+    (word_dir / "word.json").write_text(json.dumps(manifest), encoding="utf-8")
+    proposal = S.plan(str(path), str(dataset), str(split), source="word", count=2)
+    frozen = tmp_path / "plan-word.json"
+    S.write_json(str(frozen), proposal)
+    assert len(S.sheet_pairs(str(path), "word", str(frozen))) == 2
+    pair = proposal["pairs"][0]
+    export = word_dir / (pair["document"] + "__" + pair["a"] + ".pdf")
+    export.write_bytes(b"changed Word export")
+    with pytest.raises(ValueError, match="hash-mismatched"):
+        S.sheet_pairs(str(path), "word", str(frozen))
+
+
+def test_trainer_preflight_blocks_before_model_or_lightgbm(batch, tmp_path):
+    import importlib.util
+    path, dataset, split = batch
+    spec = importlib.util.spec_from_file_location("trainer", "scripts/train_variant_ranker.py")
+    trainer = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(trainer)
+    model = tmp_path / "should-not-exist.txt"
+    with pytest.raises(SystemExit, match="data-quality preflight blocked training"):
+        trainer.main(["--dataset", str(dataset), "--batches", str(path.parent),
+                      "--split", str(split), "--out", str(model)])
+    assert not model.exists()
+
+
 def test_audit_blocks_incomplete_and_does_not_assume_human_labels(batch, monkeypatch):
     path, dataset, split = batch
     fake = types.ModuleType("tools.design_learning.readiness")
