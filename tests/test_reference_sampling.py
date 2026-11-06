@@ -32,6 +32,20 @@ def test_bridge_reuses_measured_reference_pages_without_inventing_labels():
     assert "nodes" not in json.dumps(prof) and "preferred" not in json.dumps(prof)
 
 
+def test_reference_language_respects_catalog_and_does_not_flip_on_one_foreign_page():
+    graphs = {
+        "documents": [{"doc_id": "ar", "file": "02-Arabic/annual.pdf", "pages": 3},
+                      {"doc_id": "bi", "file": "03-Bilingual/contract.pdf", "pages": 2}],
+        "pages": [graph("ar", 1, direction="rtl"), graph("ar", 2, direction="ltr"),
+                  graph("ar", 3, direction="rtl"), graph("bi", 1, direction="ltr"),
+                  graph("bi", 2, direction="rtl")]}
+    out = S.bridge(graphs)
+    a, b = out["documents"]
+    assert a["language_hint"] == "arabic" and a["language_basis"] == "catalog_folder"
+    assert b["language_hint"] == "bilingual" and b["language_basis"] == "catalog_folder"
+    assert "file" not in json.dumps(out)
+
+
 def test_bridge_refuses_missing_or_unmatched_pages():
     graphs = {"documents": [{"doc_id": "a", "pages": 2}], "pages": [graph("a", 1)]}
     with pytest.raises(ValueError, match="missing or out-of-range"):
