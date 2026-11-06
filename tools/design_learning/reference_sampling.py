@@ -211,7 +211,10 @@ def plan(batch_dir, dataset, split_path, source="word", count=24, seed=79, max_p
         if source in (r.get("formats_inspected") or []):
             historic_lang[lang] += 1
             historic_docs[r["document"]] += 1
-            historic_pairs.add((r["document_hash"], frozenset((r["a"]["candidate"], r["b"]["candidate"]))))
+            # Candidate names may be reused in a later batch with different code/renders.
+            # Pair identities are only batch-scoped; render hashes remain global.
+            if r["batch"] == batch:
+                historic_pairs.add((r["document_hash"], frozenset((r["a"]["candidate"], r["b"]["candidate"]))))
             f = "pdf_sha256" if source == "pdf" else "docx_sha256"
             historic_visuals.add((r["document_hash"], frozenset((r["a"][f], r["b"][f]))))
     word_ok = set()
