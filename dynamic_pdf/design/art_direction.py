@@ -675,6 +675,11 @@ def direct(sem: SemanticDocument, direction: Direction, *, brand: Optional[Brand
     if rtl or sem.stats.bilingual:
         if theme.typography.arabic_family in (None, "Amiri"):
             theme.typography.arabic_family = covering_face(d.arabic_family, _arabic_chars(sem))
+    from .reviewed_quality import DIRECTION_PALETTE, apply_reviewed_quality
+    script = "bilingual" if sem.stats.bilingual else sem.direction
+    notes += apply_reviewed_quality(theme, script=script,
+                                    palette=DIRECTION_PALETTE[d.id], preserve_brand=bool(brand))
+    primary, accent = theme.colors.primary, theme.colors.accent
     tokens = compile_tokens(theme)
     design = DesignPlan(decision=base.decision, recipe=recipe, theme=theme, tokens=tokens,
                         section_numbering=recipe.section_numbering or sem.meta.section_numbering, notes=notes)
