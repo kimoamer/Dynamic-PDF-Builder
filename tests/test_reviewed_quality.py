@@ -71,3 +71,27 @@ def test_docx_body_justified_and_arabic_caption_uses_complex_script_size():
     cap = d.styles["Caption"]
     assert cap.element.rPr.rFonts.get(qn("w:cs")) == "Amiri"
     assert cap.element.rPr.find(qn("w:szCs")) is not None
+
+
+def _raw_percent_line(positions, text):
+    chars = [{"c": char, "bbox": (x, 0.0, x + 5.0, 10.0)} for char, x in zip(text, positions)]
+    return {"blocks": [{"lines": [{"spans": [{"chars": chars}]}]}]}
+
+
+def test_visual_percent_checker_detects_wrong_side_and_allows_left():
+    from dynamic_pdf.qa.percent_geometry import misplaced_arabic_percent
+    # Arabic numeral at x=10..15; sign at x=15..20 is WRONG.
+    wrong = _raw_percent_line([10, 15], "٤٪")
+    assert len(list(misplaced_arabic_percent(wrong))) == 1
+    # Sign at x=5..10 is to the LEFT and is correct.
+    right = _raw_percent_line([10, 5], "٤٪")
+    assert not list(misplaced_arabic_percent(right))
+    # A normal English-only 4% must not be treated as Arabic.
+    english = _raw_percent_line([10, 15], "4%")
+    assert not list(misplaced_arabic_percent(english))
+
+
+def test_visual_percent_checker_keeps_ascii_percent_in_arabic_context():
+    from dynamic_pdf.qa.percent_geometry import misplaced_arabic_percent
+    wrong = _raw_percent_line([10, 15], "٤%")
+    assert len(list(misplaced_arabic_percent(wrong))) == 1
