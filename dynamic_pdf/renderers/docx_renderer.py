@@ -338,7 +338,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             self.rtl_doc and not re.search(r"[A-Za-z]", text_hint)))
         if rtl:
             F.set_paragraph_bidi(p)
-            if p.alignment is None:
+            if p.alignment is None and style != "Body Text":
                 p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
         return p
 
@@ -533,11 +533,13 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
     def _b_paragraph(self, c, b):
         if (b.hints or {}).get("lead"):
             p = self._para(c, "Normal", b.text)
+            p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
             p.paragraph_format.space_after = Pt(self.tokens.paragraph_after * 1.5)
             self._runs(p, b.text, size=self.tokens.body_size * 1.2,
                        color=self.tokens.colors["text_secondary"])
             return
         p = self._para(c, "Body Text", b.text)
+        p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
         # keep-tail maps to Word's keep-with-next: without "keep lines together"
         # Word may still break inside the paragraph, carrying its last lines on
         if (b.hints or {}).get("keep_with_next") or (b.hints or {}).get("keep_tail_with_next"):
