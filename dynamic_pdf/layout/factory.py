@@ -942,6 +942,7 @@ def _body_style(theme: Theme, indent: bool = True) -> ParagraphStyle:
         spaceBefore=sp.paragraph_spacing_before,
         spaceAfter=sp.paragraph_spacing_after,
         firstLineIndent=sp.first_line_indent if indent else 0,
+        alignment=4,  # JUSTIFY body text; last lines keep natural alignment
         allowWidows=0,      # no single last line at the top of a page
         allowOrphans=0,     # no single first line at the bottom of a page
     )
@@ -1057,7 +1058,7 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
                               leading=size * theme.typography.line_height,
                               firstLineIndent=0, spaceAfter=sp.paragraph_spacing_after * 1.5,
                               textColor=_safe_color(theme.colors.text_secondary),
-                              alignment=2 if _is_rtl(block.text) else 0)
+                              alignment=4)
         return [Paragraph(_md_inline(block.text), lead)]
     if btype == "paragraph":
         raw = block.text
@@ -1099,7 +1100,7 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
 
         # ── RTL alignment ──
         if is_rtl:
-            rtl_style = ParagraphStyle('RTL', parent=bs, alignment=2, fontName=body_font)
+            rtl_style = ParagraphStyle('RTL', parent=bs, alignment=4, fontName=body_font)
             return [Paragraph(text, rtl_style)]
         return [Paragraph(text, bs)]
 
