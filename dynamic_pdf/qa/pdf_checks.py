@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import List, Optional
 
 from .report import ERROR, WARNING, Finding, QAReport, sha256
+from .percent_geometry import misplaced_arabic_percent
 
 
 _SYMBOL_FONTS = ("ZapfDingbats", "Symbol")    # never used for text by this library
@@ -80,6 +81,11 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
         left = margins.get("left", 0) - tolerance
         right = W - margins.get("right", 0) + tolerance
         d = page.get_text("dict")
+        for bbox, text in misplaced_arabic_percent(page.get_text("rawdict")):
+            rep.findings.append(Finding(
+                severity=WARNING, code="arabic_percent_position", page=pno,
+                bbox=bbox, text=text, format=fmt,
+                message="percent sign is drawn to the RIGHT of the Arabic number; move it visually left"))
         lines = []
         has_image = False
         for bl in d["blocks"]:

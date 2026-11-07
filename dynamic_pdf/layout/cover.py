@@ -95,7 +95,8 @@ def designed_cover(block, theme, ctx) -> list:
     primary = _safe_color(ink or theme.colors.text_primary)
     secondary = _safe_color(ink or theme.colors.text_secondary)
     align = 1 if layout == "centered" else (2 if rtl else 0)
-    size = theme.typography.base_size * theme.typography.heading_scale[0] * float(hints.get("title_scale", 1.4))
+    size = (theme.typography.title_size or
+            theme.typography.base_size * theme.typography.heading_scale[0] * float(hints.get("title_scale", 1.4)))
     arabic = get_font_name(theme.typography.arabic_family or "Amiri", bold=True)
     arabic_body = get_font_name(theme.typography.arabic_family or "Amiri")
 

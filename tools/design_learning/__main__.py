@@ -35,11 +35,14 @@ def main(argv=None) -> int:
     x.add_argument("batch")
     x.add_argument("--docs")
     x.add_argument("--n", type=int, default=4)
+    x.add_argument("--baseline", action="store_true", help="also render each design without the grammar")
     x = gs.add_parser("sheets")
     x.add_argument("batch")
     x.add_argument("--pairs", type=int, default=2)
     x.add_argument("--repeats", type=int, default=1)
+    x.add_argument("--docs", help="only these documents, comma separated")
     x.add_argument("--source", choices=("pdf", "word"), default="pdf", help="word: DOCX pages as Microsoft Word lays them out")
+    x.add_argument("--plan", help="frozen balanced plan from reference_sampling plan; never reveal it to reviewers")
     x = gs.add_parser("word", help="render a batch's DOCX through Microsoft Word")
     x.add_argument("batch")
     x = gs.add_parser("record")
@@ -48,10 +51,15 @@ def main(argv=None) -> int:
     x.add_argument("--model", required=True)
     x.add_argument("--date", required=True)
     x.add_argument("--method", default="blind whole-document sheets, labels A/B, PDF pages viewed as images")
+    x.add_argument("--source", choices=("pdf", "word"), default="pdf")
     gs.add_parser("check")
+    x = gs.add_parser("readiness", help="is the dataset ready for a training experiment? Trains nothing")
+    x.add_argument("--out", help="write the report to this folder")
     t = sub.add_parser("train", help="train the optional variant ranker (needs lightgbm)")
     t.add_argument("--name", required=True, help="model name under training/models")
     t.add_argument("--min-pairs", type=int, default=200)
+    t.add_argument("--human-audit", help="separate verified human-review JSONL, never AI training labels")
+    t.add_argument("--provenance", help="local source author/asset group manifest JSON")
     e = sub.add_parser("evaluate", help="read a model's training record and gate")
     e.add_argument("--name", required=True)
     c = sub.add_parser("trace", help="generate one fictional document and show the rules and selector that ran")
@@ -85,21 +93,31 @@ def main(argv=None) -> int:
         P.report(P.do_publish(p))
     elif args.cmd == "preferences":
         if args.step == "generate":
-            P.report(A.generate(work(args.batch), args.docs.split(",") if args.docs else None, args.n))
+            P.report(A.generate(work(args.batch), args.docs.split(",") if args.docs else None, args.n, baseline=args.baseline))
         elif args.step == "sheets":
-            P.report(A.sheets(work(args.batch), args.pairs, repeats=args.repeats, source=args.source))
+            P.report(A.sheets(work(args.batch), args.pairs, repeats=args.repeats, source=args.source,
+                              docs=args.docs.split(",") if args.docs else None, plan=args.plan))
         elif args.step == "word":
             from .word import export
-            P.report(export(os.path.join(work(args.batch), "renders"), os.path.join(work(args.batch), "word")))
+            P.report(export(os.path.join(work(args.batch), "renders"), os.path.join(work(args.batch), "word"), 300))
         elif args.step == "record":
-            P.report(A.record(work(args.batch), args.answers, dataset, model=args.model, date=args.date, method=args.method))
+            P.report(A.record(work(args.batch), args.answers, dataset, model=args.model, date=args.date, method=args.method,
+                              source=args.source))
+        elif args.step == "readiness":
+            from .readiness import report as readiness
+            P.report(readiness(dataset, os.path.join(p["ai_preferences"], "batches"), p["document_split"], args.out))
         else:
             P.report(A.check(dataset))
     elif args.cmd == "train":
         script = os.path.join(P.ROOT, "scripts", "train_variant_ranker.py")
         out = os.path.join(p["models"], args.name + ".txt")
-        return subprocess.call([sys.executable, script, "--dataset", dataset, "--batches", os.path.join(p["ai_preferences"], "batches"),
-                                "--split", p["document_split"], "--out", out, "--min-pairs", str(args.min_pairs)])
+        argv_train = [sys.executable, script, "--dataset", dataset, "--batches", os.path.join(p["ai_preferences"], "batches"),
+                      "--split", p["document_split"], "--out", out, "--min-pairs", str(args.min_pairs)]
+        if args.human_audit:
+            argv_train += ["--human-audit", args.human_audit]
+        if args.provenance:
+            argv_train += ["--provenance", args.provenance]
+        return subprocess.call(argv_train)
     elif args.cmd == "trace":
         P.report(A.trace(args.document, not args.no_grammar, args.model))
     elif args.cmd == "evaluate":
