@@ -56,6 +56,9 @@ def apply_reviewed_quality(theme: Theme, *, script: str = "ltr", palette: str = 
     ty.heading_scale = [h1 / body, h2 / body, h3 / body, 1.02, 0.98, 0.94]
     ty.caption_size = caption
     ty.note_size = note
+    # The PDF renderer still consumes the ratios for many captions/notes.
+    ty.caption_size_ratio = caption / body
+    ty.note_size_ratio = note / body
     ty.line_height = 1.65 if script == "rtl" else 1.55 if script == "bilingual" else 1.5
 
     sp = theme.spacing
