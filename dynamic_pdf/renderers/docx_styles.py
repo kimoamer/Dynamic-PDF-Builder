@@ -9,7 +9,7 @@ Word restyles the whole document.
 from __future__ import annotations
 
 from docx.enum.style import WD_STYLE_TYPE
-from docx.enum.text import WD_LINE_SPACING
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
 from docx.shared import Pt, RGBColor
 
 from ..design.tokens import DesignTokens
@@ -76,6 +76,7 @@ def configure_styles(doc, tokens: DesignTokens, theme: Theme, rtl: bool) -> None
     bt.font.name = body
     bt.paragraph_format.first_line_indent = Pt(tokens.first_line_indent) if tokens.first_line_indent else None
     bt.paragraph_format.space_after = Pt(tokens.paragraph_after)
+    bt.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
 
     for lvl in range(1, 7):
         st = _style(doc, f"Heading {lvl}", base="Normal")
@@ -113,15 +114,17 @@ def configure_styles(doc, tokens: DesignTokens, theme: Theme, rtl: bool) -> None
 
     cap = _style(doc, "Caption", base="Normal")
     cap.font.size = Pt(tokens.caption_size)
-    cap.font.italic = True
+    cap.font.italic = False
     cap.font.bold = False
     cap.font.color.rgb = rgb(c["text_muted"])
+    set_style_fonts(cap, body, arabic, bidi_lang, int(tokens.caption_size * 2))
     cap.paragraph_format.space_after = Pt(tokens.block_gap)
 
     note = _style(doc, "Note", base="Normal")
     note.font.size = Pt(tokens.note_size)
-    note.font.italic = True
+    note.font.italic = False
     note.font.color.rgb = rgb(c["text_secondary"])
+    set_style_fonts(note, body, arabic, bidi_lang, int(tokens.note_size * 2))
 
     q = _style(doc, "Quote", base="Normal")
     q.font.italic = True
