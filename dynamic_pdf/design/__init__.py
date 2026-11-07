@@ -69,7 +69,7 @@ def plan_design(doc: SemanticDocument, requested: Optional[str] = None,
         notes += apply_brand(theme, brand)
     script = "bilingual" if doc.stats.bilingual else doc.direction
     notes += apply_reviewed_quality(theme, script=script, preserve_brand=bool(brand))
-    tokens = compile_tokens(theme
+    tokens = compile_tokens(theme)
     return DesignPlan(decision=decision, recipe=recipe, theme=theme, tokens=tokens,
                       section_numbering=recipe.section_numbering or doc.meta.section_numbering,
                       notes=notes)
