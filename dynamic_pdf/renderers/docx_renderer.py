@@ -1295,7 +1295,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         cell = self._boxed(c, dark)
         scale = float((b.hints or {}).get("title_scale", 2.5))
         p = self._para(cell, "Title", b.title)
-        self._runs(p, b.title, size=self.tokens.body_size * scale, color=ink)
+        size = self.tokens.title_size if self.theme.typography.title_size else self.tokens.body_size * scale
+        self._runs(p, b.title, size=size, color=ink)
         for text, size in ((b.subtitle, 1.15), (b.author, 0.9)):
             if text:
                 q = self._para(cell, "Normal", text)
@@ -1351,7 +1352,9 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         if hints.get("rule"):
             F.set_paragraph_border(title, "top", hints["rule"], 24, 14)
         if hints.get("title_scale"):
-            self._runs(title, b.title, color=ink, size=self.tokens.body_size * self.tokens_h1_ratio() * float(hints["title_scale"]))
+            size = (self.tokens.title_size if self.theme.typography.title_size else
+                    self.tokens.body_size * self.tokens_h1_ratio() * float(hints["title_scale"]))
+            self._runs(title, b.title, color=ink, size=size)
         else:
             self._runs(title, b.title, color=ink)
         if b.subtitle:
