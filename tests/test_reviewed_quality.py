@@ -95,3 +95,10 @@ def test_visual_percent_checker_keeps_ascii_percent_in_arabic_context():
     from dynamic_pdf.qa.percent_geometry import misplaced_arabic_percent
     wrong = _raw_percent_line([10, 15], "٤%")
     assert len(list(misplaced_arabic_percent(wrong))) == 1
+
+
+def test_pdf_body_style_justifies_without_forcing_final_line():
+    from dynamic_pdf.layout.factory import _body_style
+    theme = Theme(name="test")
+    style = _body_style(theme)
+    assert style.alignment == 4  # ReportLab TA_JUSTIFY
