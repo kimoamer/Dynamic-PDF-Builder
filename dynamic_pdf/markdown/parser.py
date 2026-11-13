@@ -18,6 +18,8 @@ from ..schema.blocks import (
 
 
 _FN_DEF_SENTINEL = "\u2063FNDEF\u2063"
+_FN_DEF_RE = re.compile("(?m)^" + _FN_DEF_SENTINEL + r"(\w+):[ \t]*(.*?)(?=\n" + _FN_DEF_SENTINEL + r"|\Z)",
+                        re.DOTALL)
 
 
 def split_front_matter(md_text: str) -> Tuple[Dict[str, object], str]:
@@ -115,10 +117,12 @@ def _parse_body(md_text: str) -> list:
                 blocks.append(CalloutBlock(text=body, variant=variant))
                 continue
 
-            # Footnote definition: [^N]: text
-            fn_match = re.match('^' + _FN_DEF_SENTINEL + r'(\w+):\s*(.*)', content, re.DOTALL)
-            if fn_match:
-                blocks.append(FootnoteBlock(marker=fn_match.group(1), text=fn_match.group(2)))
+            # Footnote definitions: [^N]: text. Definitions on consecutive lines form one
+            # Markdown paragraph, so each one that starts a line starts its own footnote;
+            # other lines continue the footnote above them.
+            if content.startswith(_FN_DEF_SENTINEL):
+                for fn_match in _FN_DEF_RE.finditer(content):
+                    blocks.append(FootnoteBlock(marker=fn_match.group(1), text=fn_match.group(2).strip()))
                 idx += 2
                 continue
             content = content.replace(_FN_DEF_SENTINEL, "[^")

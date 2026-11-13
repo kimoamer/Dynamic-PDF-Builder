@@ -16,6 +16,7 @@
  "docx_tables": [],
  "docx_sections": 1,
  "layout": [
-  "measure: 89 chars/line"
+  "measure: 85 chars/line",
+  "pagination: 1 page: fits on one page; nothing to tighten"
  ]
 }

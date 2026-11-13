@@ -16,6 +16,7 @@
  "docx_tables": [],
  "docx_sections": 1,
  "layout": [
-  "measure: 93 chars/line too long for reading; margins widened by 12pt each side (≈88 chars/line)"
+  "measure: 85 chars/line",
+  "pagination: 1 page: fits on one page; nothing to tighten"
  ]
 }

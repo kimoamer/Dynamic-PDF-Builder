@@ -37,8 +37,9 @@
  ],
  "docx_sections": 1,
  "layout": [
-  "measure: 96 chars/line",
-  "tables: table 2: 4 cols, 3 rows; 9pt; kept on one page; numeric columns [1, 2, 3] right-aligned",
-  "exhibits: 1 heading intro(s) kept with the table or figure they introduce"
+  "measure: 83 chars/line",
+  "tables: table 2: 4 cols, 3 rows; 10.5pt; kept on one page; numeric columns [1, 2, 3] right-aligned",
+  "exhibits: 1 heading intro(s) kept with the table or figure they introduce",
+  "pagination: 1 page: fits on one page; nothing to tighten"
  ]
 }

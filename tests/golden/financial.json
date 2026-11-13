@@ -48,9 +48,9 @@
  "docx_sections": 1,
  "layout": [
   "headings: shallow outline: stronger H1 contrast",
-  "measure: 99 chars/line",
-  "tables: table 2: 5 cols, 40 rows; 9pt; splits across pages with repeated header; numeric columns [0, 1, 2, 3, 4] right-aligned",
+  "measure: 85 chars/line",
+  "tables: table 2: 5 cols, 40 rows; 10.5pt; splits across pages with repeated header; numeric columns [0, 1, 2, 3, 4] right-aligned",
   "exhibits: 1 heading intro(s) kept with the table or figure they introduce",
-  "pagination: 2 pages, last 36% full; kept rhythm (tightening within limits would not save a page)"
+  "pagination: 2 pages, last 51% full; kept rhythm (tightening within limits would not save a page)"
  ]
 }

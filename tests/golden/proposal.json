@@ -83,9 +83,9 @@
  "docx_sections": 1,
  "layout": [
   "headings: shallow outline: stronger H1 contrast",
-  "measure: 83 chars/line",
-  "tables: table 5: 2 cols, 2 rows; 10pt; kept on one page",
+  "measure: 80 chars/line",
+  "tables: table 5: 2 cols, 2 rows; 10.5pt; kept on one page",
   "lead: opening paragraph set as a lead (larger, no indent)",
-  "pagination: tightened vertical rhythm (step 1): 2→1 pages (last page was 16% full)"
+  "pagination: 1 page: fits on one page; nothing to tighten"
  ]
 }
