@@ -322,6 +322,14 @@ def fit_pages(sem: SemanticDocument, plan: DesignPlan, policy=None, max_trials: 
     # long documents: only a near-empty final page is worth fixing; short ones
     # (≤ 3 pages) are also tried because slack often sits before a kept group
     if pages < 2 or pages > 12 or fill is None or (fill > 0.3 and pages > 3):
+        if lp is not None:
+            if pages < 2:
+                why = "fits on one page; nothing to tighten"
+            elif pages > 12 or fill is None:
+                why = "too long to save a page by tightening"
+            else:
+                why = f"last page {fill:.0%} full; worth keeping"
+            lp.log("pagination", f"{pages} page{'s' if pages != 1 else ''}: {why}")
         return
     for i, (s, m, lh) in enumerate([(0.8, 0.9, 0.05), (0.65, 0.8, 0.12)][:max_trials]):
         t = plan.theme.model_copy(deep=True)

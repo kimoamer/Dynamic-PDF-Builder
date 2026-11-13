@@ -182,8 +182,9 @@ def test_arabic_report_tables_stay_with_their_lead_in_text():
     pdf = b.render()
     r = b.last_composition
     base = r.candidates[0]
-    assert base.metrics["separated_figures"] == 3          # the M6.1 defect
-    assert r.status == "ok" and r.strategy == "grouped"
+    assert base.metrics["separated_figures"] >= 1          # the M6.1 defect is present in the baseline
+    # any candidate may fix it ("grouped" did; at the reviewed sizes "compact" also saves pages)
+    assert r.status == "ok" and r.strategy != "baseline"
     chosen = next(c for c in r.candidates if c.name == r.strategy)
     assert chosen.metrics["separated_figures"] == 0 and chosen.valid
     assert chosen.pages <= base.pages + 1

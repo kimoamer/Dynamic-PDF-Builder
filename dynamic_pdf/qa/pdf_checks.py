@@ -53,6 +53,31 @@ def _overlap(a, b) -> float:
     return inter / smaller
 
 
+def _ink_beyond(page, bbox, left: float, right: float, pymupdf) -> float:
+    """How far drawn ink of a line reaches past ``left``/``right`` (0 when it does not).
+
+    A line's box comes from font metrics: for Arabic faces such as Amiri it reaches well past
+    the glyphs themselves, so a box over the margin is not yet text in the margin. Only the
+    strip outside the edge is rendered. Anything drawn there counts, so a band or picture in
+    the margin still reports the line."""
+    x0, y0, x1, y1 = bbox
+    worst = 0.0
+    for a, b, edge, outward in ((right, x1, right, 1), (x0, left, left, -1)):
+        if b - a <= 0.05:
+            continue
+        clip = pymupdf.Rect(a, y0, b, y1) & page.rect
+        if clip.is_empty:
+            continue
+        zoom = 3.0
+        pix = page.get_pixmap(matrix=pymupdf.Matrix(zoom, zoom), colorspace=pymupdf.csGRAY, clip=clip, alpha=False)
+        w, h, s = pix.width, pix.height, pix.samples
+        ink = [c for c in range(w) if any(s[r * w + c] < 160 for r in range(h))]
+        if ink:
+            far = (clip.x0 + (max(ink) + 1) / zoom) if outward > 0 else (clip.x0 + min(ink) / zoom)
+            worst = max(worst, (far - edge) * outward)
+    return worst
+
+
 def _separate_lines(a, b) -> bool:
     """Whether two lines stand clear of each other although their boxes meet: LibreOffice
     reports Amiri lines with the font's full extent, far taller than its ink. Lines drawn
@@ -124,10 +149,12 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
                                             text=txt.strip()[:120], format=fmt, fixable=True,
                                             message=f"text runs off the page: {txt.strip()[:40]!r}"))
             elif margins and (x1 > right or x0 < left) and 40 < y0 < H - 40:
-                rep.findings.append(Finding(severity=ERROR, code="overflow", page=pno, bbox=bbox,
-                                            text=txt.strip()[:120], format=fmt, fixable=True,
-                                            message=f"text overflows into the margin by "
-                                                    f"{max(x1 - right, left - x0):.0f}pt: {txt.strip()[:40]!r}"))
+                over = _ink_beyond(page, (x0, y0, x1, y1), left, right, pymupdf)
+                if over > 0:
+                    rep.findings.append(Finding(severity=ERROR, code="overflow", page=pno, bbox=bbox,
+                                                text=txt.strip()[:120], format=fmt, fixable=True,
+                                                message=f"text overflows into the margin by "
+                                                        f"{max(over, 1):.0f}pt: {txt.strip()[:40]!r}"))
         # overlapping text lines (different lines drawn on top of each other)
         for i in range(len(lines)):
             for j in range(i + 1, len(lines)):

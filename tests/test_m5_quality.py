@@ -44,7 +44,8 @@ def test_financial_tables_flow_without_near_empty_pages():
     b = financial_complex().design()
     doc = _pdf(b)
     assert b.design_explain()["profile"] == "financial_report"
-    assert doc.page_count <= 6
+    # 7 since the reviewed standard set body text at 11.5pt (was 10pt); pages stay full below
+    assert doc.page_count <= 7
     rep = check_pdf(doc.tobytes())
     assert all(f >= 0.5 for f in rep.page_fill[1:-1]), rep.page_fill
 

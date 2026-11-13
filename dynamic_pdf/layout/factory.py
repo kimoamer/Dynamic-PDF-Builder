@@ -2041,28 +2041,32 @@ def _render_cover(block, theme, ctx=None):
             img.hAlign = 'LEFT'
             flowables.append(img)
             flowables.append(Spacer(1, 30))
-    ts = ParagraphStyle('CoverTitle',
-                        fontName=get_font_name(theme.typography.heading_family, bold=True),
-                        fontSize=theme.typography.base_size * theme.typography.heading_scale[0] * 1.4,
-                        leading=theme.typography.base_size * theme.typography.heading_scale[0] * 1.7,
-                        textColor=_safe_color(theme.colors.text_primary), spaceAfter=8)
+    ty = theme.typography
+    # the same size the designed cover, the tokens and the DOCX cover use
+    size = ty.title_size or ty.base_size * ty.heading_scale[0] * 1.4
+    rtl = _is_rtl(block.title)
+    align = 2 if rtl else 0
+    # Arabic faces draw well above and below their nominal size: give them taller lines
+    ratio = 1.4 if rtl else 1.2
+    ts = ParagraphStyle('CoverTitle', fontName=get_font_name(ty.heading_family, bold=True),
+                        fontSize=size, leading=size * ratio, alignment=align,
+                        textColor=_safe_color(theme.colors.text_primary), spaceAfter=size * 0.45)
     flowables.append(Paragraph(_md_inline(block.title), ts))
+
+    def line(name, text, fs, color, after=0.0):
+        return Paragraph(text, ParagraphStyle(name, fontName=get_font_name(ty.body_family), fontSize=fs,
+                                              leading=fs * (1.6 if _is_rtl(text) else 1.3),
+                                              alignment=2 if _is_rtl(text) else align,
+                                              textColor=_safe_color(color), spaceAfter=after))
     if block.subtitle:
-        ss = ParagraphStyle('CoverSub', fontName=get_font_name(theme.typography.body_family),
-                            fontSize=theme.typography.base_size * 1.3,
-                            textColor=_safe_color(theme.colors.text_secondary), spaceAfter=30)
-        flowables.append(Paragraph(_md_inline(block.subtitle), ss))
+        flowables.append(line('CoverSub', _md_inline(block.subtitle), ty.base_size * 1.3,
+                              theme.colors.text_secondary, 30))
     if block.author:
-        a_sty = ParagraphStyle('CoverAuthor', fontName=get_font_name(theme.typography.body_family),
-                               fontSize=theme.typography.base_size,
-                               textColor=_safe_color(theme.colors.text_muted))
-        flowables.append(Paragraph(f"{_label('prepared_by')} {_md_inline(block.author)}", a_sty))
+        flowables.append(line('CoverAuthor', f"{_label('prepared_by')} {_md_inline(block.author)}",
+                              ty.base_size, theme.colors.text_muted))
     if block.date:
-        d_sty = ParagraphStyle('CoverDate', fontName=get_font_name(theme.typography.body_family),
-                               fontSize=theme.typography.base_size,
-                               textColor=_safe_color(theme.colors.text_muted))
         flowables.append(Spacer(1, 60))
-        flowables.append(Paragraph(_md_inline(block.date), d_sty))
+        flowables.append(line('CoverDate', _md_inline(block.date), ty.base_size, theme.colors.text_muted))
     flowables.append(PageBreak())
     return flowables
 

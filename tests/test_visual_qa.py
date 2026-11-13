@@ -48,6 +48,20 @@ def test_detects_clipping_overflow_and_overlap():
     assert not rep.passed
 
 
+def test_overflow_is_judged_by_ink_not_by_the_font_box():
+    """A line's box comes from font metrics, which for Arabic faces reach far past the glyphs.
+    Blank glyph space over the margin is not text in the margin; drawn letters there are."""
+    def blank_edge(p):          # leading spaces cross the margin, the letters start inside it
+        p.insert_text((50, 200), "        Letters start inside the margin", fontsize=11)
+
+    def inked_edge(p):
+        p.insert_text((50, 200), "Letters start in the margin", fontsize=11)
+    margins = {"left": 72, "right": 72}
+    assert not [f for f in check_pdf(_synthetic_pdf(blank_edge), margins=margins).findings if f.code == "overflow"]
+    found = [f for f in check_pdf(_synthetic_pdf(inked_edge), margins=margins).findings if f.code == "overflow"]
+    assert found and "by" in found[0].message
+
+
 def test_detects_blank_page_and_stranded_heading():
     doc = pymupdf.open()
     p1 = doc.new_page(width=595, height=842)
