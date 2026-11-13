@@ -115,6 +115,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             tail.add_run().font.size = Pt(1)
         if any(b.type == "table_of_contents" for b in self.sem.blocks):
             F.enable_update_fields_on_open(doc)
+        F.keep_manual_breaks_unstretched(doc)
         F.mirror_bidi_justification(doc.element.body)
         for sec in doc.sections:
             for part in (sec.header, sec.footer, sec.first_page_header, sec.first_page_footer,

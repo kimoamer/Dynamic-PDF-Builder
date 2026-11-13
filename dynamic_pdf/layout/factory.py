@@ -313,6 +313,10 @@ def _md_inline(text: str) -> str:
         text = _reshape(text)
     text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     text = _restore_safe_tags(text)
+    # Markdown line breaks, as in the DOCX (core.inline): a blank line inside the block or a
+    # hard break ("  " or "\" before the newline) starts a new line; a soft break is a space
+    text = re.sub(r"\n[ \t]*\n\s*", "<br/>", text)
+    text = re.sub(r"(?: {2,}|\\)\n", "<br/>", text)
     # Inline code spans are protected from further inline processing
     codes: list = []
 

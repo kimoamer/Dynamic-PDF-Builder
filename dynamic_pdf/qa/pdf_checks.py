@@ -7,6 +7,7 @@ a page bottom, replacement/missing glyphs and broken internal links.
 """
 from __future__ import annotations
 
+import re
 from typing import List, Optional
 
 from .report import ERROR, WARNING, Finding, QAReport, sha256
@@ -14,6 +15,7 @@ from .percent_geometry import misplaced_arabic_percent
 
 
 _SYMBOL_FONTS = ("ZapfDingbats", "Symbol")    # never used for text by this library
+_SENTENCE_END = re.compile(r"^\s*[.!?\u061f\u06d4\u2026]|[.!?\u061f\u06d4\u2026]\s*$")
 
 
 def _require_pymupdf():
@@ -95,6 +97,7 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
     caps = [_key(c) for c in (captions or []) if c.strip()]
     majors = [_key(h) for h in (major_headings or []) if _key(h)]
     head_keys = [_key(h) for h in (heading_texts or []) if _key(h)]
+    head_ends = [(_key(h), bool(_SENTENCE_END.search(h))) for h in (heading_texts or []) if _key(h)]
     page_firsts = []          # first body line text of each page
     contents_keys = _contents_keys()
     page_texts = []
@@ -186,7 +189,10 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
         if body and pno < doc.page_count and caps:
             last = max(body, key=lambda ln: ln[0][3])
             lt = " ".join(last[1].split())
-            if any(_matches(lt, c) or (_key(lt) and _key(lt) <= c and len(_key(lt)) >= 2) for c in caps):
+            # captions are set smaller than body text: a body-size line that shares words with a
+            # caption is the end of a paragraph
+            small = body_size is None or last[2] < body_size - 0.25
+            if small and any(_matches(lt, c) or (_key(lt) and _key(lt) <= c and len(_key(lt)) >= 2) for c in caps):
                 rep.findings.append(Finding(severity=ERROR, code="detached_caption", page=pno, bbox=last[0],
                                             text=lt, format=fmt,
                                             message=f"caption {lt[:40]!r} is separated from its table/figure"))
@@ -199,8 +205,12 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
             # a contents page or an opening page's chapter strip lists headings; it does not strand one
             listed = sum(_key(ln[1]) in head_keys for ln in body) >= 3
             contents_page = listed or any(_matches(page_firsts[-1], k) for k in contents_keys)
-            if lk and not contents_page and any(hk == lk or (len(hk) >= 2 and hk <= lk and len(lk) <= len(hk) + 1)
-                          for hk in head_keys):
+            # a line that ends a sentence is the end of a paragraph, unless the heading itself
+            # ends that way (extracted right-to-left lines may carry the stop at either end)
+            sentence = bool(_SENTENCE_END.search(last[1]))
+            if lk and not contents_page and any((hk == lk or (len(hk) >= 2 and hk <= lk and len(lk) <= len(hk) + 1))
+                                                and (not sentence or ends)
+                                                for hk, ends in head_ends):
                 rep.findings.append(Finding(severity=ERROR, code="stranded_heading", page=pno,
                                             bbox=last[0], text=last[1].strip(), format=fmt, fixable=True,
                                             message=f"heading {last[1].strip()[:40]!r} is the last line on its page"))

@@ -113,3 +113,20 @@ def test_header_footer_styles_with_logo_and_total(header, footer, png_path):
     text = pdf_text(pdf)
     assert "of ?" not in text
     assert b.last_render.diagnostics.errors == []
+
+
+def test_gauge_reads_label_value_data_and_refuses_data_it_cannot_show():
+    """A gauge given {label: value} used to draw 0 without a word."""
+    import pytest
+    from dynamic_pdf.utils.errors import DynamicPDFError
+    from dynamic_pdf.renderers.chart import _gauge
+    from dynamic_pdf.schema.blocks import ChartBlock
+    from dynamic_pdf.themes import get_theme
+    assert DocumentBuilder().chart("gauge", data={"NPS": 47}).render().startswith(b"%PDF")
+    with pytest.raises(ValueError):
+        _gauge(ChartBlock(chart_type="gauge", data={"a": 1, "b": 2}), get_theme("claude"))
+    with pytest.raises(DynamicPDFError):
+        DocumentBuilder().chart("gauge", data=["not", "a", "reading"]).render()
+    b = DocumentBuilder().quality("permissive").chart("gauge", data="47%")
+    b.render()
+    assert any(d["level"] == "error" for d in b.diagnostics)

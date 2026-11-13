@@ -357,6 +357,15 @@ def enable_update_fields_on_open(document) -> None:
     el.set(qn("w:val"), "true")
 
 
+def keep_manual_breaks_unstretched(document) -> None:
+    """Word stretches a justified line that ends in a manual line break across the whole
+    measure ("To:        All        staff"). This compatibility option, which LibreOffice also
+    reads, sets such lines at their natural width, as the PDF does."""
+    compat = _get_or_add(document.settings.element, "w:compat")
+    if compat.find(qn("w:doNotExpandShiftReturn")) is None:
+        compat.insert(0, OxmlElement("w:doNotExpandShiftReturn"))   # first in the schema's order
+
+
 # ─────────────────────────── bookmarks & links ───────────────────────────
 
 _BM_RE = re.compile(r"[^A-Za-z0-9_]")

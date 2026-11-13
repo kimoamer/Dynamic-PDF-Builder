@@ -101,6 +101,29 @@ Sizes are rough estimates for one engineer: S is up to a week, M two to three we
 
 Every later milestone is judged by tests and benchmarks, and neither can be trusted today.
 
+**Progress (2026-11-13, branch `claude/tender-clarke-ern139`).** Decision 1 was settled conservatively:
+the human-reviewed standard stays as written (its tests lock the sizes and margins), and everything
+else now works within it. Done, each with tests:
+
+- All 39 failing tests fixed, without weakening a check: evidence recipes named by a caller keep
+  their typography; `editorial_modern` hangs no further than the reviewed margin; the performance
+  page plans with the frame's real usable height; tests that pinned pre-standard values now check the
+  property they protect. Goldens regenerated after a contact-sheet review.
+- Defects found while doing it: justified Arabic paragraphs had the last line flush left and the
+  indent on the left; the Arabic classic cover was flush left with its title on the author line;
+  every Markdown soft break became a hard break in DOCX, so wrapped Markdown came out as broken,
+  stretched lines in Word; memo field lines ran together in PDF; DOCX said it was created in 2013;
+  a designed masthead repeated a title the document already opens with; a gauge given
+  `{label: value}` drew 0.
+- QA judged more precisely, never more loosely: margin overflow is confirmed by rendered ink, not by
+  font boxes; a sentence ending in heading or caption words is not a stranded heading or detached
+  caption; the DOCX check counts the contents entries actually written, and reads line breaks.
+- F8 (footnotes) and F12 (reproducible output, via `SOURCE_DATE_EPOCH`) closed; the version has one
+  source; `.pyc` files untracked; the learning config's `D:/` paths work on every OS; README corrected.
+- Every applicable direction passes the hard gates on all 15 fixture and stress documents (64 of 64).
+
+Open: CI still does not execute on GitHub; that needs the repository's Actions settings (owner).
+
 - **Get CI executing again**, then require it on `main` with branch protection. Add a fast job without LibreOffice so every push gets an answer in minutes. Run CI against a constraints file, with a scheduled job on the newest dependencies.
 - **Decide what the reviewed standard is** (decision 1 in section 7). Recommended: it becomes bounds plus the default for `design("auto")`, not an override. Directions and evidence recipes keep their own values inside the bounds, and the clamp accounts for a direction's hang.
 - Fix `editorial_modern` (hang against margin), the Arabic `PerformancePage` that is 12 pt taller than its frame, and `plan.typography` so that it reports compiled tokens. Regenerate `tests/golden/` only after that, reviewed on contact sheets.

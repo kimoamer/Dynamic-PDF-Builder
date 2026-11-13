@@ -49,6 +49,8 @@ def safe_href(url: str) -> Optional[str]:
     return u if u.lower().startswith(_SAFE_LINK) else None
 
 
+_BLANK_LINE = re.compile(r"\n[ \t]*\n\s*")      # a paragraph boundary inside one block
+
 _EXT = re.compile(
     r"(?P<fn>\[\^(?P<fnm>[\w-]+)\])"
     r"|(?P<hl>==(?P<hlt>.+?)==)"
@@ -95,10 +97,13 @@ def parse_inline(text: str) -> List[TextRun]:
     if not text:
         return []
     out: List[TextRun] = []
-    for line_idx, line in enumerate(text.split("\n")):
-        if line_idx:
+    # Markdown decides what a newline means: a soft break inside a paragraph is a space
+    # (text wrapped by an editor), a hard break ("  " or "\" before it) is a new line. A
+    # blank line inside one block separates its paragraphs, so it breaks the line too.
+    for seg_idx, segment in enumerate(_BLANK_LINE.split(text)):
+        if seg_idx:
             out.append(TextRun(text="\n", line_break=True))
-        tokens = _md().parseInline(line)
+        tokens = _md().parseInline(segment)
         children = tokens[0].children if tokens and tokens[0].children else []
         style = {}
         link_stack: List[Optional[str]] = []

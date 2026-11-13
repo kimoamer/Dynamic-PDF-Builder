@@ -286,6 +286,10 @@ def _cover(sem, d: Direction, brief: DocumentBrief, primary: str, accent: str, l
         sem.blocks.pop(0)
     short = brief.estimated_pages < 3
     kind = "masthead" if short else d.cover
+    if kind == "masthead" and _opens_with_title(sem):
+        plan.cover = "none"
+        plan.decisions.append("cover: the document opens with its own title, so no masthead repeats it")
+        return
     photo = _first_photo(sem.blocks)
     if kind in ("image_top", "split") and photo is None:
         kind = "type_left" if kind == "image_top" else "colour_panel"
@@ -333,6 +337,16 @@ def _cover(sem, d: Direction, brief: DocumentBrief, primary: str, accent: str, l
     if short and d.cover != "masthead":
         plan.decisions.append(f"cover: about {brief.estimated_pages} pages is too short for a cover page, "
                               "so the title opens page one")
+
+
+def _opens_with_title(sem) -> bool:
+    """The first block the reader meets is a top-level heading that says the document's title."""
+    from ..core.inline import plain_text
+    first = next((b for b in sem.blocks if b.type not in ("table_of_contents", "watermark", "page_media",
+                                                          "page_section")), None)
+    return (first is not None and first.type == "heading" and first.level == 1
+            and " ".join(plain_text(first.text).split()).casefold()
+            == " ".join((sem.meta.title or "").split()).casefold())
 
 
 def _cover_crop(src) -> ImageTreatment:
