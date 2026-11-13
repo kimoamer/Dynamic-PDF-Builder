@@ -12,6 +12,7 @@ import unicodedata
 import html as html_mod
 from functools import lru_cache
 from typing import Optional
+from reportlab.lib.enums import TA_JUSTIFY
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.platypus import (
     Paragraph as _RLParagraph, ListFlowable, ListItem, Spacer, PageBreak,
@@ -187,11 +188,35 @@ class Paragraph(_RLParagraph):
         if base is None or bl is None:
             return super().drawPara(debug)
         logical = bl.lines
+        had = "_offsets" in self.__dict__
+        saved = self.__dict__.get("_offsets")
         try:
             bl.lines = [_visual_line(ln, bl.kind, base) for ln in logical]
+            if base == "R" and self.style.alignment == TA_JUSTIFY and logical:
+                self._offsets = self._rtl_justify_offsets(bl, saved)
             return super().drawPara(debug)
         finally:
             bl.lines = logical
+            if had:
+                self._offsets = saved
+            else:
+                self.__dict__.pop("_offsets", None)
+
+    def _rtl_justify_offsets(self, bl, existing):
+        """ReportLab justifies as if every line ran left to right: the first-line indent lands
+        on the left and the short last line sits flush left. A right-to-left paragraph needs
+        both on the right, so each line is moved by its own offset; breaking is untouched."""
+        n = len(bl.lines)
+        base = list(existing or [0])
+        base += (n - len(base)) * [base[-1]]
+        out = list(base)
+        indent = self.style.firstLineIndent or 0
+        out[0] -= indent                                 # the indent belongs at the right edge
+        if not getattr(self, "_JustifyLast", False):
+            last = bl.lines[-1]
+            extra = last[0] if bl.kind == 0 else getattr(last, "extraSpace", 0)
+            out[-1] += max(0.0, extra)                   # a short last line ends at the right
+        return out
 
 
 def _plain_markup(text: str) -> str:
@@ -858,6 +883,9 @@ class LegendFlowable(Flowable):
 
 # ═══════════════════════ Render Context (thread-safe) ═══════════════════════
 
+FRAME_PADDING = 6.0      # ReportLab's default Frame padding, on every side; the engine keeps it
+
+
 class RenderContext:
     """Thread-safe rendering context passed from LayoutEngine to the factory.
 
@@ -881,6 +909,17 @@ class RenderContext:
         self.last_block = True             # nothing follows the block being built
         self.heading_counters = [0, 0, 0, 0, 0, 0]  # H1–H6
         self.toc_entries: list = []  # (level, text) for TOC
+
+    @property
+    def usable_width(self) -> float:
+        """Width a flowable is actually offered: the frame less its side padding."""
+        return self.available_width - 2 * FRAME_PADDING
+
+    @property
+    def usable_height(self) -> Optional[float]:
+        """Height a flowable is actually offered: the frame less its top and bottom padding.
+        Anything planned to fill a page must plan with this, not with ``available_height``."""
+        return None if self.available_height is None else self.available_height - 2 * FRAME_PADDING
 
     def next_heading_number(self, level: int) -> str:
         """Increment heading counter and return formatted number string."""
@@ -1100,7 +1139,8 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
 
         # ── RTL alignment ──
         if is_rtl:
-            rtl_style = ParagraphStyle('RTL', parent=bs, alignment=4, fontName=body_font)
+            # no first-line indent in Arabic, as the DOCX renderer and the RTL recipes already do
+            rtl_style = ParagraphStyle('RTL', parent=bs, alignment=4, fontName=body_font, firstLineIndent=0)
             return [Paragraph(text, rtl_style)]
         return [Paragraph(text, bs)]
 

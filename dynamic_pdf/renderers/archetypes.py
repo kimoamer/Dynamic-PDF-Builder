@@ -264,7 +264,7 @@ class PerformancePage(Flowable):
 
 
 def _performance(block, theme, ctx) -> list:
-    plan = A.plan_performance(block, theme, ctx.available_width, ctx.available_height)
+    plan = A.plan_performance(block, theme, ctx.usable_width, ctx.usable_height or 640.0)
     for note in plan.notes:
         _diag.current().warn("archetype_fit", f"Performance page: {note}")
     if not plan.ok:

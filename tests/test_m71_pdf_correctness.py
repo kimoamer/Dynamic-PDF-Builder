@@ -162,3 +162,57 @@ def test_docx_keeps_logical_text_heading_styles_and_bidi():
     W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
     assert body[0]._p.pPr is not None and body[0]._p.pPr.find(W + "bidi") is not None
     assert "كتابٌ مُفيدٌ" in docx_text(data)
+
+
+# ── justified right-to-left paragraphs ─────────────────────────────────
+
+def _paragraph_lines(pdf: bytes):
+    """Body lines of a one-paragraph page, top to bottom (PyMuPDF may split one paragraph
+    into several blocks, so blocks are not used)."""
+    page = pymupdf.open(stream=pdf, filetype="pdf")[0]
+    lines = [ln["bbox"] for b in page.get_text("dict")["blocks"] for ln in b.get("lines", [])
+             if 40 < ln["bbox"][1] < page.rect.height - 60]
+    return [sorted(lines, key=lambda b: b[1])]
+
+
+@pytest.mark.parametrize("text", [SRC, SRC.replace("الموارد البشرية", "**الموارد البشرية**")])
+def test_justified_rtl_paragraph_ends_its_last_line_on_the_right(text):
+    """ReportLab justifies as if text ran left to right, which set the short last line of an
+    Arabic paragraph flush left. Arabic paragraphs also take no first-line indent, as in DOCX."""
+    from dynamic_pdf.themes import get_theme
+    assert get_theme("claude").spacing.first_line_indent > 0     # the classic theme indents Latin text
+    lines = _paragraph_lines(DocumentBuilder().paragraph(text).render())[0]
+    assert len(lines) >= 2
+    right = max(b[2] for b in lines)
+    left = min(b[0] for b in lines)
+    first, last = lines[0], lines[-1]
+    assert first[2] == pytest.approx(right, abs=2) and first[0] == pytest.approx(left, abs=2)
+    assert last[2] == pytest.approx(right, abs=2)                # the last line ends at the right
+    assert last[0] > left + 20                                   # and is not stretched
+
+
+def test_rtl_first_line_indent_sits_at_the_right_edge():
+    """A style that does indent an Arabic paragraph indents it from the right."""
+    from reportlab.lib.styles import ParagraphStyle
+    from dynamic_pdf.layout.factory import Paragraph, _plain_markup
+    para = Paragraph(_plain_markup(SRC), ParagraphStyle("t", fontName="Amiri", fontSize=11, leading=16,
+                                                         alignment=4, firstLineIndent=30))
+    para.wrap(400, 800)
+    from reportlab.pdfgen.canvas import Canvas
+    buf = io.BytesIO()
+    c = Canvas(buf)
+    para.drawOn(c, 50, 400)
+    c.save()
+    page = pymupdf.open(stream=buf.getvalue(), filetype="pdf")[0]
+    lines = sorted((ln["bbox"] for b in page.get_text("dict")["blocks"] for ln in b.get("lines", [])),
+                   key=lambda b: b[1])
+    right, left = max(b[2] for b in lines), min(b[0] for b in lines)
+    assert right - lines[0][2] == pytest.approx(30, abs=2) and lines[0][0] == pytest.approx(left, abs=2)
+    assert lines[-1][2] == pytest.approx(right, abs=2)
+
+
+def test_justified_ltr_paragraph_is_unchanged_by_the_rtl_fix():
+    lines = next(ls for ls in _paragraph_lines(DocumentBuilder().paragraph("Plain English text. " * 20).render())
+                 if len(ls) >= 2)
+    left = min(b[0] for b in lines)
+    assert lines[0][0] > left + 20 and lines[-1][0] == pytest.approx(left, abs=2)

@@ -43,7 +43,11 @@ def test_reference_language_respects_catalog_and_does_not_flip_on_one_foreign_pa
     a, b = out["documents"]
     assert a["language_hint"] == "arabic" and a["language_basis"] == "catalog_folder"
     assert b["language_hint"] == "bilingual" and b["language_basis"] == "catalog_folder"
-    assert "file" not in json.dumps(out)
+    # paths are read for the folder label and never copied out (the format name itself
+    # contains "profiles", so a bare substring test for "file" cannot tell)
+    dumped = json.dumps(out)
+    assert "annual.pdf" not in dumped and "contract.pdf" not in dumped and "02-Arabic" not in dumped
+    assert all("file" not in d for d in out["documents"])
 
 
 def test_bridge_refuses_missing_or_unmatched_pages():

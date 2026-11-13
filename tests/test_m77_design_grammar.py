@@ -372,8 +372,11 @@ class TestWorkflow:
     def test_committed_config_keeps_references_outside_the_repository(self):
         with open(os.path.join(ROOT, "config", "design-learning.json"), encoding="utf-8") as f:
             c = json.load(f)
+        from tools.design_learning.pipeline import is_absolute, paths
+        resolved = paths()
         for key in ("reference_dir", "inbox", "analysis_dir"):
-            assert os.path.isabs(c[key]) and not os.path.abspath(c[key]).startswith(ROOT)
+            assert is_absolute(c[key])
+            assert resolved[key] == c[key]          # never joined onto the repository root
 
 
 class TestBlindReviewFindings:

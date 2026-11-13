@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import re
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace as _replace
 from typing import Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, Field
@@ -649,6 +649,24 @@ def _closing_band(blocks, last: List[int], remove: set, d: Direction, plan: ArtD
     plan.decisions.append(f"image {b.src!r}: closes the document as a band across the page")
 
 
+HANG_EDGE = 28.0               # a hanging heading keeps at least this far from the paper edge
+
+
+def _fit_hang(d: Direction, theme: Theme, rtl: bool, plan: ArtDirectionPlan) -> Direction:
+    """Headings hang into the start margin, so they may hang no further than that margin allows.
+    The reviewed standard can narrow a direction's margin after the direction chose its hang."""
+    if not d.hang:
+        return d
+    sp = theme.spacing
+    start = sp.page_margin_right if rtl else sp.page_margin_left
+    room = max(0.0, round(start - HANG_EDGE, 1))
+    if d.hang <= room:
+        return d
+    plan.decisions.append(f"headings: hang {d.hang:g}pt reduced to {room:g}pt to fit the "
+                          f"{start:g}pt start margin")
+    return _replace(d, hang=room)
+
+
 def _arabic_chars(sem) -> str:
     """Characters of this document that the Arabic face has to draw."""
     text = str(sem.meta.model_dump()) + "".join(str(b.model_dump()) for b in sem.blocks)
@@ -700,6 +718,7 @@ def direct(sem: SemanticDocument, direction: Direction, *, brand: Optional[Brand
         plan.decisions.append(f"contents: about {brief.estimated_pages} pages needs no contents page")
     _cover(out, d, brief, primary, accent, logo, plan)
     _compose(out, d, primary, adjust, plan, rtl)
+    d = _fit_hang(d, theme, rtl, plan)
     _apply_sections(out, d, brief, primary, accent, muted, adjust, plan, rtl)
     if brief.author_bands:
         plan.bands = "the author's own page system"
