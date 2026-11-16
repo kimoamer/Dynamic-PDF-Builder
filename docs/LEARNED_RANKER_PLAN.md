@@ -122,8 +122,30 @@ Not done here, by design: no model is trained or packaged, the booster's trainin
 - **Word pages** from the owner's Windows machine, as the preflight requires (decision 3).
 
 Done when: the preflight audit reports ready; at least 400 usable comparisons, 150 of them
-held out across 10 or more documents; judges agree on 75% of clear answers; judges agree with
-people on 70% of the anchor; half the answers or more are high confidence.
+held out across 10 or more documents; half or more of the comparisons judged are usable (each
+judge gives the same answer in both orders, and the judges agree); judges agree with people on
+70% of the anchor.
+
+**Pilot (2026-11-16): run.** 18 comparisons of the fixed selector's first choice against its
+second or third, over 9 corpus documents (2 Arabic, 2 bilingual). Each was judged from the two
+whole PDFs by Opus 5.5 and Sonnet 5.5, in both orders; 6 were judged again without the first
+page; then each of the 27 designs was scored alone. 138 requests, $6.22. The numbers are small
+and are evidence for the method, not for any design.
+
+| Question | Measured | What it changes |
+| --- | --- | --- |
+| Cost | $0.21 a comparison (two judges, two orders), so $0.11 through Message Batches. About 16,500 input tokens a judgment. | 800 comparisons cost about $90, below the estimate in section 5. |
+| Does the order matter? | Yes, a lot. "A" won 25 of 36 clear answers from Opus and 22 of 36 from Sonnet. Opus gave the same answer in both orders on 11 of 18 pairs, Sonnet on 14 of 18. | Both orders stay mandatory and a pair that flips is not used. The 47 of 48 in today's dataset came from repeats the judge could recognise, and overstates it. |
+| Do two judges agree? | On every pair where each was consistent: 9 of 9. | A comparison is usable when both judges are consistent and agree: 9 of 18 here. Plan for twice as many comparisons as usable ones. |
+| Did seeing whole pages raise confidence? | No. 6 of 72 answers were "high" (30 of 180 before). | Stated confidence is dropped as a criterion; consistency under a swapped order replaces it. |
+| Does the cover decide? | No. Without the first page the answer was the same in 11 of 12. | The cover-masked share falls from a quarter to a tenth, as a running check. |
+| Is the fixed selector right? | On the 9 usable pairs the judges preferred its first choice 5 times. | Between its top designs the fixed score carries little. There is room for a learned one. |
+| Is scoring one design at a time better? | No. The two judges' scores correlate 0.45 and order a pair the same way in 9 of 18. | Pairwise stays. |
+| How good do the judges find the designs? | All 27 scored 52 to 74 of 100, where the rubric set ordinary office output at 50 and professional design at 80. | A selector can only pick the best of what the engine makes. Better candidates are the larger lever, and M20's search matters more than first thought. |
+
+Found on the way: `arabic_health_data` has no valid design at all (stranded headings before its
+charts, in every direction). It is the same on `main`, and it is a defect of the engine, not of
+selection.
 
 ### M18. A first model through an honest gate (S to M)
 
@@ -196,12 +218,9 @@ M16 -> M17 -> M18 -> M19 -> M20
 M16 needs no data and no decision, so it starts first. M17 is the long pole because it waits
 on documents, people and Word.
 
-Judging cost is an estimate from one measurement: today a request carrying a one- or two-page
-PDF used about 4,000 input tokens. A comparison of two four-page designs is then about 20,000.
-At list prices through Message Batches, one judgment costs about $0.045 on Opus 5.5 and $0.022
-on Sonnet 5.5. A comparison judged by both models in both orders is about $0.13, and 800
-comparisons $100 to $200 depending on how much the judges write. The pilot measures the real
-figure. The run needs a long-lived API key kept as an environment secret.
+Judging cost is measured by the pilot (M17): $0.11 a comparison through Message Batches, judged
+by both models in both orders. Half the comparisons come out usable, so 400 usable comparisons
+need about 800, or about $90. The run needs a long-lived API key kept as an environment secret.
 
 ## 6. Decisions for the owner
 
