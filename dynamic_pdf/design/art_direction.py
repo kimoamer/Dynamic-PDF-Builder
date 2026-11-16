@@ -721,7 +721,7 @@ def direct(sem: SemanticDocument, direction: Direction, *, brand: Optional[Brand
     brief = read_brief(sem, base.decision.profile.value, estimated)
     plan = ArtDirectionPlan(direction=d.id, name=d.name, summary=d.summary, brief=brief, fit_reasons=fit_reasons or [],
                             typography=f"{theme.typography.heading_family} headings, {theme.typography.body_family} "
-                                       f"{recipe.base_size:g}/{recipe.line_height:g}",
+                                       f"{theme.typography.base_size:g}/{theme.typography.line_height:g}",
                             bands=d.bands)
     plan.decisions += notes
     primary = dark_ink(theme)

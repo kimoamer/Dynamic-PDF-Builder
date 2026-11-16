@@ -122,7 +122,19 @@ else now works within it. Done, each with tests:
   source; `.pyc` files untracked; the learning config's `D:/` paths work on every OS; README corrected.
 - Every applicable direction passes the hard gates on all 15 fixture and stress documents (64 of 64).
 
-Open: CI still does not execute on GitHub; that needs the repository's Actions settings (owner).
+**Progress (2026-11-16).** M8 closed on the code side:
+
+- F4: `plan.typography` reports the size and leading on the page (after the reviewed standard), so
+  the variant ranker's `base_size` and `line_height` features read real values. Tested.
+- CI installs against `constraints.txt` (known-good versions, with markers for Python 3.10), runs a
+  nightly job on the newest releases without it, and adds a Windows job (Python 3.12, no LibreOffice).
+  The Python 3.10, 3.11 and 3.13 jobs carry no LibreOffice and are the fast answer on each push.
+- The M7 findings list was re-checked: 1, 2, 3 and 6 are closed by named tests, 4 and 5 partly, the
+  rest are listed as open with the milestone that takes them (`benchmarks/m7/FINDINGS.md`).
+- The changelog for M5 to M7.10 is the README's "Unreleased" entry.
+
+Open, owner only: CI still does not execute on GitHub (F1, the repository's Actions settings), so
+the Windows job and branch protection on `main` wait for that. Next: M9.
 
 - **Get CI executing again**, then require it on `main` with branch protection. Add a fast job without LibreOffice so every push gets an answer in minutes. Run CI against a constraints file, with a scheduled job on the newest dependencies.
 - **Decide what the reviewed standard is** (decision 1 in section 7). Recommended: it becomes bounds plus the default for `design("auto")`, not an override. Directions and evidence recipes keep their own values inside the bounds, and the clamp accounts for a direction's hang.
