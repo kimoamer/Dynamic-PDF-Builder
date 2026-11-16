@@ -1368,6 +1368,25 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
   footnotes merged; DOCX files said they were created in 2013.
 - Margin overflow is judged by rendered ink, not by font boxes.
 - `SOURCE_DATE_EPOCH` makes PDF and DOCX output byte-for-byte reproducible.
+- One engine (M9): `PageFacts`, one measured description of a rendered PDF, feeds scoring, critique,
+  ranking and benchmarks; one weights table; `design(direction=, variants=, grammar=)` makes
+  `export()` deliver the recommended valid design (`ExportResult.design`); CLI `variants`,
+  `--direction`, `--grammar`, `--brand`; one scoreboard (`benchmarks/scoreboard.py`) with budgets.
+- Content (M10): typed table columns (period, measure, currency ...), `lint()` and CLI `lint`,
+  document type with a confidence and an "uncertain" outcome, `meta.audience`, figure and table
+  numbers with `{ref:id}` references and lists of figures and tables, stricter chart data.
+- Page breaks (M11) are chosen by search over measured heights and kept only when a render confirms
+  them; Word gets native keep and row-split properties.
+- Learning (M12): scripted blind AI review with two judges, `VariantSet.accept()`, a local A/B page,
+  calibrated monotone weights behind the existing training gate. No model is trained yet.
+- Optional AI (M13, `pip install dynamic-pdf-builder[ai]`): a Director and a Critic that only choose
+  among designs the gates accept, content assistance labelled as AI-written, CLI `schema` and an MCP
+  server (`[mcp]`). Nothing loads it unless the caller passes it.
+- Typography and accessibility (M14): Arabic text extracts as written, justified English text
+  hyphenates, QA reads PDFs through PyMuPDF or the permissively licensed PDFium (`[qa-permissive]`),
+  a contrast check, real Word footnotes, and opt-in tagged PDF (`meta(tagged=True)`).
+- Product (M15): streaming that parses as text arrives, templates over CSV, JSON or XLSX data
+  (`render --data`, `batch`), a `charts` extra, and `python -m dynamic_pdf.service`.
 
 ### v0.3.0 (2026-04-04)
 
