@@ -164,6 +164,23 @@ def union_length(intervals) -> float:
     return total
 
 
+def _leaf_tag(canv, f):
+    """Tagged PDF: the marked content a placed flowable other than a paragraph (paragraphs tag
+    themselves) or a container (its paragraphs do) is drawn in."""
+    tagger = getattr(canv, "_dpb_tagger", None)
+    if tagger is None:
+        return None
+    from reportlab.platypus import Paragraph
+    if isinstance(f, Paragraph) or isinstance(getattr(f, "_content", None), list):
+        return None
+    from ..layout.tagging import flowable_tag
+    info = flowable_tag(f)
+    if info is None:
+        return None
+    mark = len(canv._code)
+    return (tagger, mark) if tagger.begin(canv, *info) else None
+
+
 class GeoFrame(Frame):
     """A Frame that records placed regions into a shared ``Geometry``."""
 
@@ -173,7 +190,10 @@ class GeoFrame(Frame):
     def add(self, flowable, canv, trySplit=0):
         y0 = self._y
         at_top = getattr(self, "_atTop", 0)
+        tagging = _leaf_tag(canv, flowable)
         placed = super().add(flowable, canv, trySplit)
+        if tagging:
+            tagging[0].close(canv, tagging[1], bool(placed))
         geo = self.geometry
         children = getattr(flowable, "_dpb_children", None)
         if placed and geo is not None and children is not None:

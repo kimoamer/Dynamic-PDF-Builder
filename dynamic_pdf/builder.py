@@ -413,7 +413,10 @@ class DocumentBuilder:
     def meta(self, title: Optional[str] = None, author: Optional[str] = None,
              language: str = "en", subject: Optional[str] = None,
              keywords: Optional[List[str]] = None,
-             description: Optional[str] = None) -> 'DocumentBuilder':
+             description: Optional[str] = None, tagged: bool = False) -> 'DocumentBuilder':
+        """``tagged=True``: a tagged PDF (structure tree, alt text, artifacts; needs pikepdf)."""
+        if tagged:
+            self._meta.tagged = True
         if title:
             self._meta.title = title
         if author:

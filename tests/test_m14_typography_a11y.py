@@ -251,3 +251,77 @@ def test_libreoffice_sets_the_footnotes_at_the_foot_of_the_page():
     note = page.search_for("Two participants withdrew.")
     body = page.search_for("Sleep supports recall.")
     assert note and body and note[0].y0 > page.rect.height * 0.6 > body[0].y1
+
+
+# ── F9: tagged PDF (opt-in spike) ────────────────────────────────────────
+
+def _tagged_sample(tagged=True):
+    import tempfile
+    from PIL import Image
+    png = tempfile.mktemp(suffix=".png")
+    Image.new("RGB", (300, 150), (30, 90, 160)).save(png)
+    return (DocumentBuilder().meta(title="Tagged sample", tagged=tagged)
+            .heading("Summary").paragraph(LONG * 8)
+            .heading("Detail", level=2).bullet_list(["First item", "Second item"])
+            .image(png, caption="A blue box", alt_text="A blue rectangle")
+            .table(["Region", "Revenue"], [["North", "1"], ["South", "2"]] * 25))
+
+
+def _tree(pdf: bytes):
+    import pikepdf
+    p = pikepdf.open(io.BytesIO(pdf))
+    out = []
+
+    def walk(e, depth):
+        kids = [k for k in e.K if isinstance(k, pikepdf.Dictionary)]
+        mcrs = [k for k in kids if k.get("/Type") == "/MCR"]
+        out.append((depth, str(e.S)[1:], len(mcrs), str(e.get("/Alt", ""))))
+        for k in kids:
+            if k.get("/Type") == "/StructElem":
+                assert k.P == e
+                walk(k, depth + 1)
+    walk(p.Root.StructTreeRoot.K[0], 0)
+    return p, out
+
+
+def test_tagged_pdf_has_a_structure_tree():
+    pytest.importorskip("pikepdf")
+    pdf = _tagged_sample().render()
+    p, tree = _tree(pdf)
+    assert p.Root.MarkInfo.Marked is True and str(p.Root.Lang) == "en"
+    tags = [t for _, t, _, _ in tree]
+    assert tags[0] == "Document" and tags[1:4] == ["H1", "P", "H2"]
+    assert tags.count("LI") == 2 and tags.count("LBody") == 2 and "L" in tags
+    assert ("Figure", "A blue rectangle") in [(t, alt) for _, t, _, alt in tree]
+    assert "Caption" in tags and tags.count("TH") == 2 and tags.count("TD") == 100
+    first_tr = tags.index("TR")
+    assert tags[first_tr + 1:first_tr + 3] == ["TH", "TH"]             # header cells in the first row
+    assert [n for _, t, n, _ in tree if t == "P"][0] >= 2                # a paragraph split over pages: one P
+    # every marked-content id on every page is in the parent tree, and only those
+    nums = list(p.Root.StructTreeRoot.ParentTree.Nums)
+    import pikepdf
+    for index, page in enumerate(p.pages):
+        ids = [ops[1].MCID for ops, op in pikepdf.parse_content_stream(page)
+               if str(op) == "BDC" and isinstance(ops[1], pikepdf.Dictionary) and "/MCID" in ops[1]]
+        if ids:
+            assert page.StructParents == index and str(page.Tabs) == "/S"
+            assert sorted(ids) == list(range(len(ids))) == list(range(len(nums[nums.index(index) + 1])))
+
+
+def test_tagging_changes_neither_pixels_nor_text():
+    pytest.importorskip("pikepdf")
+    plain, tagged = _tagged_sample(False).render(), _tagged_sample(True).render()
+    a, b = pymupdf.open(stream=plain), pymupdf.open(stream=tagged)
+    assert [p.get_pixmap(dpi=40).samples for p in a] == [p.get_pixmap(dpi=40).samples for p in b]
+    assert [p.get_text() for p in a] == [p.get_text() for p in b]
+    import pikepdf
+    assert "/StructTreeRoot" not in pikepdf.open(io.BytesIO(plain)).Root      # off unless asked for
+
+
+def test_running_heads_and_feet_are_artifacts():
+    pytest.importorskip("pikepdf")
+    import pikepdf
+    pdf = pikepdf.open(io.BytesIO(_tagged_sample().render()))
+    ops = [(str(op), operands) for operands, op in pikepdf.parse_content_stream(pdf.pages[0])]
+    assert any(op == "BMC" and str(o[0]) == "/Artifact" for op, o in ops)
+
