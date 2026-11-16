@@ -74,9 +74,18 @@ def _squash(text: str) -> str:
     return " ".join(text.split())
 
 
+def _as_set(text: str, ledger: ContentLedger) -> str:
+    """The visible text of an author string: a ``{ref:id}`` reads as its label."""
+    if "{ref:" in text and ledger.refs:
+        from ..core.numbering import REF
+        labels = dict(ledger.refs)
+        text = REF.sub(lambda m: labels.get(m.group(1), m.group(0)), text)
+    return plain_text(text)
+
+
 def _shown(ledger: ContentLedger) -> List[tuple]:
     """Block type, kind and visible text of what readers are meant to see."""
-    return [(e.block_type, e.kind, _squash(plain_text(e.text))) for e in ledger.entries
+    return [(e.block_type, e.kind, _squash(_as_set(e.text, ledger))) for e in ledger.entries
             if e.block_type in _SHOWN_TYPES and e.kind not in _HIDDEN_KINDS]
 
 
@@ -110,7 +119,7 @@ def check_fragments(ledger: ContentLedger, geometry) -> LayerResult:
         if not pieces:
             unsure.append(f"block {e.block}: no text fragments were recorded")
             continue
-        got, want = pieces[-1][2], _set_length(plain_text(e.text))
+        got, want = pieces[-1][2], _set_length(_as_set(e.text, ledger))
         if abs(got - want) <= len(pieces):
             continue
         message = f"block {e.block}: {got} characters placed, {want} in the source"

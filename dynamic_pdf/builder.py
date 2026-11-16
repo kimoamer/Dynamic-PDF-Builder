@@ -466,6 +466,12 @@ class DocumentBuilder:
         self._meta.section_numbering = enabled
         return self
 
+    def exhibit_numbering(self, enabled: bool = True) -> 'DocumentBuilder':
+        """Number captioned tables and figures ("Table 1", "Figure 2"). A ``{ref:id}`` in the
+        text, or a list of figures or tables, turns it on as well."""
+        self._meta.exhibit_numbering = enabled
+        return self
+
     def encrypt(self, owner_password: str, user_password: str = "") -> 'DocumentBuilder':
         """Enable PDF password protection (requires pikepdf)."""
         self._meta.encrypt = True
@@ -843,6 +849,16 @@ class DocumentBuilder:
         self._blocks.append(TOCBlock(depth=depth, style=style))
         return self
 
+    def list_of_figures(self) -> 'DocumentBuilder':
+        """A list of the numbered figures, each linked to its caption. Turns numbering on."""
+        self._blocks.append(TOCBlock(kind="figures"))
+        return self
+
+    def list_of_tables(self) -> 'DocumentBuilder':
+        """A list of the numbered tables, each linked to its caption. Turns numbering on."""
+        self._blocks.append(TOCBlock(kind="tables"))
+        return self
+
     # Alias
     toc = table_of_contents
 
@@ -1070,6 +1086,8 @@ class DocumentBuilder:
             builder.document_type(fm["document_type"])
         if fm.get("direction") in ("ltr", "rtl"):
             builder.direction(fm["direction"])
+        if str(fm.get("numbering", "")).lower() in ("true", "yes", "1"):
+            builder._meta.exhibit_numbering = True
         builder.front_matter = fm
         builder._source_kind = "markdown"
         builder._source_text = markdown

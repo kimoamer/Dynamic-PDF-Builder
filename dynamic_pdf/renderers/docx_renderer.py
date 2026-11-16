@@ -429,6 +429,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         if not (self.rtl_doc or is_rtl_text(full)):
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         self._runs(p, full)
+        return p
 
     def _boxed(self, container, fill: str, bar: Optional[str] = None):
         """A single-cell table used as a framed container (callouts, abstracts)."""
@@ -679,10 +680,14 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
 
     def _table(self, c, b, hints):
         size = hints.get("font_size")
-        if b.caption or b.table_number:
-            label = f"Table {b.table_number}" if b.table_number else ""
+        from ..core.numbering import exhibit_label
+        label, anchor = exhibit_label(b)
+        if b.caption or label:
+            label = label or ""
             full = f"{label}: {b.caption}" if (label and b.caption) else (b.caption or label)
             p = self._para(c, "Caption", full)
+            if anchor:
+                F.add_bookmark(p, F.bookmark_name(anchor), self.bm)
             p.alignment = None if (self.rtl_doc or is_rtl_text(full)) else WD_ALIGN_PARAGRAPH.LEFT
             p.paragraph_format.keep_with_next = True
             p.paragraph_format.space_after = Pt(3)
@@ -903,9 +908,12 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
     def _figure_caption(self, c, b):
         from ..i18n import label as _i18n
         lang = "ar" if self.rtl_doc else self.sem.language
-        if b.caption or b.figure_number:
-            label = f"{_i18n('figure', lang)} {b.figure_number}" if b.figure_number else ""
-            self._caption(c, label, b.caption)
+        from ..core.numbering import exhibit_label
+        label, anchor = exhibit_label(b)
+        if b.caption or label:
+            p = self._caption(c, label or "", b.caption)
+            if anchor and p is not None:
+                F.add_bookmark(p, F.bookmark_name(anchor), self.bm)
         if b.source:
             self._caption(c, "", f"{_i18n('source', lang)}: {b.source}")
 
@@ -1397,6 +1405,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         self._page_break(c)
 
     def _b_table_of_contents(self, c, b):
+        if getattr(b, "kind", "contents") != "contents":
+            return self._exhibit_list(c, b)
         title = self._label("toc")
         p = self._para(c, "TOC Heading", title)
         self._runs(p, title)
@@ -1421,6 +1431,22 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                 p.style = self.doc.styles[f"TOC {min(o.level, 3)}"]
             F.add_hyperlink(p, f"#{o.id}", text)
         F.end_field(first if not entries else p)
+        self._page_break(c)
+
+    def _exhibit_list(self, c, b):
+        """A list of figures or tables: each caption, linked to it. Word cannot rebuild it
+        from these captions, so it is written out rather than as a field."""
+        from ..core.numbering import current
+        from ..i18n import label as _i18n
+        kind = "figure" if b.kind == "figures" else "table"
+        title = self._label("lof" if kind == "figure" else "lot")
+        p = self._para(c, "TOC Heading", title)
+        self._runs(p, title)
+        num = current()
+        for ex in (num.listed(kind) if num else []):
+            text = f"{_i18n(kind, num.language)} {ex.number}" + (f": {ex.caption}" if ex.caption else "")
+            p = self._para(c, "Normal", text)
+            F.add_hyperlink(p, f"#{ex.anchor}", text)
         self._page_break(c)
 
     def _b_page_break(self, c, b):
@@ -1502,6 +1528,8 @@ def render_docx(sem: SemanticDocument, theme: Theme, policy=None):
     from ..policy import DiagnosticCollector, RenderPolicy
     col = DiagnosticCollector(policy or RenderPolicy())
     _policy.check_limit("Block count", len(sem.blocks), col.policy.limits.max_blocks)
+    from ..core.numbering import number_document
+    col.numbering = number_document(sem)          # table and figure numbers, {ref:id}
     token = _policy.activate(col)
     try:
         renderer = DocxRenderer(sem, theme, col)

@@ -13,7 +13,7 @@ from ..schema.blocks import (
     HeadingBlock, ParagraphBlock, CodeBlock, BulletListBlock, NumberedListBlock,
     ImageBlock, MathBlock, MermaidBlock, TableBlock, QuoteBlock, DividerBlock,
     CalloutBlock, ChecklistBlock, ChecklistItem, DefinitionListBlock, DefinitionItem,
-    FootnoteBlock,
+    FootnoteBlock, TOCBlock,
 )
 
 
@@ -47,7 +47,14 @@ def split_front_matter(md_text: str) -> Tuple[Dict[str, object], str]:
 def parse_markdown(md_text: str) -> Tuple[Dict[str, object], list]:
     """Parse Markdown into ``(front_matter, blocks)``."""
     front_matter, body = split_front_matter(md_text)
-    return front_matter, _parse_body(body)
+    blocks = _parse_body(body)
+    numbered = False
+    for b in blocks:
+        if b.type == "table" and b.hints and b.hints.pop("table_caption", None):
+            numbered, b.hints = True, b.hints or None
+    if numbered:
+        front_matter.setdefault("numbering", "true")     # "Table: ..." asks for numbered tables
+    return front_matter, blocks
 
 
 def markdown_to_blocks(md_text: str) -> list:
@@ -73,8 +80,8 @@ def _parse_body(md_text: str) -> list:
         if t.type == "heading_open":
             level = int(t.tag[1])
             idx += 1
-            content = _collect_inline(tokens, idx)
-            blocks.append(HeadingBlock(level=level, text=content))
+            content, anchor = _attr_id(_collect_inline(tokens, idx))
+            blocks.append(HeadingBlock(level=level, text=content, id=anchor))
             idx += 1  # heading_close
 
         # ─── Paragraphs ───
@@ -85,12 +92,14 @@ def _parse_body(md_text: str) -> list:
             # Image-only paragraph (the *whole* paragraph must be the image,
             # otherwise surrounding text would be lost)
             if content.startswith("!["):
-                img_match = re.fullmatch(r'\s*!\[([^\]]*)\]\(([^)\s]+?)(?:\s+"([^"]*)")?\)\s*', content)
+                img_text, anchor = _attr_id(content)
+                img_match = re.fullmatch(r'\s*!\[([^\]]*)\]\(([^)\s]+?)(?:\s+"([^"]*)")?\)\s*', img_text)
                 if img_match:
                     blocks.append(ImageBlock(
                         src=img_match.group(2),
                         caption=img_match.group(3) or img_match.group(1) or None,
                         alt_text=img_match.group(1) or None,
+                        id=anchor,
                     ))
                     idx += 2
                     continue
@@ -126,6 +135,22 @@ def _parse_body(md_text: str) -> list:
                 idx += 2
                 continue
             content = content.replace(_FN_DEF_SENTINEL, "[^")
+
+            # [TOC], [LOF], [LOT]: a contents page, a list of figures, a list of tables
+            listing = {"[TOC]": "contents", "[LOF]": "figures", "[LOT]": "tables"}.get(content.strip())
+            if listing:
+                blocks.append(TOCBlock(kind=listing))
+                idx += 2
+                continue
+
+            # "Table: caption {#id}" right after a table is that table's caption (Pandoc's form)
+            cap = _TABLE_CAPTION.match(content)
+            if cap and blocks and blocks[-1].type == "table" and not blocks[-1].caption:
+                caption, anchor = _attr_id(cap.group(1))
+                blocks[-1].caption, blocks[-1].id = caption, anchor or blocks[-1].id
+                blocks[-1].hints = {"table_caption": True}
+                idx += 2
+                continue
 
             # Definition list: term\n: definition
             if '\n: ' in content or content.startswith(': '):
@@ -193,6 +218,16 @@ def _parse_body(md_text: str) -> list:
         idx += 1
 
     return blocks
+
+
+_TABLE_CAPTION = re.compile(r"^Table:\s+(\S.*)$", re.S)
+_ATTR_ID = re.compile(r"\s*\{#([A-Za-z][\w:.-]*)\}\s*$")
+
+
+def _attr_id(text: str):
+    """("text", "id") from "text {#id}", Pandoc's attribute for an anchor."""
+    m = _ATTR_ID.search(text)
+    return (text[:m.start()], m.group(1)) if m else (text, None)
 
 
 _FIELD_LINE = re.compile(r"^\s*[^\W\d_][\w .'/&-]{0,30}?:[ \t]+\S")

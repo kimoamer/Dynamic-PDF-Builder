@@ -302,7 +302,7 @@ def drop_short_contents(sem: SemanticDocument, plan: DesignPlan) -> None:
     pages = lp.measured_pages - 1                 # the inserted contents page ends with a page break
     if pages >= MIN_CONTENTS_PAGES:
         return
-    sem.blocks = [b for b in sem.blocks if b.type != "table_of_contents"]
+    sem.blocks = [b for b in sem.blocks if not (b.type == "table_of_contents" and b.kind == "contents")]
     plan.toc_inserted = False
     note = (f"{pages} page{'s' if pages != 1 else ''} of content measured: no contents page "
             f"under {MIN_CONTENTS_PAGES} pages unless the author adds one")

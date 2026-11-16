@@ -96,6 +96,9 @@ def parse_inline(text: str) -> List[TextRun]:
     """Parse inline Markdown into a flat list of styled runs (lossless text)."""
     if not text:
         return []
+    from .numbering import resolve_refs
+    # {ref:id} reads "Table 2" (linked) while a document is rendered; otherwise it stays as written
+    text = resolve_refs(text, lambda label, anchor: f"[{_md_escape(label)}](#{anchor})" if anchor else label)
     out: List[TextRun] = []
     # Markdown decides what a newline means: a soft break inside a paragraph is a space
     # (text wrapped by an editor), a hard break ("  " or "\" before it) is a new line. A
@@ -146,6 +149,10 @@ def parse_inline(text: str) -> List[TextRun]:
                 if tok.content:
                     out.append(TextRun(text=tok.content, **style))
     return _merge(out)
+
+
+def _md_escape(text: str) -> str:
+    return re.sub(r"([\\`*_\[\]<>])", r"\\\1", text)
 
 
 def _merge(runs: List[TextRun]) -> List[TextRun]:

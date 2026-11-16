@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 
 from ..core.content_ledger import build_content_ledger
 from ..core.keywords import keywords, pattern
+from ..core.numbering import uses_numbering
 from ..core.table_types import read_cell
 from ..core.normalize import SemanticDocument, is_rtl_text
 from ..fonts.manager import covering_face
@@ -607,6 +608,7 @@ def _compose(sem, d: Direction, primary: str, adjust: Adjust, plan: ArtDirection
         return
     blocks, out, i = sem.blocks, [], 0
     panels, since_panel, appendix = 0, MIN_PANEL_GAP, False
+    numbered = uses_numbering(sem)            # a numbered table keeps its number and its anchor
     while i < len(blocks):
         b = blocks[i]
         since_panel += 1
@@ -631,7 +633,7 @@ def _compose(sem, d: Direction, primary: str, adjust: Adjust, plan: ArtDirection
             plan.decisions.append(f"paired columns: {len(rows)} paragraphs in two languages, row by row")
             i = j
             continue
-        if e.get("ledger_tables") and b.type == "table":
+        if e.get("ledger_tables") and b.type == "table" and not numbered:
             made = _ledger(b)
             if made:
                 out.append(made)

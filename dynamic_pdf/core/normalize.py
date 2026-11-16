@@ -289,7 +289,7 @@ def normalize(document: Document, *, source_kind: str = "api",
             stats.bibliography_entries += len(b.entries)
         elif t == "cover_page":
             stats.has_cover = True
-        elif t == "table_of_contents":
+        elif t == "table_of_contents" and getattr(b, "kind", "contents") == "contents":
             stats.has_toc = True
         elif t == "abstract":
             stats.has_abstract = True
