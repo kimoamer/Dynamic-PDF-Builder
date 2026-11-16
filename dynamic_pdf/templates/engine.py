@@ -75,8 +75,8 @@ def _records(value, name: str):
     if not isinstance(value, (list, tuple)):
         raise TemplateError(f"'{name}' is not a list of records")
     if value and all(isinstance(r, (list, tuple)) for r in value):
-        headers, body = [str(h) for h in value[0]], [list(r) for r in value[1:]]
-        return headers, body
+        headers = [str(h) for h in value[0]]
+        return headers, [list(r) + [""] * (len(headers) - len(r)) for r in value[1:]]
     headers: List[str] = []
     for r in value:
         if not isinstance(r, dict):
@@ -95,7 +95,7 @@ def _f_table(value, name):
         raise TemplateError(f"'{name}' has no columns to make a table")
     row = lambda cells: "| " + " | ".join(escape_markdown(_cell(c)) or " " for c in cells) + " |"
     lines = [row(headers), "| " + " | ".join("---" for _ in headers) + " |"]
-    lines += [row(r + [""] * (len(headers) - len(r))) for r in body]
+    lines += [row(r) for r in body]
     return Raw("\n".join(lines))
 
 

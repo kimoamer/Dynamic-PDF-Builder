@@ -65,10 +65,14 @@ def render_document(template: str, context: dict, kind: Optional[str] = None, th
         raise ValueError(f"kind must be 'markdown' or 'json', got {kind!r}")
     if kind == "markdown":
         return DocumentBuilder.from_markdown(render_template(template, context), theme=theme, policy=policy)
+    return builder_from_payload(render_json_template(json.loads(template), context), theme, policy)
+
+
+def builder_from_payload(payload: dict, theme: Optional[str] = None, policy=None):
+    """A ``DocumentBuilder`` for a JSON document (the ``Document`` schema)."""
+    from ..builder import DocumentBuilder
     from ..schema.document import Document
-    payload = render_json_template(json.loads(template), context)
-    if theme:
-        payload["theme"] = theme
+    payload = dict(payload, theme=theme) if theme else payload
     doc = Document.model_validate(payload)
     b = DocumentBuilder(theme=doc.theme, policy=policy)
     b._meta, b._blocks = doc.meta, list(doc.blocks)
@@ -117,4 +121,4 @@ def render_batch(template: str, records: Sequence[Any], out_dir: str, kind: Opti
     return results
 
 
-__all__ = ["load_data", "load_context", "render_document", "render_batch", "XLSX_HINT"]
+__all__ = ["load_data", "load_context", "render_document", "builder_from_payload", "render_batch", "XLSX_HINT"]
