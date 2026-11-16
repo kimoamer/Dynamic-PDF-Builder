@@ -167,3 +167,13 @@ def test_no_contents_page_under_four_pages_in_art_directions():
     for d in DIRECTIONS.values():
         out = direct(sem, d)
         assert not any(x.type == "table_of_contents" for x in out.document.blocks), d.id
+
+
+def test_a_contents_block_adds_no_author_text_to_the_ledger():
+    # its kind ("contents", "figures", "tables") is a choice, not text; a design that adds
+    # a contents page was rejected as having added the word "contents"
+    from dynamic_pdf import DocumentBuilder
+    from dynamic_pdf.core.content_ledger import build_content_ledger
+    plain = DocumentBuilder().heading("Scope").paragraph("Every asset was inspected.")
+    listed = DocumentBuilder().table_of_contents().heading("Scope").paragraph("Every asset was inspected.")
+    assert build_content_ledger(listed.build()).strings() == build_content_ledger(plain.build()).strings()
