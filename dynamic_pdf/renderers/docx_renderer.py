@@ -423,6 +423,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
 
     def _picture(self, container, data: bytes, alt: str, max_width_pt: Optional[float] = None,
                  width_pt: Optional[float] = None, align: str = "center"):
+        from docx.image.exceptions import UnrecognizedImageError
         from PIL import Image as PILImage
         with PILImage.open(io.BytesIO(data)) as im:
             wpx, hpx = im.size
@@ -438,7 +439,16 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         p = self._para(container)
         p.alignment = {"left": WD_ALIGN_PARAGRAPH.LEFT, "right": WD_ALIGN_PARAGRAPH.RIGHT}.get(
             align, WD_ALIGN_PARAGRAPH.CENTER)
-        shape = p.add_run().add_picture(io.BytesIO(data), width=Pt(target))
+        run = p.add_run()
+        try:
+            shape = run.add_picture(io.BytesIO(data), width=Pt(target))
+        except UnrecognizedImageError:
+            # python-docx reads a JPEG's size from a JFIF or Exif header and refuses one with neither,
+            # as many cameras and web thumbnails write; the same picture is written again with one
+            with PILImage.open(io.BytesIO(data)) as im:
+                buf, jpeg = io.BytesIO(), im.format == "JPEG"
+                (im.convert("RGB") if jpeg else im).save(buf, "JPEG" if jpeg else "PNG", **({"quality": 92} if jpeg else {}))
+            shape = run.add_picture(io.BytesIO(buf.getvalue()), width=Pt(target))
         F.set_alt_text(shape, alt or "image")
         p.paragraph_format.keep_with_next = True
         return p

@@ -147,6 +147,29 @@ Found on the way: `arabic_health_data` has no valid design at all (stranded head
 charts, in every direction). It is the same on `main`, and it is a defect of the engine, not of
 selection.
 
+**Run (2026-11-16): done in part.** 62 documents (the three repository sets and 14 Wikipedia
+articles), 263 designs, 438 pairs, each judged in both orders by two models from page images:
+1,751 answers for $23.36. 242 comparisons are usable (55%), 62 of them held out over 17
+documents. The owner delegated the audit to the session assistant: 24 blind decisions, recorded
+as AI rows; on the 12 that were usable comparisons the judges gave the same answer 11 times, and
+taken alone the judges matched it on 17 and 14 of 23. The preflight reports ready with two
+waivers named in its result (that audit in place of people, and no Word pages).
+
+| Asked | Reached |
+| --- | --- |
+| 400 usable, 150 held out over 10 documents | 242 usable, 62 held out over 17 documents |
+| Half or more of the judged comparisons usable | 55% |
+| Judges agree with the anchor on 70% | 92% on usable comparisons (11 of 12); 74% and 61% judge by judge |
+| Pages at least 1,000 px wide | 640 px, to stay inside the budget |
+| 60 human decisions; Word pages | 24 delegated AI decisions; none (both waived by the owner or not available) |
+
+Not done: the cover control, the sanity pairs and the owner's own documents. 36 more English
+articles are rendered with 336 sheets drawn (batches b15 to b22) and were not judged, because the
+API account ran out of credit; they would take the held-out comparisons past 150 for about $10.
+
+Found on the way and fixed in the engine: a JPEG without a JFIF or Exif header stopped the DOCX
+(21 of 36 real articles had one), and crossed emphasis (`**a *b** c*`) stopped the whole PDF.
+
 ### M18. A first model through an honest gate (S to M)
 
 - **The ladder stays:** fixed selector, then calibrated monotone weights, then LightGBM, kept
@@ -177,6 +200,21 @@ selection.
 
 Done when: the gate passes and the model ships in the wheel under 200 KB with its record; or
 it fails, and the report names the check and the data that would change it.
+
+**Run (2026-11-16): trained, not admitted.** On the 62 held-out comparisons the fixed selector
+agrees with the judges on 56%, the monotone weights on 79% and the monotone booster on 84% (its
+gain's low bound when documents are resampled is +0.13; cross-validated on training families it
+agrees on 78%). The weights never became sure enough to overrule the fixed choice. The booster
+overruled it on 9 of 17 evaluation documents: the judges preferred its choice 4 times, the fixed
+choice twice, and did not agree 3 times. Every check of the booster's gate passes but one: 150
+held-out comparisons are asked and there are 62. So no model is packaged, `ranker="auto"` still
+finds none, and output is unchanged. The record is in
+`training/ai_preferences_v2/model-results.json`.
+
+What would change it: judging batches b15 to b22 (rendered and waiting), then training again.
+Also not done from the list above: reference typicality, per-criterion models, sanity pairs. The
+booster's reasons lean on `last_page_words` more than on any other fact, which should be looked
+at before it is trusted.
 
 ### M19. On by default, and one score everywhere (M)
 

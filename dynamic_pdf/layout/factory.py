@@ -371,7 +371,38 @@ def _md_inline(text: str) -> str:
     text = re.sub(r'\x00(\d+)\x00',
                   lambda m: f'<font face="Courier" size="9" backColor="#E8E8E8">{codes[int(m.group(1))]}</font>',
                   text)
-    return re.sub(r'\x01(\d+)\x01', lambda m: escapes[int(m.group(1))], text)
+    return _nest(re.sub(r'\x01(\d+)\x01', lambda m: escapes[int(m.group(1))], text))
+
+
+_TAG = re.compile(r"<(/?)([a-zA-Z]+)[^<>]*?(/?)>")
+
+
+def _nest(markup: str) -> str:
+    """Tags that cross are closed and opened again so that they nest: ``**a *b** c*`` gives
+    ``<b>a <i>b</b> c</i>``, which ReportLab refuses, and one such paragraph stopped the whole
+    document. Every tag here is ours (author text is escaped), so a stack is enough."""
+    out, stack, pos = [], [], 0
+    for m in _TAG.finditer(markup):
+        out.append(markup[pos:m.start()])
+        pos = m.end()
+        closing, name, empty = m.groups()
+        if empty:
+            out.append(m.group(0))
+        elif not closing:
+            stack.append((name, m.group(0)))
+            out.append(m.group(0))
+        elif any(n == name for n, _ in stack):
+            again = []
+            while stack[-1][0] != name:
+                again.append(stack.pop())
+                out.append(f"</{again[-1][0]}>")
+            stack.pop()
+            out.append(m.group(0))
+            for item in reversed(again):
+                stack.append(item)
+                out.append(item[1])
+        # a closing tag with nothing open is dropped
+    return "".join(out + [markup[pos:]] + [f"</{n}>" for n, _ in reversed(stack)])
 
 
 def _safe_color(h: str, fallback: str = "#000000") -> HexColor:

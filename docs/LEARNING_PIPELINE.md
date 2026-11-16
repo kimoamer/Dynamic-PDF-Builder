@@ -193,10 +193,25 @@ record's gate decides whether the model may load:
 | --- | --- |
 | Usable comparisons | 200 or more |
 | Training documents | 8 or more |
-| Evaluation documents | 3 or more, from a family unseen in training |
+| Evaluation documents | 10 or more, from families unseen in training |
+| Held-out comparisons | 150 or more |
 | Leakage | None between training and evaluation documents |
 | Learned against the deterministic selector | At least 0.03 better on the evaluation documents |
+| The gain when evaluation documents are resampled | Its low 5% bound above zero |
 | Agreement with held-out comparisons | At least 0.60 |
+| Overrides on evaluation documents | Judges preferred the model's choice to the fixed one in 60% or more of those they agreed on |
+| Languages | None with 10 or more held-out comparisons more than 0.10 worse than the fixed selector |
+
+The booster is held to the known direction of a fact (more fit never counts against a design), and
+its number of trees and its `override_threshold` are chosen on training documents only, by leaving
+whole families out in turn.
+
+The second dataset (`training/ai_preferences_v2`, read with `--config config/design-learning-v2.json`)
+was judged from whole pages: `preferences review <batch> --judge A --judge B --page-px 640` sends
+every page as its own image. Its documents come from `tools/design_learning/corpus.py`. The
+preflight can take two waivers by the owner's decision, `--delegated-audit FILE` (an AI reviewer's
+blind audit in place of the 20 human decisions) and `--pdf-only` (no Word-verified pages); each is
+named in the model's record. See `training/ai_preferences_v2/README.md` for what was measured.
 
 Finishing training is not a pass. The ranker only reorders designs that already passed the hard
 QA gates. A model that fails any check, is altered or is missing leaves the deterministic selector

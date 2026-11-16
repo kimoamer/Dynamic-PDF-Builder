@@ -222,6 +222,798 @@
    ]
   },
   {
+   "name": "wiki_en_11",
+   "language": "en",
+   "title": "Lighthouse",
+   "url": "https://en.wikipedia.org/wiki/Lighthouse",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1343,
+   "text_sha256": "b02d4fcba59aacb43536ef2db0d9b535cb6c31a1ed8b778856036c993f931ce4",
+   "pictures": [
+    {
+     "commons": "Aerial photograph 60D 2012 05 13 8760 DxO retusche.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Aerial_photograph_60D_2012_05_13_8760_DxO_retusche.jpg",
+     "sha256": "a66aabd2d1f71ba1e675b3ec1ab54bea62af8dd215edea2dc2f1124fb7624f0c"
+    },
+    {
+     "commons": "NJ LBI Lighthouse 04.JPG",
+     "page": "https://commons.wikimedia.org/wiki/File:NJ_LBI_Lighthouse_04.JPG",
+     "sha256": "460325b02b929abc9b07825a88166555aed986909fad94181788d6be669a7e3f"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_12",
+   "language": "en",
+   "title": "Glacier",
+   "url": "https://en.wikipedia.org/wiki/Glacier",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1442,
+   "text_sha256": "c1093c5d423949c52a545019dac8c9da40595eb3310aaea43f729761c2d65b23",
+   "pictures": [
+    {
+     "commons": "Geikie Plateau Glacier.JPG",
+     "page": "https://commons.wikimedia.org/wiki/File:Geikie_Plateau_Glacier.JPG",
+     "sha256": "48b3d3115162c2a9150d22f4bab1907e9478e690f3e97000f1037c03b901fcea"
+    },
+    {
+     "commons": "Wildspitze seen from Hinterer Brunnkogel, with visible ascent track of ski mountaineer.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Wildspitze_seen_from_Hinterer_Brunnkogel%2C_with_visible_ascent_track_of_ski_mountaineer.jpg",
+     "sha256": "72efcd0faffb37fb1c6c93e9a8456f0ed81d6e0d2e732e4040ac960afb823e29"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_13",
+   "language": "en",
+   "title": "Paper",
+   "url": "https://en.wikipedia.org/wiki/Paper",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1416,
+   "text_sha256": "ce574505484ae6eaf9560a06700453c750ebb5164fd2488d637bf7c6200375bc",
+   "pictures": [
+    {
+     "commons": "Chinese hemp paper western han.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Chinese_hemp_paper_western_han.jpg",
+     "sha256": "6496f6a810545ec95899726fbc4354391a70ca24be9cef16b4dd3a1a691ef3b5"
+    },
+    {
+     "commons": "PaperAutofluorescence.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:PaperAutofluorescence.jpg",
+     "sha256": "71cffbadd8050494b595c71b90c04f7c7ea04f034352dbbd1c77fca8b84c955d"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_14",
+   "language": "en",
+   "title": "Silk Road",
+   "url": "https://en.wikipedia.org/wiki/Silk_Road",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1339,
+   "text_sha256": "0cc781e66d7c985c40728f690a66b33bbaf676bc948dcc565498e290480fda35",
+   "pictures": [
+    {
+     "commons": "Woven silk, Western Han Dynasty.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Woven_silk%2C_Western_Han_Dynasty.jpg",
+     "sha256": "df663cc3fb9260a74d2752b1505aae7cadf28ded5d90f804bc896531c8c25617"
+    },
+    {
+     "commons": "SeidenstrasseGMT.JPG",
+     "page": "https://commons.wikimedia.org/wiki/File:SeidenstrasseGMT.JPG",
+     "sha256": "efb558daa5f1c41ac526b1767a4a2d41211f865ec2869c6c434a0e1b3cdc7269"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_15",
+   "language": "en",
+   "title": "Olive",
+   "url": "https://en.wikipedia.org/wiki/Olive",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1402,
+   "text_sha256": "46a59b51588a42bb8aba88480e4d4247fd8fd09ac692cff2aa8ed97afc581873",
+   "pictures": [
+    {
+     "commons": "Olive trees A-3176 1.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Olive_trees_A-3176_1.jpg",
+     "sha256": "010b961b5683976bec98200b679d75d4b2f4b237ced24e1c857956d6880f33ee"
+    },
+    {
+     "commons": "Olive Grove prunings in neat rows. Ostuni, Puglia.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Olive_Grove_prunings_in_neat_rows._Ostuni%2C_Puglia.jpg",
+     "sha256": "3b18215230488b26d2cfb22072d242f2c960a8b43155a2221c675c3423ce6135"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_16",
+   "language": "en",
+   "title": "Camel",
+   "url": "https://en.wikipedia.org/wiki/Camel",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1362,
+   "text_sha256": "664ac1bad34cf891de8011b08f60c642f263393563811c6a7d1fe79451515bfc",
+   "pictures": [
+    {
+     "commons": "Teve 3.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Teve_3.jpg",
+     "sha256": "4d3f36dc4304b7f2da71bbf0a84367688c434b5a3db6c35dc5e99067ae23426e"
+    },
+    {
+     "commons": "Camel portrait.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Camel_portrait.jpg",
+     "sha256": "698e80806bcb8ff0b5f022f391ac35a62746341eea886d59610bf405c3556d89"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_17",
+   "language": "en",
+   "title": "Telescope",
+   "url": "https://en.wikipedia.org/wiki/Telescope",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1372,
+   "text_sha256": "78bf11a2ef70728b3f7c4e6a9e761b4e0a5f21e97aa927258d583647dc1fac6d",
+   "pictures": [
+    {
+     "commons": "100inchHooker.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:100inchHooker.jpg",
+     "sha256": "099c273feff4b6b88d29e6b928afd434071d8bb645c279b0bcdb803db1528047"
+    },
+    {
+     "commons": "Large 1923 0668 0003 .jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Large_1923_0668_0003_.jpg",
+     "sha256": "be992b6d8787b0b383be31a25cd7936d6b347d0a183205235f88cc197b630ec2"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_18",
+   "language": "en",
+   "title": "Compass",
+   "url": "https://en.wikipedia.org/wiki/Compass",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1346,
+   "text_sha256": "c02a56724ced52a220960b75b1a9cf0d6997baa54f068a8bc93bbeaca9c3359b",
+   "pictures": [
+    {
+     "commons": "2016 Busola.JPG",
+     "page": "https://commons.wikimedia.org/wiki/File:2016_Busola.JPG",
+     "sha256": "b94871bd45077f023a9dbf1f99c8d636e711d9b3610f276a4fc4b2b6c1a16862"
+    },
+    {
+     "commons": "Model Si Nan of Han Dynasty.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Model_Si_Nan_of_Han_Dynasty.jpg",
+     "sha256": "dd64a3ad105cad032534f4552ab0adce1b09b87015749e3b6e41e7dc35fa1212"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_19",
+   "language": "en",
+   "title": "Bread",
+   "url": "https://en.wikipedia.org/wiki/Bread",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1351,
+   "text_sha256": "1f5f2d84e75c6df8821f8dfd74ee92a5b31ea45f027b385647eec749a90a1167",
+   "pictures": [
+    {
+     "commons": "Woman baking bread-E 25213-IMG 4514-gradient.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Woman_baking_bread-E_25213-IMG_4514-gradient.jpg",
+     "sha256": "7f75ba1ada4d802862e7b408aff5c8d360d03e7d855bdfbffda8112e1cd13d86"
+    },
+    {
+     "commons": "Small home made bread with pumpkin and sunflower seeds.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Small_home_made_bread_with_pumpkin_and_sunflower_seeds.jpg",
+     "sha256": "a7196511145adf79c27d989fbf86ccbdc6db29bb727f7efe8408c4fde6ee44c4"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_20",
+   "language": "en",
+   "title": "Rice",
+   "url": "https://en.wikipedia.org/wiki/Rice",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1401,
+   "text_sha256": "114ab6ae6951a04ef01031a87676af375a3c9bf3fb96217b019f5122f8fd1465",
+   "pictures": [
+    {
+     "commons": "20201102.Hengnan.Hybrid rice Sanyou-1.6.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:20201102.Hengnan.Hybrid_rice_Sanyou-1.6.jpg",
+     "sha256": "badaf73967aee6443abdec626e5efe77892aaa53966de5fe36f56416e476389a"
+    },
+    {
+     "commons": "Rice grains (IRRI).jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Rice_grains_%28IRRI%29.jpg",
+     "sha256": "3a848b16bacc4f7cde69813c79f93379ee6a91d2d51cb227f869d4be6c0ea4f3"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_21",
+   "language": "en",
+   "title": "Tea",
+   "url": "https://en.wikipedia.org/wiki/Tea",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1524,
+   "text_sha256": "a81e38458106828b80cd3b629c4144d7df4fd6bb6de62d687f24c4781c9730ee",
+   "pictures": [
+    {
+     "commons": "Camellia sinensis - Köhler–s Medizinal-Pflanzen-025.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Camellia_sinensis_-_K%C3%B6hler%E2%80%93s_Medizinal-Pflanzen-025.jpg",
+     "sha256": "0186f61e0dbe153a3eea0db4665689e8a3d18edb9d38a7309ad7469fc19ad43d"
+    },
+    {
+     "commons": "Shinno (Shennong) derivative.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Shinno_%28Shennong%29_derivative.jpg",
+     "sha256": "f42e31a10d84687a937c6a13575de55ccca72c4ee5a376be00473fa6b465de6e"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_22",
+   "language": "en",
+   "title": "Salt",
+   "url": "https://en.wikipedia.org/wiki/Salt",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1453,
+   "text_sha256": "2728bafbcf3833082276bb8cbc717822582e8aec40b2a56767b76cafa372ca36",
+   "pictures": [
+    {
+     "commons": "Rock salt (halitite) (Billianwala Salt Member, Salt Range Formation, Ediacaran to Lower Cambrian; Khewra Salt Mine, Salt Range, Pakistan) 14.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Rock_salt_%28halitite%29_%28Billianwala_Salt_Member%2C_Salt_Range_Formation%2C_Ediacaran_to_Lower_Cambrian%3B_Khewra_Salt_Mine%2C_Salt_Range%2C_Pakistan%29_14.jpg",
+     "sha256": "7db9abf273c8e4227fb2f61ddf9380af376cf757e2733b1ddf994c16dc8fe7e9"
+    },
+    {
+     "commons": "Salzproduktion-Halle.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Salzproduktion-Halle.jpg",
+     "sha256": "60920dd3dd51e7baa18f6d5121c5d9ddef2cc694983fe2dc9799a8d686a1e9e4"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_23",
+   "language": "en",
+   "title": "Glass",
+   "url": "https://en.wikipedia.org/wiki/Glass",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1383,
+   "text_sha256": "257917429caea084a2157efff1c6c6819f9d874000a6f1dd59d926c32ed3f678",
+   "pictures": [
+    {
+     "commons": "Fassade Wilhelmstrasse 65, Berlin-Mitte, 160417, ako.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Fassade_Wilhelmstrasse_65%2C_Berlin-Mitte%2C_160417%2C_ako.jpg",
+     "sha256": "29902f5d20e9dca07b1acb6917687d970915af38974936b92c7d31707555aa39"
+    },
+    {
+     "commons": "Roman diatretglas.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Roman_diatretglas.jpg",
+     "sha256": "04d403c1c3931cd84ea83306d872fd7541646541974681d61b4ac60913ef8491"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_24",
+   "language": "en",
+   "title": "Cement",
+   "url": "https://en.wikipedia.org/wiki/Cement",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1354,
+   "text_sha256": "aa9243b45e9dc0e8ab6afbe24fe43f76ca6602b5935e10fed80da3346283da17",
+   "pictures": [
+    {
+     "commons": "USMC-110806-M-IX060-148.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:USMC-110806-M-IX060-148.jpg",
+     "sha256": "467e1d94f5c7c928faa804f4f6c98afc264ba9e0452ed5031afece26467830ca"
+    },
+    {
+     "commons": "LDClinkerScaled.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:LDClinkerScaled.jpg",
+     "sha256": "3945fd309923857bcfe459ef030f25d7d738cc40b3fe14474fb305b0a2614b18"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_25",
+   "language": "en",
+   "title": "Wind power",
+   "url": "https://en.wikipedia.org/wiki/Wind_power",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1332,
+   "text_sha256": "e4a228f21e6f6d1fd2744c5b2b12997beb5e79da4114d74405bfdea301372dcd",
+   "pictures": [
+    {
+     "commons": "Wind power plants in Xinjiang, China.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Wind_power_plants_in_Xinjiang%2C_China.jpg",
+     "sha256": "e7efec0e64fcb9896555424f916a6a30a906668cf8c89f4a788989c07281c2bd"
+    },
+    {
+     "commons": "Mean Wind Speed.png",
+     "page": "https://commons.wikimedia.org/wiki/File:Mean_Wind_Speed.png",
+     "sha256": "5a31ff6e8137fda5ebf416163f9e812415b72d425a9f00a0858d3a2f8b554354"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_26",
+   "language": "en",
+   "title": "Irrigation",
+   "url": "https://en.wikipedia.org/wiki/Irrigation",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1367,
+   "text_sha256": "4e5a74ddde7740ef30cdea63f8e5480f58d171666614004524962860e825e242",
+   "pictures": [
+    {
+     "commons": "Fields SW from Sevilla.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Fields_SW_from_Sevilla.jpg",
+     "sha256": "7970584e0964fb8abc3087aa96284aa10b7052910e0fc044660d9ed1e27443b5"
+    },
+    {
+     "commons": "Bisse.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Bisse.jpg",
+     "sha256": "7a424b6b29cf3b0a460d80d0f4917c3ee7a9c2ee646b3c22079053859d316f9b"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_27",
+   "language": "en",
+   "title": "Desalination",
+   "url": "https://en.wikipedia.org/wiki/Desalination",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1396,
+   "text_sha256": "1c9eade85f4414d080b90dcaec0547e7f9efc5e4168321dc17566379cddfccbe",
+   "pictures": [
+    {
+     "commons": "Reverse osmosis desalination plant.JPG",
+     "page": "https://commons.wikimedia.org/wiki/File:Reverse_osmosis_desalination_plant.JPG",
+     "sha256": "367c3b333c2aed19524f542ee823fa7353aaac9c20bea7bb0c1627e9c7254642"
+    },
+    {
+     "commons": "PlantaSchemaNotional.png",
+     "page": "https://commons.wikimedia.org/wiki/File:PlantaSchemaNotional.png",
+     "sha256": "28ab8bb648c3514c6104a0e72da847664557224149f643b6bf15ece3259dd6c6"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_28",
+   "language": "en",
+   "title": "Rail transport",
+   "url": "https://en.wikipedia.org/wiki/Rail_transport",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1326,
+   "text_sha256": "46a820f5fe1ce3de33a258e2cda39fafab70d178fdc451377abb0ed4902de809",
+   "pictures": [
+    {
+     "commons": "Alaska Railroad oil train at Nenna.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Alaska_Railroad_oil_train_at_Nenna.jpg",
+     "sha256": "574dfdc5c72d4c0effb97fedba5f20c454d1b4f6f4c4beef5e18ffbcbb483a20"
+    },
+    {
+     "commons": "Berlin_Technikmuseum_Holzbahn.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Berlin_Technikmuseum_Holzbahn.jpg",
+     "sha256": "220c3d041fedc854391ee06cc208ad15869476c45107fa2d6eba91e746f0a39b"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_29",
+   "language": "en",
+   "title": "Bicycle",
+   "url": "https://en.wikipedia.org/wiki/Bicycle",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1425,
+   "text_sha256": "562a92f17cc93054f01e0dd6c6146e76c4d84e9cccef4b1e7b1bb6f85db1abaf",
+   "pictures": [
+    {
+     "commons": "Firefighter bicycle.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Firefighter_bicycle.jpg",
+     "sha256": "25000da5c94d73aff60dcfd39e5f160c26822c4feb05852fa89e700edef11f8d"
+    },
+    {
+     "commons": "A man riding an electric bicycle.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:A_man_riding_an_electric_bicycle.jpg",
+     "sha256": "c09567f117a95542df106e9e91f0a0c1f4470516aa7f1151ba97aa17fc10e763"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_30",
+   "language": "en",
+   "title": "Clock",
+   "url": "https://en.wikipedia.org/wiki/Clock",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1370,
+   "text_sha256": "938ab76271f443ed9c33803011e60828c744e709708ae7c0e308c72451ba02ed",
+   "pictures": [
+    {
+     "commons": "Pendulum clock by Jacob Kock, antique furniture photography, IMG 0931 edit.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Pendulum_clock_by_Jacob_Kock%2C_antique_furniture_photography%2C_IMG_0931_edit.jpg",
+     "sha256": "5453c8968b5f45f0c27f18b00cd47883781e3036e4ce7f61293dc3bb10ffee07"
+    },
+    {
+     "commons": "Casio F-91W 82T38575.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Casio_F-91W_82T38575.jpg",
+     "sha256": "cfd6de9e4b18467055d9955f81d972eb6c4db3e388e46ff1330ab623eee4c2ae"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_31",
+   "language": "en",
+   "title": "Calendar",
+   "url": "https://en.wikipedia.org/wiki/Calendar",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1335,
+   "text_sha256": "f872e88b1c596bb6886dc19bc10a862ec0a4ff1f6ffa5846f9852258c5e0b7c1",
+   "pictures": [
+    {
+     "commons": "Calendar (part of a set) MET DP-13486-011.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Calendar_%28part_of_a_set%29_MET_DP-13486-011.jpg",
+     "sha256": "0e27cb5553aa9141eb455b43daac57c874ebd3e17a75f4b3c1a1dbc65b156cc4"
+    },
+    {
+     "commons": "Equinozio da Pizzo Vento,tramonto fondachelli fantina, sicilia.JPG",
+     "page": "https://commons.wikimedia.org/wiki/File:Equinozio_da_Pizzo_Vento%2Ctramonto_fondachelli_fantina%2C_sicilia.JPG",
+     "sha256": "4fb84f29f81316a7467556f90c0ae092f06d99699b7010252c9faee584d1d43a"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_32",
+   "language": "en",
+   "title": "Map",
+   "url": "https://en.wikipedia.org/wiki/Map",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1342,
+   "text_sha256": "e28d08dfc5f56423f39a919664e8f36abeae7d973afe59965a4d4c083d84b09b",
+   "pictures": [
+    {
+     "commons": "World Map 1689.JPG",
+     "page": "https://commons.wikimedia.org/wiki/File:World_Map_1689.JPG",
+     "sha256": "15782f06925af27c3cde6353765fefb2f3cf612e49f20f177fdcc9663f302022"
+    },
+    {
+     "commons": "Map Operation Typhoon.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Map_Operation_Typhoon.jpg",
+     "sha256": "64ef25252c0534527ccb3fac78589cdee9e8458ba8367e548e18c5260e3802c5"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_33",
+   "language": "en",
+   "title": "Museum",
+   "url": "https://en.wikipedia.org/wiki/Museum",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1323,
+   "text_sha256": "e45d03e31d2c280b62ec2ca31a3d0c7d947a6d1a38f658f98a295a3f9e73872c",
+   "pictures": [
+    {
+     "commons": "Lower Paleolithic fossils from Darband Cave, Paleolithic hall, National Museum of Iran.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Lower_Paleolithic_fossils_from_Darband_Cave%2C_Paleolithic_hall%2C_National_Museum_of_Iran.jpg",
+     "sha256": "ffbb9899caabec6f9cd02d44f6ee3a3b604dcb2d0d729e543130510c778ab6db"
+    },
+    {
+     "commons": "Segundo Editatón Soumaya Abierto 01.JPG",
+     "page": "https://commons.wikimedia.org/wiki/File:Segundo_Editat%C3%B3n_Soumaya_Abierto_01.JPG",
+     "sha256": "dab2bc6b8edf7698d2257cfab2c104e5ba753355b3bd98f728aecb4a76c9cf25"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_34",
+   "language": "en",
+   "title": "Earthquake",
+   "url": "https://en.wikipedia.org/wiki/Earthquake",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1390,
+   "text_sha256": "dec731271dc7ee407d9331da05e4e074fd1761c0d5924e5020304b06e81914cf",
+   "pictures": [
+    {
+     "commons": "Quake epicenters 1963-98.png",
+     "page": "https://commons.wikimedia.org/wiki/File:Quake_epicenters_1963-98.png",
+     "sha256": "0ce901b3a07b9f53c88be39924e6e7dc84fb4fbfe251a17ec6a51c341e1e0215"
+    },
+    {
+     "commons": "Kluft-photo-Carrizo-Plain-Nov-2007-Img 0327.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Kluft-photo-Carrizo-Plain-Nov-2007-Img_0327.jpg",
+     "sha256": "7f145a838a59ce788ebdbf4d9f304477cc8e79471b7b6844c6e800a120447400"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_35",
+   "language": "en",
+   "title": "Coral reef",
+   "url": "https://en.wikipedia.org/wiki/Coral_reef",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1486,
+   "text_sha256": "200e1106cc7a544bf94e9355c852369a4693e93aa7e9689dbb460020d9be9929",
+   "pictures": [
+    {
+     "commons": "Blue Linckia Starfish.JPG",
+     "page": "https://commons.wikimedia.org/wiki/File:Blue_Linckia_Starfish.JPG",
+     "sha256": "5a1678f103c7e0857f639ede13acbc85391d946df0f4c4a255049d16ce0b0cca"
+    },
+    {
+     "commons": "EilatFringingReef.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:EilatFringingReef.jpg",
+     "sha256": "eca26769c202f79aef0633991ec9272435f4491d6ac6c674fc179abe21490463"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_36",
+   "language": "en",
+   "title": "Mangrove",
+   "url": "https://en.wikipedia.org/wiki/Mangrove",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1487,
+   "text_sha256": "b526cda12c4702f47486ed2478543707d5cf8e689435d7cd79894b0b5d042679",
+   "pictures": [
+    {
+     "commons": "Sonneratia alba - Manado (2).JPG",
+     "page": "https://commons.wikimedia.org/wiki/File:Sonneratia_alba_-_Manado_%282%29.JPG",
+     "sha256": "cabb23435cdd944fd9d36cd28e7c737db9df7524a343745c6f19c99ed5c84fbf"
+    },
+    {
+     "commons": "Mangrove roots at low tide.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Mangrove_roots_at_low_tide.jpg",
+     "sha256": "690e17ff27f96aecc4c069e6ddb46531f062c7040027f127354f6813eb0d6116"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_37",
+   "language": "en",
+   "title": "Date palm",
+   "url": "https://en.wikipedia.org/wiki/Date_palm",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1356,
+   "text_sha256": "e15d498a76cb330ffa92fe6b400c1500ec6e0689a8430c59ec1e14f3292bbfbd",
+   "pictures": [
+    {
+     "commons": "דקל תמר מצוי חתך גזע דמוי עץ (3).jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:%D7%93%D7%A7%D7%9C_%D7%AA%D7%9E%D7%A8_%D7%9E%D7%A6%D7%95%D7%99_%D7%97%D7%AA%D7%9A_%D7%92%D7%96%D7%A2_%D7%93%D7%9E%D7%95%D7%99_%D7%A2%D7%A5_%283%29.jpg",
+     "sha256": "ceea13b206001b3b2ebce55935feadcadbf4341498b8b4371cdf78a4f62f8456"
+    },
+    {
+     "commons": "Germination of Date Palm.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Germination_of_Date_Palm.jpg",
+     "sha256": "412ea9a9755a7116861e77751c73f848d5ec068750c1b4d8fab4a400fa010494"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_38",
+   "language": "en",
+   "title": "Cotton",
+   "url": "https://en.wikipedia.org/wiki/Cotton",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1339,
+   "text_sha256": "9444d9d5c3ffa25de4e9b566f66474e2d79a38932b4034afa0f3c40f6c27fd45",
+   "pictures": [
+    {
+     "commons": "BALLS OF COTTON (ANDHRA -SOUTH INDIA) READY FOR HARVEST.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:BALLS_OF_COTTON_%28ANDHRA_-SOUTH_INDIA%29_READY_FOR_HARVEST.jpg",
+     "sha256": "c90a2c4e64b963fbd64e0f9cc42eb767692447239e3671145568b10c3567ac56"
+    },
+    {
+     "commons": "Mehrgarh pakistan rel96.JPG",
+     "page": "https://commons.wikimedia.org/wiki/File:Mehrgarh_pakistan_rel96.JPG",
+     "sha256": "16283c170d037614da4882d9d2bb6c695b25649c50566544689c32224baec4de"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_39",
+   "language": "en",
+   "title": "Pyramid",
+   "url": "https://en.wikipedia.org/wiki/Pyramid",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1387,
+   "text_sha256": "58ccc653a99c4c1b8f6fc0acbc5a5ec41986b5628fc18f352ab9c4e873e44d2a",
+   "pictures": [
+    {
+     "commons": "01 khafre north.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:01_khafre_north.jpg",
+     "sha256": "0226aafcd46464d6db96ea54085e3e71faf9ce2a6665b367a33c4a2091b37a7e"
+    },
+    {
+     "commons": "Koh Ker temple(2007).jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Koh_Ker_temple%282007%29.jpg",
+     "sha256": "b8d0ad047903de675ce7a69b9b6b9b88c25cedcf332b7e0d5c529a5634e7d1e0"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_40",
+   "language": "en",
+   "title": "Lunar eclipse",
+   "url": "https://en.wikipedia.org/wiki/Lunar_eclipse",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1345,
+   "text_sha256": "f440645c39bd580c40ecc22dab9e82a99bb6cd25ae80822c4a9ba3817aa52f48",
+   "pictures": [
+    {
+     "commons": "Lunar eclipse 04-15-2014 by R Jay GaBany.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Lunar_eclipse_04-15-2014_by_R_Jay_GaBany.jpg",
+     "sha256": "df059286e02d7d159905c4d04a073db0c32f9ec6cb372fbad8ae8241ca0be51c"
+    },
+    {
+     "commons": "Lunar eclipse at sunrise Minneapolis October 2014.png",
+     "page": "https://commons.wikimedia.org/wiki/File:Lunar_eclipse_at_sunrise_Minneapolis_October_2014.png",
+     "sha256": "6a0dc5cef03babcfce6a99c2657181bed27b6fb91787ac1515ada496022b2132"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_41",
+   "language": "en",
+   "title": "Monsoon",
+   "url": "https://en.wikipedia.org/wiki/Monsoon",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1343,
+   "text_sha256": "942cf4bf10d293e3f3bdbe989d7bec789da4758012c4204f17fca9bda42d58b6",
+   "pictures": [
+    {
+     "commons": "Monsoon clouds near Nagercoil.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Monsoon_clouds_near_Nagercoil.jpg",
+     "sha256": "377967d20a9dea4276a99ff84124626b7c90e5781241028c01f4df5cc3e6b7bf"
+    },
+    {
+     "commons": "Monsoon clouds arriving at Port Blair, Andaman.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Monsoon_clouds_arriving_at_Port_Blair%2C_Andaman.jpg",
+     "sha256": "b537d01b4259d78b4ca2367d2d5bf8648c3840ba3e7a62f6f65a7c7d9e38b8fc"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_42",
+   "language": "en",
+   "title": "Oasis",
+   "url": "https://en.wikipedia.org/wiki/Oasis",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1354,
+   "text_sha256": "18dc272b07a590d9a884d3f2fba0d58d2a7887d56f777b7adf945c9de486c99e",
+   "pictures": [
+    {
+     "commons": "ISS-64 Jubba with Nefud Desert, Saudi Arabia.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:ISS-64_Jubba_with_Nefud_Desert%2C_Saudi_Arabia.jpg",
+     "sha256": "1114b958610abf5c4a107d56fdf8ebd9941412379cb9a82fc7d952f37622c252"
+    },
+    {
+     "commons": "Taghit oasis Béchar Algeria.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Taghit_oasis_B%C3%A9char_Algeria.jpg",
+     "sha256": "7c1e63a9aa888834c4b3f2313c9a82dabcf3231cc48e56e5aa2538a187598171"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_43",
+   "language": "en",
+   "title": "Dam",
+   "url": "https://en.wikipedia.org/wiki/Dam",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1398,
+   "text_sha256": "7c37702d8b94c13d8f64dacd5e96dfd6d78c0039699e495de2077e1931bf15c7",
+   "pictures": [
+    {
+     "commons": "Usoi Dam in 2009, by Martin Mergili.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Usoi_Dam_in_2009%2C_by_Martin_Mergili.jpg",
+     "sha256": "17021fb88e4770ca5d464a2198f8c23e3d0c3f34b02387cbd32b4ae9e0109343"
+    },
+    {
+     "commons": "Beaver dam on Smilga.JPG",
+     "page": "https://commons.wikimedia.org/wiki/File:Beaver_dam_on_Smilga.JPG",
+     "sha256": "5f57cad15a0616f57639fb0c35bf5e44e795e77c6c1ab00b89433dadb0cd662f"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_44",
+   "language": "en",
+   "title": "Aqueduct (water supply)",
+   "url": "https://en.wikipedia.org/wiki/Aqueduct_%28water_supply%29",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1354,
+   "text_sha256": "4c09728fe6c7a4ece064978bc385de1bc40d8e47d345de80b4058ed2f809a420",
+   "pictures": [
+    {
+     "commons": "Pont du Gard BLS.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Pont_du_Gard_BLS.jpg",
+     "sha256": "0fbdedb82e08d16359f842dfd43ffee3ad5191177ed57323dc11d878a37e040d"
+    },
+    {
+     "commons": "Hampi aqueduct.JPG",
+     "page": "https://commons.wikimedia.org/wiki/File:Hampi_aqueduct.JPG",
+     "sha256": "c7d87c0212ae7580f206bbbe93a6eaa1a1835d8a7c6ad2ba89d6872400f8babc"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_45",
+   "language": "en",
+   "title": "Windmill",
+   "url": "https://en.wikipedia.org/wiki/Windmill",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1375,
+   "text_sha256": "8429f103dfcb57951c0e29d236e9ee663ca616715b8ef680aaf03418507a83d5",
+   "pictures": [
+    {
+     "commons": "DK Fanoe Windmill01.JPG",
+     "page": "https://commons.wikimedia.org/wiki/File:DK_Fanoe_Windmill01.JPG",
+     "sha256": "c5e8e5dea319cc7bfc4cf5a606e750bd962e0a04cf12a7487241f61d9a0b0180"
+    },
+    {
+     "commons": "Heron's Windwheel.png",
+     "page": "https://commons.wikimedia.org/wiki/File:Heron%27s_Windwheel.png",
+     "sha256": "1053e497db881a5c0894a48ae19a95866191bf2b9f4cb679ee9f676cb7f2a0f4"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_46",
+   "language": "en",
+   "title": "Pottery",
+   "url": "https://en.wikipedia.org/wiki/Pottery",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1439,
+   "text_sha256": "32aa3cc25ff40021f7f9271cefef443dbcb0d8f61c117796020373d19a5a8c08",
+   "pictures": [
+    {
+     "commons": "Traditional pottery in Nigeria (Ikpu ite) 19.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Traditional_pottery_in_Nigeria_%28Ikpu_ite%29_19.jpg",
+     "sha256": "d8c1013f4da19dcb4b71fa3cfadc4ad177d84bebf18ddd87b344ff02b29ab0e6"
+    },
+    {
+     "commons": "Table Service MET DT11573 (cropped).jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Table_Service_MET_DT11573_%28cropped%29.jpg",
+     "sha256": "80ff4d9846ff34762828cacc3e1b5213fba129fcf212396f04e19fc4fef2e2f5"
+    }
+   ]
+  },
+  {
    "name": "wiki_ar_01",
    "language": "ar",
    "title": "مد وجزر",

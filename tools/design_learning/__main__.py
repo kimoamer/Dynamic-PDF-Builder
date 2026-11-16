@@ -75,6 +75,8 @@ def main(argv=None) -> int:
                    help="weights: calibrated monotone weights, no LightGBM needed. Either is written as <name>.json")
     t.add_argument("--human-audit", help="separate verified human-review JSONL, never AI training labels")
     t.add_argument("--provenance", help="local source author/asset group manifest JSON")
+    t.add_argument("--delegated-audit", help="owner's waiver: an AI reviewer's blind audit in place of the human one")
+    t.add_argument("--pdf-only", action="store_true", help="owner's waiver: no Word-verified comparisons")
     e = sub.add_parser("evaluate", help="read a model's training record and gate")
     e.add_argument("--name", required=True)
     c = sub.add_parser("trace", help="generate one fictional document and show the rules and selector that ran")
@@ -147,6 +149,10 @@ def main(argv=None) -> int:
             argv_train += ["--human-audit", args.human_audit]
         if args.provenance:
             argv_train += ["--provenance", args.provenance]
+        if args.delegated_audit:
+            argv_train += ["--delegated-audit", args.delegated_audit]
+        if args.pdf_only:
+            argv_train += ["--pdf-only"]
         return subprocess.call(argv_train)
     elif args.cmd == "trace":
         P.report(A.trace(args.document, not args.no_grammar, args.model))

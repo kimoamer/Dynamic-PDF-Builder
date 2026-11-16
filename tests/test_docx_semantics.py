@@ -133,3 +133,40 @@ def test_cli_docx_and_both(tmp_path):
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
     assert (tmp_path / "in.pdf").exists() and (tmp_path / "in.docx").exists()
+
+
+def test_a_jpeg_without_a_jfif_or_exif_header_is_still_embedded(tmp_path):
+    """python-docx refuses such a file, though it is a valid JPEG that cameras and web thumbnails write."""
+    import io
+
+    import docx
+    from docx.image.exceptions import UnrecognizedImageError
+    from docx.image.image import Image as DocxImage
+    from PIL import Image
+
+    from dynamic_pdf import DocumentBuilder
+    buf = io.BytesIO()
+    Image.new("RGB", (120, 80), "#336699").save(buf, "JPEG")
+    raw = buf.getvalue()
+    assert raw[2:4] == b"\xff\xe0" and raw[6:10] == b"JFIF"
+    bare = raw[:2] + raw[4 + int.from_bytes(raw[4:6], "big"):]              # the same picture without its JFIF segment
+    with pytest.raises(UnrecognizedImageError):
+        DocxImage.from_blob(bare)
+    picture = tmp_path / "bare.jpg"
+    picture.write_bytes(bare)
+    out = tmp_path / "out.docx"
+    DocumentBuilder.from_markdown(f"# Report\n\nText before.\n\n![A blue card]({picture})\n").export(str(out))
+    assert len(docx.Document(str(out)).inline_shapes) == 1
+
+
+def test_crossed_emphasis_does_not_stop_the_document():
+    """``**a *b** c*`` used to give crossed tags, which ReportLab refuses for the whole paragraph."""
+    import pymupdf
+
+    from dynamic_pdf.layout.factory import _md_inline, _nest
+    assert _md_inline("x **a *b** c* y") == "x <b>a <i>b</i></b><i> c</i> y"
+    assert _nest("<b>ok <i>fine</i></b> <br/>") == "<b>ok <i>fine</i></b> <br/>"        # nested markup is left alone
+    assert _nest("stray</b> and <i>open") == "stray and <i>open</i>"
+    pdf = DocumentBuilder().paragraph("Latin **first *second** third* last, and **bold** as usual.").render()
+    text = pymupdf.open(stream=pdf, filetype="pdf")[0].get_text()
+    assert "first second third last" in " ".join(text.split())

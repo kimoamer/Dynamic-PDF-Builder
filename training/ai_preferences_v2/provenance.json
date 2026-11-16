@@ -496,6 +496,294 @@
    "asset_pool": "wikimedia-commons-en",
    "source": "https://en.wikipedia.org/wiki/Library",
    "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_11",
+   "document_hash": "b4baf0a23339ec69b1646578251ae099bd3c52ff637562e9e73d4a7d7f546d0e",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Lighthouse",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_12",
+   "document_hash": "a26a3d3c7e18f4f6dc2a59d53a86381e197be7243d434f476685077f1e4d22d8",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Glacier",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_13",
+   "document_hash": "4fe6d62e6edba5cb0545df63d3c5c787ba06a61635922cba675e457556379379",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Paper",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_14",
+   "document_hash": "5e5bf2c2e29a53b22d7e94bd485a89246914241697f08318873f23f28100ca6e",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Silk_Road",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_15",
+   "document_hash": "c4790aa8cd670417952b172b524ff4856f1c4e6e1670215d6520fe75ab4bb8f5",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Olive",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_16",
+   "document_hash": "26f566ea39a0510a878253ad21ae72a63882d703abe95bf717fbf7b99c57ee94",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Camel",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_17",
+   "document_hash": "1927b66a602c796a901515b3c888f9611db0ee581dc6cefec3fbdbf991271857",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Telescope",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_18",
+   "document_hash": "4a548ab5e656da0c154a3a5db58b0ed7cd361b2d270526bf6be6d2e94b1ebb5a",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Compass",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_19",
+   "document_hash": "fd1640b6318dee0126b9ba98b7c417269efc862379fa87cfebadbb8f4f37bc46",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Bread",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_20",
+   "document_hash": "87c348f8524722654360e4950ff016f9846e0611570852a8a929438185850749",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Rice",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_21",
+   "document_hash": "593485c7f8dfbd8487deaae529c42a6d59fe02041b31e5d9a585f47b7c6ed6d0",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Tea",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_22",
+   "document_hash": "0a4f7e8d2d0d938d8565b877c1225390b3c1e24f7f8cc3f09a19f0b12e26a1e8",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Salt",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_23",
+   "document_hash": "cf5a40178976ffc7a03b1e5a734575f41e1ef9298e5637e36365e5008bd5acac",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Glass",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_24",
+   "document_hash": "bc27728bc837b3d436a296a44ed882ad161facb1ff07459bcf6eb0f10931dfe1",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Cement",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_25",
+   "document_hash": "c3e0f2d25430e2c7650874dff06830d265734b20f120defba0130d2ee67570a1",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Wind_power",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_26",
+   "document_hash": "20e0a3b0331f1e3625bbfe045507bf93de4619b023d35b5447df4c8ccd36c657",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Irrigation",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_27",
+   "document_hash": "f1334e5684f9d126bec259d50bfdae4639c5440ecc0b995fa9a6f1a57bc165f4",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Desalination",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_28",
+   "document_hash": "b35b5db3a13a525e076fa04e7ec335f2c7201b4cc3c7c96c903b1ff1c3e10ebf",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Rail_transport",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_29",
+   "document_hash": "0ddcb6974fd9d0a74bff9a6b20b6bf41d311a74d40ed1fd807eb42a092d961d8",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Bicycle",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_30",
+   "document_hash": "a660e0acc862bd9591286f0124f3ba18d266e5c6bce0dd58388efb98f4ec5f59",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Clock",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_31",
+   "document_hash": "50d5cb1d0bb59f4e25b56326254b24307fe9c12de9d979a941548669fad65728",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Calendar",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_32",
+   "document_hash": "db6e3279fcc1a0198f83065e19f1ef069d185af832dead006b93d345b645581a",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Map",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_33",
+   "document_hash": "6cf123bd603108e05e11d4ba348fd0b7cfc0d34642f1eadd17dc937ee6d22f8a",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Museum",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_34",
+   "document_hash": "cc046cb92b7eef7552e26a27850a05bfcca399d9fb3ce13e17e765a27b45e1eb",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Earthquake",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_35",
+   "document_hash": "ebb8dad243eaadaa6959ba44af845aea18ee0b3ec49072cca6e9c4705ee35ceb",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Coral_reef",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_36",
+   "document_hash": "3fc71410a94f703bde5e55b5c54171c0b73372b6915f845ebe2fd4a0882ce9f3",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Mangrove",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_37",
+   "document_hash": "316d8ed46fee9670126b4e6a4bd952a05046bbb2bebddef7b36974f08fcf0100",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Date_palm",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_38",
+   "document_hash": "c737b0717bb72f1c47de63c6ca312f580958fa6afcafe0ae4b7fdc3ac8490ff8",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Cotton",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_39",
+   "document_hash": "cbad8d2710f8fb64695f78648e33e8a3031f2cfb3421af161fe973c9aac48705",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Pyramid",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_40",
+   "document_hash": "f0cfe154cce0cc09be1722c2d96f57b5f4652af1dce0b6a49efdc76b695fb932",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Lunar_eclipse",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_41",
+   "document_hash": "dcf62a0f68f247c2e48affe9ec917dcad77692b1abc16ba53d568766b012acef",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Monsoon",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_42",
+   "document_hash": "b353dbf57bad9828b46557609159467ba63809c2f95cd38c60ee3b7976c915ef",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Oasis",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_43",
+   "document_hash": "026e84f065588d0e84b059da57e575b5b2ca4221ecbfd5c8b6fd9dc9b181dd9e",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Dam",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_44",
+   "document_hash": "c07598728b2d02f9b6b01583ef8caabaeeb404cea4e641c437bfad18d1ccb556",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Aqueduct_%28water_supply%29",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_45",
+   "document_hash": "975842e1ae4e933530e19591b32ef46283a6c19b881b57a9b549c3f7fc60c76d",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Windmill",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_46",
+   "document_hash": "5b7bbd780c6ed711035e3b42778ce8b64bf2eb8aff9baa6cb23d57c7837f28eb",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Pottery",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
   }
  ]
 }

@@ -56,6 +56,7 @@ def generate(batch_dir: str, docs: Optional[List[str]] = None, n: int = 4, gramm
 
     from .layout_facts import measure
     assets = os.path.join(batch_dir, "assets")
+    os.makedirs(batch_dir, exist_ok=True)
     if sources is None:
         corpus = _corpus()
         shared = corpus.make_assets(assets)
