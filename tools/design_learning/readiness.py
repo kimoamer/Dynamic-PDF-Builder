@@ -34,11 +34,17 @@ def usable(rows: List[dict], skipped: set) -> List[dict]:
     and no design later found defective."""
     seen: Dict[tuple, set] = defaultdict(set)
     for r in rows:
-        seen[_pair(r)].add(_won(r))
-    return [r for r in rows if r["preferred"] in ("A", "B") and r["confidence"] != "low" and len(seen[_pair(r)]) == 1
-            and not r["reversed_repeat"]
-            and (r["batch"], r["document"], r["a"]["candidate"]) not in skipped
-            and (r["batch"], r["document"], r["b"]["candidate"]) not in skipped]
+        seen[_pair(r)].add(_won(r))       # judges who disagree leave the pair out, like a flipped repeat
+    once: set = set()
+    out = []
+    for r in rows:
+        if (r["preferred"] in ("A", "B") and r["confidence"] != "low" and len(seen[_pair(r)]) == 1
+                and not r["reversed_repeat"] and (r["batch"], r["comparison"]) not in once
+                and (r["batch"], r["document"], r["a"]["candidate"]) not in skipped
+                and (r["batch"], r["document"], r["b"]["candidate"]) not in skipped):
+            once.add((r["batch"], r["comparison"]))       # judges who agree count a comparison once
+            out.append(r)
+    return out
 
 
 def _candidates(batches: str):
@@ -87,8 +93,8 @@ def report(dataset: str, batches: str, split_path: str, out: Optional[str] = Non
     train = [r for r in good if r["document"] not in held]
     test = [r for r in good if r["document"] in held]
 
-    first = {_pair(r): r for r in rows if not r["reversed_repeat"]}
-    repeats = [(first[_pair(r)], r) for r in rows if r["reversed_repeat"] and _pair(r) in first]
+    first = {(r.get("model"), *_pair(r)): r for r in rows if not r["reversed_repeat"]}      # each judge against itself
+    repeats = [(first[(r.get("model"), *_pair(r))], r) for r in rows if r["reversed_repeat"] and (r.get("model"), *_pair(r)) in first]
     agree = sum(_won(a) == _won(b) for a, b in repeats)
     flips = [b["comparison"] for a, b in repeats if _won(a) != _won(b)]
 
