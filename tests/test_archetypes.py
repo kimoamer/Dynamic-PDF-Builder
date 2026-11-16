@@ -366,6 +366,8 @@ def test_runtime_package_has_no_inference_dependency():
     root = os.path.join(ROOT, "dynamic_pdf")
     banned = re.compile(r"^\s*(?:import|from)\s+(torch|tensorflow|onnxruntime|transformers|openai|anthropic)\b", re.M)
     for folder, _, files in os.walk(root):
+        if os.path.relpath(folder, root).split(os.sep)[0] == "ai":
+            continue        # the opt-in ai extra; test_m13_ai proves nothing else imports it
         for name in files:
             if name.endswith(".py"):
                 with open(os.path.join(folder, name), encoding="utf-8") as f:
