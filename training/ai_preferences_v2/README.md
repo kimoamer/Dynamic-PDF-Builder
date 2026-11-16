@@ -83,11 +83,31 @@ about 20 points. The fact is a real signal in the training documents, where the 
 has more words on its last page in 121 of the 155 pairs that differ: the judges dislike a
 document that ends on a nearly empty page.
 
+## Faults this run found in the engine
+
+Rendering 104 real and fictional documents in every direction showed 443 designs, of which 21 were
+rejected and two documents had no valid design. All of it traced to seven faults, now fixed with a
+test each; after them 443 of 443 are valid.
+
+| Fault | Kind |
+| --- | --- |
+| A JPEG without a JFIF or Exif header stopped the DOCX export | real: no Word file |
+| Crossed emphasis (`**a *b** c*`) stopped the whole PDF | real: no document |
+| A compound word lost its hyphen when its paragraph ran onto the next page ("by-product" became "byproduct") | real: wrong text; a fault in ReportLab, corrected where the engine loads it |
+| A quote wrapped over source lines became several Word paragraphs | real: PDF and DOCX differed |
+| A chapter's opening page with a short strip was read as a stranded heading | false alarm that rejected the design |
+| The dots of a contents line were counted as words, so a contents page looked too dense | false alarm |
+| A Western number set beside an Arabic-Indic one in a table was read as one number, then reported missing | false alarm |
+
+The judged batches (`b01` to `b14`) were rendered before the last five fixes and stay as they were
+judged; their hashes say exactly what was seen.
+
 ## Waiting for judges
 
-Batches `b15` to `b22` hold 36 more English Wikipedia articles, rendered (138 designs) with 336
+Batches `b15` to `b22` hold 36 more English Wikipedia articles, rendered (144 designs) with 360
 blind sheets drawn. They are evaluation documents. They were not judged: the API account ran out
-of credit. Judging them costs about $10 and should bring the held-out comparisons past 150:
+of credit. Judging them costs about $10 and should bring the held-out comparisons past 150. They
+were rendered after the engine fixes below, so every design of every article is valid.
 
 ```bash
 for b in b15 b16 b17 b18 b19 b20 b21 b22; do

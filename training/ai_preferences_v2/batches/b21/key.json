@@ -376,11 +376,11 @@
    "b": "executive_premium",
    "reversed_repeat": false,
    "pages_shown": [
-    6,
+    8,
     7
    ],
    "pages_total": [
-    6,
+    8,
     7
    ],
    "shown_px": 240
@@ -440,11 +440,11 @@
    "b": "editorial_modern",
    "reversed_repeat": true,
    "pages_shown": [
-    6,
+    8,
     7
    ],
    "pages_total": [
-    6,
+    8,
     7
    ],
    "shown_px": 240
@@ -457,11 +457,11 @@
    "reversed_repeat": false,
    "pages_shown": [
     7,
-    6
+    8
    ],
    "pages_total": [
     7,
-    6
+    8
    ],
    "shown_px": 240
   },
@@ -681,11 +681,11 @@
    "reversed_repeat": true,
    "pages_shown": [
     7,
-    6
+    8
    ],
    "pages_total": [
     7,
-    6
+    8
    ],
    "shown_px": 240
   },
@@ -761,11 +761,11 @@
    "reversed_repeat": false,
    "pages_shown": [
     7,
-    6
+    8
    ],
    "pages_total": [
     7,
-    6
+    8
    ],
    "shown_px": 240
   },
@@ -776,11 +776,11 @@
    "b": "corporate_conservative",
    "reversed_repeat": true,
    "pages_shown": [
-    6,
+    8,
     7
    ],
    "pages_total": [
-    6,
+    8,
     7
    ],
    "shown_px": 240

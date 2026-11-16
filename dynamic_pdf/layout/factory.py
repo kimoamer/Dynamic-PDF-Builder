@@ -140,6 +140,28 @@ def _visual_line(line, kind: int, base: str):
 _TAG_ATTRS = ("_dpb_role", "_dpb_level", "_dpb_key", "_dpb_cell", "_dpb_alt", "_dpb_block")
 
 
+def _keep_the_authors_hyphen() -> None:
+    """ReportLab joins the halves of a word it broke with ``_shyUnsplit``, which drops any hyphen
+    that ends the first half. That is right for a hyphen it added and wrong for the author's own:
+    "by-" and "product" came back as "byproduct" when a paragraph with inline markup ran onto
+    the next page. A hyphen ReportLab added is already taken off before the halves are joined,
+    so joining plain strings keeps what is there."""
+    import reportlab.platypus.paragraph as rl
+    original = getattr(rl, "_shyUnsplit", None)
+    if original is None or getattr(original, "_dpb", False):
+        return
+
+    def unsplit(s, ss=None):
+        if ss and type(s) is str and not hasattr(ss, "_shyIndices"):
+            return s + ss
+        return original(s, ss)
+    unsplit._dpb = True
+    rl._shyUnsplit = unsplit
+
+
+_keep_the_authors_hyphen()
+
+
 class Paragraph(_RLParagraph):
     """ReportLab ``Paragraph`` with bidirectional text drawn correctly.
 

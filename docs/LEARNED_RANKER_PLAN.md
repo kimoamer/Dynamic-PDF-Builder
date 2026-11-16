@@ -164,11 +164,17 @@ waivers named in its result (that audit in place of people, and no Word pages).
 | 60 human decisions; Word pages | 24 delegated AI decisions; none (both waived by the owner or not available) |
 
 Not done: the cover control, the sanity pairs and the owner's own documents. 36 more English
-articles are rendered with 336 sheets drawn (batches b15 to b22) and were not judged, because the
+articles are rendered with 360 sheets drawn (batches b15 to b22) and were not judged, because the
 API account ran out of credit; they would take the held-out comparisons past 150 for about $10.
 
 Found on the way and fixed in the engine: a JPEG without a JFIF or Exif header stopped the DOCX
 (21 of 36 real articles had one), and crossed emphasis (`**a *b** c*`) stopped the whole PDF.
+Then every design of all 104 documents was checked: 21 of 443 were rejected, for five more
+faults (a hyphen lost from compound words across a page break, a wrapped quote split into
+several Word paragraphs, and three false alarms of the checks). After the fixes all 443 are
+valid, `arabic_health_data` and the two documents that had no valid design included. The list
+is in `training/ai_preferences_v2/README.md`. The waiting batches were rendered again with
+the fixed engine: 144 designs, 360 sheets.
 
 ### M18. A first model through an honest gate (S to M)
 

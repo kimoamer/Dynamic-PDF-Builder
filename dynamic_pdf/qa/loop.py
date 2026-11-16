@@ -74,8 +74,8 @@ def _propose_fixes(blocks, report: QAReport, current: Dict[int, dict]) -> List[T
 
 
 def qa_context(doc, theme) -> dict:
-    """Captions, level-1 headings and body size used by the PDF checks."""
-    caps, majors = [], []
+    """Captions, level-1 headings, chapter openers and body size used by the PDF checks."""
+    caps, majors, openers = [], [], []
     for b in doc.blocks:
         # only captions that *precede* their content (tables) can be detached by
         # ending a page; figure captions follow the image, so ending a page is normal
@@ -89,9 +89,11 @@ def qa_context(doc, theme) -> dict:
             majors.append(plain_text(b.text))
         elif b.type in ("cover_page", "table_of_contents"):
             majors.append(plain_text(getattr(b, "title", "") or "Table of Contents"))
+        elif b.type == "section_opener":
+            openers.append(plain_text(b.title))
     from ..i18n import LABELS
     majors += [v["toc"] for v in LABELS.values()]
-    return {"captions": caps, "major_headings": majors, "body_size": theme.typography.base_size}
+    return {"captions": caps, "major_headings": majors, "body_size": theme.typography.base_size, "openers": openers}
 
 
 def glyph_findings(sem, theme) -> List[Finding]:

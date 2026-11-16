@@ -56,11 +56,11 @@
    "b": "financial_data",
    "reversed_repeat": true,
    "pages_shown": [
-    7,
+    8,
     6
    ],
    "pages_total": [
-    7,
+    9,
     6
    ],
    "shown_px": 240
@@ -137,11 +137,11 @@
    "reversed_repeat": false,
    "pages_shown": [
     6,
-    7
+    8
    ],
    "pages_total": [
     6,
-    7
+    9
    ],
    "shown_px": 240
   },
@@ -489,11 +489,11 @@
    "reversed_repeat": true,
    "pages_shown": [
     7,
-    7
+    8
    ],
    "pages_total": [
     7,
-    7
+    9
    ],
    "shown_px": 240
   },
@@ -728,11 +728,11 @@
    "b": "editorial_modern",
    "reversed_repeat": false,
    "pages_shown": [
-    7,
+    8,
     7
    ],
    "pages_total": [
-    7,
+    9,
     7
    ],
    "shown_px": 240

@@ -912,7 +912,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
     def _b_quote(self, c, b):
         if (b.hints or {}).get("statement"):
             return self._statement(c, b, b.hints)
-        for part in b.text.split("\n"):
+        for part in re.split(r"\n[ \t]*\n", b.text):      # a blank line parts paragraphs; one newline is a space, as in the PDF
             if part.strip():
                 self._runs(self._para(c, "Quote", part), part)
         if b.attribution:

@@ -3,6 +3,22 @@
  "comparisons": [
   {
    "comparison": "cmp-001",
+   "document": "wiki_en_34",
+   "a": "corporate_conservative",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    7,
+    7
+   ],
+   "pages_total": [
+    7,
+    7
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-002",
    "document": "wiki_en_32",
    "a": "executive_premium",
    "b": "corporate_conservative",
@@ -18,58 +34,42 @@
    "shown_px": 240
   },
   {
-   "comparison": "cmp-002",
-   "document": "wiki_en_35",
-   "a": "editorial_modern",
-   "b": "financial_data",
-   "reversed_repeat": false,
-   "pages_shown": [
-    7,
-    7
-   ],
-   "pages_total": [
-    7,
-    7
-   ],
-   "shown_px": 240
-  },
-  {
    "comparison": "cmp-003",
    "document": "wiki_en_31",
-   "a": "editorial_modern",
-   "b": "executive_premium",
+   "a": "executive_premium",
+   "b": "financial_data",
    "reversed_repeat": true,
    "pages_shown": [
-    7,
-    8
+    8,
+    7
    ],
    "pages_total": [
-    7,
-    8
+    8,
+    7
    ],
    "shown_px": 240
   },
   {
    "comparison": "cmp-004",
    "document": "wiki_en_31",
-   "a": "financial_data",
-   "b": "corporate_conservative",
-   "reversed_repeat": false,
+   "a": "corporate_conservative",
+   "b": "financial_data",
+   "reversed_repeat": true,
    "pages_shown": [
-    7,
-    8
+    8,
+    7
    ],
    "pages_total": [
-    7,
-    8
+    8,
+    7
    ],
    "shown_px": 240
   },
   {
    "comparison": "cmp-005",
    "document": "wiki_en_32",
-   "a": "financial_data",
-   "b": "corporate_conservative",
+   "a": "executive_premium",
+   "b": "financial_data",
    "reversed_repeat": false,
    "pages_shown": [
     6,
@@ -99,33 +99,33 @@
   },
   {
    "comparison": "cmp-007",
-   "document": "wiki_en_34",
-   "a": "financial_data",
-   "b": "editorial_modern",
+   "document": "wiki_en_33",
+   "a": "executive_premium",
+   "b": "corporate_conservative",
    "reversed_repeat": true,
    "pages_shown": [
-    5,
-    7
+    7,
+    8
    ],
    "pages_total": [
-    5,
-    7
+    7,
+    8
    ],
    "shown_px": 240
   },
   {
    "comparison": "cmp-008",
-   "document": "wiki_en_33",
+   "document": "wiki_en_32",
    "a": "financial_data",
    "b": "corporate_conservative",
-   "reversed_repeat": true,
+   "reversed_repeat": false,
    "pages_shown": [
     6,
-    8
+    6
    ],
    "pages_total": [
     6,
-    8
+    6
    ],
    "shown_px": 240
   },
@@ -133,100 +133,84 @@
    "comparison": "cmp-009",
    "document": "wiki_en_31",
    "a": "financial_data",
-   "b": "editorial_modern",
+   "b": "corporate_conservative",
    "reversed_repeat": false,
    "pages_shown": [
     7,
-    7
+    8
    ],
    "pages_total": [
     7,
-    7
+    8
    ],
    "shown_px": 240
   },
   {
    "comparison": "cmp-010",
-   "document": "wiki_en_33",
-   "a": "financial_data",
-   "b": "editorial_modern",
-   "reversed_repeat": true,
+   "document": "wiki_en_35",
+   "a": "corporate_conservative",
+   "b": "executive_premium",
+   "reversed_repeat": false,
    "pages_shown": [
-    6,
-    7
+    8,
+    8
    ],
    "pages_total": [
-    6,
-    7
+    9,
+    9
    ],
    "shown_px": 240
   },
   {
    "comparison": "cmp-011",
-   "document": "wiki_en_31",
-   "a": "executive_premium",
-   "b": "financial_data",
-   "reversed_repeat": true,
+   "document": "wiki_en_32",
+   "a": "financial_data",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
    "pages_shown": [
-    8,
+    6,
     7
    ],
    "pages_total": [
-    8,
+    6,
     7
    ],
    "shown_px": 240
   },
   {
    "comparison": "cmp-012",
-   "document": "wiki_en_34",
-   "a": "financial_data",
-   "b": "executive_premium",
-   "reversed_repeat": false,
+   "document": "wiki_en_35",
+   "a": "executive_premium",
+   "b": "corporate_conservative",
+   "reversed_repeat": true,
    "pages_shown": [
-    5,
-    7
+    8,
+    8
    ],
    "pages_total": [
-    5,
-    7
+    9,
+    9
    ],
    "shown_px": 240
   },
   {
    "comparison": "cmp-013",
-   "document": "wiki_en_31",
-   "a": "corporate_conservative",
+   "document": "wiki_en_33",
+   "a": "editorial_modern",
    "b": "financial_data",
-   "reversed_repeat": true,
+   "reversed_repeat": false,
    "pages_shown": [
-    8,
-    7
+    7,
+    6
    ],
    "pages_total": [
-    8,
-    7
+    7,
+    6
    ],
    "shown_px": 240
   },
   {
    "comparison": "cmp-014",
-   "document": "wiki_en_34",
-   "a": "corporate_conservative",
-   "b": "financial_data",
-   "reversed_repeat": false,
-   "pages_shown": [
-    7,
-    5
-   ],
-   "pages_total": [
-    7,
-    5
-   ],
-   "shown_px": 240
-  },
-  {
-   "comparison": "cmp-015",
    "document": "wiki_en_32",
    "a": "corporate_conservative",
    "b": "financial_data",
@@ -242,10 +226,26 @@
    "shown_px": 240
   },
   {
-   "comparison": "cmp-016",
+   "comparison": "cmp-015",
    "document": "wiki_en_31",
-   "a": "executive_premium",
-   "b": "editorial_modern",
+   "a": "editorial_modern",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    7,
+    8
+   ],
+   "pages_total": [
+    7,
+    8
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-016",
+   "document": "wiki_en_33",
+   "a": "corporate_conservative",
+   "b": "executive_premium",
    "reversed_repeat": false,
    "pages_shown": [
     8,
@@ -260,120 +260,8 @@
   {
    "comparison": "cmp-017",
    "document": "wiki_en_33",
-   "a": "editorial_modern",
-   "b": "financial_data",
-   "reversed_repeat": false,
-   "pages_shown": [
-    7,
-    6
-   ],
-   "pages_total": [
-    7,
-    6
-   ],
-   "shown_px": 240
-  },
-  {
-   "comparison": "cmp-018",
-   "document": "wiki_en_32",
    "a": "financial_data",
    "b": "executive_premium",
-   "reversed_repeat": true,
-   "pages_shown": [
-    6,
-    6
-   ],
-   "pages_total": [
-    6,
-    6
-   ],
-   "shown_px": 240
-  },
-  {
-   "comparison": "cmp-019",
-   "document": "wiki_en_33",
-   "a": "editorial_modern",
-   "b": "corporate_conservative",
-   "reversed_repeat": false,
-   "pages_shown": [
-    7,
-    8
-   ],
-   "pages_total": [
-    7,
-    8
-   ],
-   "shown_px": 240
-  },
-  {
-   "comparison": "cmp-020",
-   "document": "wiki_en_32",
-   "a": "corporate_conservative",
-   "b": "executive_premium",
-   "reversed_repeat": false,
-   "pages_shown": [
-    6,
-    6
-   ],
-   "pages_total": [
-    6,
-    6
-   ],
-   "shown_px": 240
-  },
-  {
-   "comparison": "cmp-021",
-   "document": "wiki_en_31",
-   "a": "editorial_modern",
-   "b": "corporate_conservative",
-   "reversed_repeat": true,
-   "pages_shown": [
-    7,
-    8
-   ],
-   "pages_total": [
-    7,
-    8
-   ],
-   "shown_px": 240
-  },
-  {
-   "comparison": "cmp-022",
-   "document": "wiki_en_33",
-   "a": "executive_premium",
-   "b": "corporate_conservative",
-   "reversed_repeat": true,
-   "pages_shown": [
-    7,
-    8
-   ],
-   "pages_total": [
-    7,
-    8
-   ],
-   "shown_px": 240
-  },
-  {
-   "comparison": "cmp-023",
-   "document": "wiki_en_32",
-   "a": "editorial_modern",
-   "b": "financial_data",
-   "reversed_repeat": true,
-   "pages_shown": [
-    7,
-    6
-   ],
-   "pages_total": [
-    7,
-    6
-   ],
-   "shown_px": 240
-  },
-  {
-   "comparison": "cmp-024",
-   "document": "wiki_en_32",
-   "a": "executive_premium",
-   "b": "editorial_modern",
    "reversed_repeat": false,
    "pages_shown": [
     6,
@@ -381,6 +269,118 @@
    ],
    "pages_total": [
     6,
+    7
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-018",
+   "document": "wiki_en_33",
+   "a": "corporate_conservative",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    8,
+    7
+   ],
+   "pages_total": [
+    8,
+    7
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-019",
+   "document": "wiki_en_35",
+   "a": "financial_data",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    7,
+    7
+   ],
+   "pages_total": [
+    7,
+    7
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-020",
+   "document": "wiki_en_33",
+   "a": "editorial_modern",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    7,
+    8
+   ],
+   "pages_total": [
+    7,
+    8
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-021",
+   "document": "wiki_en_31",
+   "a": "financial_data",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    7,
+    7
+   ],
+   "pages_total": [
+    7,
+    7
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-022",
+   "document": "wiki_en_32",
+   "a": "editorial_modern",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    7,
+    6
+   ],
+   "pages_total": [
+    7,
+    6
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-023",
+   "document": "wiki_en_31",
+   "a": "executive_premium",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    8,
+    7
+   ],
+   "pages_total": [
+    8,
+    7
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-024",
+   "document": "wiki_en_34",
+   "a": "financial_data",
+   "b": "executive_premium",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    7
+   ],
+   "pages_total": [
+    5,
     7
    ],
    "shown_px": 240
@@ -388,25 +388,25 @@
   {
    "comparison": "cmp-025",
    "document": "wiki_en_35",
-   "a": "editorial_modern",
-   "b": "corporate_conservative",
+   "a": "executive_premium",
+   "b": "financial_data",
    "reversed_repeat": true,
    "pages_shown": [
-    7,
-    8
+    8,
+    7
    ],
    "pages_total": [
-    7,
-    8
+    9,
+    7
    ],
    "shown_px": 240
   },
   {
    "comparison": "cmp-026",
    "document": "wiki_en_32",
-   "a": "executive_premium",
-   "b": "financial_data",
-   "reversed_repeat": false,
+   "a": "financial_data",
+   "b": "executive_premium",
+   "reversed_repeat": true,
    "pages_shown": [
     6,
     6
@@ -420,31 +420,31 @@
   {
    "comparison": "cmp-027",
    "document": "wiki_en_35",
-   "a": "corporate_conservative",
-   "b": "editorial_modern",
+   "a": "editorial_modern",
+   "b": "financial_data",
    "reversed_repeat": false,
    "pages_shown": [
-    8,
+    7,
     7
    ],
    "pages_total": [
-    8,
+    7,
     7
    ],
    "shown_px": 240
   },
   {
    "comparison": "cmp-028",
-   "document": "wiki_en_33",
-   "a": "corporate_conservative",
+   "document": "wiki_en_34",
+   "a": "financial_data",
    "b": "editorial_modern",
    "reversed_repeat": true,
    "pages_shown": [
-    8,
+    5,
     7
    ],
    "pages_total": [
-    8,
+    5,
     7
    ],
    "shown_px": 240
@@ -453,53 +453,53 @@
    "comparison": "cmp-029",
    "document": "wiki_en_34",
    "a": "corporate_conservative",
-   "b": "executive_premium",
-   "reversed_repeat": true,
+   "b": "financial_data",
+   "reversed_repeat": false,
    "pages_shown": [
     7,
-    7
+    5
    ],
    "pages_total": [
     7,
-    7
+    5
    ],
    "shown_px": 240
   },
   {
    "comparison": "cmp-030",
-   "document": "wiki_en_33",
-   "a": "financial_data",
+   "document": "wiki_en_32",
+   "a": "corporate_conservative",
    "b": "executive_premium",
    "reversed_repeat": false,
    "pages_shown": [
     6,
-    7
+    6
    ],
    "pages_total": [
     6,
-    7
+    6
    ],
    "shown_px": 240
   },
   {
    "comparison": "cmp-031",
-   "document": "wiki_en_34",
-   "a": "executive_premium",
+   "document": "wiki_en_31",
+   "a": "editorial_modern",
    "b": "corporate_conservative",
-   "reversed_repeat": false,
+   "reversed_repeat": true,
    "pages_shown": [
     7,
-    7
+    8
    ],
    "pages_total": [
     7,
-    7
+    8
    ],
    "shown_px": 240
   },
   {
    "comparison": "cmp-032",
-   "document": "wiki_en_31",
+   "document": "wiki_en_35",
    "a": "financial_data",
    "b": "executive_premium",
    "reversed_repeat": false,
@@ -509,16 +509,16 @@
    ],
    "pages_total": [
     7,
-    8
+    9
    ],
    "shown_px": 240
   },
   {
    "comparison": "cmp-033",
-   "document": "wiki_en_31",
-   "a": "editorial_modern",
-   "b": "financial_data",
-   "reversed_repeat": true,
+   "document": "wiki_en_34",
+   "a": "executive_premium",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
    "pages_shown": [
     7,
     7
@@ -532,21 +532,53 @@
   {
    "comparison": "cmp-034",
    "document": "wiki_en_33",
-   "a": "executive_premium",
-   "b": "financial_data",
+   "a": "financial_data",
+   "b": "corporate_conservative",
    "reversed_repeat": true,
    "pages_shown": [
-    7,
-    6
+    6,
+    8
    ],
    "pages_total": [
-    7,
-    6
+    6,
+    8
    ],
    "shown_px": 240
   },
   {
    "comparison": "cmp-035",
+   "document": "wiki_en_33",
+   "a": "financial_data",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    6,
+    7
+   ],
+   "pages_total": [
+    6,
+    7
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-036",
+   "document": "wiki_en_32",
+   "a": "executive_premium",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    6,
+    7
+   ],
+   "pages_total": [
+    6,
+    7
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-037",
    "document": "wiki_en_34",
    "a": "corporate_conservative",
    "b": "editorial_modern",
@@ -562,7 +594,71 @@
    "shown_px": 240
   },
   {
-   "comparison": "cmp-036",
+   "comparison": "cmp-038",
+   "document": "wiki_en_31",
+   "a": "financial_data",
+   "b": "executive_premium",
+   "reversed_repeat": false,
+   "pages_shown": [
+    7,
+    8
+   ],
+   "pages_total": [
+    7,
+    8
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-039",
+   "document": "wiki_en_31",
+   "a": "editorial_modern",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    7,
+    7
+   ],
+   "pages_total": [
+    7,
+    7
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-040",
+   "document": "wiki_en_33",
+   "a": "executive_premium",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    7,
+    6
+   ],
+   "pages_total": [
+    7,
+    6
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-041",
+   "document": "wiki_en_35",
+   "a": "editorial_modern",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    7,
+    8
+   ],
+   "pages_total": [
+    7,
+    9
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-042",
    "document": "wiki_en_33",
    "a": "corporate_conservative",
    "b": "financial_data",
@@ -578,7 +674,7 @@
    "shown_px": 240
   },
   {
-   "comparison": "cmp-037",
+   "comparison": "cmp-043",
    "document": "wiki_en_34",
    "a": "executive_premium",
    "b": "financial_data",
@@ -594,119 +690,39 @@
    "shown_px": 240
   },
   {
-   "comparison": "cmp-038",
-   "document": "wiki_en_35",
-   "a": "financial_data",
-   "b": "editorial_modern",
-   "reversed_repeat": true,
-   "pages_shown": [
-    7,
-    7
-   ],
-   "pages_total": [
-    7,
-    7
-   ],
-   "shown_px": 240
-  },
-  {
-   "comparison": "cmp-039",
+   "comparison": "cmp-044",
    "document": "wiki_en_35",
    "a": "corporate_conservative",
    "b": "financial_data",
-   "reversed_repeat": true,
+   "reversed_repeat": false,
    "pages_shown": [
     8,
     7
    ],
    "pages_total": [
-    8,
+    9,
     7
-   ],
-   "shown_px": 240
-  },
-  {
-   "comparison": "cmp-040",
-   "document": "wiki_en_34",
-   "a": "financial_data",
-   "b": "corporate_conservative",
-   "reversed_repeat": true,
-   "pages_shown": [
-    5,
-    7
-   ],
-   "pages_total": [
-    5,
-    7
-   ],
-   "shown_px": 240
-  },
-  {
-   "comparison": "cmp-041",
-   "document": "wiki_en_34",
-   "a": "editorial_modern",
-   "b": "corporate_conservative",
-   "reversed_repeat": false,
-   "pages_shown": [
-    7,
-    7
-   ],
-   "pages_total": [
-    7,
-    7
-   ],
-   "shown_px": 240
-  },
-  {
-   "comparison": "cmp-042",
-   "document": "wiki_en_32",
-   "a": "financial_data",
-   "b": "editorial_modern",
-   "reversed_repeat": false,
-   "pages_shown": [
-    6,
-    7
-   ],
-   "pages_total": [
-    6,
-    7
-   ],
-   "shown_px": 240
-  },
-  {
-   "comparison": "cmp-043",
-   "document": "wiki_en_35",
-   "a": "financial_data",
-   "b": "corporate_conservative",
-   "reversed_repeat": false,
-   "pages_shown": [
-    7,
-    8
-   ],
-   "pages_total": [
-    7,
-    8
-   ],
-   "shown_px": 240
-  },
-  {
-   "comparison": "cmp-044",
-   "document": "wiki_en_34",
-   "a": "editorial_modern",
-   "b": "financial_data",
-   "reversed_repeat": false,
-   "pages_shown": [
-    7,
-    5
-   ],
-   "pages_total": [
-    7,
-    5
    ],
    "shown_px": 240
   },
   {
    "comparison": "cmp-045",
+   "document": "wiki_en_35",
+   "a": "financial_data",
+   "b": "corporate_conservative",
+   "reversed_repeat": true,
+   "pages_shown": [
+    7,
+    8
+   ],
+   "pages_total": [
+    7,
+    9
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-046",
    "document": "wiki_en_31",
    "a": "corporate_conservative",
    "b": "editorial_modern",
@@ -722,17 +738,65 @@
    "shown_px": 240
   },
   {
-   "comparison": "cmp-046",
-   "document": "wiki_en_33",
-   "a": "corporate_conservative",
-   "b": "executive_premium",
+   "comparison": "cmp-047",
+   "document": "wiki_en_35",
+   "a": "executive_premium",
+   "b": "editorial_modern",
    "reversed_repeat": false,
    "pages_shown": [
     8,
     7
    ],
    "pages_total": [
-    8,
+    9,
+    7
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-048",
+   "document": "wiki_en_34",
+   "a": "editorial_modern",
+   "b": "financial_data",
+   "reversed_repeat": false,
+   "pages_shown": [
+    7,
+    5
+   ],
+   "pages_total": [
+    7,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-049",
+   "document": "wiki_en_34",
+   "a": "financial_data",
+   "b": "corporate_conservative",
+   "reversed_repeat": true,
+   "pages_shown": [
+    5,
+    7
+   ],
+   "pages_total": [
+    5,
+    7
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-050",
+   "document": "wiki_en_34",
+   "a": "editorial_modern",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    7,
+    7
+   ],
+   "pages_total": [
+    7,
     7
    ],
    "shown_px": 240

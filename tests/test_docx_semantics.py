@@ -170,3 +170,10 @@ def test_crossed_emphasis_does_not_stop_the_document():
     pdf = DocumentBuilder().paragraph("Latin **first *second** third* last, and **bold** as usual.").render()
     text = pymupdf.open(stream=pdf, filetype="pdf")[0].get_text()
     assert "first second third last" in " ".join(text.split())
+
+
+def test_a_quote_wrapped_over_source_lines_is_one_paragraph_as_in_the_pdf():
+    """Every source newline used to start a new Word paragraph, so the sentence was not found whole."""
+    b = DocumentBuilder().quote("**Risk to watch:** two customers renew in the first quarter\nand may move to one vendor.\n\nA second paragraph.")
+    quotes = [p.text for p in open_docx(b.render_docx()).paragraphs if p.style.name == "Quote"]
+    assert quotes == ["Risk to watch: two customers renew in the first quarter and may move to one vendor.", "A second paragraph."]

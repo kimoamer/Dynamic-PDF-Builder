@@ -182,3 +182,66 @@ def test_a_body_size_line_sharing_caption_words_is_not_a_detached_caption():
     assert "detached_caption" not in {f.code for f in body_line.findings}
     caption = check_pdf(_two_pages("Table 3: Regional risk management", 9), captions=caps, body_size=11)
     assert "detached_caption" in {f.code for f in caption.findings}
+
+
+def test_a_chapter_opening_page_with_a_short_strip_does_not_strand_the_next_chapter():
+    """The strip names the next chapter below the opener's title; with two chapters that was read as a stranded heading."""
+    from dynamic_pdf.qa.loop import qa_context
+    b = DocumentBuilder()
+    b.section_opener("Potential", chapters=["Potential", "Thermal energy"], current=0)
+    b.paragraph("Sunlight reaches the upper atmosphere and part of it is reflected back to space. " * 6)
+    b.heading("Thermal energy").paragraph("Solar thermal technologies heat water and space. " * 6)
+    pdf = b.render()
+    ctx = qa_context(b.last_render.document, b.last_render.theme)
+    assert ctx["openers"] == ["Potential"]
+    heads = ["Potential", "Thermal energy"]
+    assert "stranded_heading" not in {f.code for f in check_pdf(pdf, heading_texts=heads, **ctx).findings}
+    blind = check_pdf(pdf, heading_texts=heads, **{**ctx, "openers": []})       # the fault this guards against
+    assert "stranded_heading" in {f.code for f in blind.findings}
+    long = DocumentBuilder()                                   # a title long enough to run over two lines
+    long.section_opener("Wind energy resources across the northern coastal plains", chapters=["Wind energy resources across the northern coastal plains", "Wind farms"], current=0)
+    long.paragraph("Wind is air in motion. " * 20)
+    long.heading("Wind farms").paragraph("A wind farm is a group of turbines. " * 12)
+    pdf = long.render()
+    found = check_pdf(pdf, heading_texts=["Wind farms"], **qa_context(long.last_render.document, long.last_render.theme))
+    assert "stranded_heading" not in {f.code for f in found.findings}
+
+
+def test_a_compound_word_keeps_its_hyphen_when_its_paragraph_runs_onto_the_next_page():
+    """ReportLab dropped the author's hyphen when it joined the halves again: "by-product" became "byproduct"."""
+    from reportlab.lib.enums import TA_JUSTIFY
+    from reportlab.lib.styles import ParagraphStyle
+
+    from dynamic_pdf.layout.factory import Paragraph
+    style = ParagraphStyle("b", fontName="Helvetica", fontSize=10, leading=13, alignment=TA_JUSTIFY,
+                           hyphenationLang="en_GB", hyphenationMinWordLength=8)
+    text = ("Salt is <b>known</b> in the Balkans since long ago and it stays so today. Salt was the best-known "
+            "food preservative, especially for meat, and brine as a by-product of it.")
+
+    def words(p):
+        return " ".join(" ".join(getattr(w, "text", w) if not isinstance(w, str) else w for w in
+                                 (ln.words if hasattr(ln, "words") else ln[1])) for ln in p.blPara.lines)
+    tried = 0
+    for width in range(120, 420, 6):
+        for kept in range(1, 6):
+            p = Paragraph(text, style)
+            p.wrap(width, 1000)
+            parts = p.split(width, 13 * kept + 1)
+            if len(parts) == 2:
+                parts[1].wrap(width, 1000)
+                whole = (words(parts[0]) + " " + words(parts[1])).replace("- ", "-")
+                tried += 1
+                assert "byproduct" not in whole and "stknown" not in whole and "bestknown" not in whole, (width, kept)
+    assert tried > 50
+
+
+def test_cells_set_side_by_side_do_not_merge_a_western_number_with_an_arabic_indic_one():
+    from dynamic_pdf.qa.content_preservation import _LATIN
+    assert _LATIN.findall("99٨ and 2024") == ["99", "٨", "and", "2024"]
+
+
+def test_the_dots_that_lead_a_contents_line_are_not_counted_as_words():
+    from dynamic_pdf.intelligence.facts import read_pdf
+    doc = pymupdf.open()
+    doc.new_page(width=595, height=842).insert_text((72, 100), "Summary . . . . . . . . . . . . 4", fontsize=11)
+    assert read_pdf(doc.tobytes()).pages[0].words == 2
