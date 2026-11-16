@@ -245,6 +245,51 @@ def test_word_page_forecast_scales_heights_by_the_font_calibration():
     assert pages[0] <= pages[1] <= pages[2] and pages[0] < pages[2]
 
 
+def test_variants_take_page_breaks_as_a_refinement_within_their_budget(monkeypatch):
+    import warnings
+    import dynamic_pdf.layout.breaks as B
+    from dynamic_pdf.intelligence.variants import VariantBudget
+    warnings.simplefilter("ignore")
+    calls = []
+
+    def confirmed(doc, theme, policy=None, cache=None, natural=None):
+        calls.append(natural is not None)
+        facts, pdf, geo = B._render(doc, theme, policy)
+        rep = B.BreakReport(applied=True, before=facts, after=facts, renders=1, rendered=(pdf, geo))
+        return doc, rep
+
+    monkeypatch.setattr(B, "optimize_breaks", confirmed)
+    v = _kept_tables_doc().design_variants(families=["corporate_conservative"]).variants[0]
+    assert calls == [True]                      # verified against the design's own render
+    assert v.valid and any(s.startswith("kept: page breaks") for s in v.report.refinements)
+    none = _kept_tables_doc().design_variants(families=["corporate_conservative"],
+                                              budget=VariantBudget(max_refinements=0)).variants[0]
+    assert len(calls) == 1 and none.report.refinements == [] and none.report.renders == 1
+
+
+def test_refinement_renders_the_change_with_the_best_forecast(monkeypatch):
+    from dynamic_pdf.design.art_direction import Adjust
+    from dynamic_pdf.intelligence import variants as V
+    run = V._Runner.__new__(V._Runner)
+    run.base_pages, run.budget = 2, V.VariantBudget(max_forecasts=3)
+    options = [(Adjust(density=0.9), "a"), (Adjust(exhibits=0.8), "b"), (Adjust(openers=False), "c")]
+    monkeypatch.setattr(V, "_refinements", lambda *a: iter(options))
+
+    def ranked(forecasts):
+        got = iter(forecasts)
+        monkeypatch.setattr(V._Runner, "_forecast", lambda self, d, adj, why: next(got))
+        return run._ranked(None, [], None, Adjust(), None, [])[1]
+
+    assert ranked([(1, 5), (0, 6), (0, 5)]) == "c"          # fewest faults, then fewest pages
+    assert ranked([(0, 5), (0, 5), (0, 5)]) == "a"          # ties keep the ladder's order
+    assert ranked([(1, 5), None]) == "a"                    # no forecast: the ladder stands
+    monkeypatch.setattr(V, "_refinements", lambda *a: iter(options[:1]))
+    assert ranked([]) == "a"                                # one change: nothing to forecast
+    monkeypatch.setattr(V, "_refinements", lambda *a: iter(options))
+    run.budget = V.VariantBudget()
+    assert ranked([]) == "a"                                # default budget: the ladder, no forecast
+
+
 def test_forecast_matches_the_render_on_a_plain_document(natural):
     from dynamic_pdf.layout.breaks import forecast, page_facts
     doc, theme = natural

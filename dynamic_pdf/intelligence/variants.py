@@ -16,6 +16,7 @@ import re
 import time
 import warnings
 from dataclasses import dataclass, field, replace
+from itertools import islice
 from typing import Dict, List, Optional, Sequence
 
 from pydantic import BaseModel, Field
@@ -36,6 +37,10 @@ class VariantBudget(BaseModel):
 
     max_renders: int = Field(40, ge=1)
     max_refinements: int = Field(5, ge=0)        # per design
+    # changes forecast (measured blocks, no render) before each refinement; the best is rendered.
+    # 0 renders the ladder's first change. Off by default: on three corpus documents the
+    # forecast chose differently twice and the designs ended the same.
+    max_forecasts: int = Field(0, ge=0)
     max_seconds: float = Field(120.0, gt=0)
     max_output_mb: float = Field(160.0, gt=0)    # PDF and DOCX bytes held at once
 
@@ -155,8 +160,14 @@ def _title_on(line: str, titles: Sequence[str]) -> Optional[str]:
 def _next_refinement(critique, adjust: Adjust, plan: ArtDirectionPlan, titles: Sequence[str],
                      base_pages: int) -> Optional[tuple]:
     """One focused change for the worst thing measured, or nothing."""
+    return next(_refinements(critique, adjust, plan, titles, base_pages), None)
+
+
+def _refinements(critique, adjust: Adjust, plan: ArtDirectionPlan, titles: Sequence[str], base_pages: int):
+    """Every focused change for what was measured, worst problem first."""
     pages = critique.pages
     by_number = {p.page: p for p in pages}
+    seen = set()
     for o in critique.observations:
         if o.code != "sparse_page":
             continue
@@ -164,35 +175,35 @@ def _next_refinement(critique, adjust: Adjust, plan: ArtDirectionPlan, titles: S
         if nxt is None:
             continue
         title = _title_on(nxt.first_line, titles)
-        if title and title not in adjust.no_break:
-            return (replace(adjust, no_break=adjust.no_break | {title}),
-                    f"page {o.page} ended early: let {title!r} follow on instead of opening a page")
+        if title and title not in adjust.no_break and title not in seen:
+            seen.add(title)
+            yield (replace(adjust, no_break=adjust.no_break | {title}),
+                   f"page {o.page} ended early: let {title!r} follow on instead of opening a page")
     n = len(pages)
     last = pages[-1] if pages else None
     if last and n > 1 and last.words <= SHORT_LAST_WORDS:     # a short closing section need not open a page
         title = _title_on(last.first_line, titles)
-        if title and title not in adjust.no_break:
-            return (replace(adjust, no_break=adjust.no_break | {title}),
-                    f"last page holds {last.words} words: let {title!r} follow on")
+        if title and title not in adjust.no_break and title not in seen:
+            yield (replace(adjust, no_break=adjust.no_break | {title}),
+                   f"last page holds {last.words} words: let {title!r} follow on")
     if n >= max(4, base_pages * 1.75) and adjust.openers:
-        return (replace(adjust, openers=False),
-                f"{n} pages against about {base_pages} in plain setting: dropped the opening pages")
+        yield (replace(adjust, openers=False),
+               f"{n} pages against about {base_pages} in plain setting: dropped the opening pages")
     if n >= max(4, base_pages * 1.5) and adjust.major_breaks:
-        return (replace(adjust, major_breaks=False),
-                f"{n} pages against about {base_pages} in plain setting: sections now follow on")
+        yield (replace(adjust, major_breaks=False),
+               f"{n} pages against about {base_pages} in plain setting: sections now follow on")
     if not _faults(critique, base_pages):
-        return None
+        return
     if n >= max(3, base_pages * 1.5) and adjust.hero_page:
-        return (replace(adjust, hero_page=False),
-                f"{n} pages against about {base_pages} in plain setting: figures join their section")
+        yield (replace(adjust, hero_page=False),
+               f"{n} pages against about {base_pages} in plain setting: figures join their section")
     why = f"{n} pages, the last with {last.words} words"
     if adjust.exhibits > 0.76:
-        return (replace(adjust, exhibits=round(adjust.exhibits * 0.87, 3)),
-                f"{why}: made image bands and charts smaller to pull it back")
+        yield (replace(adjust, exhibits=round(adjust.exhibits * 0.87, 3)),
+               f"{why}: made image bands and charts smaller to pull it back")
     if adjust.density > 0.8:
-        return (replace(adjust, density=round(adjust.density * 0.9, 3)),
-                f"{why}: tightened spacing to pull it back")
-    return None
+        yield (replace(adjust, density=round(adjust.density * 0.9, 3)),
+               f"{why}: tightened spacing to pull it back")
 
 
 def _faults(critique, base_pages: int) -> int:
@@ -213,6 +224,7 @@ class _Runner:
         self.bytes = 0
         self.start = time.monotonic()
         self.base_pages = 1
+        self.forecast_figures: dict = {}      # figures drawn once for all forecasts
 
     def spent(self) -> Optional[str]:
         if self.renders >= self.budget.max_renders:
@@ -248,13 +260,14 @@ class _Runner:
             rep.hard_failures.append(stop)
             return Variant(direction.id, direction.name, None, rep)
         adjust = Adjust()
+        renders_before = self.renders
         titles = [o.text for o in self.sem.outline if o.level == 1]
         made, pdf, geo = self._attempt(direction, adjust, why)
         rep.renders = 1
         critique = self._look(made, pdf, titles)
         steps: List[str] = []
         for _ in range(self.budget.max_refinements):
-            step = _next_refinement(critique, adjust, made.plan, titles, self.base_pages)
+            step = self._ranked(direction, why, critique, adjust, made.plan, titles)
             if step is None or self.spent():
                 break
             trial = step[0]
@@ -268,6 +281,8 @@ class _Runner:
                 steps.append(f"kept: {step[1]} (index {critique.index})")
             else:
                 steps.append(f"undone: {step[1]} (index fell to {t_critique.index})")
+        made, pdf, geo, critique = self._paged(made, pdf, geo, critique, titles, steps)
+        rep.renders = self.renders - renders_before
         made.plan.refinements = steps
         rep.refinements = steps
         docx = self._docx(made, rep)
@@ -279,6 +294,52 @@ class _Runner:
         rep.seconds = round(time.monotonic() - began, 2)
         self.bytes += len(pdf) + len(docx or b"")
         return Variant(direction.id, direction.name, made.plan, rep, pdf, docx, made.document, made.theme)
+
+    def _ranked(self, direction: Direction, why, critique, adjust: Adjust, plan, titles) -> Optional[tuple]:
+        """The change to render next. Of the first ``max_forecasts`` the ladder offers, the one
+        whose forecast (measured blocks, no render) has the fewest page faults, then the fewest
+        pages; ladder order breaks ties and stands wherever a forecast is missing."""
+        options = list(islice(_refinements(critique, adjust, plan, titles, self.base_pages),
+                              max(1, self.budget.max_forecasts)))
+        if len(options) < 2:
+            return options[0] if options else None
+        keys = []
+        for k, (trial, _) in enumerate(options):
+            got = self._forecast(direction, trial, why)
+            if got is None:
+                return options[0]
+            keys.append((got, k))
+        return options[min(keys)[1]]
+
+    def _forecast(self, direction: Direction, adjust: Adjust, why) -> Optional[tuple]:
+        """(page faults, pages) forecast for a design, or None."""
+        from ..layout.breaks import forecast
+        made = direct(self.sem, direction, brand=self.brand, base_theme=self.base_theme, adjust=adjust,
+                      fit_reasons=why)
+        got = forecast(made.document, made.theme, self.policy, self.forecast_figures)
+        if got is None:
+            return None
+        pages, last_fill = got
+        return int(pages > 1 and last_fill < 1 - SHORT_TAIL) + int(pages >= max(3, self.base_pages * 1.5)), pages
+
+    def _paged(self, made, pdf, geo, critique, titles, steps: List[str]):
+        """Page breaks chosen by search (``layout/breaks.py``) for the refined design: one more
+        refinement, kept when a render confirms it and the measured faults do not grow."""
+        from ..layout.breaks import optimize_breaks
+        if len(steps) >= self.budget.max_refinements or self.spent():
+            return made, pdf, geo, critique
+        doc, br = optimize_breaks(made.document, made.theme, self.policy, natural=geo)
+        self.renders += br.renders
+        if not br.applied:
+            return made, pdf, geo, critique
+        t_made = replace(made, document=doc)
+        t_pdf, t_geo = br.rendered
+        t_critique = self._look(t_made, t_pdf, titles)
+        if _faults(t_critique, self.base_pages) <= _faults(critique, self.base_pages):
+            steps.append(f"kept: {br.summary()} (index {t_critique.index})")
+            return t_made, t_pdf, t_geo, t_critique
+        steps.append(f"undone: {br.summary()} (more page faults)")
+        return made, pdf, geo, critique
 
     def _look(self, made, pdf: bytes, titles: Sequence[str]):
         from ..qa.visual_critique import critique_pdf
