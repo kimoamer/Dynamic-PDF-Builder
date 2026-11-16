@@ -270,15 +270,16 @@ def _items(doc, theme, policy=None, cache=None):
         released = dict(zip(kept, rel))
     segments: List[Tuple[list, bool, bool]] = []
     cur: List[Item] = []
-    frozen = False
+    frozen = landscape = False
     for m, b in zip(ms, doc.blocks):
         hints = b.hints or {}
-        starts = m.break_before or hints.get("drop") or (
+        starts = m.break_before or hints.get("drop") or m.landscape != landscape or (
             m.index > 0 and doc.blocks[m.index - 1].type in FORCED_BREAK_AFTER)
+        landscape = m.landscape
         if starts and cur:
             segments.append((cur, False, frozen))
             cur, frozen = [], False
-        if b.type not in SUPPORTED or any(hints.get(h) for h in FROZEN_HINTS) or m.tail:
+        if b.type not in SUPPORTED or any(hints.get(h) for h in FROZEN_HINTS) or m.tail or m.landscape:
             frozen = True
         if b.type == "page_break":
             continue

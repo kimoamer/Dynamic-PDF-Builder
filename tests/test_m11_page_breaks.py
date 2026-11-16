@@ -295,3 +295,17 @@ def test_forecast_matches_the_render_on_a_plain_document(natural):
     doc, theme = natural
     pages, fill = forecast(doc, theme)
     assert pages == page_facts(doc, theme)["pages"] and 0 < fill <= 1
+
+
+def test_landscape_runs_are_left_alone_and_split_the_document_into_runs():
+    from dynamic_pdf.layout.breaks import _items
+    from dynamic_pdf.themes import get_theme
+    doc = _kept_tables_doc().build()
+    wide = next(i for i, blk in enumerate(doc.blocks) if blk.type == "table")
+    doc.blocks[wide].hints = {"landscape": True}
+    runs, _ = _items(doc, get_theme("claude"))
+    where = {it.index: (k, frozen) for k, (items, _, frozen) in enumerate(runs) for it in items}
+    last = len(doc.blocks) - 1
+    assert where[wide][1]                         # the landscape run is frozen
+    assert not where[last][1]                     # portrait pages after it are planned
+    assert where[wide][0] != where[last][0]
