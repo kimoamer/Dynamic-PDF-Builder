@@ -301,3 +301,25 @@ def test_scoreboard_runs_and_the_committed_baseline_has_budgets(tmp_path):
     code = sb.main([str(tmp_path / "run"), "--docs", "memo", "--quick", "--no-office", "--budgets", str(strict)])
     out = json.loads((tmp_path / "run" / "scoreboard.json").read_text(encoding="utf-8"))
     assert code == 1 and out["summary"]["docs"] == 1 and (tmp_path / "run" / "scoreboard.md").exists()
+
+
+def test_each_refinement_is_chosen_from_the_last_kept_render(monkeypatch):
+    # an integration slip once chose every step from the first render, so a design lost
+    # the page its later steps would have pulled back
+    import stress_docs
+    seen, kept = [], []
+    real_ranked, real_trial = vmod._Runner._ranked, vmod._Runner._trial
+
+    def ranked(self, direction, why, critique, *a):
+        seen.append(critique)
+        return real_ranked(self, direction, why, critique, *a)
+
+    def trial(self, *a, **k):
+        state = real_trial(self, *a, **k)
+        kept.append(state[3])
+        return state
+
+    monkeypatch.setattr(vmod._Runner, "_ranked", ranked)
+    monkeypatch.setattr(vmod._Runner, "_trial", trial)
+    stress_docs.academic_paper().design_variants(families=["executive_premium"])
+    assert len(seen) >= 2 and all(s is k for s, k in zip(seen[1:], kept))

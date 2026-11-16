@@ -325,3 +325,10 @@ def test_running_heads_and_feet_are_artifacts():
     ops = [(str(op), operands) for operands, op in pikepdf.parse_content_stream(pdf.pages[0])]
     assert any(op == "BMC" and str(o[0]) == "/Artifact" for op, o in ops)
 
+
+
+def test_a_word_hyphenated_across_a_page_break_is_rejoined():
+    # extraction puts a blank line where a page or column ends between the two halves
+    from dynamic_pdf.qa.content_preservation import _dehyphenate
+    assert _dehyphenate("Effects were estim-\n\nated with mixed models") == "Effects were estimated with mixed models"
+    assert _dehyphenate("well-\n\n42 cases") == "well-\n\n42 cases"          # a digit is not a word's tail

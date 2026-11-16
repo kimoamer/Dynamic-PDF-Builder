@@ -342,6 +342,7 @@ class _Runner:
                 break
             adjust = step[0]                      # a rejected change is not tried again
             state = self._trial(direction, adjust, why, titles, state, step[1], rep, steps, cache, critic=False)
+            made, pdf, geo, critique, facts = state
         for _ in range(self.critic.rounds if self.critic else 0):
             if self.spent():
                 break

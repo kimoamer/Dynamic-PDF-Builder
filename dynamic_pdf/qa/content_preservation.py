@@ -218,7 +218,8 @@ def _fold(text: str) -> str:
     return "".join(c for c in unicodedata.normalize("NFKC", text.lower()) if not unicodedata.combining(c))
 
 
-_SOFT_BREAK = re.compile(r"(?<=[^\W\d_])-\n(?=[^\W\d_])")
+# a page or column break between the two halves comes out as blank lines in between
+_SOFT_BREAK = re.compile(r"(?<=[^\W\d_])-\n\s*(?=[^\W\d_])")
 
 
 def _dehyphenate(text: str) -> str:
