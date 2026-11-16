@@ -14,6 +14,7 @@ from typing import Callable, Dict, List, Literal, Optional, Sequence, Tuple
 
 from pydantic import BaseModel, Field
 
+from ..core.normalize import block_text
 from ..design.art_direction import Adjust
 from ..design.directions import DIRECTIONS
 from .provider import Provider, ask, check_context, pdf_block, sha, text_block
@@ -180,9 +181,10 @@ def document_text(sem) -> List[dict]:
     """The author's words block by block, for the ``text`` context. Sent, never changed."""
     out = []
     for i, b in enumerate(sem.blocks):
-        text = getattr(b, "text", None)
         if b.type == "table":
             text = " | ".join(b.headers) + "\n" + "\n".join(" | ".join(map(str, r)) for r in b.rows)
+        else:                                     # lists, quotes, callouts ... keep their words in items or children
+            text = "\n".join(block_text(b))
         if text:
             out.append({"index": i, "type": b.type, "text": text})
     return out

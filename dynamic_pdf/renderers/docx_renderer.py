@@ -35,6 +35,7 @@ from ..core.normalize import SemanticDocument, coerce_child, is_rtl_text
 from ..design.archetypes import ink as _ink, mix as _mix
 from ..design.tokens import compile_tokens
 from ..core.table_types import table_types
+from ..i18n import written_number
 from ..media import (LOW_RESOLUTION_DPI, check_resolution, fit_image, flow_box, ingest, normal_mode,
                      physical_side)
 from ..schema.enums import Orientation, PageSize
@@ -89,7 +90,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         from .docx_footnotes import Footnotes
         self.notes = Footnotes(doc, self.sem.blocks, self.tokens.note_size)
         self.lists = F.ListNumbering(doc, indent_twips=int(self.tokens.list_indent * 20) or 360,
-                                     bullet_font=word_font(self.tokens.fonts.body))
+                                     bullet_font=word_font(self.tokens.fonts.body),
+                                     indic=self.rtl_doc and getattr(self.col, "digits", "") == "arabic")
         self._setup_section()
         self._core_properties()
         self._page_parts(doc.sections[0], None)
@@ -492,7 +494,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             self.heading_counters[idx] += 1
             for i in range(idx + 1, 6):
                 self.heading_counters[i] = 0
-            num = ".".join(str(n) for n in self.heading_counters[:idx + 1] if n > 0)
+            num = written_number(".".join(str(n) for n in self.heading_counters[:idx + 1] if n > 0), text)
             text = f"{num}  {text}"
         p = self._para(c, f"Heading {lvl}", b.text)
         hints = b.hints or {}
@@ -558,7 +560,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
     def _b_paragraph(self, c, b):
         if (b.hints or {}).get("lead"):
             p = self._para(c, "Normal", b.text)
-            p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+            rtl = is_rtl_text(b.text) or self.rtl_doc
+            p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY if rtl else WD_ALIGN_PARAGRAPH.LEFT   # as in the PDF
             p.paragraph_format.space_after = Pt(self.tokens.paragraph_after * 1.5)
             self._runs(p, b.text, size=self.tokens.body_size * 1.2,
                        color=self.tokens.colors["text_secondary"])
@@ -1450,7 +1453,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                 counters[o.level - 1] += 1
                 for j in range(o.level, 6):
                     counters[j] = 0
-                text = ".".join(str(n) for n in counters[:o.level] if n) + "  " + text
+                text = written_number(".".join(str(n) for n in counters[:o.level] if n), text) + "  " + text
             p = first if i == 0 else self._para(c, f"TOC {min(o.level, 3)}", o.text)
             if i == 0:
                 p.style = self.doc.styles[f"TOC {min(o.level, 3)}"]

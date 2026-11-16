@@ -17,6 +17,20 @@ def label(key: str, language: str = "en") -> str:
     return LABELS.get(lang, LABELS["en"]).get(key, LABELS["en"][key])
 
 
+_INDIC = str.maketrans("0123456789", "٠١٢٣٤٥٦٧٨٩")
+
+
+def written_number(number: str, text: str) -> str:
+    """A generated number (a heading's, a list item's) in Arabic-Indic digits when it numbers
+    right-to-left ``text`` in a document that writes its own figures that way; else as given."""
+    from . import policy as _policy
+    from .core.normalize import is_rtl_text
+    col = _policy._current.get()
+    if getattr(col, "digits", "western") == "arabic" and is_rtl_text(text):
+        return number.translate(_INDIC)
+    return number
+
+
 def digit_style(doc) -> str:
     """``"arabic"`` when the document writes its figures in Arabic-Indic digits more than in
     Western ones, else ``"western"``. Generated figures (chart labels) follow it."""

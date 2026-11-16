@@ -310,3 +310,11 @@ class TestAgentSurface:
                 await server.call_tool("render", {"document": {"blocks": [{"type": "heading", "text": "x", "level": 9}]}})
             return names
         assert asyncio.run(go()) >= {"schema", "render", "variants", "explain"}
+
+
+def test_the_text_sent_to_a_model_holds_list_items_too():
+    # a real summary called a document's lists "sections with no content": only .text was sent
+    from dynamic_pdf.ai.design import document_text
+    doc = DocumentBuilder().heading("Findings").bullet_list(["Customer satisfaction rose", "Costs fell"]).build()
+    sent = "\n".join(x["text"] for x in document_text(doc))
+    assert "Customer satisfaction rose" in sent and "Costs fell" in sent

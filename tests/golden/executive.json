@@ -56,7 +56,6 @@
  "layout": [
   "headings: shallow outline: stronger H1 contrast",
   "measure: 83 chars/line",
-  "lead: opening paragraph set as a lead (larger, no indent)",
   "pagination: 1 page: fits on one page; nothing to tighten"
  ]
 }

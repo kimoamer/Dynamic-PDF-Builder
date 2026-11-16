@@ -464,9 +464,12 @@ def _apply_sections(sem, d: Direction, brief: DocumentBrief, primary: str, accen
         major = _major(s)
         opener = d.opener
         composition = s.role
-        if number == 0 and plan.cover == "masthead" and opener == "slab":
-            opener = "rule"                       # two bands in a row would fight
-            why.append("under the masthead: a rule, not a second band")
+        # the first section under a masthead takes a rule (two bands in a row would fight); in a
+        # short document its peers, on the same page or the next, take the same rule
+        if (number == 0 or brief.estimated_pages < 4) and plan.cover == "masthead" and opener == "slab":
+            opener = "rule"
+            why.append("under the masthead: a rule, not a second band" if number == 0 else
+                       "short document: the same rule as the first section, so peer headings match")
             _hint(heading, opener="rule", rule=accent, rule_width=1.2, weight="regular")
         if s.role == "appendix":
             opener = "quiet"
@@ -515,7 +518,10 @@ def _apply_sections(sem, d: Direction, brief: DocumentBrief, primary: str, accen
                 (heading.hints or {}).pop(key, None)
         previous = opener
         side = "end" if not (d.side_alternates and side_flip) else "start"
-        lead_done = not d.lead or s.role in ("data", "appendix")
+        # a lead leads into more text: a section of one paragraph sets it as body, or every
+        # paragraph of a short document turns into larger grey display text
+        lead_done = (not d.lead or s.role in ("data", "appendix")
+                     or sum(blocks[i].type == "paragraph" for i in idx if i not in remove) < 2)
         for pos, i in enumerate(idx):
             b = blocks[i]
             if i in remove:

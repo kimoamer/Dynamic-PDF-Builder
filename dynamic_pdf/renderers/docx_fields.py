@@ -436,10 +436,11 @@ class ListNumbering:
     """Creates two abstract list definitions (bullet, ordered) and one numbering
     instance per list, so every ordered list restarts at its own ``start``."""
 
-    def __init__(self, document, indent_twips: int = 360, bullet_font: str = "Arial"):
+    def __init__(self, document, indent_twips: int = 360, bullet_font: str = "Arial", indic: bool = False):
         self.numbering = document.part.numbering_part.element
         self.indent = indent_twips
         self.bullet_font = bullet_font
+        self.indic = indic          # first-level numbers in Arabic-Indic digits ("hindiNumbers" in Word)
         self._abs = {}
 
     def _next_id(self, tag: str, attr: str) -> int:
@@ -462,7 +463,8 @@ class ListNumbering:
             st.set(qn("w:val"), "1")
             el.append(st)
             fmt = OxmlElement("w:numFmt")
-            fmt.set(qn("w:val"), _ORDERED_FMTS[lvl] if ordered else "bullet")
+            fmt.set(qn("w:val"), ("hindiNumbers" if self.indic and lvl == 0 else _ORDERED_FMTS[lvl]) if ordered
+                    else "bullet")
             el.append(fmt)
             txt = OxmlElement("w:lvlText")
             txt.set(qn("w:val"), f"%{lvl + 1}." if ordered else _BULLETS[lvl])

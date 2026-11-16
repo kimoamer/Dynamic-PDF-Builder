@@ -201,9 +201,11 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
 
     # ── lead paragraph ──
     if profile in _LEAD_PROFILES:
-        for b in sem.blocks:
+        for k, b in enumerate(sem.blocks):
             if b.type == "paragraph":
-                if len(plain_text(b.text)) > 60:
+                # a lead leads into more text in its section; alone, it is just larger body text
+                rest = next((j for j in range(k + 1, len(sem.blocks)) if sem.blocks[j].type == "heading"), len(sem.blocks))
+                if len(plain_text(b.text)) > 60 and any(x.type == "paragraph" for x in sem.blocks[k + 1:rest]):
                     b.hints = {**(b.hints or {}), "lead": True}
                     lp.log("lead", "opening paragraph set as a lead (larger, no indent)")
                 break

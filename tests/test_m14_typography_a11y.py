@@ -332,3 +332,10 @@ def test_a_word_hyphenated_across_a_page_break_is_rejoined():
     from dynamic_pdf.qa.content_preservation import _dehyphenate
     assert _dehyphenate("Effects were estim-\n\nated with mixed models") == "Effects were estimated with mixed models"
     assert _dehyphenate("well-\n\n42 cases") == "well-\n\n42 cases"          # a digit is not a word's tail
+
+
+def test_a_word_hyphenated_over_the_running_head_and_foot_is_found():
+    from dynamic_pdf.qa.content_preservation import _split_over_bands
+    text = "effects were estim-\nsleep and recall\ndiscussion\npage 3 of 4\n\nated with mixed models"
+    assert _split_over_bands(text, "estimated", 1) == 1
+    assert _split_over_bands("effects were estim-\nnothing here", "estimated", 1) == 0
