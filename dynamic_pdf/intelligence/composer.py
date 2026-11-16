@@ -44,7 +44,7 @@ class ComposeOptions(BaseModel):
     time_budget_s: float = 60.0
     memory_budget_mb: float = 1024.0
     measure_memory: bool = False        # tracemalloc peak (process-global: benchmarks only)
-    qa: bool = True                     # inspect the selected PDF (needs PyMuPDF)
+    qa: bool = True                     # inspect the selected PDF (needs PyMuPDF or pypdfium2)
     ranker_model: Optional[str] = None  # optional LightGBM text model (valid candidates only)
     media: Optional[AutoMediaOptions] = None    # automatic image placement; off unless given
 

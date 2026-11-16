@@ -438,11 +438,15 @@ class DocumentBuilder:
     def meta(self, title: Optional[str] = None, author: Optional[str] = None,
              language: str = "en", subject: Optional[str] = None,
              keywords: Optional[List[str]] = None,
-             description: Optional[str] = None, audience: Optional[str] = None) -> 'DocumentBuilder':
+             description: Optional[str] = None, audience: Optional[str] = None,
+             tagged: bool = False) -> 'DocumentBuilder':
         """Document metadata. ``audience`` names the readers in free text ("board",
-        "engineers", "investors"); the design reads it and ``design_explain()`` says how."""
+        "engineers", "investors"); the design reads it and ``design_explain()`` says how.
+        ``tagged=True``: a tagged PDF (structure tree, alt text, artifacts; needs pikepdf)."""
         if audience:
             self._meta.audience = audience
+        if tagged:
+            self._meta.tagged = True
         if title:
             self._meta.title = title
         if author:

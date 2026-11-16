@@ -372,7 +372,7 @@ class _Runner:
             pdf_rep.findings += glyph_findings(sem, theme)
             media += check_pdf_media(pdf)
         except ImportError:
-            rep.unverified.append("pdf page checks need PyMuPDF")
+            rep.unverified.append("pdf page checks need a PDF reader (PyMuPDF or pypdfium2)")
         if docx:
             docx_rep = check_docx(docx, heading_texts=heads, visual=False)
             media += check_docx_media(docx)
@@ -385,7 +385,7 @@ class _Runner:
                 if layer.status == UNKNOWN:
                     rep.unverified += [f"preservation {layer.name}: {x}" for x in layer.details]
         except ImportError:
-            rep.unverified.append("preservation of the PDF text needs PyMuPDF")
+            rep.unverified.append("preservation of the PDF text needs a PDF reader (PyMuPDF or pypdfium2)")
         rep.hard_failures += hard_failures(content=changes, pdf_report=pdf_rep, docx_report=docx_rep,
                                            preservation=preservation, layout_errors=layout.hard_errors, media=media,
                                            smallest_type=theme.typography.base_size, critique=critique)
@@ -393,8 +393,8 @@ class _Runner:
             version = office_version()
             converted = docx_to_pdf(docx) if version else None
             if converted:
-                import pymupdf
-                with pymupdf.open(stream=converted, filetype="pdf") as d:
+                from ..qa.pdf_backend import open_pdf
+                with open_pdf(converted) as d:
                     rep.office = {"engine": version, "pages": d.page_count}
             else:
                 rep.unverified.append("LibreOffice was not available for this DOCX")
@@ -526,21 +526,22 @@ def _took_effect(rule: str, plan) -> bool:
 
 def _cover_spilled(pdf: Optional[bytes]) -> bool:
     """A cover too tall for its page leaves white type on a white second page, which no text check sees."""
-    try:
-        import pymupdf
-    except ImportError:
-        return False
+    from ..qa.pdf_backend import open_pdf
     if not pdf:
         return False
-    with pymupdf.open(stream=pdf, filetype="pdf") as doc:
+    try:
+        doc = open_pdf(pdf)
+    except ImportError:
+        return False
+    with doc:
         if doc.page_count < 2:
             return False
         page = doc[1]
-        spans = [x for block in page.get_text("dict")["blocks"] for line in block.get("lines", []) for x in line["spans"]]
+        spans = [x for block in page.text_dict()["blocks"] for line in block.get("lines", []) for x in line["spans"]]
         for span in spans:
             if span["color"] >= 0xF0F0F0 and span["text"].strip():
-                pix = page.get_pixmap(clip=pymupdf.Rect(span["bbox"]), colorspace=pymupdf.csGRAY, alpha=False)
-                if min(pix.samples, default=255) > 200:         # nothing behind it: this type cannot be seen
+                clip = page.clip(tuple(span["bbox"]))
+                if clip and min(page.gray(1.0, clip)[2], default=255) > 200:   # nothing behind it: unseen type
                     return True
     return False
 

@@ -97,7 +97,8 @@ def test_arabic_and_bilingual_pages(corpus):
     assert ar["scripts"]["value"] == {"arabic_rtl": 2}
     assert set(ar["alignment"]["value"]) == {"rtl:right_or_justified"}
     assert {r["band"] for r in ar["running_elements"]["value"]} == {"top", "bottom"}
-    assert _warn(corpus, "arabic_report.pdf", "arabic_presentation_forms")
+    # M14: this library's Arabic now extracts as base letters, so the analyzer has nothing to warn about
+    assert not _warn(corpus, "arabic_report.pdf", "arabic_presentation_forms")
     assert corpus["feat"]["bilingual.pdf"]["summary"]["scripts"]["value"] == {"bilingual": 1}
 
 

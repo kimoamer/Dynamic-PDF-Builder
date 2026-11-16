@@ -137,6 +137,9 @@ def _visual_line(line, kind: int, base: str):
     return line.clone(words=empty + [frags[fi].clone(text="".join(cs)) for fi, cs in runs])
 
 
+_TAG_ATTRS = ("_dpb_role", "_dpb_level", "_dpb_key", "_dpb_cell", "_dpb_alt", "_dpb_block")
+
+
 class Paragraph(_RLParagraph):
     """ReportLab ``Paragraph`` with bidirectional text drawn correctly.
 
@@ -177,10 +180,19 @@ class Paragraph(_RLParagraph):
     def split(self, availWidth, availHeight):
         base = self._bidi_base()
         parts = super().split(availWidth, availHeight)
+        tagged = {k: v for k, v in self.__dict__.items() if k in _TAG_ATTRS}
+        if "_dpb_role" in tagged:                # the pieces are one element of the structure tree
+            from .tagging import _key
+            tagged["_dpb_key"] = _key(self)
         for p in parts:
             if isinstance(p, Paragraph):
                 p._dpb_base = base
+                p.__dict__.update(tagged)
         return parts
+
+    def drawOn(self, canvas, x, y, _sW=0):
+        from .tagging import draw_tagged
+        return draw_tagged(self, canvas, lambda: super(Paragraph, self).drawOn(canvas, x, y, _sW))
 
     def drawPara(self, debug=0):
         base = self._bidi_base()
@@ -490,7 +502,14 @@ class DropCapParagraph(Flowable):
             'DropCapCont', fontName=self.body_font, fontSize=self.body_size,
             leading=self.body_leading, textColor=_safe_color(self.body_color))
         cont = ParagraphStyle('DropCapCont', parent=style, firstLineIndent=0, spaceBefore=0)
-        return [head, Paragraph(html_mod.escape(tail_text), cont)]
+        parts = [head, Paragraph(html_mod.escape(tail_text), cont)]
+        if "_dpb_role" in self.__dict__:         # tagged PDF: both pieces are one paragraph
+            from .tagging import _key
+            tagged = {k: v for k, v in self.__dict__.items() if k in _TAG_ATTRS}
+            tagged["_dpb_key"] = _key(self)
+            for p in parts:
+                p.__dict__.update(tagged)
+        return parts
 
     def draw(self):
         c = self.canv
@@ -999,6 +1018,26 @@ def _body_style(theme: Theme, indent: bool = True) -> ParagraphStyle:
     )
 
 
+@lru_cache(maxsize=32)
+def _hyphenation_lang(language: str) -> str:
+    try:
+        import pyphen
+    except ImportError:
+        return ""
+    return pyphen.language_fallback((language or "en").replace("-", "_")) or ""
+
+
+def _hyphenated(style: ParagraphStyle) -> ParagraphStyle:
+    """Justified left-to-right body paragraphs break long words at the document language's
+    hyphenation points (pyphen), so word gaps stay even. Only the body-paragraph branches call
+    this: headings, tables, code and right-to-left text are never hyphenated."""
+    lang = _hyphenation_lang(getattr(_diag.current(), "language", "en"))
+    if not lang or style.alignment != TA_JUSTIFY:
+        return style
+    return ParagraphStyle(style.name + "Hy", parent=style, hyphenationLang=lang,
+                          hyphenationMinWordLength=8)   # fewer breaks, equally even gaps on the corpus
+
+
 def _arabic_font(theme: Theme, bold: bool = False) -> str:
     """Return the Arabic-capable font name, falling back to body/heading font."""
     if theme.typography.arabic_family:
@@ -1110,7 +1149,7 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
                               firstLineIndent=0, spaceAfter=sp.paragraph_spacing_after * 1.5,
                               textColor=_safe_color(theme.colors.text_secondary),
                               alignment=4)
-        return [Paragraph(_md_inline(block.text), lead)]
+        return [Paragraph(_md_inline(block.text), lead if _is_rtl(block.text) else _hyphenated(lead))]
     if btype == "paragraph":
         raw = block.text
         is_rtl = _is_rtl(raw)
@@ -1154,7 +1193,7 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
             # no first-line indent in Arabic, as the DOCX renderer and the RTL recipes already do
             rtl_style = ParagraphStyle('RTL', parent=bs, alignment=4, fontName=body_font, firstLineIndent=0)
             return [Paragraph(text, rtl_style)]
-        return [Paragraph(text, bs)]
+        return [Paragraph(text, _hyphenated(bs))]
 
     # ─── Rich Text ───
     if btype == "rich_text":
@@ -1513,6 +1552,11 @@ def _render_table(block, theme, bs, ctx=None):
         col_widths = [w * avail / sum(col_widths) for w in col_widths]   # never overflow the frame
     if col_widths and tbl_rtl:
         col_widths = list(reversed(col_widths))
+    from .tagging import new_key
+    tkey = new_key()
+    for ri, row in enumerate(data):              # structure tree: Table > TR > TH/TD, reading order
+        for ci, cell in enumerate(row):
+            cell._dpb_cell = (tkey, ri, len(row) - 1 - ci if tbl_rtl else ci, ri == 0 and bool(block.headers))
     t = Table(data, colWidths=col_widths, style=TableStyle(cmds),
               repeatRows=1 if block.headers else 0)
     t.hAlign = 'RIGHT' if tbl_rtl else 'LEFT'

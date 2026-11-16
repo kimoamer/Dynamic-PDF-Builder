@@ -7,7 +7,7 @@ page image, such as empty bands or how alike neighbouring pages are. They steer
 refinement and rank valid designs, but they are not aesthetic judgement: they cannot tell
 good whitespace from bad, and no human has calibrated them.
 
-Reading the page image needs PyMuPDF (the ``qa`` extra). Without it the critique says so
+Reading the page image needs a PDF reader (``pdf_backend``: PyMuPDF or pypdfium2). Without one the critique says so
 and carries no heuristics.
 """
 from __future__ import annotations
@@ -66,11 +66,11 @@ class VisualCritique(BaseModel):
         return round(score, 2)
 
 
-def _cells(page, pymupdf) -> List[List[bool]]:
+def _cells(page) -> List[List[bool]]:
     """Which cells of a coarse grid hold anything but the page background."""
     from PIL import Image
-    pix = page.get_pixmap(dpi=36, colorspace=pymupdf.csGRAY, alpha=False)
-    img = Image.frombytes("L", (pix.width, pix.height), pix.samples)
+    w, h, samples = page.gray(36 / 72)
+    img = Image.frombytes("L", (w, h), samples)
     small = img.resize((GRID_W * 4, GRID_H * 4))
     data = small.load()
     out = []
@@ -101,15 +101,15 @@ def _signals(number: int, page, cells) -> PageSignals:
         run = 0 if filled else run + 1
         best = max(best, run)
     last = max((i for i, f in enumerate(body) if f), default=-1)
-    area = page.rect.width * page.rect.height
+    area = page.width * page.height
     images = 0.0
-    for info in page.get_image_info():
+    for info in page.images():
         x0, y0, x1, y1 = info["bbox"]
         images += max(0.0, x1 - x0) * max(0.0, y1 - y0)
     largest, words, first = 0.0, 0, ""
-    top = page.rect.height * 0.09
-    bottom = page.rect.height * 0.92
-    for block in page.get_text("dict")["blocks"]:
+    top = page.height * 0.09
+    bottom = page.height * 0.92
+    for block in page.text_dict()["blocks"]:
         for line in block.get("lines", []):
             for span in line["spans"]:
                 if not span["text"].strip():
@@ -127,16 +127,18 @@ def _signals(number: int, page, cells) -> PageSignals:
 def critique_pdf(data: bytes, *, intended: Sequence[int] = ()) -> VisualCritique:
     """Measure every page. ``intended`` lists pages whose emptiness was planned (a cover,
     an opening page, a statement), which are not reported as sparse."""
+    from .pdf_backend import open_pdf
     try:
-        import pymupdf
+        doc = open_pdf(io.BytesIO(data).getvalue())
     except ImportError:
         return VisualCritique(available=False, observations=[Observation(
-            code="unreviewed", note="PyMuPDF is not installed, so the page images were not measured")])
+            code="unreviewed", note="no PDF reader (PyMuPDF or pypdfium2) is installed, so the page images "
+                                    "were not measured")])
     out = VisualCritique()
     thumbs = []
-    with pymupdf.open(stream=io.BytesIO(data).getvalue(), filetype="pdf") as doc:
+    with doc:
         for i, page in enumerate(doc, 1):
-            cells = _cells(page, pymupdf)
+            cells = _cells(page)
             thumbs.append(_thumb(cells))
             out.pages.append(_signals(i, page, cells))
     pages = out.pages

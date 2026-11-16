@@ -106,6 +106,16 @@ def _uses_page_layers(blocks) -> bool:
 _MIN_ROOM_AFTER_HEADING = 60.0
 
 
+def _set_alt(flowables, alt: str) -> None:
+    """Tagged PDF: a figure's alternative text, from the block's alt text or caption."""
+    for f in flowables or []:
+        if getattr(f, "_dpb_role", None) == "figure":
+            f._dpb_alt = alt
+        inner = getattr(f, "_content", None)
+        if isinstance(inner, list):
+            _set_alt(inner, alt)
+
+
 def _uses_media_model(blocks) -> bool:
     return _uses_page_layers(blocks) or any(
         getattr(b, "type", None) == "image" and b.placement for b in blocks)
@@ -1171,6 +1181,11 @@ class LayoutEngine:
             hooks = {"onPageEnd": self._on_page_end}
         if self.page_system is not None or _uses_page_layers(self.document.blocks):
             hooks = {"onPage": self._page_begin, "onPageEnd": self._page_finish}
+        tagged = bool(getattr(self.document.meta, "tagged", False))
+        if tagged:
+            from .tagging import artifact
+            # running heads, feet and page layers are artifacts, not text
+            hooks = {k: (lambda canv, doc, fn=fn: artifact(canv, lambda: fn(canv, doc))) for k, fn in hooks.items()}
         template = PageTemplate(id='AllPages', frames=[frame], pagesize=pagesize, **hooks)
         # Landscape pages for content the planner marks as too wide for portrait
         lw, lh = (h, w) if h > w else (w, h)
@@ -1186,6 +1201,11 @@ class LayoutEngine:
 
         # Fail closed: refuse *before* rendering if encryption cannot be honoured
         needs_encrypt = bool(meta.encrypt)
+        if tagged:
+            try:
+                import pikepdf  # noqa: F401
+            except ImportError as e:
+                raise DynamicPDFError('A tagged PDF needs pikepdf: pip install "dynamic-pdf-builder[pdf]"') from e
         if needs_encrypt:
             if not (meta.owner_password or meta.user_password):
                 raise EncryptionError("encrypt=True requires owner_password and/or user_password")
@@ -1271,9 +1291,11 @@ class LayoutEngine:
                     continue
                 result = create_flowables(block, theme, ctx)
                 if result:
-                    if self.geometry is not None:
+                    if self.geometry is not None or tagged:
                         from ..intelligence.geometry import tag
                         tag(result, i, _role_for(block))
+                    if tagged:
+                        _set_alt(result, getattr(block, "alt_text", None) or getattr(block, "caption", None) or "")
                     flowables.extend(result)
             self.diagnostics.block_index = None
             self.diagnostics.block_type = None
@@ -1281,7 +1303,15 @@ class LayoutEngine:
             if len(flowables) == 1:
                 flowables.append(Spacer(1, 1))
 
-            doc_template.multiBuild(flowables, canvasmaker=_BidiCanvas)
+            maker = _BidiCanvas
+            if tagged:
+                from .tagging import Tagger
+
+                def maker(*a, **k):              # each build pass draws afresh; the last one counts
+                    c = _BidiCanvas(*a, **k)
+                    c._dpb_tagger = self._tagger = Tagger()
+                    return c
+            doc_template.multiBuild(flowables, canvasmaker=maker)
             self.page_count = self._page_counter.total
             # how full the final page is (0..1) — used by the page-fit step
             fr = getattr(doc_template, "frame", None)
@@ -1293,6 +1323,9 @@ class LayoutEngine:
             _policy.deactivate(token)
 
         pdf_bytes = render_target.getvalue()
+        if tagged:
+            from .tagging import add_structure
+            pdf_bytes = add_structure(pdf_bytes, self._tagger, meta.language, meta.title or "")
         if needs_encrypt:
             pdf_bytes = self._encrypt_bytes(pdf_bytes, meta)
         _write_output(output, pdf_bytes)

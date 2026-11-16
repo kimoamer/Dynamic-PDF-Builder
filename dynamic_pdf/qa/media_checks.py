@@ -43,12 +43,12 @@ def _covered(text, image) -> float:
 
 
 def check_pdf_media(data: bytes) -> List[Dict]:
-    import pymupdf
+    from .pdf_backend import open_pdf
     findings = []
-    doc = pymupdf.open(stream=data, filetype="pdf")
+    doc = open_pdf(data)
     for number, page in enumerate(doc, start=1):
         painted = []
-        for kind, rect in page.get_bboxlog():
+        for kind, rect in page.paint_log():
             if kind == "fill-text":
                 painted.append(rect)
             elif kind == "fill-image":
@@ -56,7 +56,7 @@ def check_pdf_media(data: bytes) -> List[Dict]:
                 if hidden:
                     findings.append({"code": "text_under_image", "page": number,
                                      "detail": f"{hidden} text runs are painted before an image over them"})
-        for info in page.get_image_info():
+        for info in page.images():
             a, b, c, d, _, _ = info["transform"]
             if abs(b) > 1e-3 or abs(c) > 1e-3 or not (a and d and info["width"] and info["height"]):
                 continue                                  # rotated: its box is not its shape
