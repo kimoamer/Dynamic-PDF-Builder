@@ -34,6 +34,7 @@ from ..core.inline import parse_inline, plain_text
 from ..core.normalize import SemanticDocument, coerce_child, is_rtl_text
 from ..design.archetypes import ink as _ink, mix as _mix
 from ..design.tokens import compile_tokens
+from ..core.table_types import table_types
 from ..media import (LOW_RESOLUTION_DPI, check_resolution, fit_image, flow_box, ingest, normal_mode,
                      physical_side)
 from ..schema.enums import Orientation, PageSize
@@ -52,7 +53,6 @@ _PAGE_SIZES_PT = {PageSize.A4: (595.28, 841.89), PageSize.LETTER: (612, 792),
 _VARIANT_COLORS = {"info": "info", "warning": "warning", "error": "error",
                    "success": "success", "tip": "tip", "danger": "error", "note": "info"}
 WRAPS_FLOAT = ("paragraph", "rich_text", "bullet_list", "numbered_list", "checklist")   # may sit beside a float
-_NUMERIC = re.compile(r"^[\s$€£¥%+\-−(),.\d٠-٩]+$")
 
 
 class DocxRenderer(ArchetypeDocx, CompositionDocx):
@@ -703,12 +703,9 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         sample = [plain_text(str(x)) for x in (headers or (rows[0] if rows else [])) if str(x).strip()]
         if sample and sum(is_rtl_text(x) for x in sample) * 2 > len(sample):
             F.set_table_bidi(t)
-        # numeric columns are right-aligned (decimal-friendly)
-        numeric_cols = set()
-        for ci in range(ncols):
-            vals = [r[ci] for r in rows if ci < len(r) and str(r[ci]).strip()]
-            if vals and sum(bool(_NUMERIC.match(plain_text(str(v)))) for v in vals) / len(vals) >= 0.8:
-                numeric_cols.add(ci)
+        # columns of figures are right-aligned (decimal-friendly); a column of years or codes is not
+        numeric_cols = set(hints["numeric_cols"] if "numeric_cols" in hints else table_types(b).numeric_cols)
+        totals = set(hints.get("total_rows") or [])
         hdr_bg = b.header_bg or self.tokens.colors["table_header_bg"]
         hdr_fg = b.header_text_color or self.tokens.colors["table_header_text"]
         r0 = 0
@@ -743,7 +740,9 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                     p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
                 if hints.get("keep_together") and ri < len(all_rows) - 1:
                     p.paragraph_format.keep_with_next = True
-                self._runs(p, val, bold=True if is_footer else None, size=size)
+                if ri in totals:
+                    F.set_cell_borders(cell, top=("single", 8, self.tokens.colors["text_primary"]))
+                self._runs(p, val, bold=True if (is_footer or ri in totals) else None, size=size)
         widths = None
         if b.column_widths and len(b.column_widths) == ncols:
             # v0.3 semantics: points; scaled down if wider than the text block
@@ -758,10 +757,10 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                 for row in t.rows:
                     row.cells[ci].width = Pt(wv)
         if hints.get("design"):
-            self._art_table(t, hints, has_header, bool(b.footer_row))
+            self._art_table(t, hints, has_header, bool(b.footer_row), {r0 + ri for ri in totals})
         self._spacer_after(c)
 
-    def _art_table(self, t, hints, has_header, has_footer):
+    def _art_table(self, t, hints, has_header, has_footer, total_rows=()):
         """Rules and tone in place of a grid, cell by cell so that Word keeps them."""
         dark = _ink(self.theme) if self.theme is not None else self.tokens.colors["primary"]
         hair = self.tokens.colors["border"]
@@ -779,7 +778,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                         sides["top"] = ("single", 12, dark)
                 if ledger and ri == last:
                     sides["bottom"] = ("single", 12, dark)
-                if has_footer and ri == last:
+                if (has_footer and ri == last) or ri in total_rows:
                     sides["top"] = ("single", 8, dark)
                 F.set_cell_borders(cell, **sides)
                 if current == ci:

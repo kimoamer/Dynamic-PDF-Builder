@@ -1458,8 +1458,11 @@ def _render_table(block, theme, bs, ctx=None):
                for ci, c in enumerate(cells)]
         return list(reversed(out)) if tbl_rtl else out
     data = [_row(block.headers or [], h_sty, h_num)] if block.headers else []
-    for row in block.rows:
-        data.append(_row(row, c_sty, c_num))
+    totals = set(hints.get("total_rows") or [])       # rows the author labelled total: set bold, ruled above
+    t_sty = ParagraphStyle('TDt', parent=c_sty, fontName=body_font)
+    t_num = ParagraphStyle('TDtn', parent=t_sty, alignment=2)
+    for ri, row in enumerate(block.rows):
+        data.append(_row(row, t_sty, t_num) if ri in totals else _row(row, c_sty, c_num))
     # Footer row (summary/totals)
     if block.footer_row:
         f_sty = ParagraphStyle('TF', parent=bs, firstLineIndent=0,
@@ -1488,6 +1491,10 @@ def _render_table(block, theme, bs, ctx=None):
         from .art import table_commands
         cmds = table_commands(hints["design"], theme, len(data), ncols, bool(block.headers), bool(block.footer_row),
                               pad, hints.get("current_col"), tbl_rtl)
+    head = 1 if block.headers else 0
+    for ri in sorted(totals):
+        if 0 <= ri < len(block.rows):
+            cmds.append(('LINEABOVE', (0, ri + head), (-1, ri + head), 0.9, _safe_color(theme.colors.text_primary)))
     avail = ctx.available_width if ctx else None
     col_widths = block.column_widths
     if not col_widths and hints.get("col_fractions") and avail:

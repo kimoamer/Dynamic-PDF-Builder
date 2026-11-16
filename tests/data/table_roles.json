@@ -1,0 +1,2491 @@
+{
+ "_about": "Labelled tables for column-role inference (M10). The labels were written by Claude, the implementing agent, by reading each table; they are not human-reviewed. 'fx_' tables come from tests/fixtures; the rest are synthetic but modelled on real report tables, in English, Arabic and both. Under periods_in_columns, a column headed by a period holds figures, so its role is the kind of figure.",
+ "tables": [
+  {
+   "id": "fx_financial",
+   "lang": "en",
+   "source": "tests/fixtures/financial.md",
+   "headers": [
+    "Fiscal year",
+    "Revenue",
+    "EBITDA",
+    "Profit",
+    "Margin"
+   ],
+   "rows": [
+    [
+     "2000",
+     "1,000",
+     "200",
+     "800",
+     "12.0%"
+    ],
+    [
+     "2001",
+     "1,037",
+     "211",
+     "826",
+     "13.1%"
+    ],
+    [
+     "2002",
+     "1,074",
+     "222",
+     "852",
+     "14.2%"
+    ]
+   ],
+   "roles": [
+    "period",
+    "currency",
+    "currency",
+    "currency",
+    "percent"
+   ],
+   "orientation": "periods_in_rows",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "fx_invoice",
+   "lang": "en",
+   "source": "tests/fixtures/invoice.md",
+   "headers": [
+    "Item",
+    "Qty",
+    "Unit price",
+    "Amount"
+   ],
+   "rows": [
+    [
+     "Consulting (hours)",
+     "32",
+     "150.00",
+     "4,800.00"
+    ],
+    [
+     "Workshop facilitation",
+     "2",
+     "1,200.00",
+     "2,400.00"
+    ],
+    [
+     "Travel",
+     "1",
+     "380.00",
+     "380.00"
+    ]
+   ],
+   "roles": [
+    "category",
+    "measure",
+    "currency",
+    "currency"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "fx_bilingual",
+   "lang": "bilingual",
+   "source": "tests/fixtures/bilingual.md",
+   "headers": [
+    "Item",
+    "البند",
+    "Amount"
+   ],
+   "rows": [
+    [
+     "Salaries",
+     "الرواتب",
+     "7,200,000"
+    ],
+    [
+     "Operations",
+     "التشغيل",
+     "5,300,000"
+    ]
+   ],
+   "roles": [
+    "category",
+    "category",
+    "currency"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "fx_proposal",
+   "lang": "en",
+   "source": "tests/fixtures/proposal.md",
+   "headers": [
+    "Deliverable",
+    "Due"
+   ],
+   "rows": [
+    [
+     "Assessment report",
+     "Week 3"
+    ],
+    [
+     "Migrated pipelines",
+     "Week 12"
+    ]
+   ],
+   "roles": [
+    "category",
+    "period"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "fx_wide",
+   "lang": "en",
+   "source": "tests/fixtures/wide_data.md",
+   "headers": [
+    "Region",
+    "Segment",
+    "Bookings (USD)",
+    "Pipeline (USD)",
+    "YoY change",
+    "Open deals",
+    "Win rate",
+    "Status",
+    "Week"
+   ],
+   "rows": [
+    [
+     "North America",
+     "Segment 01 enterprise accounts",
+     "439,563",
+     "29,772",
+     "4.4%",
+     "1,791",
+     "53.5%",
+     "Ahead of plan",
+     "7"
+    ],
+    [
+     "Europe, Middle East & Africa",
+     "Segment 02 enterprise accounts",
+     "483,452",
+     "86,387",
+     "-7.0%",
+     "9,313",
+     "60.5%",
+     "On track",
+     "28"
+    ],
+    [
+     "Asia Pacific",
+     "Segment 03 enterprise accounts",
+     "538,485",
+     "19,156",
+     "-0.8%",
+     "7,955",
+     "52.9%",
+     "Ahead of plan",
+     "8"
+    ]
+   ],
+   "roles": [
+    "category",
+    "category",
+    "currency",
+    "currency",
+    "percent",
+    "measure",
+    "percent",
+    "category",
+    "period"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_income_cols",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Line item",
+    "2024",
+    "2023",
+    "Change"
+   ],
+   "rows": [
+    [
+     "Revenue",
+     "4,210",
+     "3,880",
+     "8.5%"
+    ],
+    [
+     "Cost of sales",
+     "(2,105)",
+     "(1,990)",
+     "5.8%"
+    ],
+    [
+     "Gross profit",
+     "2,105",
+     "1,890",
+     "11.4%"
+    ]
+   ],
+   "roles": [
+    "category",
+    "measure",
+    "measure",
+    "percent"
+   ],
+   "orientation": "periods_in_columns",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": 1
+  },
+  {
+   "id": "en_income_ascending",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "USD m",
+    "FY2022",
+    "FY2023",
+    "FY2024"
+   ],
+   "rows": [
+    [
+     "Revenue",
+     "310.2",
+     "342.9",
+     "377.0"
+    ],
+    [
+     "EBITDA",
+     "61.0",
+     "70.4",
+     "80.1"
+    ],
+    [
+     "Net income",
+     "22.5",
+     "27.3",
+     "33.8"
+    ]
+   ],
+   "roles": [
+    "category",
+    "measure",
+    "measure",
+    "measure"
+   ],
+   "orientation": "periods_in_columns",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": 3
+  },
+  {
+   "id": "en_quarters",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Metric",
+    "Q1 2024",
+    "Q2 2024",
+    "Q3 2024",
+    "Q4 2024"
+   ],
+   "rows": [
+    [
+     "Active users",
+     "12,400",
+     "13,050",
+     "13,900",
+     "14,600"
+    ],
+    [
+     "Churn",
+     "2.1%",
+     "1.9%",
+     "1.8%",
+     "1.7%"
+    ],
+    [
+     "NPS",
+     "41",
+     "43",
+     "44",
+     "47"
+    ]
+   ],
+   "roles": [
+    "category",
+    "measure",
+    "measure",
+    "measure",
+    "measure"
+   ],
+   "orientation": "periods_in_columns",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": 4
+  },
+  {
+   "id": "en_forecast",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Segment",
+    "2023A",
+    "2024A",
+    "2025E"
+   ],
+   "rows": [
+    [
+     "Retail",
+     "120",
+     "131",
+     "140"
+    ],
+    [
+     "Wholesale",
+     "80",
+     "84",
+     "90"
+    ],
+    [
+     "Total",
+     "200",
+     "215",
+     "230"
+    ]
+   ],
+   "roles": [
+    "category",
+    "measure",
+    "measure",
+    "measure"
+   ],
+   "orientation": "periods_in_columns",
+   "total_rows": [
+    2
+   ],
+   "subtotal_rows": [],
+   "current_col": 2
+  },
+  {
+   "id": "en_year_series",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Year",
+    "Students enrolled",
+    "Graduation rate"
+   ],
+   "rows": [
+    [
+     "2019",
+     "1,204",
+     "71%"
+    ],
+    [
+     "2020",
+     "1,180",
+     "69%"
+    ],
+    [
+     "2021",
+     "1,310",
+     "74%"
+    ],
+    [
+     "2022",
+     "1,402",
+     "77%"
+    ]
+   ],
+   "roles": [
+    "period",
+    "measure",
+    "percent"
+   ],
+   "orientation": "periods_in_rows",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_months",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Month",
+    "Orders",
+    "Revenue ($)"
+   ],
+   "rows": [
+    [
+     "January",
+     "312",
+     "18,400"
+    ],
+    [
+     "February",
+     "298",
+     "17,950"
+    ],
+    [
+     "March",
+     "355",
+     "21,020"
+    ]
+   ],
+   "roles": [
+    "period",
+    "measure",
+    "currency"
+   ],
+   "orientation": "periods_in_rows",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_month_year",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Period",
+    "Tickets opened",
+    "Tickets closed",
+    "Backlog"
+   ],
+   "rows": [
+    [
+     "Jan 2025",
+     "410",
+     "398",
+     "52"
+    ],
+    [
+     "Feb 2025",
+     "388",
+     "402",
+     "38"
+    ],
+    [
+     "Mar 2025",
+     "421",
+     "415",
+     "44"
+    ]
+   ],
+   "roles": [
+    "period",
+    "measure",
+    "measure",
+    "measure"
+   ],
+   "orientation": "periods_in_rows",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_dates",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Date",
+    "Event",
+    "Attendees"
+   ],
+   "rows": [
+    [
+     "2025-03-04",
+     "Kick-off workshop",
+     "24"
+    ],
+    [
+     "2025-03-18",
+     "Design review",
+     "11"
+    ],
+    [
+     "2025-04-02",
+     "Pilot launch",
+     "40"
+    ]
+   ],
+   "roles": [
+    "period",
+    "category",
+    "measure"
+   ],
+   "orientation": "periods_in_rows",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_units_years_values",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Plant",
+    "Units produced",
+    "Defects"
+   ],
+   "rows": [
+    [
+     "Leeds",
+     "2,019",
+     "14"
+    ],
+    [
+     "Porto",
+     "2021",
+     "9"
+    ],
+    [
+     "Lyon",
+     "1,987",
+     "21"
+    ]
+   ],
+   "roles": [
+    "category",
+    "measure",
+    "measure"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_ids",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Invoice",
+    "Customer",
+    "Issued",
+    "Amount"
+   ],
+   "rows": [
+    [
+     "INV-2025-0101",
+     "Northwind",
+     "2025-01-12",
+     "$4,200.00"
+    ],
+    [
+     "INV-2025-0102",
+     "Contoso",
+     "2025-01-15",
+     "$980.00"
+    ],
+    [
+     "INV-2025-0103",
+     "Fabrikam",
+     "2025-01-20",
+     "$12,450.00"
+    ]
+   ],
+   "roles": [
+    "identifier",
+    "category",
+    "period",
+    "currency"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_rownum",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "#",
+    "Task",
+    "Owner",
+    "Hours"
+   ],
+   "rows": [
+    [
+     "1",
+     "Map current pipelines",
+     "Data team",
+     "40"
+    ],
+    [
+     "2",
+     "Migrate reporting layer",
+     "BI team",
+     "120"
+    ],
+    [
+     "3",
+     "Train analysts",
+     "Enablement",
+     "24"
+    ]
+   ],
+   "roles": [
+    "identifier",
+    "category",
+    "category",
+    "measure"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_sku",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "SKU",
+    "Product",
+    "Stock",
+    "Reorder level"
+   ],
+   "rows": [
+    [
+     "SKU-1042",
+     "Ceramic mug",
+     "320",
+     "100"
+    ],
+    [
+     "SKU-1043",
+     "Travel flask",
+     "85",
+     "60"
+    ],
+    [
+     "SKU-2001",
+     "Tea tin",
+     "410",
+     "150"
+    ]
+   ],
+   "roles": [
+    "identifier",
+    "category",
+    "measure",
+    "measure"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_accounts",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Account",
+    "Description",
+    "Debit",
+    "Credit"
+   ],
+   "rows": [
+    [
+     "4010",
+     "Product sales",
+     "",
+     "125,400.00"
+    ],
+    [
+     "5010",
+     "Cost of goods sold",
+     "61,200.00",
+     ""
+    ],
+    [
+     "6200",
+     "Rent",
+     "8,000.00",
+     ""
+    ]
+   ],
+   "roles": [
+    "identifier",
+    "category",
+    "currency",
+    "currency"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_error_codes",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Error code",
+    "Meaning",
+    "HTTP status"
+   ],
+   "rows": [
+    [
+     "`invalid_request`",
+     "The request body could not be parsed or failed validation.",
+     "400"
+    ],
+    [
+     "`invalid_token`",
+     "The access token is missing, expired or revoked by the administrator.",
+     "401"
+    ],
+    [
+     "`rate_limited`",
+     "Too many requests were sent in a short window; retry after the delay.",
+     "429"
+    ]
+   ],
+   "roles": [
+    "identifier",
+    "text",
+    "identifier"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_config",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Option",
+    "Default",
+    "Description"
+   ],
+   "rows": [
+    [
+     "`port`",
+     "8080",
+     "TCP port the server listens on for incoming connections."
+    ],
+    [
+     "`log_level`",
+     "info",
+     "Minimum severity written to the log, one of debug, info, warn or error."
+    ],
+    [
+     "`workers`",
+     "4",
+     "Number of worker processes started to serve requests in parallel."
+    ]
+   ],
+   "roles": [
+    "identifier",
+    "category",
+    "text"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_risks",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Risk",
+    "Likelihood",
+    "Impact",
+    "Mitigation"
+   ],
+   "rows": [
+    [
+     "Data loss during migration",
+     "Low",
+     "High",
+     "Run both warehouses in parallel for four weeks and reconcile nightly before cut-over."
+    ],
+    [
+     "Analyst adoption",
+     "Medium",
+     "Medium",
+     "Train champions in each team and hold weekly office hours for the first two months."
+    ],
+    [
+     "Vendor delay",
+     "Medium",
+     "High",
+     "Fix delivery dates in the contract with penalties for slippage beyond two weeks."
+    ]
+   ],
+   "roles": [
+    "category",
+    "category",
+    "category",
+    "text"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_budget_total",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Category",
+    "Budget",
+    "Actual",
+    "Variance"
+   ],
+   "rows": [
+    [
+     "Salaries",
+     "$1,200,000",
+     "$1,180,000",
+     "-1.7%"
+    ],
+    [
+     "Travel",
+     "$80,000",
+     "$92,500",
+     "15.6%"
+    ],
+    [
+     "Software",
+     "$150,000",
+     "$141,000",
+     "-6.0%"
+    ],
+    [
+     "Total",
+     "$1,430,000",
+     "$1,413,500",
+     "-1.2%"
+    ]
+   ],
+   "roles": [
+    "category",
+    "currency",
+    "currency",
+    "percent"
+   ],
+   "orientation": "records",
+   "total_rows": [
+    3
+   ],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_subtotals",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Item",
+    "Amount (EUR)"
+   ],
+   "rows": [
+    [
+     "Licences",
+     "12,000"
+    ],
+    [
+     "Support",
+     "3,000"
+    ],
+    [
+     "Subtotal software",
+     "15,000"
+    ],
+    [
+     "Consulting",
+     "22,000"
+    ],
+    [
+     "Training",
+     "4,000"
+    ],
+    [
+     "Subtotal services",
+     "26,000"
+    ],
+    [
+     "Grand total",
+     "41,000"
+    ]
+   ],
+   "roles": [
+    "category",
+    "currency"
+   ],
+   "orientation": "records",
+   "total_rows": [
+    6
+   ],
+   "subtotal_rows": [
+    2,
+    5
+   ],
+   "current_col": null
+  },
+  {
+   "id": "en_share",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Channel",
+    "Share of revenue"
+   ],
+   "rows": [
+    [
+     "Online",
+     "46%"
+    ],
+    [
+     "Stores",
+     "38%"
+    ],
+    [
+     "Partners",
+     "16%"
+    ]
+   ],
+   "roles": [
+    "category",
+    "percent"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_margin_pct_header",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Division",
+    "Revenue (£m)",
+    "Margin (%)"
+   ],
+   "rows": [
+    [
+     "Consumer",
+     "412.0",
+     "18.2"
+    ],
+    [
+     "Business",
+     "268.5",
+     "22.9"
+    ],
+    [
+     "Public sector",
+     "91.3",
+     "9.8"
+    ]
+   ],
+   "roles": [
+    "category",
+    "currency",
+    "percent"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_survey",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Question",
+    "Agree",
+    "Neutral",
+    "Disagree"
+   ],
+   "rows": [
+    [
+     "The onboarding process was clear and easy to follow for me",
+     "72%",
+     "18%",
+     "10%"
+    ],
+    [
+     "I know exactly who to ask when I need help with my work",
+     "65%",
+     "20%",
+     "15%"
+    ]
+   ],
+   "roles": [
+    "text",
+    "percent",
+    "percent",
+    "percent"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_versions",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Version",
+    "Released",
+    "Notes"
+   ],
+   "rows": [
+    [
+     "v2.4.0",
+     "2025-02-10",
+     "Adds streaming export"
+    ],
+    [
+     "v2.3.1",
+     "2024-12-02",
+     "Fixes footnote merging"
+    ],
+    [
+     "v2.3.0",
+     "2024-11-15",
+     "New art directions"
+    ]
+   ],
+   "roles": [
+    "identifier",
+    "period",
+    "category"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_api",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Method",
+    "Endpoint",
+    "Purpose"
+   ],
+   "rows": [
+    [
+     "GET",
+     "/v1/documents",
+     "List documents"
+    ],
+    [
+     "POST",
+     "/v1/documents",
+     "Create a document"
+    ],
+    [
+     "DELETE",
+     "/v1/documents/{id}",
+     "Delete a document"
+    ]
+   ],
+   "roles": [
+    "category",
+    "identifier",
+    "category"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_staff",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Name",
+    "Role",
+    "Start date",
+    "Salary"
+   ],
+   "rows": [
+    [
+     "A. Rahman",
+     "Engineer",
+     "03/02/2021",
+     "$96,000"
+    ],
+    [
+     "J. Okafor",
+     "Designer",
+     "15/09/2022",
+     "$88,500"
+    ],
+    [
+     "L. Moreau",
+     "Analyst",
+     "01/11/2023",
+     "$74,000"
+    ]
+   ],
+   "roles": [
+    "category",
+    "category",
+    "period",
+    "currency"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_kpis_targets",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "KPI",
+    "Target",
+    "Actual",
+    "Status"
+   ],
+   "rows": [
+    [
+     "On-time delivery",
+     "95%",
+     "97.2%",
+     "Met"
+    ],
+    [
+     "Customer satisfaction",
+     "4.5",
+     "4.6",
+     "Met"
+    ],
+    [
+     "Cost per unit",
+     "$12.40",
+     "$12.95",
+     "Missed"
+    ]
+   ],
+   "roles": [
+    "category",
+    "measure",
+    "measure",
+    "category"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_population",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "City",
+    "Population",
+    "Area (km²)",
+    "Density"
+   ],
+   "rows": [
+    [
+     "Riyadh",
+     "7,676,654",
+     "1,973",
+     "3,891"
+    ],
+    [
+     "Jeddah",
+     "3,751,722",
+     "1,686",
+     "2,225"
+    ],
+    [
+     "Dammam",
+     "1,532,300",
+     "800",
+     "1,915"
+    ]
+   ],
+   "roles": [
+    "category",
+    "measure",
+    "measure",
+    "measure"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_schedule_weeks",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Phase",
+    "Start",
+    "End",
+    "Owner"
+   ],
+   "rows": [
+    [
+     "Discovery",
+     "Week 1",
+     "Week 3",
+     "Strategy"
+    ],
+    [
+     "Build",
+     "Week 4",
+     "Week 10",
+     "Engineering"
+    ],
+    [
+     "Launch",
+     "Week 11",
+     "Week 12",
+     "Marketing"
+    ]
+   ],
+   "roles": [
+    "category",
+    "period",
+    "period",
+    "category"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_cashflow_cols",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "",
+    "H1 2024",
+    "H2 2024",
+    "FY 2024"
+   ],
+   "rows": [
+    [
+     "Operating cash flow",
+     "54",
+     "61",
+     "115"
+    ],
+    [
+     "Capital expenditure",
+     "(20)",
+     "(25)",
+     "(45)"
+    ],
+    [
+     "Free cash flow",
+     "34",
+     "36",
+     "70"
+    ]
+   ],
+   "roles": [
+    "category",
+    "measure",
+    "measure",
+    "measure"
+   ],
+   "orientation": "periods_in_columns",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_placeholders",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Region",
+    "2023",
+    "2024"
+   ],
+   "rows": [
+    [
+     "North",
+     "1.2",
+     "1.5"
+    ],
+    [
+     "South",
+     "—",
+     "0.8"
+    ],
+    [
+     "East",
+     "n/a",
+     "2.1"
+    ],
+    [
+     "West",
+     "0.9",
+     "1.1"
+    ]
+   ],
+   "roles": [
+    "category",
+    "measure",
+    "measure"
+   ],
+   "orientation": "periods_in_columns",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": 2
+  },
+  {
+   "id": "en_bigtotal_bold",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Programme",
+    "Beneficiaries",
+    "Cost (USD)"
+   ],
+   "rows": [
+    [
+     "Literacy",
+     "1,250",
+     "310,000"
+    ],
+    [
+     "Health",
+     "3,400",
+     "520,000"
+    ],
+    [
+     "**Total**",
+     "**4,650**",
+     "**830,000**"
+    ]
+   ],
+   "roles": [
+    "category",
+    "measure",
+    "currency"
+   ],
+   "orientation": "records",
+   "total_rows": [
+    2
+   ],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_ratios",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Ratio",
+    "2024",
+    "2023"
+   ],
+   "rows": [
+    [
+     "Current ratio",
+     "1.8x",
+     "1.6x"
+    ],
+    [
+     "Debt to equity",
+     "0.42",
+     "0.47"
+    ],
+    [
+     "Interest cover",
+     "9.1x",
+     "7.8x"
+    ]
+   ],
+   "roles": [
+    "category",
+    "measure",
+    "measure"
+   ],
+   "orientation": "periods_in_columns",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": 1
+  },
+  {
+   "id": "en_hashes",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Commit",
+    "Author",
+    "Message"
+   ],
+   "rows": [
+    [
+     "3a57cb0",
+     "kim",
+     "Arabic cover and ink-based margin check"
+    ],
+    [
+     "87ec5fa",
+     "lee",
+     "Separate Markdown footnotes"
+    ],
+    [
+     "dbd8fc2",
+     "kim",
+     "Markdown line breaks and gauge data"
+    ]
+   ],
+   "roles": [
+    "identifier",
+    "category",
+    "category"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_glossary",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Term",
+    "Definition"
+   ],
+   "rows": [
+    [
+     "EBITDA",
+     "Earnings before interest, taxes, depreciation and amortisation, a measure of operating profit."
+    ],
+    [
+     "Churn",
+     "The share of customers who stop using the service during a given period of time."
+    ]
+   ],
+   "roles": [
+    "category",
+    "text"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_scores",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Team",
+    "Played",
+    "Won",
+    "Points"
+   ],
+   "rows": [
+    [
+     "Falcons",
+     "12",
+     "9",
+     "28"
+    ],
+    [
+     "Eagles",
+     "12",
+     "7",
+     "23"
+    ],
+    [
+     "Hawks",
+     "12",
+     "4",
+     "14"
+    ]
+   ],
+   "roles": [
+    "category",
+    "measure",
+    "measure",
+    "measure"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_temps",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Day",
+    "High (°C)",
+    "Low (°C)",
+    "Rain (mm)"
+   ],
+   "rows": [
+    [
+     "Monday",
+     "31",
+     "22",
+     "0"
+    ],
+    [
+     "Tuesday",
+     "29",
+     "21",
+     "4.5"
+    ],
+    [
+     "Wednesday",
+     "27",
+     "19",
+     "12.0"
+    ]
+   ],
+   "roles": [
+    "period",
+    "measure",
+    "measure",
+    "measure"
+   ],
+   "orientation": "periods_in_rows",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_fy_rows",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "FY",
+    "Dividend per share",
+    "Payout ratio"
+   ],
+   "rows": [
+    [
+     "FY2021",
+     "$0.42",
+     "38%"
+    ],
+    [
+     "FY2022",
+     "$0.47",
+     "40%"
+    ],
+    [
+     "FY2023",
+     "$0.55",
+     "41%"
+    ]
+   ],
+   "roles": [
+    "period",
+    "currency",
+    "percent"
+   ],
+   "orientation": "periods_in_rows",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "en_quarter_rows",
+   "lang": "en",
+   "source": "synthetic",
+   "headers": [
+    "Quarter",
+    "New customers",
+    "Revenue"
+   ],
+   "rows": [
+    [
+     "Q1",
+     "140",
+     "$1.2M"
+    ],
+    [
+     "Q2",
+     "162",
+     "$1.4M"
+    ],
+    [
+     "Q3",
+     "171",
+     "$1.5M"
+    ],
+    [
+     "Q4",
+     "190",
+     "$1.7M"
+    ],
+    [
+     "Total",
+     "663",
+     "$5.8M"
+    ]
+   ],
+   "roles": [
+    "period",
+    "measure",
+    "currency"
+   ],
+   "orientation": "periods_in_rows",
+   "total_rows": [
+    4
+   ],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "ar_income_cols",
+   "lang": "ar",
+   "source": "synthetic",
+   "headers": [
+    "البند",
+    "٢٠٢٤",
+    "٢٠٢٣"
+   ],
+   "rows": [
+    [
+     "الإيرادات",
+     "٤٬٢١٠",
+     "٣٬٨٨٠"
+    ],
+    [
+     "تكلفة المبيعات",
+     "(٢٬١٠٥)",
+     "(١٬٩٩٠)"
+    ],
+    [
+     "إجمالي الربح",
+     "٢٬١٠٥",
+     "١٬٨٩٠"
+    ]
+   ],
+   "roles": [
+    "category",
+    "measure",
+    "measure"
+   ],
+   "orientation": "periods_in_columns",
+   "total_rows": [
+    2
+   ],
+   "subtotal_rows": [],
+   "current_col": 1
+  },
+  {
+   "id": "ar_fiscal_rows",
+   "lang": "ar",
+   "source": "synthetic",
+   "headers": [
+    "السنة المالية",
+    "الإيرادات",
+    "صافي الربح",
+    "الهامش"
+   ],
+   "rows": [
+    [
+     "٢٠٢١",
+     "١٢٠٫٥",
+     "١٨٫٢",
+     "١٥٫١٪"
+    ],
+    [
+     "٢٠٢٢",
+     "١٣٤٫٠",
+     "٢١٫٧",
+     "١٦٫٢٪"
+    ],
+    [
+     "٢٠٢٣",
+     "١٥١٫٣",
+     "٢٥٫٤",
+     "١٦٫٨٪"
+    ]
+   ],
+   "roles": [
+    "period",
+    "currency",
+    "currency",
+    "percent"
+   ],
+   "orientation": "periods_in_rows",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "ar_regions_total",
+   "lang": "ar",
+   "source": "synthetic",
+   "headers": [
+    "المنطقة",
+    "المبيعات (ريال)",
+    "النمو"
+   ],
+   "rows": [
+    [
+     "الرياض",
+     "٥٬٤٠٠٬٠٠٠",
+     "١٢٪"
+    ],
+    [
+     "جدة",
+     "٣٬١٠٠٬٠٠٠",
+     "٨٪"
+    ],
+    [
+     "الدمام",
+     "١٬٩٠٠٬٠٠٠",
+     "٥٪"
+    ],
+    [
+     "الإجمالي",
+     "١٠٬٤٠٠٬٠٠٠",
+     "١٠٪"
+    ]
+   ],
+   "roles": [
+    "category",
+    "currency",
+    "percent"
+   ],
+   "orientation": "records",
+   "total_rows": [
+    3
+   ],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "ar_quarters_cols",
+   "lang": "ar",
+   "source": "synthetic",
+   "headers": [
+    "المؤشر",
+    "الربع الأول",
+    "الربع الثاني",
+    "الربع الثالث"
+   ],
+   "rows": [
+    [
+     "عدد العملاء",
+     "١٬٢٠٠",
+     "١٬٣٥٠",
+     "١٬٤٨٠"
+    ],
+    [
+     "رضا العملاء",
+     "٨٤٪",
+     "٨٦٪",
+     "٨٧٪"
+    ]
+   ],
+   "roles": [
+    "category",
+    "measure",
+    "measure",
+    "measure"
+   ],
+   "orientation": "periods_in_columns",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "ar_months",
+   "lang": "ar",
+   "source": "synthetic",
+   "headers": [
+    "الشهر",
+    "الطلبات",
+    "الإيرادات"
+   ],
+   "rows": [
+    [
+     "يناير",
+     "٣١٢",
+     "١٨٬٤٠٠"
+    ],
+    [
+     "فبراير",
+     "٢٩٨",
+     "١٧٬٩٥٠"
+    ],
+    [
+     "مارس",
+     "٣٥٥",
+     "٢١٬٠٢٠"
+    ]
+   ],
+   "roles": [
+    "period",
+    "measure",
+    "currency"
+   ],
+   "orientation": "periods_in_rows",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "ar_ids",
+   "lang": "ar",
+   "source": "synthetic",
+   "headers": [
+    "رقم الفاتورة",
+    "العميل",
+    "المبلغ"
+   ],
+   "rows": [
+    [
+     "INV-0101",
+     "شركة الأفق",
+     "٤٬٢٠٠ ر.س"
+    ],
+    [
+     "INV-0102",
+     "مؤسسة النور",
+     "٩٨٠ ر.س"
+    ],
+    [
+     "INV-0103",
+     "شركة المدار",
+     "١٢٬٤٥٠ ر.س"
+    ]
+   ],
+   "roles": [
+    "identifier",
+    "category",
+    "currency"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "ar_rownum",
+   "lang": "ar",
+   "source": "synthetic",
+   "headers": [
+    "م",
+    "المهمة",
+    "المسؤول"
+   ],
+   "rows": [
+    [
+     "١",
+     "حصر الأنظمة الحالية",
+     "فريق البيانات"
+    ],
+    [
+     "٢",
+     "ترحيل طبقة التقارير",
+     "فريق ذكاء الأعمال"
+    ],
+    [
+     "٣",
+     "تدريب المحللين",
+     "فريق التمكين"
+    ]
+   ],
+   "roles": [
+    "identifier",
+    "category",
+    "category"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "ar_text",
+   "lang": "ar",
+   "source": "synthetic",
+   "headers": [
+    "المخاطر",
+    "الاحتمال",
+    "خطة المعالجة"
+   ],
+   "rows": [
+    [
+     "فقدان البيانات أثناء الترحيل",
+     "منخفض",
+     "تشغيل المستودعين بالتوازي لمدة أربعة أسابيع مع مطابقة يومية قبل التحويل النهائي"
+    ],
+    [
+     "ضعف تبني المحللين",
+     "متوسط",
+     "تدريب سفراء في كل فريق وتخصيص ساعات أسبوعية للدعم خلال الشهرين الأولين"
+    ]
+   ],
+   "roles": [
+    "category",
+    "category",
+    "text"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "ar_budget_western",
+   "lang": "ar",
+   "source": "synthetic",
+   "headers": [
+    "البند",
+    "الميزانية",
+    "الفعلي",
+    "الانحراف"
+   ],
+   "rows": [
+    [
+     "الرواتب",
+     "1,200,000",
+     "1,180,000",
+     "-1.7%"
+    ],
+    [
+     "السفر",
+     "80,000",
+     "92,500",
+     "15.6%"
+    ],
+    [
+     "المجموع",
+     "1,280,000",
+     "1,272,500",
+     "-0.6%"
+    ]
+   ],
+   "roles": [
+    "category",
+    "currency",
+    "currency",
+    "percent"
+   ],
+   "orientation": "records",
+   "total_rows": [
+    2
+   ],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "ar_share",
+   "lang": "ar",
+   "source": "synthetic",
+   "headers": [
+    "القناة",
+    "الحصة"
+   ],
+   "rows": [
+    [
+     "المتاجر الإلكترونية",
+     "٤٦٪"
+    ],
+    [
+     "الفروع",
+     "٣٨٪"
+    ],
+    [
+     "الشركاء",
+     "١٦٪"
+    ]
+   ],
+   "roles": [
+    "category",
+    "percent"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "ar_years_hijri",
+   "lang": "ar",
+   "source": "synthetic",
+   "headers": [
+    "العام",
+    "عدد الحجاج"
+   ],
+   "rows": [
+    [
+     "1443هـ",
+     "٩٢٦٬٠٦٢"
+    ],
+    [
+     "1444هـ",
+     "١٬٨٤٥٬٠٤٥"
+    ],
+    [
+     "1445هـ",
+     "١٬٨٣٣٬١٦٤"
+    ]
+   ],
+   "roles": [
+    "period",
+    "measure"
+   ],
+   "orientation": "periods_in_rows",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "ar_dates",
+   "lang": "ar",
+   "source": "synthetic",
+   "headers": [
+    "التاريخ",
+    "الحدث",
+    "الحضور"
+   ],
+   "rows": [
+    [
+     "٢٠٢٥-٠٣-٠٤",
+     "ورشة الانطلاق",
+     "٢٤"
+    ],
+    [
+     "٢٠٢٥-٠٣-١٨",
+     "مراجعة التصميم",
+     "١١"
+    ],
+    [
+     "٢٠٢٥-٠٤-٠٢",
+     "إطلاق المرحلة التجريبية",
+     "٤٠"
+    ]
+   ],
+   "roles": [
+    "period",
+    "category",
+    "measure"
+   ],
+   "orientation": "periods_in_rows",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "ar_subtotals",
+   "lang": "ar",
+   "source": "synthetic",
+   "headers": [
+    "البند",
+    "المبلغ (ريال)"
+   ],
+   "rows": [
+    [
+     "التراخيص",
+     "١٢٬٠٠٠"
+    ],
+    [
+     "الدعم",
+     "٣٬٠٠٠"
+    ],
+    [
+     "المجموع الفرعي",
+     "١٥٬٠٠٠"
+    ],
+    [
+     "الاستشارات",
+     "٢٢٬٠٠٠"
+    ],
+    [
+     "الإجمالي",
+     "٣٧٬٠٠٠"
+    ]
+   ],
+   "roles": [
+    "category",
+    "currency"
+   ],
+   "orientation": "records",
+   "total_rows": [
+    4
+   ],
+   "subtotal_rows": [
+    2
+   ],
+   "current_col": null
+  },
+  {
+   "id": "ar_kpi_targets",
+   "lang": "ar",
+   "source": "synthetic",
+   "headers": [
+    "المؤشر",
+    "المستهدف",
+    "المحقق",
+    "الحالة"
+   ],
+   "rows": [
+    [
+     "التسليم في الموعد",
+     "٩٥٪",
+     "٩٧٪",
+     "محقق"
+    ],
+    [
+     "رضا العملاء",
+     "٤٫٥",
+     "٤٫٦",
+     "محقق"
+    ],
+    [
+     "تكلفة الوحدة",
+     "١٢٫٤٠",
+     "١٢٫٩٥",
+     "غير محقق"
+    ]
+   ],
+   "roles": [
+    "category",
+    "measure",
+    "measure",
+    "category"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "ar_cities",
+   "lang": "ar",
+   "source": "synthetic",
+   "headers": [
+    "المدينة",
+    "السكان",
+    "المساحة (كم²)"
+   ],
+   "rows": [
+    [
+     "الرياض",
+     "٧٬٦٧٦٬٦٥٤",
+     "١٬٩٧٣"
+    ],
+    [
+     "جدة",
+     "٣٬٧٥١٬٧٢٢",
+     "١٬٦٨٦"
+    ],
+    [
+     "الدمام",
+     "١٬٥٣٢٬٣٠٠",
+     "٨٠٠"
+    ]
+   ],
+   "roles": [
+    "category",
+    "measure",
+    "measure"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "ar_forecast_cols",
+   "lang": "ar",
+   "source": "synthetic",
+   "headers": [
+    "القطاع",
+    "2023",
+    "2024",
+    "2025 (توقع)"
+   ],
+   "rows": [
+    [
+     "التجزئة",
+     "120",
+     "131",
+     "140"
+    ],
+    [
+     "الجملة",
+     "80",
+     "84",
+     "90"
+    ]
+   ],
+   "roles": [
+    "category",
+    "measure",
+    "measure",
+    "measure"
+   ],
+   "orientation": "periods_in_columns",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": 2
+  },
+  {
+   "id": "ar_weeks",
+   "lang": "ar",
+   "source": "synthetic",
+   "headers": [
+    "المرحلة",
+    "البداية",
+    "النهاية"
+   ],
+   "rows": [
+    [
+     "الاستكشاف",
+     "الأسبوع 1",
+     "الأسبوع 3"
+    ],
+    [
+     "التطوير",
+     "الأسبوع 4",
+     "الأسبوع 10"
+    ]
+   ],
+   "roles": [
+    "category",
+    "period",
+    "period"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "ar_salaries",
+   "lang": "ar",
+   "source": "synthetic",
+   "headers": [
+    "الاسم",
+    "المسمى الوظيفي",
+    "تاريخ التعيين",
+    "الراتب"
+   ],
+   "rows": [
+    [
+     "أحمد السالم",
+     "مهندس",
+     "03/02/2021",
+     "١٢٬٠٠٠ ريال"
+    ],
+    [
+     "سارة القحطاني",
+     "مصممة",
+     "15/09/2022",
+     "١٠٬٥٠٠ ريال"
+    ]
+   ],
+   "roles": [
+    "category",
+    "category",
+    "period",
+    "currency"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "ar_quarter_rows",
+   "lang": "ar",
+   "source": "synthetic",
+   "headers": [
+    "الربع",
+    "العملاء الجدد",
+    "الإيرادات (مليون ريال)"
+   ],
+   "rows": [
+    [
+     "الربع الأول",
+     "١٤٠",
+     "١٫٢"
+    ],
+    [
+     "الربع الثاني",
+     "١٦٢",
+     "١٫٤"
+    ],
+    [
+     "الربع الثالث",
+     "١٧١",
+     "١٫٥"
+    ],
+    [
+     "المجموع",
+     "٤٧٣",
+     "٤٫١"
+    ]
+   ],
+   "roles": [
+    "period",
+    "measure",
+    "currency"
+   ],
+   "orientation": "periods_in_rows",
+   "total_rows": [
+    3
+   ],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "ar_bilingual_ledger",
+   "lang": "bilingual",
+   "source": "synthetic",
+   "headers": [
+    "Item",
+    "2024",
+    "2023",
+    "البند"
+   ],
+   "rows": [
+    [
+     "Revenue",
+     "4,210",
+     "3,880",
+     "الإيرادات"
+    ],
+    [
+     "Expenses",
+     "(3,100)",
+     "(2,950)",
+     "المصروفات"
+    ],
+    [
+     "Net profit",
+     "1,110",
+     "930",
+     "صافي الربح"
+    ]
+   ],
+   "roles": [
+    "category",
+    "measure",
+    "measure",
+    "category"
+   ],
+   "orientation": "periods_in_columns",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": 1
+  },
+  {
+   "id": "ar_codes",
+   "lang": "ar",
+   "source": "synthetic",
+   "headers": [
+    "الرمز",
+    "الوصف",
+    "الكمية"
+   ],
+   "rows": [
+    [
+     "A-101",
+     "أقلام حبر جاف",
+     "٢٤٠"
+    ],
+    [
+     "A-102",
+     "دفاتر ملاحظات",
+     "١٢٠"
+    ],
+    [
+     "B-210",
+     "حبر طابعة",
+     "٣٥"
+    ]
+   ],
+   "roles": [
+    "identifier",
+    "category",
+    "measure"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  },
+  {
+   "id": "ar_survey",
+   "lang": "ar",
+   "source": "synthetic",
+   "headers": [
+    "العبارة",
+    "موافق",
+    "محايد",
+    "غير موافق"
+   ],
+   "rows": [
+    [
+     "كانت إجراءات التهيئة واضحة ومفهومة لجميع الموظفين الجدد",
+     "٧٢٪",
+     "١٨٪",
+     "١٠٪"
+    ],
+    [
+     "أعرف الجهة التي أتواصل معها عند الحاجة إلى المساعدة في العمل",
+     "٦٥٪",
+     "٢٠٪",
+     "١٥٪"
+    ]
+   ],
+   "roles": [
+    "text",
+    "percent",
+    "percent",
+    "percent"
+   ],
+   "orientation": "records",
+   "total_rows": [],
+   "subtotal_rows": [],
+   "current_col": null
+  }
+ ]
+}

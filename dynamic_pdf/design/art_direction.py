@@ -17,6 +17,7 @@ from typing import Dict, List, Optional, Tuple
 from pydantic import BaseModel, Field
 
 from ..core.content_ledger import build_content_ledger
+from ..core.table_types import read_cell
 from ..core.normalize import SemanticDocument, is_rtl_text
 from ..fonts.manager import covering_face
 from ..schema.blocks import (CoverPageBlock, FigureCell, FigureMatrixBlock, HeadingBlock, ImageBlock, ImageTextPanelBlock,
@@ -387,7 +388,7 @@ def _chart(b, d: Direction, primary: str, muted: str, adjust: Adjust) -> None:
     if b.colors:
         return
     data = b.data if isinstance(b.data, dict) else {}
-    periods = data and all(re.search(r"\d", str(k)) for k in data)
+    periods = data and all(read_cell(str(k)).kind in ("year", "period") for k in data)
     if b.chart_type in ("bar", "column") and periods and len(data) > 1:
         b.colors = [muted] * (len(data) - 1) + [primary]     # the current period carries the tone
     else:
@@ -404,9 +405,10 @@ def _table(b, d: Direction) -> None:
         return
     if d.table != "default" and not b.header_bg:
         hints = {**hints, "design": d.table}
-        numeric = hints.get("numeric_cols") or []
-        if d.table == "ledger" and len(numeric) >= 2:
-            hints["current_col"] = sorted(numeric)[0]
+        # the tint marks the latest period when periods run across the columns; a column of
+        # years down the side is a label, not a period of figures
+        if d.table == "ledger" and hints.get("current_period_col") is not None:
+            hints["current_col"] = hints["current_period_col"]
     b.hints = hints
 
 

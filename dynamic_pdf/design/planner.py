@@ -11,7 +11,8 @@ Decisions
 * Measure: keep prose lines near 60–80 characters by widening margins on
   prose-led documents (not when wide tables need the room).
 * Hierarchy: gentler heading ramp for deep outlines, bolder for shallow ones.
-* Tables: content-measured column widths; numeric columns right-aligned;
+* Tables: content-measured column widths; each column's role read from its header and
+  cells (period, identifier, category, figure, text), figures right-aligned;
   font stepped down (never below ``MIN_TABLE_SIZE``) when columns don't fit;
   landscape pages for tables that still don't fit; short tables kept whole.
 * Lead paragraph: the opening paragraph of reports/proposals is set larger.
@@ -20,12 +21,12 @@ Decisions
 """
 from __future__ import annotations
 
-import re
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
 from ..core.inline import plain_text
+from ..core.table_types import table_types
 from ..core.normalize import SemanticDocument
 from ..schema.blocks import CoverPageBlock
 from ..schema.enums import Orientation, PageSize
@@ -39,7 +40,6 @@ MIN_RUN_PARAGRAPHS = 3      # a column run is continuous prose, not a sentence o
 MIN_RUN_CHARS = 900
 MIN_COLUMN_CPL = 40
 _PAGE = {PageSize.A4: (595.28, 841.89), PageSize.LETTER: (612, 792), PageSize.LEGAL: (612, 1008)}
-_NUMERIC = re.compile(r"^[\s$€£¥%+\-−(),.\d٠-٩]+$")
 _PROSE_PROFILES = {Profile.PROPOSAL, Profile.ACADEMIC_REPORT, Profile.LETTER,
                    Profile.CORPORATE_MEMO, Profile.EXECUTIVE_REPORT, Profile.GENERAL}
 _LEAD_PROFILES = {Profile.EXECUTIVE_REPORT, Profile.PROPOSAL}
@@ -145,12 +145,14 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
             continue
         hints = dict(b.hints or {})
         ncols = max([len(b.headers or [])] + [len(r) for r in b.rows] + [1])
-        numeric = []
-        for ci in range(ncols):
-            vals = [plain_text(str(r[ci])) for r in b.rows if ci < len(r) and str(r[ci]).strip()]
-            if vals and sum(bool(_NUMERIC.match(v)) for v in vals) / len(vals) >= 0.8:
-                numeric.append(ci)
+        types = table_types(b)
+        numeric = types.numeric_cols          # figures line up at the reading end; periods and codes do not
         hints["numeric_cols"] = numeric
+        hints["column_roles"] = types.roles
+        if types.total_rows or types.subtotal_rows:
+            hints["total_rows"] = sorted(types.total_rows + types.subtotal_rows)
+        if types.current_col is not None:
+            hints["current_period_col"] = types.current_col
         size = ty.base_size - 1
         fits = False
         fracs: Optional[List[float]] = None
@@ -176,7 +178,9 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
             mins, nats = column_metrics(b.headers or [], b.rows, ty.body_family, MIN_TABLE_SIZE, 2 * pad)
             fracs2, fits2 = fit_columns(mins, nats, land_w)
             fits2 = fits2 and wrap_ratio(nats, fracs2, land_w) <= 1.8
-            if sem.meta.orientation != Orientation.LANDSCAPE and ncols >= 5:
+            # prose wraps; figures, codes and periods cannot, so only they justify turning the page
+            rigid = sum(r != "text" for r in types.roles)
+            if sem.meta.orientation != Orientation.LANDSCAPE and ncols >= 5 and rigid >= 3:
                 hints["landscape"] = True
                 hints["col_fractions"] = [round(f, 4) for f in fracs2] if not b.column_widths else None
                 what += "; too wide for portrait → landscape page" + ("" if fits2 else " (cells wrap)")
@@ -189,6 +193,9 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
             what += "; splits across pages with repeated header"
         if numeric:
             what += f"; numeric columns {numeric} right-aligned"
+        what += f"; columns: {types.summary()}"
+        if types.chart_suggestion():
+            what += f" (would also read as a {types.chart_suggestion()})"
         b.hints = hints
         lp.log("tables", what)
 
