@@ -45,6 +45,7 @@ class ExportResult:
         self.diagnostics = diagnostics or []
         self.qa = {}             # format -> QAReport (when exported with qa=True)
         self.composition = None  # dict (CompositionReport) when compose() is active
+        self.design = None       # DesignChoice when design(direction=/variants=/grammar=) chose the design
 
     _RANK = {"ok": 0, "fallback": 1, "unverified": 2, "degraded": 3, "failed": 4}
 
@@ -72,6 +73,8 @@ class ExportResult:
         if cst == "fallback" or any("designed layout" in f for f in c.get("fallbacks", [])):
             found.append(("fallback", "composition fell back to the designed layout: "
                           + "; ".join(c.get("fallbacks", [])[:2])))
+        if self.design is not None and self.design.fallback:
+            found.append(("fallback", "no design variant passed the hard gates: the stable designed output was used"))
         status = max((s for s, _ in found), key=self._RANK.__getitem__, default="ok")
         return status, [why for _, why in found]
 
@@ -127,6 +130,9 @@ class DocumentBuilder:
         self._composition = None
         self.last_composition = None
         self._fit_cache: dict = {}
+        self._variant_request = None     # set by design(direction=/variants=/grammar=); None = one design
+        self._variant_result = None      # (key, VariantSet) of the last variant search
+        self.last_variants = None
 
     # ─── Semantic / design layer ───────────────────────────────────
 
@@ -146,7 +152,8 @@ class DocumentBuilder:
         return self
 
     def design(self, mode: str = "auto", brand=None, recipe: Optional[str] = None,
-               recipe_gate: str = "evidence") -> 'DocumentBuilder':
+               recipe_gate: str = "evidence", *, direction: Optional[str] = None,
+               variants: Optional[int] = None, grammar=False) -> 'DocumentBuilder':
         """Enable intelligent design: ``"auto"`` selects a profile from the
         content; a profile name forces it. ``brand`` is a ``BrandKit`` or dict.
         Content is never altered — only typography, layout and navigation.
@@ -155,17 +162,34 @@ class DocumentBuilder:
         or ``"auto"`` for the one covering this document). It is used only if its
         comparison evidence supports it and this document passes the safety checks;
         otherwise the existing design stays and ``design_explain()`` says why.
-        ``recipe_gate="preview"`` renders it regardless, for comparisons."""
+        ``recipe_gate="preview"`` renders it regardless, for comparisons.
+
+        ``direction`` (``"auto"`` or a name from ``design.directions.DIRECTIONS``), ``variants``
+        (how many directions to try, 1 to 5, default 3) or ``grammar`` (as in
+        ``design_variants``) makes ``export()``/``render()`` deliver the recommended design that
+        passed the hard gates; ``ExportResult.design`` says which and why. When none passes,
+        the stable designed output is delivered and the result's status is ``"fallback"``.
+        Without them nothing changes."""
         from .design import BrandKit, EVIDENCE_RECIPES, resolve_profile_name
+        from .design.directions import DIRECTIONS
         from .design.evidence_gate import GATES
         if recipe is not None and recipe != "auto" and recipe not in EVIDENCE_RECIPES:
             raise ValueError(f"unknown evidence recipe {recipe!r}; choose from {sorted(EVIDENCE_RECIPES)}")
         if recipe_gate not in GATES:
             raise ValueError(f"recipe_gate must be one of {GATES}")
+        if direction is not None and direction != "auto" and direction not in DIRECTIONS:
+            raise ValueError(f"unknown direction {direction!r}; choose 'auto' or one of {sorted(DIRECTIONS)}")
+        if variants is not None and not 1 <= variants <= len(DIRECTIONS):
+            raise ValueError(f"variants must be between 1 and {len(DIRECTIONS)}")
+        self._variant_request = None
+        if direction is not None or variants is not None or grammar:
+            self._variant_request = {"families": None if direction in (None, "auto") else [direction],
+                                     "n": variants or 3, "grammar": grammar or None}
         self._evidence_recipe, self._recipe_gate = recipe, recipe_gate
         self._design_explicit = True
         if mode is None or mode == "none":
             self._design_mode = None       # explicit opt-out: classic theme rendering
+            self._variant_request = None
             return self
         if mode != "auto":
             resolve_profile_name(mode)   # validate early
@@ -211,6 +235,8 @@ class DocumentBuilder:
         from .core.normalize import normalize
         from .intelligence import Composer
         from .themes import get_theme as _gt
+        if self._variant_request:
+            raise ValueError("compose() cannot yet be combined with design(direction=/variants=/grammar=)")
         doc, theme = self._prepared_base()
         theme = theme or _gt(doc.theme)
         key = hashlib.sha256((doc.model_dump_json() + theme.model_dump_json()
@@ -287,7 +313,24 @@ class DocumentBuilder:
         if self._compose_active():
             d, t, _, _, _ = self._composed()
             return d, t
+        if self._variant_request and self._design_mode is not None:
+            chosen = self._variant_set().recommended
+            if chosen is not None:
+                return chosen.document, chosen.theme
         return self._prepared_base()
+
+    def _variant_set(self):
+        """The variant search ``design(direction=/variants=/grammar=)`` asked for (cached)."""
+        import hashlib
+        key = hashlib.sha256((self.build().model_dump_json() + repr(sorted(self._variant_request.items()))
+                              + str(self._theme_explicit)
+                              + (self._brand.model_dump_json() if self._brand else "") + self._theme
+                              + repr(self._policy)).encode()).hexdigest()
+        if self._variant_result is None or self._variant_result[0] != key:
+            r = self._variant_request
+            self._variant_result = (key, self.design_variants(n=r["n"], families=r["families"], grammar=r["grammar"]))
+        self.last_variants = self._variant_result[1]
+        return self.last_variants
 
     def _prepared_base(self):
         """(Document, Theme | None) ready for a renderer, applying the design plan."""
@@ -375,6 +418,10 @@ class DocumentBuilder:
         if self._design_mode is None and self._brand is None:
             return {"profile": None, "reasons": ["design() not enabled; using theme "
                                                  f"'{self._theme}' as-is"]}
+        if self._variant_request and self._design_mode is not None:
+            vs = self._variant_set()
+            if vs.recommended is not None:
+                return {**vs.recommended.plan.explain(), "variants": vs.choice().to_dict()}
         self._prepared()
         return self.last_design.explain()
 
@@ -980,7 +1027,7 @@ class DocumentBuilder:
             result.profile = self.last_design.decision.profile.value if self.last_design else None
             if self._compose_active():
                 result.composition = self.last_composition.model_dump()
-            return result
+            return self._note_design(result)
         if fmt == "pdf":
             self.render(path)
             result.pdf_path = path
@@ -995,6 +1042,15 @@ class DocumentBuilder:
         result.profile = self.last_design.decision.profile.value if self.last_design else None
         if self._compose_active():
             result.composition = self.last_composition.model_dump()
+        return self._note_design(result)
+
+    def _note_design(self, result: 'ExportResult') -> 'ExportResult':
+        """Say which variant was delivered, when design() asked for a variant search."""
+        if self._variant_request and self._design_mode is not None:
+            vs = self._variant_set()
+            result.design = vs.choice()
+            if vs.recommended is not None:
+                result.profile = vs.recommended.plan.brief.profile
         return result
 
     def export_both(self, directory: str, basename: Optional[str] = None,
@@ -1011,6 +1067,7 @@ class DocumentBuilder:
                            diagnostics=pdf.diagnostics + [dict(d, format="docx") for d in docx.diagnostics])
         res.qa = {**pdf.qa, **docx.qa}
         res.composition = self.last_composition.model_dump() if self._compose_active() else None
+        res.design = pdf.design
         return res
 
     def render_bytes(self) -> bytes:
