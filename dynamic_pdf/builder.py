@@ -378,6 +378,14 @@ class DocumentBuilder:
         self._prepared()
         return self.last_design.explain()
 
+    def lint(self, rules=None) -> list:
+        """Warnings about the content: totals against their rows, shares against 100,
+        repeated headings, unresolved references, mixed digits, inconsistent number and
+        date formats, images without alt text, empty sections. Never edits anything.
+        Returns ``dynamic_pdf.qa.lint.LintWarning`` items; ``rules`` limits the rules run."""
+        from .qa.lint import lint
+        return lint(self.semantic(), rules)
+
     # ─── Render policy (caller-owned; never taken from document payloads) ───
 
     def quality(self, mode: str = STRICT) -> 'DocumentBuilder':
