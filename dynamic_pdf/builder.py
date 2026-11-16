@@ -147,7 +147,7 @@ class DocumentBuilder:
         return self
 
     def design(self, mode: str = "auto", brand=None, recipe: Optional[str] = None,
-               recipe_gate: str = "evidence") -> 'DocumentBuilder':
+               recipe_gate: str = "evidence", *, ai=None, critic=None, brief: Optional[str] = None) -> 'DocumentBuilder':
         """Enable intelligent design: ``"auto"`` selects a profile from the
         content; a profile name forces it. ``brand`` is a ``BrandKit`` or dict.
         Content is never altered — only typography, layout and navigation.
@@ -156,14 +156,23 @@ class DocumentBuilder:
         or ``"auto"`` for the one covering this document). It is used only if its
         comparison evidence supports it and this document passes the safety checks;
         otherwise the existing design stays and ``design_explain()`` says why.
-        ``recipe_gate="preview"`` renders it regardless, for comparisons."""
+        ``recipe_gate="preview"`` renders it regardless, for comparisons.
+
+        ``ai`` (a ``dynamic_pdf.ai.Director``), ``critic`` (a ``dynamic_pdf.ai.Critic``) and
+        ``brief`` (what the caller wants, in words, for the Director) are opt-in and used by
+        ``design_variants()``. A brief needs a Director: without one it raises ``ValueError``
+        rather than being silently ignored."""
         from .design import BrandKit, EVIDENCE_RECIPES, resolve_profile_name
         from .design.evidence_gate import GATES
         if recipe is not None and recipe != "auto" and recipe not in EVIDENCE_RECIPES:
             raise ValueError(f"unknown evidence recipe {recipe!r}; choose from {sorted(EVIDENCE_RECIPES)}")
         if recipe_gate not in GATES:
             raise ValueError(f"recipe_gate must be one of {GATES}")
+        if brief is not None and ai is None:
+            raise ValueError("brief= is read by a model: pass ai=dynamic_pdf.ai.Director(...) "
+                             "(the 'ai' extra), or leave the brief out")
         self._evidence_recipe, self._recipe_gate = recipe, recipe_gate
+        self._ai, self._critic, self._ai_brief = ai, critic, brief
         self._design_explicit = True
         if mode is None or mode == "none":
             self._design_mode = None       # explicit opt-out: classic theme rendering
@@ -346,7 +355,8 @@ class DocumentBuilder:
         return self._gate_cache[key]
 
     def design_variants(self, n: int = 3, families=None, brand=None, budget=None, office: bool = False,
-                        grammar=None, grammar_rules=None, ranker_model=None):
+                        grammar=None, grammar_rules=None, ranker_model=None, ai=None, critic=None,
+                        brief: Optional[str] = None):
         """Several complete designs of this document, each a different art direction, and
         a recommendation among those that pass the hard gates.
 
@@ -361,7 +371,9 @@ class DocumentBuilder:
 
         ``ranker_model`` names a trained variant ranker whose gate passed. It only reorders
         designs that passed the hard gates, and ``stats["selection"]`` says which selector
-        chose. A missing or refused model leaves the fixed selection in place."""
+        chose. A missing or refused model leaves the fixed selection in place.
+
+        ``ai``, ``critic`` and ``brief`` default to those given to ``design()``; see there."""
         from .design import BrandKit
         from .intelligence.variants import generate_variants
         from .themes import get_theme as _gt
@@ -369,7 +381,9 @@ class DocumentBuilder:
         return generate_variants(self.build(), policy=self._policy, brand=kit or self._brand,
                                  base_theme=_gt(self._theme) if self._theme_explicit else None, n=n,
                                  families=families, budget=budget, office=office, grammar=grammar,
-                                 grammar_rules=grammar_rules, ranker_model=ranker_model)
+                                 grammar_rules=grammar_rules, ranker_model=ranker_model,
+                                 ai=ai or getattr(self, "_ai", None), critic=critic or getattr(self, "_critic", None),
+                                 request=brief or getattr(self, "_ai_brief", None))
 
     def design_explain(self) -> dict:
         """Why each style/layout decision was made (profile, reasons, recipe)."""

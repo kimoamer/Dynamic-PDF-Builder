@@ -124,14 +124,22 @@ class VariantRanker:
         return out
 
 
-def choose(valid: Sequence, deterministic, model_path: Optional[str], loader=VariantRanker.load):
+def load_model(path: str):
+    """A ``.json`` path is a calibrated weights model; anything else a LightGBM ranker."""
+    if path.lower().endswith(".json"):
+        from .variant_weights import WeightsRanker
+        return WeightsRanker.load(path)
+    return VariantRanker.load(path)
+
+
+def choose(valid: Sequence, deterministic, model_path: Optional[str], loader=load_model):
     """The design to recommend, and a note of which selector chose it and why."""
     note = {"selector": "deterministic", "model": None}
     if not model_path:
         return deterministic, note
     try:
         ranker = loader(model_path)
-        scores = ranker.scores([variant_features(v) for v in valid])
+        scores = ranker.scores([getattr(ranker, "features", variant_features)(v) for v in valid])
     except RankerRefused as e:
         note["fallback_reason"] = str(e)
         return deterministic, note

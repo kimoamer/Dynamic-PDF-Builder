@@ -9,6 +9,7 @@ Usage:
     dynamic-pdf render invoice.md --data invoice.json --data lines=lines.csv
     dynamic-pdf batch letter.md --data people.csv -o out/ --name "letter-{{ id }}"
     dynamic-pdf themes
+    dynamic-pdf schema -o document.schema.json
     dynamic-pdf version
 """
 import argparse
@@ -67,6 +68,10 @@ def main():
     # ─── themes ───
     sub.add_parser("themes", help="List available themes")
 
+    # ─── schema ───
+    schema_p = sub.add_parser("schema", help="Print the JSON Schema of a document (for JSON input and agents)")
+    schema_p.add_argument("-o", "--output", default=None, help="Write the schema to this file instead")
+
     # ─── version ───
     sub.add_parser("version", help="Show version")
 
@@ -90,6 +95,8 @@ def main():
             sys.exit(2)
     elif args.command == "themes":
         _cmd_themes()
+    elif args.command == "schema":
+        _cmd_schema(args.output)
     elif args.command == "version":
         _cmd_version()
     else:
@@ -217,6 +224,17 @@ def _cmd_themes():
     print(f"Available themes ({len(themes)}):")
     for name in themes:
         print(f"  • {name}")
+
+
+def _cmd_schema(output):
+    import json
+    from .schema.document import Document
+    text = json.dumps(Document.model_json_schema(), ensure_ascii=False, indent=1)
+    if output:
+        with open(output, "w", encoding="utf-8") as f:
+            f.write(text + "\n")
+    else:
+        print(text)
 
 
 def _cmd_version():
