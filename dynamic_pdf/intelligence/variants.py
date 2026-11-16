@@ -9,6 +9,7 @@ recommendation from heuristics, not a verdict on beauty.
 """
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import os
@@ -56,6 +57,7 @@ class VariantReport(BaseModel):
     unverified: List[str] = Field(default_factory=list)
     grammar_rules: List[str] = Field(default_factory=list)   # approved rules this design used
     grammar_version: Optional[str] = None
+    ai: List[Dict] = Field(default_factory=list)              # what a model was asked, and whether its answer was used
 
 
 @dataclass
@@ -94,6 +96,36 @@ class VariantSet:
                 "note": "the recommendation comes from fit rules and page measurements; no person has judged it",
                 "variants": [{"id": v.id, "name": v.name, "report": v.report.model_dump(),
                               "plan": v.plan.explain() if v.plan else None} for v in self.variants]}
+
+    def accept(self, variant_id: str, reviewer: str, *, note: str = "", root: str = "training/human_preferences",
+               date: Optional[str] = None) -> dict:
+        """Record that a person kept ``variant_id``: one row in ``<root>/accepted.jsonl``.
+
+        This is human signal, so it goes only to a ``human_preferences`` folder, never to the AI
+        rows. The row names the design kept, the valid designs passed over and the recommendation."""
+        import datetime
+        if os.path.basename(os.path.normpath(root)) != "human_preferences":
+            raise ValueError("accepted designs are written only to a human_preferences folder")
+        if not reviewer or not reviewer.strip():
+            raise ValueError("a person's name is required: an acceptance is a human judgment")
+        chosen = next((v for v in self.variants if v.id == variant_id), None)
+        if chosen is None or not chosen.valid:
+            raise ValueError(f"{variant_id!r} is not a valid design of this set; choose from "
+                             f"{[v.id for v in self.variants if v.valid]}")
+
+        def ident(v):
+            return {"candidate": v.id, "pdf_sha256": hashlib.sha256(v.pdf or b"").hexdigest(),
+                    "docx_sha256": hashlib.sha256(v.docx or b"").hexdigest()}
+
+        row = {"format": "dynamic-pdf-builder/human-acceptance", "reviewer_type": "human", "reviewer": reviewer.strip(),
+               "review_date": date or datetime.date.today().isoformat(), "document_hash": self.stats.get("source_sha256"),
+               "accepted": ident(chosen), "passed_over": [ident(v) for v in self.variants if v.valid and v is not chosen],
+               "recommended": self.recommended.id if self.recommended else None,
+               "selector": (self.stats.get("selection") or {}).get("selector"), "note": note}
+        os.makedirs(root, exist_ok=True)
+        with open(os.path.join(root, "accepted.jsonl"), "a", encoding="utf-8", newline="\n") as f:
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+        return row
 
     def export(self, directory: str) -> Dict[str, Dict[str, str]]:
         """Write each valid design and ``decisions.json``. Returns the paths by design."""
@@ -205,9 +237,11 @@ def _faults(critique, base_pages: int) -> int:
 
 
 class _Runner:
-    def __init__(self, source, policy, brand, base_theme, budget: VariantBudget, office: bool):
+    def __init__(self, source, policy, brand, base_theme, budget: VariantBudget, office: bool, critic=None):
         self.source, self.policy, self.brand, self.base_theme = source, policy, brand, base_theme
-        self.budget, self.office = budget, office
+        self.budget, self.office, self.critic = budget, office, critic
+        self.start_adjust = Adjust()             # a Director may start every design from its own choice
+        self.plain_pdf: Optional[bytes] = None
         self.sem = normalize(source)
         self.renders = 0
         self.bytes = 0
@@ -247,27 +281,30 @@ class _Runner:
             rep.status = "not_rendered"
             rep.hard_failures.append(stop)
             return Variant(direction.id, direction.name, None, rep)
-        adjust = Adjust()
+        adjust = self.start_adjust
         titles = [o.text for o in self.sem.outline if o.level == 1]
         made, pdf, geo = self._attempt(direction, adjust, why)
         rep.renders = 1
         critique = self._look(made, pdf, titles)
         steps: List[str] = []
+        state = (made, pdf, geo, critique)
         for _ in range(self.budget.max_refinements):
             step = _next_refinement(critique, adjust, made.plan, titles, self.base_pages)
             if step is None or self.spent():
                 break
-            trial = step[0]
-            t_made, t_pdf, t_geo = self._attempt(direction, trial, why)
-            rep.renders += 1
-            t_critique = self._look(t_made, t_pdf, titles)
-            adjust = trial                        # a rejected change is not tried again
-            before, after = _faults(critique, self.base_pages), _faults(t_critique, self.base_pages)
-            if after < before or (after == before and t_critique.index >= critique.index):
-                made, pdf, geo, critique = t_made, t_pdf, t_geo, t_critique
-                steps.append(f"kept: {step[1]} (index {critique.index})")
-            else:
-                steps.append(f"undone: {step[1]} (index fell to {t_critique.index})")
+            adjust = step[0]                      # a rejected change is not tried again
+            state = self._trial(direction, adjust, why, titles, state, step[1], rep, steps, critic=False)
+            made, pdf, geo, critique = state
+        for _ in range(self.critic.rounds if self.critic else 0):
+            if self.spent():
+                break
+            trial, note, asked = self.critic.review(pdf, critique, adjust, titles, direction.id)
+            rep.ai.append(asked)
+            if trial is None:
+                break
+            adjust = trial
+            state = self._trial(direction, adjust, why, titles, state, note, rep, steps, critic=True)
+            made, pdf, geo, critique = state
         made.plan.refinements = steps
         rep.refinements = steps
         docx = self._docx(made, rep)
@@ -279,6 +316,22 @@ class _Runner:
         rep.seconds = round(time.monotonic() - began, 2)
         self.bytes += len(pdf) + len(docx or b"")
         return Variant(direction.id, direction.name, made.plan, rep, pdf, docx, made.document, made.theme)
+
+    def _trial(self, direction, trial: Adjust, why, titles, state, note: str, rep: VariantReport, steps: List[str],
+               critic: bool):
+        """Render one change and keep it if it measures no worse. A critic's change needs only to
+        add no measured fault: the model is the judge there, the measurements a filter."""
+        made, pdf, geo, critique = state
+        t_made, t_pdf, t_geo = self._attempt(direction, trial, why)
+        rep.renders += 1
+        t_critique = self._look(t_made, t_pdf, titles)
+        before, after = _faults(critique, self.base_pages), _faults(t_critique, self.base_pages)
+        if after < before or (after == before and (critic or t_critique.index >= critique.index)):
+            steps.append(f"kept: {note} (index {t_critique.index})")
+            return t_made, t_pdf, t_geo, t_critique
+        steps.append(f"undone: {note} (" + (f"measured faults rose to {after}" if after > before
+                                             else f"index fell to {t_critique.index}") + ")")
+        return state
 
     def _look(self, made, pdf: bytes, titles: Sequence[str]):
         from ..qa.visual_critique import critique_pdf
@@ -352,15 +405,25 @@ class _Runner:
 def generate_variants(source, *, policy=None, brand: Optional[BrandKit] = None, base_theme=None, n: int = 3,
                       families: Optional[Sequence[str]] = None, budget: Optional[VariantBudget] = None,
                       office: bool = False, grammar=None, grammar_rules: Optional[Sequence[str]] = None,
-                      ranker_model: Optional[str] = None) -> VariantSet:
+                      ranker_model: Optional[str] = None, ai=None, critic=None,
+                      request: Optional[str] = None) -> VariantSet:
     """Up to ``n`` (3–5) designs of ``source`` and a recommendation.
 
     ``grammar`` is ``True`` for the packaged approved grammar, a path, or a ``Grammar``.
     A design the grammar breaks falls back to the same direction without it.
 
     ``ranker_model`` names a trained ranker for the valid designs. It never runs by itself,
-    and ``stats["selection"]`` says which selector chose. Any problem keeps the fixed rule."""
+    and ``stats["selection"]`` says which selector chose. Any problem keeps the fixed rule.
+
+    ``ai`` is a ``dynamic_pdf.ai.Director``: it ranks the directions, starts each design from its
+    section treatments and emphasis, and its first valid design is recommended. ``request`` is a
+    caller's brief in words, for the Director. ``critic`` is a ``dynamic_pdf.ai.Critic`` that may
+    refine each design for a few more renders. Both are opt-in; every design they shape passes the
+    same hard gates, and ``stats["ai"]`` reports what each model was asked and whether it was used.
+    A named ``ranker_model`` still has the last word among the valid designs."""
     from ..design.grammar import resolve
+    if request and ai is None:
+        raise ValueError("a brief is read by a model: pass ai=dynamic_pdf.ai.Director(...), or leave the brief out")
     grammar = resolve(grammar)
     budget = budget or VariantBudget()
     if not 1 <= n <= len(DIRECTIONS):
@@ -370,11 +433,16 @@ def generate_variants(source, *, policy=None, brand: Optional[BrandKit] = None, 
             raise ValueError(f"unknown design family {f!r}; choose from {sorted(DIRECTIONS)}")
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        run = _Runner(source, policy, brand, base_theme, budget, office)
+        run = _Runner(source, policy, brand, base_theme, budget, office, critic)
         base_pages = _plain_pages(run)
         run.base_pages = base_pages
         brief = read_brief(run.sem, _profile(run.sem), base_pages)
         ranked = select_directions(brief, len(DIRECTIONS))
+        order, director = None, None
+        if ai is not None:
+            order, run.start_adjust, director = ai.choose(run.sem, brief, ranked, request=request, plain_pdf=run.plain_pdf)
+            if order:
+                ranked = sorted(ranked, key=lambda r: order.index(r[0].id))
         if families:
             chosen = [r for f in families for r in ranked if r[0].id == f]
             chosen += [(DIRECTIONS[f], 0.0, ["requested by the caller"]) for f in families
@@ -385,6 +453,10 @@ def generate_variants(source, *, policy=None, brand: Optional[BrandKit] = None, 
     valid = [v for v in variants if v.valid]
     best = max(valid, key=lambda v: v.report.fit * 6 + v.report.index, default=None)
     selection = {"selector": "deterministic", "model": None}
+    if best is not None and order:
+        fixed = best
+        best = min(valid, key=lambda v: order.index(v.id) if v.id in order else len(order))
+        selection = {"selector": "ai", "model": director["model"], "deterministic_choice": fixed.id}
     if best is not None and ranker_model:
         from .variant_ranker import choose
         best, selection = choose(valid, best, ranker_model)
@@ -393,6 +465,8 @@ def generate_variants(source, *, policy=None, brand: Optional[BrandKit] = None, 
     else:
         reasons = [f"{best.name}: fit {best.report.fit:g} for this document, measured index {best.report.index:g}",
                    *best.plan.fit_reasons,
+                   f"ranked first by {selection['model']} among the valid designs; no person has judged it"
+                   if selection["selector"] == "ai" else
                    "chosen from fit rules and page measurements; no person has judged it"]
         for v in valid:
             if v is not best:
@@ -401,7 +475,10 @@ def generate_variants(source, *, policy=None, brand: Optional[BrandKit] = None, 
         if v.report.status == "rejected":
             reasons.append(f"rejected: {v.name}: {'; '.join(v.report.hard_failures[:3])}")
     stats = {"renders": run.renders, "seconds": round(time.monotonic() - run.start, 2),
-             "budget": budget.model_dump(), "plain_pages": base_pages, "selection": selection}
+             "budget": budget.model_dump(), "plain_pages": base_pages, "selection": selection,
+             "source_sha256": hashlib.sha256(source.model_dump_json().encode("utf-8")).hexdigest()}
+    if director is not None or critic is not None:
+        stats["ai"] = {"director": director, "critic": {v.id: v.report.ai for v in variants if v.report.ai}}
     return VariantSet(variants, best, reasons, fallback=best is None, stats=stats)
 
 
@@ -477,5 +554,5 @@ def _plain_pages(run: _Runner) -> int:
     """Pages of the document in plain setting: the yardstick for growth."""
     from ..themes import get_theme
     theme = run.base_theme or get_theme(run.source.theme)
-    _, geo = run._render(run.source, theme)
+    run.plain_pdf, geo = run._render(run.source, theme)
     return max(1, len(geo.pages))
