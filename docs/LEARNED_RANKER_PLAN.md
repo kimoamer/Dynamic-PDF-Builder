@@ -213,8 +213,11 @@ finds none, and output is unchanged. The record is in
 
 What would change it: judging batches b15 to b22 (rendered and waiting), then training again.
 Also not done from the list above: reference typicality, per-criterion models, sanity pairs. The
-booster's reasons lean on `last_page_words` more than on any other fact, which should be looked
-at before it is trusted.
+booster's reasons lean on `last_page_words` more than on any other fact. Checked: trained
+without it the booster agrees on 77% of the held-out comparisons (74% cross-validated), still
+about 20 points above the fixed selector, and in the training documents the preferred design
+has more words on its last page in 121 of the 155 pairs that differ. It is a real signal (a
+document that ends on a nearly empty page loses), not the only one.
 
 ### M19. On by default, and one score everywhere (M)
 

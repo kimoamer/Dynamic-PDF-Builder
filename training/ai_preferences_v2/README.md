@@ -69,6 +69,20 @@ The booster's gain holds when the documents are resampled (low bound +0.13) and 
 worse. **Neither model passed its gate, so neither is packaged or can be loaded.** The booster
 fails one check: the gate asks for 150 held-out comparisons and there are 62.
 
+The booster's reasons name `last_page_words` most often, so it was trained again without it:
+
+| Facts left out | Held out | Cross-validated on training families |
+| --- | --- | --- |
+| None | 84% | 78% |
+| `last_page_words` | 77% | 74% |
+| Every last-page fact | 74% | 73% |
+| Word and page counts | 77% | 76% |
+
+The model does not rest on that one fact: without it it still beats the fixed selector (56%) by
+about 20 points. The fact is a real signal in the training documents, where the preferred design
+has more words on its last page in 121 of the 155 pairs that differ: the judges dislike a
+document that ends on a nearly empty page.
+
 ## Waiting for judges
 
 Batches `b15` to `b22` hold 36 more English Wikipedia articles, rendered (138 designs) with 336
