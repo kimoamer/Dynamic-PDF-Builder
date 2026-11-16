@@ -152,8 +152,10 @@ def resolve_refs(text: str, link) -> str:
     """``text`` with each ``{ref:id}`` the current document resolves replaced by
     ``link(label, anchor)``. Outside a render, or for an id nothing carries, the marker
     stays as the author wrote it (``lint()`` reports it)."""
+    if "{ref:" not in text:
+        return text
     num = current()
-    if num is None or "{ref:" not in text:
+    if num is None:
         return text
 
     def sub(m):

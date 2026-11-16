@@ -1227,6 +1227,8 @@ class LayoutEngine:
 
         from ..core.numbering import number_document
         self.diagnostics.numbering = number_document(self.document)     # table and figure numbers, {ref:id}
+        from ..i18n import digit_style
+        self.diagnostics.digits = digit_style(self.document)            # how generated figures are written
         token = _policy.activate(self.diagnostics)
         try:
             self._page_counter = _PageCounter(doc_template)

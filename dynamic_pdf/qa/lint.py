@@ -23,6 +23,7 @@ from typing import Iterable, List, Optional, Tuple
 from ..core.inline import parse_inline, plain_text
 from ..core.keywords import pattern
 from ..core.normalize import SemanticDocument, block_text
+from ..core.numbering import REF as _REF
 from ..core.table_types import ascii_digits, infer_table, read_cell
 
 RULES = ("total_mismatch", "percent_sum", "repeated_heading", "unresolved_ref", "mixed_digits",
@@ -30,7 +31,6 @@ RULES = ("total_mismatch", "percent_sum", "repeated_heading", "unresolved_ref", 
 _NOT_PROSE = {"code", "mermaid", "math", "diagram", "qrcode", "shape", "spacer", "divider", "page_break",
               "watermark", "page_media", "table_of_contents"}
 _NOT_ADDITIVE = re.compile(r"average|mean|median|avg|rate|ratio|per\b|price|متوسط|معدل|نسبة|سعر", re.I)
-_REF = re.compile(r"\{ref:([^}\s]+)\}")
 _WESTERN, _INDIC = re.compile(r"[0-9]"), re.compile(r"[٠-٩۰-۹]")
 _EURO = re.compile(r"^\d{1,3}(?:\.\d{3})+(?:,\d+)?$|^\d+,\d{1,2}$")
 _US = re.compile(r"^\d{1,3}(?:,\d{3})+(?:\.\d+)?$")

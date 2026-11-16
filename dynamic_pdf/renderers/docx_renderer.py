@@ -1530,6 +1530,8 @@ def render_docx(sem: SemanticDocument, theme: Theme, policy=None):
     _policy.check_limit("Block count", len(sem.blocks), col.policy.limits.max_blocks)
     from ..core.numbering import number_document
     col.numbering = number_document(sem)          # table and figure numbers, {ref:id}
+    from ..i18n import digit_style
+    col.digits = digit_style(sem)                 # how generated figures are written
     token = _policy.activate(col)
     try:
         renderer = DocxRenderer(sem, theme, col)
