@@ -256,6 +256,6 @@ class MediaGate:
 
 
 def _pages(pdf: bytes) -> int:
-    import pymupdf
-    with pymupdf.open(stream=pdf, filetype="pdf") as doc:
+    from ..qa.pdf_backend import open_pdf
+    with open_pdf(pdf) as doc:
         return len(doc)

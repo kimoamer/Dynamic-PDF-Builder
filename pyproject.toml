@@ -43,6 +43,7 @@ diagrams = ["playwright>=1.40"]
 plotly   = ["plotly>=5.0", "kaleido>=0.2"]
 pdf      = ["pikepdf>=8.0"]
 qa       = ["pymupdf>=1.23"]          # visual QA (AGPL; optional)
+qa-permissive = ["pypdfium2>=5.0"]    # visual QA without AGPL: PDFium (BSD-3/Apache-2.0); PyMuPDF wins when both
 ranker   = ["lightgbm>=4.0"]          # optional learned candidate ranker (MIT); not in "all"
 analyzer = ["pymupdf>=1.23"]          # tools/reference_analyzer only (AGPL; local dev tool, not in "all")
 qrcode   = ["qrcode[pil]>=7.4"]

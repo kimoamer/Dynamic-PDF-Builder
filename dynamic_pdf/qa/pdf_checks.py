@@ -1,5 +1,5 @@
 """
-PDF layout checks on the real output (PyMuPDF text/image geometry).
+PDF layout checks on the real output (text and image geometry, through ``pdf_backend``).
 
 Detects: text/images clipped off the page, content overflowing into the side
 margins, overlapping text lines, accidental blank pages, headings stranded at
@@ -11,6 +11,7 @@ import re
 from typing import List, Optional
 
 from .report import ERROR, WARNING, Finding, QAReport, sha256
+from .contrast import low_contrast
 from .percent_geometry import misplaced_arabic_percent
 
 
@@ -18,13 +19,14 @@ _SYMBOL_FONTS = ("ZapfDingbats", "Symbol")    # never used for text by this libr
 _SENTENCE_END = re.compile(r"^\s*[.!?\u061f\u06d4\u2026]|[.!?\u061f\u06d4\u2026]\s*$")
 
 
-def _require_pymupdf():
+def _open(data: bytes):
+    from .pdf_backend import open_pdf
     try:
-        import pymupdf
-        return pymupdf
+        return open_pdf(data)
     except ImportError as e:   # pragma: no cover
         from ..utils.errors import DynamicPDFError
-        raise DynamicPDFError('Visual QA requires PyMuPDF: pip install "dynamic-pdf-builder[qa]"') from e
+        raise DynamicPDFError('Visual QA needs a PDF reader: pip install "dynamic-pdf-builder[qa-permissive]" '
+                              '(PDFium) or "dynamic-pdf-builder[qa]" (PyMuPDF, AGPL)') from e
 
 
 def _key(text: str) -> frozenset:
@@ -55,7 +57,7 @@ def _overlap(a, b) -> float:
     return inter / smaller
 
 
-def _ink_beyond(page, bbox, left: float, right: float, pymupdf) -> float:
+def _ink_beyond(page, bbox, left: float, right: float) -> float:
     """How far drawn ink of a line reaches past ``left``/``right`` (0 when it does not).
 
     A line's box comes from font metrics: for Arabic faces such as Amiri it reaches well past
@@ -67,15 +69,14 @@ def _ink_beyond(page, bbox, left: float, right: float, pymupdf) -> float:
     for a, b, edge, outward in ((right, x1, right, 1), (x0, left, left, -1)):
         if b - a <= 0.05:
             continue
-        clip = pymupdf.Rect(a, y0, b, y1) & page.rect
-        if clip.is_empty:
+        clip = page.clip((a, y0, b, y1))
+        if clip is None:
             continue
         zoom = 3.0
-        pix = page.get_pixmap(matrix=pymupdf.Matrix(zoom, zoom), colorspace=pymupdf.csGRAY, clip=clip, alpha=False)
-        w, h, s = pix.width, pix.height, pix.samples
+        w, h, s = page.gray(zoom, clip)
         ink = [c for c in range(w) if any(s[r * w + c] < 160 for r in range(h))]
         if ink:
-            far = (clip.x0 + (max(ink) + 1) / zoom) if outward > 0 else (clip.x0 + min(ink) / zoom)
+            far = (clip[0] + (max(ink) + 1) / zoom) if outward > 0 else (clip[0] + min(ink) / zoom)
             worst = max(worst, (far - edge) * outward)
     return worst
 
@@ -91,8 +92,7 @@ def _separate_lines(a, b) -> bool:
 def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Optional[List[str]] = None,
               tolerance: float = 2.0, fmt: str = "pdf", captions: Optional[List[str]] = None,
               major_headings: Optional[List[str]] = None, body_size: Optional[float] = None) -> QAReport:
-    pymupdf = _require_pymupdf()
-    doc = pymupdf.open(stream=data, filetype="pdf")
+    doc = _open(data)
     rep = QAReport(format=fmt, pages=doc.page_count, sha256=sha256(data))
     caps = [_key(c) for c in (captions or []) if c.strip()]
     majors = [_key(h) for h in (major_headings or []) if _key(h)]
@@ -105,15 +105,22 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
     margins = margins or {}
 
     for pno, page in enumerate(doc, start=1):
-        W, H = page.rect.width, page.rect.height
+        W, H = page.width, page.height
         left = margins.get("left", 0) - tolerance
         right = W - margins.get("right", 0) + tolerance
-        d = page.get_text("dict")
-        for bbox, text in misplaced_arabic_percent(page.get_text("rawdict")):
+        d = page.text_dict()
+        for bbox, text in misplaced_arabic_percent(page.rawdict()):
             rep.findings.append(Finding(
                 severity=WARNING, code="arabic_percent_position", page=pno,
                 bbox=bbox, text=text, format=fmt,
                 message="percent sign is drawn to the RIGHT of the Arabic number; move it visually left"))
+        seen = set()
+        for ratio, needed, fg, bg, text, bbox in low_contrast(page, d):
+            if (fg, bg) not in seen:                   # one finding per colour pair and page
+                seen.add((fg, bg))
+                rep.findings.append(Finding(
+                    severity=WARNING, code="low_contrast", page=pno, bbox=bbox, text=text[:80], format=fmt,
+                    message=f"text {fg} on {bg} has contrast {ratio:.2f}:1, below WCAG AA {needed:g}:1"))
         lines = []
         has_image = False
         for bl in d["blocks"]:
@@ -152,7 +159,7 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
                                             text=txt.strip()[:120], format=fmt, fixable=True,
                                             message=f"text runs off the page: {txt.strip()[:40]!r}"))
             elif margins and (x1 > right or x0 < left) and 40 < y0 < H - 40:
-                over = _ink_beyond(page, (x0, y0, x1, y1), left, right, pymupdf)
+                over = _ink_beyond(page, (x0, y0, x1, y1), left, right)
                 if over > 0:
                     rep.findings.append(Finding(severity=ERROR, code="overflow", page=pno, bbox=bbox,
                                                 text=txt.strip()[:120], format=fmt, fixable=True,
@@ -174,7 +181,7 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
         body = [ln for ln in lines if 40 < ln[0][1] < H - 50]
         # page fill: how far down the text block the content reaches, charts drawn as vectors included
         top = min([ln[0][1] for ln in body], default=72)
-        drawn = [d["rect"].y1 for d in page.get_drawings() if d["rect"].y0 > 40 and d["rect"].y1 < H - 50]
+        drawn = [r[3] for r in page.drawings() if r[1] > 40 and r[3] < H - 50]
         bottom = max([ln[0][3] for ln in body] + [image_bottoms.get(pno, 0)] + drawn, default=0)
         area = (H - 50) - min(top, 90)
         rep.page_fill.append(round(max(0.0, (bottom - min(top, 90)) / area), 2) if bottom else 0.0)
@@ -214,12 +221,12 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
                 rep.findings.append(Finding(severity=ERROR, code="stranded_heading", page=pno,
                                             bbox=last[0], text=last[1].strip(), format=fmt, fixable=True,
                                             message=f"heading {last[1].strip()[:40]!r} is the last line on its page"))
-        for link in page.get_links():
-            if link.get("kind") == 1 and not (0 <= link.get("page", -1) < doc.page_count):
+        for target in page.link_targets():
+            if not 0 <= target < doc.page_count:
                 rep.findings.append(Finding(severity=ERROR, code="broken_link", page=pno, format=fmt,
                                             message="internal link points to a missing page"))
     # wasted space: a short non-final page followed by ordinary continuing content
-    orient = [p.rect.width > p.rect.height for p in doc]
+    orient = [p.width > p.height for p in doc]
     for i in range(len(rep.page_fill) - 1):
         nxt = page_firsts[i + 1]
         intentional = (orient[i] != orient[i + 1] or i == 0

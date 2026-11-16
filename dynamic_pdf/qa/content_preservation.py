@@ -222,12 +222,13 @@ def _either_way(word: str) -> str:
 def check_pdf_content(ledger: ContentLedger, data: bytes, initials: Sequence[str] = ()) -> LayerResult:
     """The page text holds every word of the source. Extra words prove nothing here:
     bands and contents repeat text, which is why repeats are checked on the fragments."""
+    from .pdf_backend import open_pdf
     try:
-        import pymupdf
+        pdf = open_pdf(data)
     except ImportError:
-        return LayerResult("pdf", UNKNOWN, ["PyMuPDF is not installed"])
-    with pymupdf.open(stream=data, filetype="pdf") as pdf:
-        page_text = "\n".join(page.get_text() for page in pdf)
+        return LayerResult("pdf", UNKNOWN, ["no PDF reader (PyMuPDF or pypdfium2) is installed"])
+    with pdf:
+        page_text = pdf.text()
     source = "\n".join([t for _, _, t in _shown(ledger)] + list(ledger.band_texts))
     folded = _fold(page_text)
     # either reading of a line-end hyphen: a hyphenation break, or the author's own hyphen
@@ -247,15 +248,14 @@ def same_extracted_words(first: bytes, second: bytes) -> Optional[bool]:
     """Whether two PDFs use the same Arabic and Latin words. Shaping and extraction are
     the same on both sides, so this holds where a comparison with the source cannot.
     Counts and digits are left out: a shorter document repeats its bands and page
-    numbers fewer times. None when PyMuPDF is missing."""
-    try:
-        import pymupdf
-    except ImportError:
+    numbers fewer times. None when no PDF reader is installed."""
+    from .pdf_backend import backend_name, open_pdf
+    if backend_name() is None:
         return None
 
     def words(data: bytes) -> set:
-        with pymupdf.open(stream=data, filetype="pdf") as pdf:
-            text = _dehyphenate("\n".join(page.get_text() for page in pdf))
+        with open_pdf(data) as pdf:
+            text = _dehyphenate(pdf.text())
         return set(_arabic_tokens(text)) | {w for w in _LATIN.findall(_fold(text)) if w.isalpha()}
     return words(first) == words(second)
 

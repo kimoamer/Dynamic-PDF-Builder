@@ -100,3 +100,102 @@ def test_word_hyphenates_body_text_only():
     assert sup("Normal") == "1" and sup("Body Text") == "0"       # headings, tables, code inherit Normal
     rtl = open_docx(DocumentBuilder().meta(title="t", language="ar").direction("rtl").paragraph("نص").render_docx())
     assert rtl.settings.element.find(qn("w:autoHyphenation")) is None
+
+
+# ── F16: QA and variants without PyMuPDF (AGPL) ──────────────────────────
+
+@pytest.fixture
+def no_pymupdf(monkeypatch):
+    """PyMuPDF uninstalled, as far as the package can tell: importing it fails."""
+    pytest.importorskip("pypdfium2")
+    import sys
+    for name in ("pymupdf", "fitz"):
+        monkeypatch.setitem(sys.modules, name, None)        # `import pymupdf` raises ImportError
+    monkeypatch.delenv("DYNAMIC_PDF_QA_BACKEND", raising=False)
+    from dynamic_pdf.qa.pdf_backend import backend_name
+    assert backend_name() == "pdfium"
+
+
+def _sample():
+    return (DocumentBuilder().meta(title="Quarterly review", author="Ops")
+            .heading("Summary").paragraph(LONG)
+            .heading("Figures").table(["Region", "Revenue"], [["North", "1,200"], ["South", "980"]])
+            .heading("ملخص").paragraph(SRC))
+
+
+def test_qa_runs_without_pymupdf(no_pymupdf):
+    from reportlab.pdfgen.canvas import Canvas
+    from dynamic_pdf.qa import check_pdf
+    from dynamic_pdf.qa.visual_critique import critique_pdf
+    data, rep = _sample().design().qa("pdf")
+    assert rep.passed and rep.pages >= 1, rep.summary()
+    assert critique_pdf(data).available
+    buf = io.BytesIO()                     # a planted defect is still caught
+    c = Canvas(buf)
+    c.setFont("Helvetica", 11)
+    c.drawString(560, 700, "This line runs off the right edge of the page")
+    c.setFont("ZapfDingbats", 14)
+    c.drawString(72, 600, "IIIII")
+    c.save()
+    codes = {f.code for f in check_pdf(buf.getvalue(), margins={"left": 54, "right": 54}).errors}
+    assert {"clipped_text", "missing_glyph"} <= codes
+
+
+def test_variants_run_without_pymupdf(no_pymupdf):
+    got = _sample().design_variants(n=3)
+    assert any(v.valid for v in got), [v.report.hard_failures for v in got]
+    for v in got:
+        assert not [u for u in v.report.unverified if "PDF reader" in u or "PyMuPDF" in u], v.report.unverified
+        assert v.report.heuristics, "the page images were not measured"
+
+
+# ── contrast (WCAG AA) ───────────────────────────────────────────────────
+
+def _canvas_pdf(draw) -> bytes:
+    from reportlab.pdfgen.canvas import Canvas
+    buf = io.BytesIO()
+    c = Canvas(buf)
+    draw(c)
+    c.save()
+    return buf.getvalue()
+
+
+def _contrast(pdf):
+    from dynamic_pdf.qa import check_pdf
+    return [f for f in check_pdf(pdf).findings if f.code == "low_contrast"]
+
+
+def _draw_samples(c):
+    from reportlab.lib.colors import HexColor
+    c.setFont("Helvetica", 11)
+    c.setFillColor(HexColor("#999999"))                 # 2.85:1 on white: fails body text
+    c.drawString(72, 700, "Pale grey body text")
+    c.setFillColor(HexColor("#333333"))
+    c.drawString(72, 650, "Dark body text")
+    c.setFillColor(HexColor("#1f4e79"))                 # a dark band with white type passes
+    c.rect(60, 560, 300, 40, fill=1, stroke=0)
+    c.setFillColor(HexColor("#ffffff"))
+    c.drawString(72, 575, "White on navy")
+    c.setFont("Helvetica-Bold", 20)
+    c.setFillColor(HexColor("#888888"))                 # 3.54:1: enough for large text
+    c.drawString(72, 500, "Large grey heading")
+
+
+def _check_contrast():
+    found = _contrast(_canvas_pdf(_draw_samples))
+    assert [f.text for f in found] == ["Pale grey body text"], [(f.text, f.message) for f in found]
+    assert "2.85:1" in found[0].message and "4.5:1" in found[0].message
+    assert found[0].severity == "warning"               # reported, never a gate failure
+
+
+def test_contrast_check_measures_text_against_what_is_painted_behind_it():
+    _check_contrast()
+
+
+def test_contrast_check_without_pymupdf(no_pymupdf):
+    _check_contrast()
+
+
+def test_default_designs_have_no_low_contrast_body_text():
+    _, rep = _sample().design().qa("pdf")
+    assert not [f for f in rep.findings if f.code == "low_contrast"], rep.summary()
