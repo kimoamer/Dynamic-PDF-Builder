@@ -120,10 +120,19 @@ def text_chars(f) -> int:
 def _split_chars(f) -> int:
     """A piece of a split paragraph keeps its lines but not its fragments. Each line
     ending stands for the space it replaced."""
-    lines = f.blPara.lines
-    if f.blPara.kind == 0:
-        return sum(len(" ".join(words)) + 1 for _, words in lines)
-    return sum(sum(len(w.text) for w in line.words) + 1 for line in lines)
+    hyphenates = bool(getattr(f.style, "hyphenationLang", ""))
+    total = 0
+    for line in f.blPara.lines:
+        if isinstance(line, tuple):                 # (extra space, words)
+            words = line[1]
+            text = " ".join(words)
+            broken = bool(words) and type(words[-1]).__name__ == "_SplitWordHY"
+        else:
+            text = "".join(w.text for w in line.words)
+            broken = hyphenates and len(text) > 1 and text[-1] == "-" and text[-2].isalpha()
+        # a hyphenation break adds a hyphen and replaces no space
+        total += len(text) - 1 if broken else len(text) + 1
+    return total
 
 
 def union_area(rects) -> float:
