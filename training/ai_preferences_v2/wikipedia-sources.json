@@ -1,0 +1,390 @@
+{
+ "note": "Fetch again with: python -m tools.design_learning.corpus fetch <root>/wikipedia-cache",
+ "articles": [
+  {
+   "name": "wiki_en_01",
+   "language": "en",
+   "title": "Tide",
+   "url": "https://en.wikipedia.org/wiki/Tide",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1341,
+   "text_sha256": "d87e266e81dc274d4a59241d92b7d32dec5dd8dd164457ea6ff24b6cdbbe23e4",
+   "pictures": [
+    {
+     "commons": "Tide terms.png",
+     "page": "https://commons.wikimedia.org/wiki/File:Tide_terms.png",
+     "sha256": "db29b638269f7f7c035a16d0a376b7ce09da05faf84116224b340fda0c61d485"
+    },
+    {
+     "commons": "M2 tidal constituent.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:M2_tidal_constituent.jpg",
+     "sha256": "37da1c7db880957e08389644d6a4daafc76fa31a5a19b7f76b72241be8eb4ca1"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_02",
+   "language": "en",
+   "title": "Photosynthesis",
+   "url": "https://en.wikipedia.org/wiki/Photosynthesis",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1336,
+   "text_sha256": "8e851fee76f0eb95887067fa16f813f2d7fc67116ffb01d59c15ede9b9f24519",
+   "pictures": [
+    {
+     "commons": "Seawifs global biosphere.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Seawifs_global_biosphere.jpg",
+     "sha256": "1b1f726456ab4faadb0610e97d56e4115b7aacacd8499220ca2a2b04a1175304"
+    },
+    {
+     "commons": "Z-scheme.png",
+     "page": "https://commons.wikimedia.org/wiki/File:Z-scheme.png",
+     "sha256": "22c594eb7c311f4594059ef28418d4843fad82adff794f9305abf8fd9591dff8"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_03",
+   "language": "en",
+   "title": "Suez Canal",
+   "url": "https://en.wikipedia.org/wiki/Suez_Canal",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1331,
+   "text_sha256": "9aa436d6675e5d1a76dcdf09d14efa1f7669ec725de6175ac5ce2f730836333b",
+   "pictures": [
+    {
+     "commons": "Suez1856.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Suez1856.jpg",
+     "sha256": "c5533ee79539071ad4e07bf8904813a8236c608d679637c1291476f18d0e9188"
+    },
+    {
+     "commons": "SuezCanalKantara.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:SuezCanalKantara.jpg",
+     "sha256": "24534ee47cb548a7bfcb7e6523f2d40028403ba2621b56b5e184355ac9494ecf"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_04",
+   "language": "en",
+   "title": "Honey bee",
+   "url": "https://en.wikipedia.org/wiki/Honey_bee",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1382,
+   "text_sha256": "949e4277749d711fb3e58201ee6785e5d2352dce8b7cf902b7459170e08a94c0",
+   "pictures": [
+    {
+     "commons": "Western honey bee on a honeycomb.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Western_honey_bee_on_a_honeycomb.jpg",
+     "sha256": "f13cb03a06e6dfe115b671a8f1945b7683cd0da9e2c33a57a82aa0b30a554232"
+    },
+    {
+     "commons": "Apis mellifera Tanzania.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Apis_mellifera_Tanzania.jpg",
+     "sha256": "f77493363d1a14e6cadb240434470c7e4debb1ab5c94ef85ac8b7620dbea28b4"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_05",
+   "language": "en",
+   "title": "Volcano",
+   "url": "https://en.wikipedia.org/wiki/Volcano",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1340,
+   "text_sha256": "73df7783808ab41f1dbf0dd9e472487ed371e8baa51e35d0969c6f83a5b3d5ce",
+   "pictures": [
+    {
+     "commons": "Augustine volcano Jan 24 2006 - Cyrus Read.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Augustine_volcano_Jan_24_2006_-_Cyrus_Read.jpg",
+     "sha256": "ab2dfbb3d3cdac82e221e2cd26eb9072224566b0cbe21c06021ff94a3c59245a"
+    },
+    {
+     "commons": "Lakagigar Iceland 2004-07-01.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Lakagigar_Iceland_2004-07-01.jpg",
+     "sha256": "a7ca1e33907ef6409c2e58f43ffa1d322fd8f052c9cc309723263150fdd97474"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_06",
+   "language": "en",
+   "title": "Printing press",
+   "url": "https://en.wikipedia.org/wiki/Printing_press",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1376,
+   "text_sha256": "126fb72cb9b4a5af80a47ca72254e6c4d2231d825cd85d00446d4139d757cd33",
+   "pictures": [
+    {
+     "commons": "Holzspindelkelter von 1702.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Holzspindelkelter_von_1702.jpg",
+     "sha256": "4f0de8a5aefab2e14a4d603642c4cc81903f8269cbab7e383e15d39502d4d398"
+    },
+    {
+     "commons": "Printing press.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Printing_press.jpg",
+     "sha256": "71e08b41c4baab3a1d062199140fcdb1c36c3120236303f1657b4ef12be26829"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_07",
+   "language": "en",
+   "title": "Coffee",
+   "url": "https://en.wikipedia.org/wiki/Coffee",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1324,
+   "text_sha256": "f10c23381c72e5b511cf444ac1a7abb39974819f8e93742c9626f087761b76d0",
+   "pictures": [
+    {
+     "commons": "Coffee beans unroasted.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Coffee_beans_unroasted.jpg",
+     "sha256": "347edb8fcfff8c21dea9ffbca6deebab972380bb6661bd4d3b82cfbb87afc105"
+    },
+    {
+     "commons": "The_Vertue_of_the_COFFEE_Drink.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:The_Vertue_of_the_COFFEE_Drink.jpg",
+     "sha256": "b394298bf4067eaf50cda9746bb48c2c5ca8f3522b726099ebd9dc394b41b288"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_08",
+   "language": "en",
+   "title": "Bridge",
+   "url": "https://en.wikipedia.org/wiki/Bridge",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1423,
+   "text_sha256": "638204f2d2756e4c946b7bb0504930691ed0fdea70f394d0df21c6f17ca24859",
+   "pictures": [
+    {
+     "commons": "Pont_du_Gard_BLS.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Pont_du_Gard_BLS.jpg",
+     "sha256": "0fbdedb82e08d16359f842dfd43ffee3ad5191177ed57323dc11d878a37e040d"
+    },
+    {
+     "commons": "Anji Bridge, Zhao County, 2020-09-06 05.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Anji_Bridge%2C_Zhao_County%2C_2020-09-06_05.jpg",
+     "sha256": "37399fb10e021ae06ba96e38de2a5963819faf5c3e3c77852f612c41d21b37d4"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_09",
+   "language": "en",
+   "title": "Solar energy",
+   "url": "https://en.wikipedia.org/wiki/Solar_energy",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1408,
+   "text_sha256": "15c27ec12f3f865ae91a8c988532998569fcdf3a5c03e930d58c958c876c1473",
+   "pictures": [
+    {
+     "commons": "Sunset over the gulf of Mexico - iss042e034066.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Sunset_over_the_gulf_of_Mexico_-_iss042e034066.jpg",
+     "sha256": "c5c4a82c0cec430addf0962a45e6eb8d59ffdae30edc138b8cbb818b41e3b7da"
+    },
+    {
+     "commons": "World GHI Solar-resource-map GlobalSolarAtlas World-Bank-Esmap-Solargis.png",
+     "page": "https://commons.wikimedia.org/wiki/File:World_GHI_Solar-resource-map_GlobalSolarAtlas_World-Bank-Esmap-Solargis.png",
+     "sha256": "c2a722baa3d66635a01fdc0eecefa37e8775da392d421ca5cc3377969283426e"
+    }
+   ]
+  },
+  {
+   "name": "wiki_en_10",
+   "language": "en",
+   "title": "Library",
+   "url": "https://en.wikipedia.org/wiki/Library",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1389,
+   "text_sha256": "fb3d6f83be252b099b8b448510fe53622ce7ca1de74979ad1db887130c1e98cd",
+   "pictures": [
+    {
+     "commons": "SanDiegoCityCollegeLearningResource - bookshelf.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:SanDiegoCityCollegeLearningResource_-_bookshelf.jpg",
+     "sha256": "9966f530657076c87f183c5953d5fce83fd77fb62ac186785196a46075b2713b"
+    },
+    {
+     "commons": "Library of Ashurbanipal.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Library_of_Ashurbanipal.jpg",
+     "sha256": "979bcbf1519437af96203089f7f97ad2aca0d571f675c2de5eb727bc53182e9a"
+    }
+   ]
+  },
+  {
+   "name": "wiki_ar_01",
+   "language": "ar",
+   "title": "مد وجزر",
+   "url": "https://ar.wikipedia.org/wiki/%D9%85%D8%AF_%D9%88%D8%AC%D8%B2%D8%B1",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 704,
+   "text_sha256": "f6d90150f5b6a91e4b03edebc1f3f41770f1820e64abaf69695c347e1552fa40",
+   "pictures": []
+  },
+  {
+   "name": "wiki_ar_02",
+   "language": "ar",
+   "title": "نهر النيل",
+   "url": "https://ar.wikipedia.org/wiki/%D9%86%D9%87%D8%B1_%D8%A7%D9%84%D9%86%D9%8A%D9%84",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1327,
+   "text_sha256": "332ea97c3c414ab4128e3bd83480694965bf6a2ce134dbdcb80fad3574143cc3",
+   "pictures": [
+    {
+     "commons": "Limestone slab showing the Nile flood god Hapy. 12th Dynasty. From the foundations of the temple of Thutmose III, Koptos, Egypt. The Petrie Museum of Egyptian Archaeology, London.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Limestone_slab_showing_the_Nile_flood_god_Hapy._12th_Dynasty._From_the_foundations_of_the_temple_of_Thutmose_III%2C_Koptos%2C_Egypt._The_Petrie_Museum_of_Egyptian_Archaeology%2C_London.jpg",
+     "sha256": "474a6834e37fe4190341e78a9e5432d74d9bd61d1b98575fb9ed1c67c1412152"
+    },
+    {
+     "commons": "New Wing, Vatican Museums (25497052238).jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:New_Wing%2C_Vatican_Museums_%2825497052238%29.jpg",
+     "sha256": "279be0b45eabfa4e306f84ecaead648d6e8e6d032e96435cfe9550be96632985"
+    }
+   ]
+  },
+  {
+   "name": "wiki_ar_03",
+   "language": "ar",
+   "title": "القاهرة",
+   "url": "https://ar.wikipedia.org/wiki/%D8%A7%D9%84%D9%82%D8%A7%D9%87%D8%B1%D8%A9",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1347,
+   "text_sha256": "28ee0fca4009de4e8698064e50e0fd23ccccc8e6706b4707133334fbfa789436",
+   "pictures": [
+    {
+     "commons": "برج علي قمة قلعة صلاح الدين الأيوبي كما تظهر مدينة القاهرة من أعلي - Tower on the top of the Saladin Citadel of Cairo as they appear from the top.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:%D8%A8%D8%B1%D8%AC_%D8%B9%D9%84%D9%8A_%D9%82%D9%85%D8%A9_%D9%82%D9%84%D8%B9%D8%A9_%D8%B5%D9%84%D8%A7%D8%AD_%D8%A7%D9%84%D8%AF%D9%8A%D9%86_%D8%A7%D9%84%D8%A3%D9%8A%D9%88%D8%A8%D9%8A_%D9%83%D9%85%D8%A7_%D8%AA%D8%B8%D9%87%D8%B1_%D9%85%D8%AF%D9%8A%D9%86%D8%A9_%D8%A7%D9%84%D9%82%D8%A7%D9%87%D8%B1%D8%A9_%D9%85%D9%86_%D8%A3%D8%B9%D9%84%D9%8A_-_Tower_on_the_top_of_the_Saladin_Citadel_of_Cairo_as_they_appear_from_the_top.jpg",
+     "sha256": "9ad889af785b9f521612d8cc130116a3557b4a151be658ec7855239fa196802e"
+    },
+    {
+     "commons": "Hanging Church-1.JPG",
+     "page": "https://commons.wikimedia.org/wiki/File:Hanging_Church-1.JPG",
+     "sha256": "122257cec1051a47c48c6e6b664bffff16d9c6363e3bd3958d4b686b65245b01"
+    }
+   ]
+  },
+  {
+   "name": "wiki_ar_04",
+   "language": "ar",
+   "title": "طاقة شمسية",
+   "url": "https://ar.wikipedia.org/wiki/%D8%B7%D8%A7%D9%82%D8%A9_%D8%B4%D9%85%D8%B3%D9%8A%D8%A9",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1351,
+   "text_sha256": "51bb20eb8962e443da6d576e6a1ee3a7a3e6b26e65ee28172d3fd03be1671afe",
+   "pictures": [
+    {
+     "commons": "SolarGIS-Solar-map-Africa-and-Middle-East-ar.png",
+     "page": "https://commons.wikimedia.org/wiki/File:SolarGIS-Solar-map-Africa-and-Middle-East-ar.png",
+     "sha256": "0c7b51285caba745098722b93498d460de15d965def360f83d1b1eb2b5321669"
+    },
+    {
+     "commons": "Technische Universität Darmstadt - Solar Decathlon 2007.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Technische_Universit%C3%A4t_Darmstadt_-_Solar_Decathlon_2007.jpg",
+     "sha256": "fac93c8adfb185aa9d48995c86a5e1819354ec11ecbdeabf2d6562bc506e1123"
+    }
+   ]
+  },
+  {
+   "name": "wiki_ar_05",
+   "language": "ar",
+   "title": "ابن خلدون",
+   "url": "https://ar.wikipedia.org/wiki/%D8%A7%D8%A8%D9%86_%D8%AE%D9%84%D8%AF%D9%88%D9%86",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1323,
+   "text_sha256": "1b9e76f38a0ea39bb48d80540d77f2a69492a3b5cb9cc4ef6834b097d8e258be",
+   "pictures": [
+    {
+     "commons": "Dar Ibn Khaldoun.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Dar_Ibn_Khaldoun.jpg",
+     "sha256": "98ba273dc605a8c32927b9dc87d5548460b02f77eb06ae2933414a2393bb2ce0"
+    },
+    {
+     "commons": "Tunisia588.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Tunisia588.jpg",
+     "sha256": "3f2a307f7070a91a7bebd55d8b24bc50368a1891f34811afdac6c09fbc7ade44"
+    }
+   ]
+  },
+  {
+   "name": "wiki_ar_06",
+   "language": "ar",
+   "title": "الخوارزمي",
+   "url": "https://ar.wikipedia.org/wiki/%D9%85%D8%AD%D9%85%D8%AF_%D8%A8%D9%86_%D9%85%D9%88%D8%B3%D9%89_%D8%A7%D9%84%D8%AE%D9%88%D8%A7%D8%B1%D8%B2%D9%85%D9%8A",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1380,
+   "text_sha256": "1619e69a82532ceef5c91e831f7ae9494ed0dc8958c2be608093ff1f708ede3a",
+   "pictures": [
+    {
+     "commons": "Muhammad ibn Musa al-Khwarizmi.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Muhammad_ibn_Musa_al-Khwarizmi.jpg",
+     "sha256": "c8156bff6767e37b974e49b27079ec27a31af04065e9304a9cbc7d88b0745f2e"
+    },
+    {
+     "commons": "Image-Al-Kitāb al-muḫtaṣar fī ḥisāb al-ğabr wa-l-muqābala.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Image-Al-Kit%C4%81b_al-mu%E1%B8%ABta%E1%B9%A3ar_f%C4%AB_%E1%B8%A5is%C4%81b_al-%C4%9Fabr_wa-l-muq%C4%81bala.jpg",
+     "sha256": "7c0ed6dac89ce1fa03d320d310c05c636733eb9c2ab2040080a1b679adb77849"
+    }
+   ]
+  },
+  {
+   "name": "wiki_ar_07",
+   "language": "ar",
+   "title": "البحر الأحمر",
+   "url": "https://ar.wikipedia.org/wiki/%D8%A7%D9%84%D8%A8%D8%AD%D8%B1_%D8%A7%D9%84%D8%A3%D8%AD%D9%85%D8%B1",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1324,
+   "text_sha256": "0a2174b7fd0d8155563dd275db7eb8ebf2fdf69e1c354137a2d84d434ced16e9",
+   "pictures": [
+    {
+     "commons": "Echo Sounding of Newly Discovered Canyon in the Red Sea MOD 45155030.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Echo_Sounding_of_Newly_Discovered_Canyon_in_the_Red_Sea_MOD_45155030.jpg",
+     "sha256": "5f17c326b79da0b8b67826d2920b07b3c2dce81c25b8f0d50fd7fa9514ad9041"
+    },
+    {
+     "commons": "Tihama on the Red Sea near Khaukha, Yemen.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:Tihama_on_the_Red_Sea_near_Khaukha%2C_Yemen.jpg",
+     "sha256": "3073863dd36e47192732d5a4961229a514ef844a6e6d9691bcb115f980f8b9ab"
+    }
+   ]
+  },
+  {
+   "name": "wiki_ar_08",
+   "language": "ar",
+   "title": "قمح",
+   "url": "https://ar.wikipedia.org/wiki/%D9%82%D9%85%D8%AD",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page",
+   "retrieved": "2026-11-16",
+   "words": 1403,
+   "text_sha256": "6942a0483d0b6449133c6e781e1eb7c1f084cbf74cdfd8d5fbe6143351d67a5b",
+   "pictures": [
+    {
+     "commons": "Wheat-haHula-ISRAEL2.JPG",
+     "page": "https://commons.wikimedia.org/wiki/File:Wheat-haHula-ISRAEL2.JPG",
+     "sha256": "afaeafcd38770749a59485659acaab285722eff465009fbdeadb37b95ba78320"
+    },
+    {
+     "commons": "USDA wheat.jpg",
+     "page": "https://commons.wikimedia.org/wiki/File:USDA_wheat.jpg",
+     "sha256": "46d6c1ea3232f44836d06ef9acc42dd2c5d1a3abdf23e8c98a5bdeeddfc2c266"
+    }
+   ]
+  }
+ ]
+}

@@ -45,27 +45,38 @@ PLAIN = "@plain"                # a candidate rendered without the grammar
 
 
 def generate(batch_dir: str, docs: Optional[List[str]] = None, n: int = 4, grammar: bool = True,
-             baseline: bool = False) -> dict:
+             baseline: bool = False, sources: Optional[dict] = None, max_pages: Optional[int] = None) -> dict:
     """Render ``n`` designs per document into ``batch_dir`` and write candidates.jsonl.
     ``baseline`` also renders each design without the grammar, under the id ``<design>@plain``,
     so a comparison can set a design against itself with and without the rules. A baseline
-    identical to its grammar design is dropped: there would be nothing to compare."""
+    identical to its grammar design is dropped: there would be nothing to compare.
+    ``sources`` are the documents of ``corpus.documents`` in place of the m79 corpus; a design
+    longer than ``max_pages`` is left out, and a document that cannot be built is reported."""
     from dynamic_pdf.intelligence.variant_ranker import variant_features
 
     from .layout_facts import measure
-    corpus = _corpus()
-    assets = corpus.make_assets(os.path.join(batch_dir, "assets"))
-    rows = []
-    for name in docs or list(corpus.DOCUMENTS):
-        builder, brand = corpus.DOCUMENTS[name](assets)
-        source = builder.build().model_dump_json().encode("utf-8")
+    assets = os.path.join(batch_dir, "assets")
+    if sources is None:
+        corpus = _corpus()
+        shared = corpus.make_assets(assets)
+        sources = {k: {"make": lambda _, fn=fn: fn(shared)} for k, fn in corpus.DOCUMENTS.items()}
+    rows, failed = [], {}
+    for name in docs or list(sources):
+        try:
+            builder, brand = sources[name]["make"](assets)
+            source = builder.build().model_dump_json().encode("utf-8")
+            made = []
+            for rules, suffix in [(grammar or None, "")] + ([(None, PLAIN)] if baseline else []):
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    made.append((builder.design_variants(n=n, brand=brand, grammar=rules), suffix))
+        except Exception as e:  # noqa: BLE001 - one document that cannot be built must not lose the batch
+            failed[name] = f"{type(e).__name__}: {e}"[:200]
+            continue
         seen = set()
-        for rules, suffix in [(grammar or None, "")] + ([(None, PLAIN)] if baseline else []):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                made = builder.design_variants(n=n, brand=brand, grammar=rules)
-            for v in made.variants:
-                if not v.valid or _sha(v.pdf) in seen:
+        for result, suffix in made:
+            for v in result.variants:
+                if not v.valid or _sha(v.pdf) in seen or (max_pages and v.report.pages > max_pages):
                     continue
                 seen.add(_sha(v.pdf))
                 candidate = v.id + suffix
@@ -77,13 +88,13 @@ def generate(batch_dir: str, docs: Optional[List[str]] = None, n: int = 4, gramm
                 rows.append({"document": name, "document_hash": _sha(source), "candidate": candidate, "design": v.id,
                              "pdf_sha256": _sha(v.pdf), "docx_sha256": _sha(v.docx), "pages": v.report.pages,
                              "grammar_rules": v.report.grammar_rules, "grammar_version": v.report.grammar_version,
-                             "deterministic_pick": made.recommended is v, "features": variant_features(v),
-                             "context": made.stats.get("context"),
-                             "layout_facts": measure(v.pdf, made.stats.get("plain_pages"))})
+                             "deterministic_pick": result.recommended is v, "features": variant_features(v),
+                             "context": result.stats.get("context"),
+                             "layout_facts": measure(v.pdf, result.stats.get("plain_pages"))})
     with open(os.path.join(batch_dir, "candidates.jsonl"), "w", encoding="utf-8", newline="\n") as f:
         for r in rows:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
-    return {"documents": len({r["document"] for r in rows}), "candidates": len(rows)}
+    return {"documents": len({r["document"] for r in rows}), "candidates": len(rows), **({"failed": failed} if failed else {})}
 
 
 def trace(document: str, grammar: bool = True, model: Optional[str] = None) -> dict:

@@ -216,3 +216,36 @@ def test_audit_blocks_incomplete_and_does_not_assume_human_labels(batch, monkeyp
     assert result["ready"] is False
     assert result["usable"] == 0
     assert any("human audit" in x for x in result["issues"])
+
+
+def test_the_owner_can_waive_two_rules_and_each_waiver_is_named(tmp_path, monkeypatch):
+    fake = types.ModuleType("tools.design_learning.readiness")
+    fake._candidates = lambda batches: ({}, set())
+    fake.usable = lambda rows, skipped: []
+    monkeypatch.setitem(sys.modules, "tools.design_learning.readiness", fake)
+    rows = [{"batch": "b", "comparison": f"c{n}", "document": "d", "document_hash": "h", "reviewer_type": "ai",
+             "model": "judge-one"} for n in range(20)]
+    dataset = tmp_path / "data.jsonl"
+    dataset.write_text("\n".join(json.dumps(r) for r in rows), encoding="utf-8")
+    split = tmp_path / "split.json"
+    split.write_text(json.dumps({"families": {"f": ["d"]}, "evaluation_families": []}), encoding="utf-8")
+    (tmp_path / "batches").mkdir()
+
+    def audit_rows(**change):
+        return [{"batch": "b", "comparison": f"c{n}", "document_hash": "h", "reviewer_type": "ai", "delegated_by_owner": True,
+                 "reviewer": "an assistant outside the judges", "review_date": "2026-11-16", "visual_evidence": "seen",
+                 "preferred": "A", **change} for n in range(20)]
+
+    def run(audit_file, **k):
+        f = tmp_path / "audit.jsonl"
+        f.write_text("\n".join(json.dumps(r) for r in audit_file), encoding="utf-8")
+        return S.audit(str(dataset), str(tmp_path / "batches"), str(split), delegated_audit=str(f), **k)
+
+    plain = S.audit(str(dataset), str(tmp_path / "batches"), str(split))
+    assert plain["waivers"] == [] and any("human audit" in x for x in plain["issues"]) and any("Word" in x for x in plain["issues"])
+    waived = run(audit_rows(), pdf_only=True)
+    assert len(waived["waivers"]) == 2 and waived["delegated_audit"] == 20 and waived["human_audit"] == 0
+    assert not any("human audit" in x or "Word" in x for x in waived["issues"])
+    for bad in (audit_rows(reviewer="judge-one"), audit_rows(delegated_by_owner=False), audit_rows(reviewer_type="human"),
+                audit_rows(document_hash="other"), audit_rows()[:19]):       # a judge, not delegated, posing as human, untraced, too few
+        assert any("human audit" in x for x in run(bad)["issues"])

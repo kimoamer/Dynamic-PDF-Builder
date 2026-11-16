@@ -59,6 +59,7 @@ def main(argv=None) -> int:
     x.add_argument("--date", help="review date recorded on every row (default today)")
     x.add_argument("--no-wait", action="store_true", help="submit or check, and return without waiting")
     x.add_argument("--poll", type=float, default=60.0, help="seconds between status checks")
+    x.add_argument("--page-px", type=int, help="send every page as its own image of this width, not the small sheet")
     x = gs.add_parser("judge", help="a local page where a person judges the blind sheets")
     x.add_argument("batch")
     x.add_argument("--reviewer", required=True, help="the person's full name")
@@ -121,7 +122,8 @@ def main(argv=None) -> int:
             from .ai_review import run as review
             humans = os.path.join(p["human_preferences"], "human-audit.jsonl")
             P.report(review(work(args.batch), dataset, args.judge, source=args.source, date=args.date,
-                            wait=not args.no_wait, poll=args.poll, human_audit=humans if os.path.isfile(humans) else None))
+                            wait=not args.no_wait, poll=args.poll, human_audit=humans if os.path.isfile(humans) else None,
+                            page_px=args.page_px))
         elif args.step == "judge":
             from .ab_page import Judging, serve
             j = Judging(work(args.batch), os.path.join(p["human_preferences"], "human-audit.jsonl"), args.reviewer, args.source)

@@ -378,8 +378,14 @@ def sheet_pairs(batch_dir, source, plan_file):
     return result
 
 
-def audit(dataset, batches, split_path, human_audit=None, provenance=None):
-    """Fail-closed PRE-training quality and isolation gate. No model is trained here."""
+def audit(dataset, batches, split_path, human_audit=None, provenance=None, *, delegated_audit=None, pdf_only=False):
+    """Fail-closed PRE-training quality and isolation gate. No model is trained here.
+
+    Two rules can be waived, only by the repository owner's decision, and each waiver is named
+    in the result so a model record carries it: ``delegated_audit`` is a file of blind audit
+    decisions an AI reviewer gave at the owner's request, counted in place of the 20 human ones
+    (its rows stay ``reviewer_type: "ai"`` and its reviewer is none of the judges);
+    ``pdf_only`` drops the 100 Word-verified comparisons where Microsoft Word is not available."""
     from .readiness import _candidates, usable
     rows, split = jsonl(dataset), load(split_path)
     candidates, superseded = _candidates(batches)
@@ -448,15 +454,30 @@ def audit(dataset, batches, split_path, human_audit=None, provenance=None):
             verified_word += "word" in formats
     require(locally_verified == len(matching),
             "all usable comparisons need hash-verified local renders in every inspected format")
-    require(verified_word >= 100, "need at least 100 locally verified Word comparisons")
+    waivers = []
+    if pdf_only:
+        waivers.append("PDF only: the 100 Word-verified comparisons were not required")
+    else:
+        require(verified_word >= 100, "need at least 100 locally verified Word comparisons")
     reviews = jsonl(human_audit) if human_audit else []
     unique_reviews = {(r.get("batch"), r.get("comparison")): r for r in rows}
     verified_humans = [h for h in reviews if h.get("reviewer_type") == "human" and h.get("reviewer") and
                        h.get("review_date") and h.get("visual_evidence") and h.get("preferred") in ("A", "B", "tie", "abstain")
                        and (h.get("batch"), h.get("comparison")) in unique_reviews
                        and h.get("document_hash") == unique_reviews[(h["batch"], h["comparison"])].get("document_hash")]
-    require(len({(h["batch"], h["comparison"]) for h in verified_humans}) >= 20,
-            "need 20 independent, traceable human audit decisions (kept outside AI labels)")
+    judges = {r.get("model") for r in rows}
+    delegated = [h for h in (jsonl(delegated_audit) if delegated_audit else [])
+                 if h.get("reviewer_type") == "ai" and h.get("delegated_by_owner") is True and h.get("reviewer")
+                 and h.get("reviewer") not in judges and h.get("model") not in judges
+                 and h.get("review_date") and h.get("visual_evidence") and h.get("preferred") in ("A", "B", "tie", "abstain")
+                 and (h.get("batch"), h.get("comparison")) in unique_reviews
+                 and h.get("document_hash") == unique_reviews[(h["batch"], h["comparison"])].get("document_hash")]
+    humans_seen = len({(h["batch"], h["comparison"]) for h in verified_humans})
+    delegated_seen = len({(h["batch"], h["comparison"]) for h in delegated})
+    if humans_seen < 20 and delegated_seen >= 20:
+        waivers.append("owner-delegated AI audit in place of the 20 human audit decisions")
+    else:
+        require(humans_seen >= 20, "need 20 independent, traceable human audit decisions (kept outside AI labels)")
     sources = load(provenance) if provenance and os.path.isfile(provenance) else {}
     manifest = sources.get("documents", [])
     by_hash = {m.get("document_hash"): m for m in manifest}
@@ -474,7 +495,7 @@ def audit(dataset, batches, split_path, human_audit=None, provenance=None):
         require(not crossings, f"provenance leakage across split: {crossings[:6]}")
     return {"ready": not problems, "usable": len(matching), "held_out": len(test),
             "local_render_verified": locally_verified, "word_render_verified": verified_word,
-            "human_audit": len({(h["batch"], h["comparison"]) for h in verified_humans}),
+            "human_audit": humans_seen, "delegated_audit": delegated_seen, "waivers": waivers,
             "issues": problems, "note": "Quality readiness only. No model was trained; AI and human labels remain separate."}
 
 

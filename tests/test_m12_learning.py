@@ -66,6 +66,30 @@ JUDGES = ["judge-one", "judge-two"]
 
 
 class TestAIReview:
+    def test_whole_pages_are_sent_one_image_a_page_and_recorded_at_their_size(self, tmp_path):
+        import pymupdf
+        d = write_batch(tmp_path)
+        (d / "renders" / "doc").mkdir(parents=True)
+        for name, pages in (("financial_data", 2), ("editorial_modern", 3)):
+            pdf = pymupdf.open()
+            for _ in range(pages):
+                pdf.new_page()
+            pdf.save(str(d / "renders" / "doc" / f"{name}.pdf"))
+        dataset = tmp_path / "ai-preferences.jsonl"
+        c = client({f"j{j}-cmp-00{n}": answer("A" if n == 1 else "B") for j in (0, 1) for n in (1, 2)})
+        ai_review.run(str(d), str(dataset), JUDGES, client=c, date="2026-11-16", sleep=lambda _: None, page_px=120)
+        first = c.messages.batches.created[0]["params"]
+        kinds = [(b["type"], b.get("text")) for b in first["messages"][0]["content"]]
+        assert first["system"] == ai_review.PAGES_RUBRIC != ai_review.RUBRIC
+        assert kinds[0] == ("text", "Design A:") and kinds[3] == ("text", "Design B:")
+        assert [k for k, _ in kinds].count("image") == 5                         # 2 pages, then 3
+        blob = json.dumps(c.messages.batches.created)
+        assert "financial_data" not in blob and "editorial_modern" not in blob
+        rows = [json.loads(x) for x in dataset.read_text(encoding="utf-8").splitlines()]
+        assert len(rows) == 4 and {r["shown_px"] for r in rows} == {120}
+        assert {r["prompt_sha256"] for r in rows} == {ai_review.prompt_sha256(120)} != {ai_review.prompt_sha256()}
+        assert all("every PDF page" in r["evaluation_method"] for r in rows)
+
     def test_two_judges_are_asked_blind_and_recorded_as_ai_with_their_prompt(self, tmp_path):
         d = write_batch(tmp_path)
         dataset = tmp_path / "ai-preferences.jsonl"

@@ -1,0 +1,14 @@
+{
+ "message_batch": "msgbatch_01JB9cssK11PXhorei6WHU85",
+ "judges": [
+  "claude-opus-5-5",
+  "claude-sonnet-5-5"
+ ],
+ "source": "pdf",
+ "requests": 168,
+ "prompt_sha256": "98915da8a5131a416bf8476789872e212d60f8c578616102fc2b9ad67013079f",
+ "page_px": 640,
+ "review_date": "2026-11-16",
+ "submitted": "2026-11-16T20:12:51+00:00",
+ "collected": true
+}
