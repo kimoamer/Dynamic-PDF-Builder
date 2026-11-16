@@ -22,7 +22,7 @@ from ..schema.theme import Theme
 from ..themes import get_theme
 from ..fonts import register_fonts, get_font_name
 from ..fonts.manager import set_arabic_face
-from .factory import create_flowables, RenderContext
+from .factory import FRAME_PADDING, create_flowables, RenderContext
 from .. import policy as _policy
 from ..policy import RenderPolicy, DiagnosticCollector
 from ..assets import load_image
@@ -1233,8 +1233,11 @@ class LayoutEngine:
         doc_template.addPageTemplates([template, land_template])
 
         # Create thread-safe render context
+        # a frame sets its flowables inside its padding: what sizes itself to the column
+        # (tables, images, figures) gets that width, or it runs past the text and the margin
+        body_width, land_body = frame_width - 2 * FRAME_PADDING, land_width - 2 * FRAME_PADDING
         ctx = RenderContext(
-            available_width=frame_width,
+            available_width=body_width,
             section_numbering=meta.section_numbering,
             available_height=h - top_m - bot_m,
             language=self._language(),
@@ -1266,7 +1269,7 @@ class LayoutEngine:
                     in_land = i in land
                     flowables += [NextPageTemplate('Landscape' if in_land else 'AllPages'),
                                   PageBreakIfNotEmpty()]
-                    ctx.available_width = land_width if in_land else frame_width
+                    ctx.available_width = land_body if in_land else body_width
                 self.diagnostics.block_index = i
                 self.diagnostics.block_type = getattr(block, "type", None)
                 ctx.first_block, ctx.last_block = i == 0, i == len(self.document.blocks) - 1

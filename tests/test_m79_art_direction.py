@@ -337,12 +337,28 @@ def test_pdf_pages_are_not_rasterised(result):
 
 def test_slab_headings_keep_their_band_in_a_style(photo):
     """LibreOffice ignored direct shading on our heading style and left white text on white."""
-    v = report(photo).design_variants(families=["financial_data"]).variants[0]
+    b = report(photo)
+    for n in range(6):                        # long enough (4+ pages) that sections keep their bands
+        b.heading(f"Port division {n + 1}")
+        b.paragraph(PARA * 6)
+    v = b.design_variants(families=["financial_data"]).variants[0]
     w = _word(v)
     bands = [s for s in w.styles if s.name.startswith("Heading 1 Band")]
     assert bands and bands[0].base_style.name == "Heading 1"
     assert bands[0].element.pPr.find("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}shd") is not None
     assert any(p.style.name.startswith("Heading 1 Band") for p in w.paragraphs)
+
+
+def test_a_short_document_gives_peer_headings_one_treatment():
+    """The first heading under a masthead takes a rule, not a second band; in a short document
+    its peers took bands, so one page showed two styles for the same level."""
+    from dynamic_pdf.design.art_direction import direct
+    b = DocumentBuilder().meta(title="Short report")
+    for t in ("Summary", "Findings", "Next steps"):
+        b.heading(t).paragraph(PARA)
+    made = direct(b.semantic(), DIRECTIONS["arabic_institutional"])
+    openers = {(blk.hints or {}).get("opener") for blk in made.document.blocks if blk.type == "heading" and blk.level == 1}
+    assert openers == {"rule"}
 
 
 def test_heading_after_a_float_clears_it(photo):

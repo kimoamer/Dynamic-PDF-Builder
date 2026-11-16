@@ -144,11 +144,11 @@ def measure_blocks(doc, theme, policy=None, cache=None) -> Tuple[List[BlockMeasu
             is_land = i in land
             width = fg.land_width if is_land else fg.width
             avail = fg.land_height if is_land else fg.height
-            ctx.available_width = width          # as the engine builds them
+            # the frame sets them inside its padding: build and measure there, as the engine does (F6)
+            width, avail = width - 2 * FRAME_PADDING, avail - 2 * FRAME_PADDING
+            ctx.available_width = width
             flows = create_flowables(b, theme, ctx) or []
             role_of = _role_for(b)
-            # the frame sets them inside its padding: measure there (F6)
-            width, avail = width - 2 * FRAME_PADDING, avail - 2 * FRAME_PADDING
             heights = [_flowable_height(f, canv, width, avail) for f in flows]
             total = sum(heights)
             ink = sum(_flowable_height(f, canv, width, avail, False) for f in flows

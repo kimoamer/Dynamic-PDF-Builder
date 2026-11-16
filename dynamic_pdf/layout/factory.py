@@ -12,7 +12,7 @@ import unicodedata
 import html as html_mod
 from functools import lru_cache
 from typing import Optional
-from reportlab.lib.enums import TA_JUSTIFY
+from reportlab.lib.enums import TA_JUSTIFY, TA_LEFT
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.platypus import (
     Paragraph as _RLParagraph, ListFlowable, ListItem, Spacer, PageBreak,
@@ -1094,7 +1094,8 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
         # Section numbering
         display_text = block.text
         if ctx.section_numbering or block.numbered:
-            number = ctx.next_heading_number(block.level)
+            from ..i18n import written_number
+            number = written_number(ctx.next_heading_number(block.level), block.text)
             display_text = f"{number}  {block.text}"
 
         # Collect for TOC
@@ -1152,7 +1153,10 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
                               firstLineIndent=0, spaceAfter=sp.paragraph_spacing_after * 1.5,
                               textColor=_safe_color(theme.colors.text_secondary),
                               alignment=4)
-        return [Paragraph(_md_inline(block.text), lead if _is_rtl(block.text) else _hyphenated(lead))]
+        if _is_rtl(block.text):
+            return [Paragraph(_md_inline(block.text), lead)]
+        # display text sets ragged: justified, a short lead stretches its gaps or breaks a word
+        return [Paragraph(_md_inline(block.text), ParagraphStyle('LeadRagged', parent=lead, alignment=TA_LEFT))]
     if btype == "paragraph":
         raw = block.text
         is_rtl = _is_rtl(raw)
@@ -1169,8 +1173,10 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
             # semantics (links, emphasis, code) would be lost.
             has_markup = (_md_inline(raw) != html_mod.escape(raw, quote=False)
                           or "&" in raw or "<" in raw)
-            if len(plain) > 1 and not has_markup:
-                dec = theme.decorations
+            dec = theme.decorations
+            # the cap needs text to wrap around it and past it: on a line or two it stands alone
+            per_line = (ctx.available_width or 440) / (theme.typography.base_size * 0.5)
+            if len(plain) >= (dec.drop_cap_lines + 1) * per_line and not has_markup:
                 first_char = plain[0]
                 rest_text  = plain[1:]
                 cap_font  = get_font_name(theme.typography.heading_family, bold=True)
@@ -1449,32 +1455,38 @@ def _flatten_list(items, list_type, start=1, depth=0):
 
 
 def _render_rtl_list(items, list_type, theme, bs, sp, start=1):
-    """Render a bullet/numbered list with RTL layout (marker on right)."""
+    """Render a bullet/numbered list with RTL layout (marker on right).
+
+    Each item is a row of its own: a nested item moves its marker in with its text, by an
+    empty column at the right as wide as its depth, so the marker stays beside its words."""
     marker_style = ParagraphStyle('RTL_Marker', parent=bs, firstLineIndent=0,
                                   fontName=_arabic_font(theme),
                                   alignment=1)  # CENTER aligned
-    rows = []
-    for item_text, marker_text, depth in _flatten_list(items, list_type, start):
-        item_style = ParagraphStyle(f'RTL_LI_{depth}', parent=bs, firstLineIndent=0,
-                                    fontName=_arabic_font(theme),
-                                    rightIndent=depth * sp.list_indent,
-                                    alignment=2)  # RIGHT aligned
-        text_para = Paragraph(_md_inline(item_text), item_style)
-        marker = Paragraph(marker_text, marker_style)
-        # RTL: text on LEFT, marker on RIGHT
-        rows.append([text_para, marker])
-
+    item_style = ParagraphStyle('RTL_LI', parent=bs, firstLineIndent=0,
+                                fontName=_arabic_font(theme), alignment=2)  # RIGHT aligned
     marker_col_w = 30
-    t = Table(rows, colWidths=[None, marker_col_w], style=TableStyle([
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 0),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-        ('TOPPADDING', (0, 0), (-1, -1), 2),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
-    ]))
-    t.hAlign = 'RIGHT'
-    t.spaceAfter = sp.block_gap
-    return [t]
+    from ..i18n import written_number
+    out = []
+    for item_text, marker_text, depth in _flatten_list(items, list_type, start):
+        marker_text = written_number(marker_text, item_text)     # as the document writes its figures
+        # RTL: text on LEFT, marker on RIGHT, then the depth's indent
+        row = [Paragraph(_md_inline(item_text), item_style), Paragraph(marker_text, marker_style)]
+        widths = [None, marker_col_w]
+        if depth:
+            row.append("")
+            widths.append(depth * sp.list_indent)
+        t = Table([row], colWidths=widths, style=TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING', (0, 0), (-1, -1), 2),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+        ]))
+        t.hAlign = 'RIGHT'
+        out.append(t)
+    if out:
+        out[-1].spaceAfter = sp.block_gap
+    return out
 
 
 def _render_table(block, theme, bs, ctx=None):
@@ -2479,7 +2491,6 @@ def _build_list_flowable(items, bullet_type, theme, bs, sp, start=1, depth=0):
             f'LI_d{depth}',
             parent=bs,
             firstLineIndent=0,
-            fontSize=max(theme.typography.base_size - depth * 0.5, 8),
         )
         text = _md_inline(item.text).replace("\n", "<br/>")
         if item.checked is not None:
@@ -2499,11 +2510,12 @@ def _build_list_flowable(items, bullet_type, theme, bs, sp, start=1, depth=0):
         else:
             li_list.append(ListItem(para, leftIndent=sp.list_indent))
 
-    item_size = max(theme.typography.base_size - depth * 0.5, 8)
+    item_size = bs.fontSize                # nested items keep the list's size: one text size per page
     kwargs = dict(
         leftIndent=sp.list_indent,
-        spaceBefore=2 if depth > 0 else sp.block_gap / 2,
-        spaceAfter=0 if depth > 0 else sp.block_gap / 2,
+        spaceBefore=0 if depth > 0 else sp.block_gap / 2,
+        # a nested group ends with the gap its items keep, so the next item is not drawn up to it
+        spaceAfter=bs.spaceAfter if depth > 0 else sp.block_gap / 2,
         bulletFontName=bs.fontName,
         bulletFontSize=item_size,
         bulletOffsetY=0,

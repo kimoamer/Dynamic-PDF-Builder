@@ -94,13 +94,23 @@ def test_measure_widens_margins_for_prose():
 
 
 def test_lead_paragraph_is_larger():
-    b = DocumentBuilder.from_markdown(fixture_text("executive.md")).design()
-    pdf = pymupdf.open(stream=b.render(), filetype="pdf")
+    md = fixture_text("executive.md").replace(
+        "for detail.", "for detail.\n\nEnterprise renewals carried the quarter, and churn fell again.", 1)
+    pdf = pymupdf.open(stream=DocumentBuilder.from_markdown(md).design().render(), filetype="pdf")
     spans = [s for bl in pdf[0].get_text("dict")["blocks"] for ln in bl.get("lines", [])
              for s in ln["spans"]]
     lead = next(s for s in spans if s["text"].startswith("Revenue grew"))
-    body = next(s for s in spans if "Enterprise renewals" in s["text"])
+    body = next(s for s in spans if s["text"].startswith("Enterprise renewals carried"))
     assert lead["size"] > body["size"] * 1.1
+
+
+def test_a_lead_needs_text_after_it_in_its_section():
+    # alone in its section, a lead is only larger body text: every such section grew a grey lead
+    pdf = pymupdf.open(stream=DocumentBuilder.from_markdown(fixture_text("executive.md")).design().render(),
+                       filetype="pdf")
+    sizes = {round(s["size"], 1) for bl in pdf[0].get_text("dict")["blocks"] for ln in bl.get("lines", [])
+             for s in ln["spans"] if s["text"].startswith(("Revenue grew", "We expect"))}
+    assert len(sizes) == 1
 
 
 def test_cover_only_for_long_titled_reports():
