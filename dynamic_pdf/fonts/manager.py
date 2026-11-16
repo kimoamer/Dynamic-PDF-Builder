@@ -10,10 +10,41 @@ import threading
 import urllib.request
 from functools import lru_cache
 from typing import Dict, List, Optional
+import unicodedata
 from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase import ttfonts as _ttfonts
 from reportlab.pdfbase.ttfonts import TTFont
 
 logger = logging.getLogger("dynamic_pdf.fonts")
+
+
+def _is_presentation_form(cp: int) -> bool:
+    return 0xFB50 <= cp <= 0xFDFF or 0xFE70 <= cp <= 0xFEFF
+
+
+def _base_letters_cmap(fontname, subset, _plain=_ttfonts.makeToUnicodeCMap):
+    """ToUnicode CMap in which reshaped Arabic glyphs (presentation forms) extract as the base
+    letters the author wrote (NFKC, so lam-alef gives two letters): a verbatim search of the
+    PDF then finds the source text. Every other code keeps ReportLab's own mapping.
+
+    A ligature's letters are listed in visual order, as its glyph is drawn: bidi-aware
+    extractors (MuPDF, PDFium) reverse the line and read them logically, and raw extractors
+    (pdfminer) give the exact mirror of the source."""
+    cmap = _plain(fontname, subset)
+    if not any(_is_presentation_form(v) for v in subset):
+        return cmap
+    for i, v in enumerate(subset):
+        if _is_presentation_form(v):
+            base = (unicodedata.normalize("NFKC", chr(v)).strip() or chr(v))[::-1]
+            cmap = cmap.replace("<%02X> <%04X>" % (i, v),
+                                "<%02X> <%s>" % (i, base.encode("utf-16-be").hex().upper()), 1)
+    return cmap
+
+
+# ReportLab builds every subset's ToUnicode through this module function; wrapping it is the one
+# seam that covers paragraphs, canvas strings, tables and charts alike.
+if getattr(_ttfonts.makeToUnicodeCMap, "__name__", "") != "_base_letters_cmap":
+    _ttfonts.makeToUnicodeCMap = _base_letters_cmap
 
 BUNDLED_DIR = os.path.join(os.path.dirname(__file__), "bundled")
 
