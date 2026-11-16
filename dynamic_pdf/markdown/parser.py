@@ -18,6 +18,8 @@ from ..schema.blocks import (
 
 
 _FN_DEF_SENTINEL = "\u2063FNDEF\u2063"
+_FN_DEF_RE = re.compile("(?m)^" + _FN_DEF_SENTINEL + r"(\w+):[ \t]*(.*?)(?=\n" + _FN_DEF_SENTINEL + r"|\Z)",
+                        re.DOTALL)
 
 
 def split_front_matter(md_text: str) -> Tuple[Dict[str, object], str]:
@@ -115,10 +117,12 @@ def _parse_body(md_text: str) -> list:
                 blocks.append(CalloutBlock(text=body, variant=variant))
                 continue
 
-            # Footnote definition: [^N]: text
-            fn_match = re.match('^' + _FN_DEF_SENTINEL + r'(\w+):\s*(.*)', content, re.DOTALL)
-            if fn_match:
-                blocks.append(FootnoteBlock(marker=fn_match.group(1), text=fn_match.group(2)))
+            # Footnote definitions: [^N]: text. Definitions on consecutive lines form one
+            # Markdown paragraph, so each one that starts a line starts its own footnote;
+            # other lines continue the footnote above them.
+            if content.startswith(_FN_DEF_SENTINEL):
+                for fn_match in _FN_DEF_RE.finditer(content):
+                    blocks.append(FootnoteBlock(marker=fn_match.group(1), text=fn_match.group(2).strip()))
                 idx += 2
                 continue
             content = content.replace(_FN_DEF_SENTINEL, "[^")
@@ -131,7 +135,7 @@ def _parse_body(md_text: str) -> list:
                     idx += 2
                     continue
 
-            blocks.append(ParagraphBlock(text=content))
+            blocks.append(ParagraphBlock(text=_field_lines(content)))
             idx += 1  # paragraph_close
 
         # ─── Code Fences ───
@@ -178,7 +182,8 @@ def _parse_body(md_text: str) -> list:
         # ─── Block Quotes ───
         elif t.type == "blockquote_open":
             parts, idx = _collect_blockquote(tokens, idx)
-            blocks.append(QuoteBlock(text="\n".join(parts)))
+            # paragraphs of the quote are separated by a blank line; a single newline is a soft break
+            blocks.append(QuoteBlock(text="\n\n".join(parts)))
             continue
 
         # ─── Horizontal Rule ───
@@ -188,6 +193,20 @@ def _parse_body(md_text: str) -> list:
         idx += 1
 
     return blocks
+
+
+_FIELD_LINE = re.compile(r"^\s*[^\W\d_][\w .'/&-]{0,30}?:[ \t]+\S")
+
+
+def _field_lines(content: str) -> str:
+    """A paragraph whose every line is a ``Label: value`` pair (a memo's To/From/Subject
+    block, a letter's reference lines) keeps one pair per line. In Markdown a single
+    newline is only a soft break, so the lines are marked as hard breaks; the words and
+    their order are unchanged."""
+    lines = content.split("\n")
+    if len(lines) < 2 or not all(_FIELD_LINE.match(line) for line in lines):
+        return content
+    return "\\\n".join(line.rstrip() for line in lines)
 
 
 def _collect_inline(tokens, idx) -> str:
@@ -247,7 +266,7 @@ def _collect_list_item(tokens, start_idx) -> Tuple[ListItemModel, int]:
         elif t.type in ("fence", "code_block"):
             texts.append((t.content or "").rstrip("\n"))
         idx += 1
-    text = "\n".join(texts)
+    text = "\n\n".join(texts)       # the item's paragraphs; a single newline would be a soft break
     checked = None
     m = _TASK_RE.match(text) or (re.match(r'^\[([ xX])\]$', text))
     if m:

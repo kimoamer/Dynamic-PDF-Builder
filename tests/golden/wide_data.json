@@ -1,8 +1,9 @@
 {
  "profile": "data_report",
  "direction": "ltr",
- "pdf_pages": 2,
+ "pdf_pages": 3,
  "pdf_orientations": [
+  "P",
   "P",
   "P"
  ],
@@ -15,7 +16,7 @@
   [
    1,
    "2  Notes",
-   2
+   3
   ]
  ],
  "pdf_fonts": [
@@ -48,9 +49,9 @@
  "docx_sections": 1,
  "layout": [
   "headings: shallow outline: stronger H1 contrast",
-  "measure: 107 chars/line",
-  "tables: table 2: 9 cols, 30 rows; 8.5pt; splits across pages with repeated header; numeric columns [2, 3, 4, 5, 6, 8] right-aligned",
+  "measure: 85 chars/line",
+  "tables: table 2: 9 cols, 30 rows; 9.5pt; splits across pages with repeated header; numeric columns [2, 3, 4, 5, 6, 8] right-aligned",
   "exhibits: 1 heading intro(s) kept with the table or figure they introduce",
-  "pagination: 2 pages, last 52% full; kept rhythm (tightening within limits would not save a page)"
+  "pagination: 3 pages, last 35% full; kept rhythm (tightening within limits would not save a page)"
  ]
 }

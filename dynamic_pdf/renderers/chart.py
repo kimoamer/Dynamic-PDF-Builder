@@ -601,15 +601,22 @@ def _gauge(block, theme):
     Renders a semicircular gauge.
     """
     data = block.data
-    if isinstance(data, (int, float)):
+    numeric = lambda v: isinstance(v, (int, float)) and not isinstance(v, bool)  # noqa: E731
+    if numeric(data):
         val, vmin, vmax, inner_label = float(data), 0.0, 100.0, ""
-    elif isinstance(data, dict):
-        val = float(data.get("value", 0))
+    elif isinstance(data, dict) and "value" in data:
+        val = float(data["value"])
         vmin = float(data.get("min", 0))
         vmax = float(data.get("max", 100))
         inner_label = str(data.get("label", ""))
+    elif isinstance(data, dict) and len(data) == 1 and numeric(next(iter(data.values()))):
+        # {label: value}, the shape every other single-series chart takes
+        (inner_label, val), = data.items()
+        val, vmin, vmax, inner_label = float(val), 0.0, 100.0, str(inner_label)
     else:
-        val, vmin, vmax, inner_label = 0.0, 0.0, 100.0, ""
+        # drawing 0 would show a reading the author never gave
+        raise ValueError("gauge data must be a number, {'value': n, 'min'?: n, 'max'?: n, 'label'?: text} "
+                         f"or {{label: n}}; got {type(data).__name__} {str(data)[:60]!r}")
 
     pct = max(0.0, min(1.0, (val - vmin) / (vmax - vmin) if vmax != vmin else 0))
     c = _colors(block, 1)

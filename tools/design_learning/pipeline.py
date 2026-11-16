@@ -20,10 +20,17 @@ REVIEWER_TYPES = ("ai", "human")
 DEPTHS = ("detail_2up", "detail_3up", "full_page")
 
 
+def is_absolute(path: str) -> bool:
+    """Absolute on this machine or as a Windows drive path, so ``D:/refs`` is never read as
+    a folder inside the repository when the config is used on Linux or macOS."""
+    import ntpath
+    return os.path.isabs(path) or ntpath.isabs(path)
+
+
 def paths(config: Optional[str] = None) -> Dict[str, str]:
     with open(config or CONFIG, encoding="utf-8") as f:
         c = json.load(f)
-    out = {k: v if os.path.isabs(v) else os.path.join(ROOT, v) for k, v in c.items() if isinstance(v, str)}
+    out = {k: v if is_absolute(v) else os.path.join(ROOT, v) for k, v in c.items() if isinstance(v, str)}
     out["grammar_work"] = os.path.join(out["analysis_dir"], "grammar")
     return out
 

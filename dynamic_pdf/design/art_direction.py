@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import re
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace as _replace
 from typing import Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, Field
@@ -286,6 +286,10 @@ def _cover(sem, d: Direction, brief: DocumentBrief, primary: str, accent: str, l
         sem.blocks.pop(0)
     short = brief.estimated_pages < 3
     kind = "masthead" if short else d.cover
+    if kind == "masthead" and _opens_with_title(sem):
+        plan.cover = "none"
+        plan.decisions.append("cover: the document opens with its own title, so no masthead repeats it")
+        return
     photo = _first_photo(sem.blocks)
     if kind in ("image_top", "split") and photo is None:
         kind = "type_left" if kind == "image_top" else "colour_panel"
@@ -333,6 +337,16 @@ def _cover(sem, d: Direction, brief: DocumentBrief, primary: str, accent: str, l
     if short and d.cover != "masthead":
         plan.decisions.append(f"cover: about {brief.estimated_pages} pages is too short for a cover page, "
                               "so the title opens page one")
+
+
+def _opens_with_title(sem) -> bool:
+    """The first block the reader meets is a top-level heading that says the document's title."""
+    from ..core.inline import plain_text
+    first = next((b for b in sem.blocks if b.type not in ("table_of_contents", "watermark", "page_media",
+                                                          "page_section")), None)
+    return (first is not None and first.type == "heading" and first.level == 1
+            and " ".join(plain_text(first.text).split()).casefold()
+            == " ".join((sem.meta.title or "").split()).casefold())
 
 
 def _cover_crop(src) -> ImageTreatment:
@@ -649,6 +663,24 @@ def _closing_band(blocks, last: List[int], remove: set, d: Direction, plan: ArtD
     plan.decisions.append(f"image {b.src!r}: closes the document as a band across the page")
 
 
+HANG_EDGE = 28.0               # a hanging heading keeps at least this far from the paper edge
+
+
+def _fit_hang(d: Direction, theme: Theme, rtl: bool, plan: ArtDirectionPlan) -> Direction:
+    """Headings hang into the start margin, so they may hang no further than that margin allows.
+    The reviewed standard can narrow a direction's margin after the direction chose its hang."""
+    if not d.hang:
+        return d
+    sp = theme.spacing
+    start = sp.page_margin_right if rtl else sp.page_margin_left
+    room = max(0.0, round(start - HANG_EDGE, 1))
+    if d.hang <= room:
+        return d
+    plan.decisions.append(f"headings: hang {d.hang:g}pt reduced to {room:g}pt to fit the "
+                          f"{start:g}pt start margin")
+    return _replace(d, hang=room)
+
+
 def _arabic_chars(sem) -> str:
     """Characters of this document that the Arabic face has to draw."""
     text = str(sem.meta.model_dump()) + "".join(str(b.model_dump()) for b in sem.blocks)
@@ -689,7 +721,7 @@ def direct(sem: SemanticDocument, direction: Direction, *, brand: Optional[Brand
     brief = read_brief(sem, base.decision.profile.value, estimated)
     plan = ArtDirectionPlan(direction=d.id, name=d.name, summary=d.summary, brief=brief, fit_reasons=fit_reasons or [],
                             typography=f"{theme.typography.heading_family} headings, {theme.typography.body_family} "
-                                       f"{recipe.base_size:g}/{recipe.line_height:g}",
+                                       f"{theme.typography.base_size:g}/{theme.typography.line_height:g}",
                             bands=d.bands)
     plan.decisions += notes
     primary = dark_ink(theme)
@@ -700,6 +732,7 @@ def direct(sem: SemanticDocument, direction: Direction, *, brand: Optional[Brand
         plan.decisions.append(f"contents: about {brief.estimated_pages} pages needs no contents page")
     _cover(out, d, brief, primary, accent, logo, plan)
     _compose(out, d, primary, adjust, plan, rtl)
+    d = _fit_hang(d, theme, rtl, plan)
     _apply_sections(out, d, brief, primary, accent, muted, adjust, plan, rtl)
     if brief.author_bands:
         plan.bands = "the author's own page system"

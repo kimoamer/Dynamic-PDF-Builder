@@ -7,6 +7,7 @@ a page bottom, replacement/missing glyphs and broken internal links.
 """
 from __future__ import annotations
 
+import re
 from typing import List, Optional
 
 from .report import ERROR, WARNING, Finding, QAReport, sha256
@@ -14,6 +15,7 @@ from .percent_geometry import misplaced_arabic_percent
 
 
 _SYMBOL_FONTS = ("ZapfDingbats", "Symbol")    # never used for text by this library
+_SENTENCE_END = re.compile(r"^\s*[.!?\u061f\u06d4\u2026]|[.!?\u061f\u06d4\u2026]\s*$")
 
 
 def _require_pymupdf():
@@ -53,6 +55,31 @@ def _overlap(a, b) -> float:
     return inter / smaller
 
 
+def _ink_beyond(page, bbox, left: float, right: float, pymupdf) -> float:
+    """How far drawn ink of a line reaches past ``left``/``right`` (0 when it does not).
+
+    A line's box comes from font metrics: for Arabic faces such as Amiri it reaches well past
+    the glyphs themselves, so a box over the margin is not yet text in the margin. Only the
+    strip outside the edge is rendered. Anything drawn there counts, so a band or picture in
+    the margin still reports the line."""
+    x0, y0, x1, y1 = bbox
+    worst = 0.0
+    for a, b, edge, outward in ((right, x1, right, 1), (x0, left, left, -1)):
+        if b - a <= 0.05:
+            continue
+        clip = pymupdf.Rect(a, y0, b, y1) & page.rect
+        if clip.is_empty:
+            continue
+        zoom = 3.0
+        pix = page.get_pixmap(matrix=pymupdf.Matrix(zoom, zoom), colorspace=pymupdf.csGRAY, clip=clip, alpha=False)
+        w, h, s = pix.width, pix.height, pix.samples
+        ink = [c for c in range(w) if any(s[r * w + c] < 160 for r in range(h))]
+        if ink:
+            far = (clip.x0 + (max(ink) + 1) / zoom) if outward > 0 else (clip.x0 + min(ink) / zoom)
+            worst = max(worst, (far - edge) * outward)
+    return worst
+
+
 def _separate_lines(a, b) -> bool:
     """Whether two lines stand clear of each other although their boxes meet: LibreOffice
     reports Amiri lines with the font's full extent, far taller than its ink. Lines drawn
@@ -70,6 +97,7 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
     caps = [_key(c) for c in (captions or []) if c.strip()]
     majors = [_key(h) for h in (major_headings or []) if _key(h)]
     head_keys = [_key(h) for h in (heading_texts or []) if _key(h)]
+    head_ends = [(_key(h), bool(_SENTENCE_END.search(h))) for h in (heading_texts or []) if _key(h)]
     page_firsts = []          # first body line text of each page
     contents_keys = _contents_keys()
     page_texts = []
@@ -124,10 +152,12 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
                                             text=txt.strip()[:120], format=fmt, fixable=True,
                                             message=f"text runs off the page: {txt.strip()[:40]!r}"))
             elif margins and (x1 > right or x0 < left) and 40 < y0 < H - 40:
-                rep.findings.append(Finding(severity=ERROR, code="overflow", page=pno, bbox=bbox,
-                                            text=txt.strip()[:120], format=fmt, fixable=True,
-                                            message=f"text overflows into the margin by "
-                                                    f"{max(x1 - right, left - x0):.0f}pt: {txt.strip()[:40]!r}"))
+                over = _ink_beyond(page, (x0, y0, x1, y1), left, right, pymupdf)
+                if over > 0:
+                    rep.findings.append(Finding(severity=ERROR, code="overflow", page=pno, bbox=bbox,
+                                                text=txt.strip()[:120], format=fmt, fixable=True,
+                                                message=f"text overflows into the margin by "
+                                                        f"{max(over, 1):.0f}pt: {txt.strip()[:40]!r}"))
         # overlapping text lines (different lines drawn on top of each other)
         for i in range(len(lines)):
             for j in range(i + 1, len(lines)):
@@ -159,7 +189,10 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
         if body and pno < doc.page_count and caps:
             last = max(body, key=lambda ln: ln[0][3])
             lt = " ".join(last[1].split())
-            if any(_matches(lt, c) or (_key(lt) and _key(lt) <= c and len(_key(lt)) >= 2) for c in caps):
+            # captions are set smaller than body text: a body-size line that shares words with a
+            # caption is the end of a paragraph
+            small = body_size is None or last[2] < body_size - 0.25
+            if small and any(_matches(lt, c) or (_key(lt) and _key(lt) <= c and len(_key(lt)) >= 2) for c in caps):
                 rep.findings.append(Finding(severity=ERROR, code="detached_caption", page=pno, bbox=last[0],
                                             text=lt, format=fmt,
                                             message=f"caption {lt[:40]!r} is separated from its table/figure"))
@@ -172,8 +205,12 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
             # a contents page or an opening page's chapter strip lists headings; it does not strand one
             listed = sum(_key(ln[1]) in head_keys for ln in body) >= 3
             contents_page = listed or any(_matches(page_firsts[-1], k) for k in contents_keys)
-            if lk and not contents_page and any(hk == lk or (len(hk) >= 2 and hk <= lk and len(lk) <= len(hk) + 1)
-                          for hk in head_keys):
+            # a line that ends a sentence is the end of a paragraph, unless the heading itself
+            # ends that way (extracted right-to-left lines may carry the stop at either end)
+            sentence = bool(_SENTENCE_END.search(last[1]))
+            if lk and not contents_page and any((hk == lk or (len(hk) >= 2 and hk <= lk and len(lk) <= len(hk) + 1))
+                                                and (not sentence or ends)
+                                                for hk, ends in head_ends):
                 rep.findings.append(Finding(severity=ERROR, code="stranded_heading", page=pno,
                                             bbox=last[0], text=last[1].strip(), format=fmt, fixable=True,
                                             message=f"heading {last[1].strip()[:40]!r} is the last line on its page"))

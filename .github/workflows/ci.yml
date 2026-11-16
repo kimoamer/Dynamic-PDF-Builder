@@ -4,17 +4,23 @@ on:
   push:
     branches: [main, "claude/**"]
   pull_request:
+  schedule:
+    - cron: "17 3 * * *"   # nightly on the newest releases, without constraints.txt
 
 permissions:
   contents: read
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest]
         python-version: ["3.10", "3.11", "3.12", "3.13"]
+        include:
+          - os: windows-latest
+            python-version: "3.12"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -22,26 +28,26 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
       - name: Install LibreOffice (DOCX round-trip tests)
-        if: matrix.python-version == '3.12'
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
         run: |
           sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-writer fonts-liberation
           mkdir -p ~/.fonts && find dynamic_pdf/fonts/bundled -name '*.ttf' -exec cp {} ~/.fonts/ \; && fc-cache -f
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev,qrcode]"
+          pip install -e ".[dev,qrcode]" ${{ github.event_name != 'schedule' && '-c constraints.txt' || '' }}
       - name: Test
         run: python -m pytest -q --junitxml=test-results.xml
       - name: Golden fixtures + page contact sheets
-        if: matrix.python-version == '3.12'
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
         run: |
           python -m dynamic_pdf.qa.golden tests/fixtures tests/golden
           python -m dynamic_pdf.qa.golden tests/fixtures review --update --sheets
       - name: Evidence recipe comparison (PDF and LibreOffice-rendered DOCX)
-        if: matrix.python-version == '3.12'
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
         run: python benchmarks/m74/run.py m74-comparison --jobs 2
       - name: Upload evidence recipe comparison
-        if: matrix.python-version == '3.12' && always()
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12' && always()
         uses: actions/upload-artifact@v4
         with:
           name: m74-comparison
@@ -50,10 +56,10 @@ jobs:
             m74-comparison/results.json
             m74-comparison/report.md
       - name: Layout archetype comparison (PDF and LibreOffice-rendered DOCX)
-        if: matrix.python-version == '3.12'
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
         run: python benchmarks/m75/run.py m75-comparison
       - name: Upload layout archetype comparison
-        if: matrix.python-version == '3.12' && always()
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12' && always()
         uses: actions/upload-artifact@v4
         with:
           name: m75-comparison
@@ -62,10 +68,10 @@ jobs:
             m75-comparison/results.json
             m75-comparison/report.md
       - name: Media and page system comparison (PDF and LibreOffice-rendered DOCX)
-        if: matrix.python-version == '3.12'
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
         run: python benchmarks/m76/run.py m76-comparison
       - name: Upload media and page system comparison
-        if: matrix.python-version == '3.12' && always()
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12' && always()
         uses: actions/upload-artifact@v4
         with:
           name: m76-comparison
@@ -74,10 +80,10 @@ jobs:
             m76-comparison/results.json
             m76-comparison/report.md
       - name: Automatic image placement comparison (PDF and LibreOffice-rendered DOCX)
-        if: matrix.python-version == '3.12'
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
         run: python benchmarks/m78/run.py m78-comparison
       - name: Upload automatic image placement comparison
-        if: matrix.python-version == '3.12' && always()
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12' && always()
         uses: actions/upload-artifact@v4
         with:
           name: m78-comparison
@@ -86,7 +92,7 @@ jobs:
             m78-comparison/results.json
             m78-comparison/report.md
       - name: Upload contact sheets for visual review
-        if: matrix.python-version == '3.12' && always()
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12' && always()
         uses: actions/upload-artifact@v4
         with:
           name: page-contact-sheets
@@ -95,5 +101,5 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-${{ matrix.python-version }}
+          name: test-results-${{ matrix.os }}-${{ matrix.python-version }}
           path: test-results.xml

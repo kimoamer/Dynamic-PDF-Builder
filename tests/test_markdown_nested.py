@@ -102,3 +102,16 @@ def test_inline_markup_is_escaped_not_injected():
     assert "<b>ok</b>" in out
     text = pdf_text(DocumentBuilder().paragraph("1 < 2 & 3 > 2").render())
     assert "1 < 2 & 3 > 2" in text
+
+
+def test_consecutive_footnote_definitions_stay_separate():
+    """Definitions on consecutive lines are one Markdown paragraph; each is still its own
+    footnote, and the parser's internal marker never reaches the page."""
+    import pymupdf
+    md = "Text with a note[^1] and another[^2].\n\n[^1]: First note\ncontinues here.\n[^2]: Second note.\n"
+    b = DocumentBuilder.from_markdown(md)
+    notes = [(x.marker, x.text) for x in b._blocks if x.type == "footnote"]
+    assert notes == [("1", "First note\ncontinues here."), ("2", "Second note.")]
+    text = "".join(p.get_text() for p in pymupdf.open(stream=b.render(), filetype="pdf"))
+    assert "FNDEF" not in text and "⁣" not in text
+    assert "Second note." in text

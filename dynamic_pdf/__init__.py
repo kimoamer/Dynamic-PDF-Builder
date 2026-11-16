@@ -1,8 +1,6 @@
 """
 Dynamic PDF Builder
-Generate beautiful PDF reports from Markdown, JSON, or structured blocks.
-
-Version 0.3.0
+Generate designed PDF and editable DOCX documents from Markdown, JSON, or structured blocks.
 """
 from .builder import (
     DocumentBuilder,

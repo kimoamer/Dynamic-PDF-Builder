@@ -60,6 +60,14 @@ def test_art_direction_applies_reviewed_standard():
     assert designed.theme.colors.primary == PALETTES["slate"][0]
 
 
+def test_plan_typography_reports_the_size_on_the_page():
+    # financial_data's recipe asks for 9.6pt; the reviewed standard sets 11.5pt, and the plan must say so
+    b = DocumentBuilder().meta(title="Annual report").heading("Results").paragraph("A measurable improvement.")
+    designed = direct(b.semantic(), DIRECTIONS["financial_data"])
+    ty = designed.theme.typography
+    assert designed.plan.typography.endswith(f" {ty.base_size:g}/{ty.line_height:g}")
+
+
 def test_docx_body_justified_and_arabic_caption_uses_complex_script_size():
     b = (DocumentBuilder().meta(title="تقرير", language="ar").direction("rtl")
          .heading("النتائج").paragraph("تحسنت المؤشرات الاقتصادية والاجتماعية خلال هذا العام.")

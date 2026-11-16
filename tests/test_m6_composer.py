@@ -150,9 +150,11 @@ def test_deterministic(tmp_path):
 
 
 def test_time_budget_falls_back_to_baseline(tmp_path):
-    b = _smart(STRESS["financial_complex"](str(tmp_path)), time_budget_s=0.0)
+    # a document with predicted issues, so candidates are tried and the budget is consulted
+    b = _smart(STRESS["chart_report"](str(tmp_path)), time_budget_s=0.0)
     pdf = b.render()
     r = b.last_composition
+    assert not r.preflight.startswith("clean")
     assert r.strategy == "baseline" and r.render_attempts == 1
     assert any("time budget" in f for f in r.fallbacks)
     assert pdf.startswith(b"%PDF")

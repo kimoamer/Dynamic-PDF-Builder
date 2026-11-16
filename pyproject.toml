@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dynamic-pdf-builder"
-version = "0.3.0"
+dynamic = ["version"]
 description = "Generate beautifully designed PDF and fully editable DOCX documents from Markdown, JSON, or a fluent API"
 authors = [
     { name = "Dynamic PDF Builder Contributors" }
@@ -49,6 +49,9 @@ qrcode   = ["qrcode[pil]>=7.4"]
 rtl      = ["arabic-reshaper>=3.0", "python-bidi>=0.6"]  # already in core; kept for compatibility
 all      = ["dynamic-pdf-builder[diagrams,plotly,pdf,qrcode,rtl,qa]"]
 dev      = ["pytest>=8.0", "pymupdf>=1.23", "pikepdf>=8.0", "ruff>=0.3", "mypy>=1.8"]
+
+[tool.setuptools.dynamic]
+version = {attr = "dynamic_pdf.__version__"}
 
 [tool.setuptools.packages.find]
 include = ["dynamic_pdf*"]

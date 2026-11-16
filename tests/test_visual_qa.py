@@ -48,6 +48,20 @@ def test_detects_clipping_overflow_and_overlap():
     assert not rep.passed
 
 
+def test_overflow_is_judged_by_ink_not_by_the_font_box():
+    """A line's box comes from font metrics, which for Arabic faces reach far past the glyphs.
+    Blank glyph space over the margin is not text in the margin; drawn letters there are."""
+    def blank_edge(p):          # leading spaces cross the margin, the letters start inside it
+        p.insert_text((50, 200), "        Letters start inside the margin", fontsize=11)
+
+    def inked_edge(p):
+        p.insert_text((50, 200), "Letters start in the margin", fontsize=11)
+    margins = {"left": 72, "right": 72}
+    assert not [f for f in check_pdf(_synthetic_pdf(blank_edge), margins=margins).findings if f.code == "overflow"]
+    found = [f for f in check_pdf(_synthetic_pdf(inked_edge), margins=margins).findings if f.code == "overflow"]
+    assert found and "by" in found[0].message
+
+
 def test_detects_blank_page_and_stranded_heading():
     doc = pymupdf.open()
     p1 = doc.new_page(width=595, height=842)
@@ -143,3 +157,28 @@ def test_golden_fingerprints(name):
         want = json.load(f)
     got = json.loads(json.dumps(fingerprint(fixture_text(name)), ensure_ascii=False))
     assert got == want, {k: (want.get(k), got.get(k)) for k in want if want.get(k) != got.get(k)}
+
+
+def _two_pages(last_line: str, size: float) -> bytes:
+    doc = pymupdf.open()
+    p = doc.new_page(width=595, height=842)
+    p.insert_text((72, 100), "Ordinary body text at the top of the page.", fontsize=11)
+    p.insert_text((72, 760), last_line, fontsize=size)
+    doc.new_page(width=595, height=842).insert_text((72, 100), "The next page continues.", fontsize=11)
+    return doc.tobytes()
+
+
+def test_a_sentence_ending_with_heading_words_is_not_a_stranded_heading():
+    heads = ["Risk management"]
+    ends_paragraph = check_pdf(_two_pages("updated risk management.", 11), heading_texts=heads)
+    assert "stranded_heading" not in {f.code for f in ends_paragraph.findings}
+    real = check_pdf(_two_pages("Risk management", 14), heading_texts=heads)
+    assert "stranded_heading" in {f.code for f in real.findings}
+
+
+def test_a_body_size_line_sharing_caption_words_is_not_a_detached_caption():
+    caps = ["Table 3: Regional risk management"]
+    body_line = check_pdf(_two_pages("regional risk management", 11), captions=caps, body_size=11)
+    assert "detached_caption" not in {f.code for f in body_line.findings}
+    caption = check_pdf(_two_pages("Table 3: Regional risk management", 9), captions=caps, body_size=11)
+    assert "detached_caption" in {f.code for f in caption.findings}

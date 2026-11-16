@@ -161,7 +161,8 @@ def _cmd_themes():
 
 
 def _cmd_version():
-    print("Dynamic PDF Builder v0.3.0")
+    from . import __version__
+    print(f"Dynamic PDF Builder v{__version__}")
 
 
 if __name__ == "__main__":

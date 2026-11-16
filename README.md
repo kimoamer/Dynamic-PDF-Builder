@@ -950,7 +950,7 @@ builder.paragraph("Artificial intelligence is reshaping every industry.")
 | Detection | Unicode bidi scan — RTL if >30% of alphabetic characters are Arabic/Hebrew |
 | Reshaping | `arabic-reshaper` joins isolated letter forms into proper connected glyphs |
 | Visual order | `python-bidi` applies the Unicode BiDi algorithm |
-| Font | `Amiri` (auto-downloaded to `dynamic_pdf/fonts/bundled/` on first run) |
+| Font | `Amiri` by default, or any bundled Arabic family (shipped with the package) |
 | Alignment | RTL paragraphs are right-aligned automatically |
 | Tables | Column order is reversed; markers appear on the right |
 | Callouts | Left accent bar moves to the right side |
@@ -1000,11 +1000,9 @@ theme.typography.body_family = "MyBrand"
 print(list_available_fonts())
 ```
 
-Built-in fonts auto-downloaded on first run:
-- **JetBrains Mono** — code blocks
-- **Amiri** — Arabic / RTL text
-
-Fallback to `Helvetica` / `Courier` if download fails.
+Fonts are shipped with the package and never downloaded. **JetBrains Mono** sets code and
+**Amiri** is the default Arabic face; the bundled families are listed below. A family that is
+not available falls back to `Helvetica` / `Courier`, and `design_explain()` says so.
 
 ---
 
@@ -1124,7 +1122,7 @@ dynamic_pdf/
 │   └── dividers.py
 ├── fonts/
 │   ├── manager.py          #  Thread-safe register + deterministic fallback (no network)
-│   └── bundled/            #  JetBrains Mono + Amiri (shipped, OFL licences in LICENSES/)
+│   └── bundled/            #  45 families, OFL licences in LICENSES/, sources in catalog.json
 ├── markdown/
 │   ├── parser.py           #  CommonMark + GFM → Block tree
 │   └── preprocessors.py    #  Math/Mermaid fence extraction
@@ -1340,9 +1338,36 @@ b.asset_policy(base_dir="/srv/assets")       # confine local paths
 - **Limits** (`ResourceLimits`): input characters, block count, table cells, Mermaid source size, renderer timeout.
 - **Fonts** are never downloaded during rendering.
 
+### Reproducible output
+
+Documents are stamped with the time they were rendered. Set `SOURCE_DATE_EPOCH` (seconds since
+1970, the reproducible-builds convention) to stamp them with a fixed time instead; the same input,
+version and fonts then give the same PDF and DOCX bytes.
+
+```bash
+SOURCE_DATE_EPOCH=1700000000 dynamic-pdf render report.md --format both
+```
+
 ---
 
 ## Changelog
+
+### Unreleased
+
+Work since v0.3.0, in brief. Design records for each step are under `docs/`.
+
+- Editable DOCX from the same semantic document as the PDF; `export()`, `export_both()`, CLI `--format`.
+- Intelligent design: `design("auto")` profiles, recipes, a layout planner, `design_explain()`.
+- `compose("smart")`: CPU-only layout candidates, scored on rendered geometry, with repairs.
+- Visual QA for PDF and LibreOffice-rendered DOCX, with bounded automatic fixes.
+- Five art directions and `design_variants()`; an opt-in approved design grammar.
+- Media placement, page systems, section openers, performance pages, ledgers and other compositions.
+- 45 bundled font families; a human-reviewed typography, margin and palette standard for designed output.
+- Fixed: justified Arabic paragraphs set their last line and first-line indent on the left; Arabic
+  classic covers were flush left and their title ran into the author line; consecutive Markdown
+  footnotes merged; DOCX files said they were created in 2013.
+- Margin overflow is judged by rendered ink, not by font boxes.
+- `SOURCE_DATE_EPOCH` makes PDF and DOCX output byte-for-byte reproducible.
 
 ### v0.3.0 (2026-04-04)
 
@@ -1367,7 +1392,6 @@ b.asset_policy(base_dir="/srv/assets")       # confine local paths
 - PDF encryption post-processing via `pikepdf` with AES-256
 - Custom exception hierarchy: `DynamicPDFError`, `ThemeError`, `FontError`, `BlockRenderError`, `ValidationError`
 - `render()` returns `bytes` when called with no arguments
-- 120+ test cases, 30 test classes, 100% pass rate
 
 ### v0.2.0
 

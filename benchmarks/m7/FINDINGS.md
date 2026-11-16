@@ -18,6 +18,26 @@ inspecting rendered pages or extracted text. No fixes are included in M7; nothin
 | 11 | **Packaging**: Matplotlib and its exclusive dependencies are 122.5 MB of the 182.9 MB core install (67 %). Matplotlib is already lazy-loaded (not imported by `import dynamic_pdf` nor by text-only PDF/DOCX rendering), so moving it to an optional extra is technically isolated; backward compatibility requires charts, math and diagrams to keep working for existing `pip install dynamic-pdf-builder` users (e.g. a default-on extra or a deprecation release with a clear install hint). `import dynamic_pdf` takes 0.27 s / 44 MB RSS — not a priority. | "Packaging and import audit" | |
 | 12 | Minor: Mermaid diagrams fall back to source code without Playwright (diagnostic emitted, status `degraded`); a code block leaves a 2-line orphan (technical manual p. 5); LibreOffice shows a 2 pt heading overflow in the Arabic statements DOCX. | | |
 
+## Status (re-checked for M8, 2026-11-16)
+
+Closed means a test fails if the problem comes back. Everything else is open, with the milestone of
+`docs/ADVANCED_INTELLIGENCE_PLAN.md` that takes it.
+
+| # | status | test or plan |
+|---|---|---|
+| 1 | closed | `tests/test_m71_pdf_correctness.py::test_rtl_paragraph_lines_read_top_to_bottom_right_to_left` and the two tests after it |
+| 2 | closed | `test_m71_pdf_correctness.py::test_mixed_script_heading_has_real_glyphs`, `::test_pdf_qa_rejects_text_drawn_with_a_symbol_font` |
+| 3 | closed | `test_m71_pdf_correctness.py::test_arabic_diacritics_survive_in_pdf_and_docx` |
+| 4 | partly closed | QA: `test_visual_qa.py::test_overflow_is_judged_by_ink_not_by_the_font_box`. Open: the simulator under-predicts separations (M9 forecast) |
+| 5 | partly closed | gauge `{label: value}`: `test_regression_blocks.py`. Open: funnel labels, single-series legend, crowded labels, palette after 8 categories |
+| 6 | closed | `test_markdown_nested.py` (consecutive footnotes) |
+| 7 | open | monospace widths in table column fitting (M10) |
+| 8 | open | prose measure fell to 76-88 characters with the reviewed standard, but no test pins it (M9 scoreboard) |
+| 9 | open | shared figure cache and fewer PDF opens for variants (M9, plan finding F13) |
+| 10 | open | page-break search (M11) |
+| 11 | open | Matplotlib as an extra (M15) |
+| 12 | open | Mermaid fallback, code-block orphan, LibreOffice 2 pt heading overflow |
+
 ## Not problems (checked)
 
 * No missing, duplicated or reordered paragraphs in PDF (Latin text) or DOCX (all scripts); no geometry

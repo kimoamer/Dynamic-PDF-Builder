@@ -57,8 +57,10 @@ _NUMERIC = re.compile(r"^[\s$€£¥%+\-−(),.\d٠-٩]+$")
 
 class DocxRenderer(ArchetypeDocx, CompositionDocx):
     def __init__(self, sem: SemanticDocument, theme: Theme, collector=None):
+        from ..utils.reproducible import render_time
         self.sem = sem
         self.theme = theme
+        self.render_time = render_time()       # SOURCE_DATE_EPOCH when set, as for the PDF
         self.tokens = compile_tokens(theme)
         self.col = collector or _policy.current()
         self.rtl_doc = sem.direction == "rtl"
@@ -113,6 +115,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             tail.add_run().font.size = Pt(1)
         if any(b.type == "table_of_contents" for b in self.sem.blocks):
             F.enable_update_fields_on_open(doc)
+        F.keep_manual_breaks_unstretched(doc)
         F.mirror_bidi_justification(doc.element.body)
         for sec in doc.sections:
             for part in (sec.header, sec.footer, sec.first_page_header, sec.first_page_footer,
@@ -198,6 +201,9 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         cp.comments = meta.description or ""
         cp.language = meta.language or "en"
         cp.category = meta.document_type or ""
+        # python-docx's template says 2013-12-23; a document is created when it is rendered
+        cp.created = cp.modified = self.render_time.replace(tzinfo=None)
+        cp.last_modified_by = meta.creator_tool or ""
 
     def next_shape(self) -> int:
         self.shape_seq += 1
@@ -1499,7 +1505,9 @@ def render_docx(sem: SemanticDocument, theme: Theme, policy=None):
     _policy.check_limit("Block count", len(sem.blocks), col.policy.limits.max_blocks)
     token = _policy.activate(col)
     try:
-        data = DocxRenderer(sem, theme, col).render()
+        renderer = DocxRenderer(sem, theme, col)
+        data = renderer.render()
     finally:
         _policy.deactivate(token)
-    return data, col
+    from ..utils.reproducible import stamp_zip
+    return stamp_zip(data, renderer.render_time), col

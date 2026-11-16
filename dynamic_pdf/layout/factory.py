@@ -12,6 +12,7 @@ import unicodedata
 import html as html_mod
 from functools import lru_cache
 from typing import Optional
+from reportlab.lib.enums import TA_JUSTIFY
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.platypus import (
     Paragraph as _RLParagraph, ListFlowable, ListItem, Spacer, PageBreak,
@@ -187,11 +188,35 @@ class Paragraph(_RLParagraph):
         if base is None or bl is None:
             return super().drawPara(debug)
         logical = bl.lines
+        had = "_offsets" in self.__dict__
+        saved = self.__dict__.get("_offsets")
         try:
             bl.lines = [_visual_line(ln, bl.kind, base) for ln in logical]
+            if base == "R" and self.style.alignment == TA_JUSTIFY and logical:
+                self._offsets = self._rtl_justify_offsets(bl, saved)
             return super().drawPara(debug)
         finally:
             bl.lines = logical
+            if had:
+                self._offsets = saved
+            else:
+                self.__dict__.pop("_offsets", None)
+
+    def _rtl_justify_offsets(self, bl, existing):
+        """ReportLab justifies as if every line ran left to right: the first-line indent lands
+        on the left and the short last line sits flush left. A right-to-left paragraph needs
+        both on the right, so each line is moved by its own offset; breaking is untouched."""
+        n = len(bl.lines)
+        base = list(existing or [0])
+        base += (n - len(base)) * [base[-1]]
+        out = list(base)
+        indent = self.style.firstLineIndent or 0
+        out[0] -= indent                                 # the indent belongs at the right edge
+        if not getattr(self, "_JustifyLast", False):
+            last = bl.lines[-1]
+            extra = last[0] if bl.kind == 0 else getattr(last, "extraSpace", 0)
+            out[-1] += max(0.0, extra)                   # a short last line ends at the right
+        return out
 
 
 def _plain_markup(text: str) -> str:
@@ -288,6 +313,10 @@ def _md_inline(text: str) -> str:
         text = _reshape(text)
     text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     text = _restore_safe_tags(text)
+    # Markdown line breaks, as in the DOCX (core.inline): a blank line inside the block or a
+    # hard break ("  " or "\" before the newline) starts a new line; a soft break is a space
+    text = re.sub(r"\n[ \t]*\n\s*", "<br/>", text)
+    text = re.sub(r"(?: {2,}|\\)\n", "<br/>", text)
     # Inline code spans are protected from further inline processing
     codes: list = []
 
@@ -858,6 +887,9 @@ class LegendFlowable(Flowable):
 
 # ═══════════════════════ Render Context (thread-safe) ═══════════════════════
 
+FRAME_PADDING = 6.0      # ReportLab's default Frame padding, on every side; the engine keeps it
+
+
 class RenderContext:
     """Thread-safe rendering context passed from LayoutEngine to the factory.
 
@@ -881,6 +913,17 @@ class RenderContext:
         self.last_block = True             # nothing follows the block being built
         self.heading_counters = [0, 0, 0, 0, 0, 0]  # H1–H6
         self.toc_entries: list = []  # (level, text) for TOC
+
+    @property
+    def usable_width(self) -> float:
+        """Width a flowable is actually offered: the frame less its side padding."""
+        return self.available_width - 2 * FRAME_PADDING
+
+    @property
+    def usable_height(self) -> Optional[float]:
+        """Height a flowable is actually offered: the frame less its top and bottom padding.
+        Anything planned to fill a page must plan with this, not with ``available_height``."""
+        return None if self.available_height is None else self.available_height - 2 * FRAME_PADDING
 
     def next_heading_number(self, level: int) -> str:
         """Increment heading counter and return formatted number string."""
@@ -1100,7 +1143,8 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
 
         # ── RTL alignment ──
         if is_rtl:
-            rtl_style = ParagraphStyle('RTL', parent=bs, alignment=4, fontName=body_font)
+            # no first-line indent in Arabic, as the DOCX renderer and the RTL recipes already do
+            rtl_style = ParagraphStyle('RTL', parent=bs, alignment=4, fontName=body_font, firstLineIndent=0)
             return [Paragraph(text, rtl_style)]
         return [Paragraph(text, bs)]
 
@@ -2001,28 +2045,32 @@ def _render_cover(block, theme, ctx=None):
             img.hAlign = 'LEFT'
             flowables.append(img)
             flowables.append(Spacer(1, 30))
-    ts = ParagraphStyle('CoverTitle',
-                        fontName=get_font_name(theme.typography.heading_family, bold=True),
-                        fontSize=theme.typography.base_size * theme.typography.heading_scale[0] * 1.4,
-                        leading=theme.typography.base_size * theme.typography.heading_scale[0] * 1.7,
-                        textColor=_safe_color(theme.colors.text_primary), spaceAfter=8)
+    ty = theme.typography
+    # the same size the designed cover, the tokens and the DOCX cover use
+    size = ty.title_size or ty.base_size * ty.heading_scale[0] * 1.4
+    rtl = _is_rtl(block.title)
+    align = 2 if rtl else 0
+    # Arabic faces draw well above and below their nominal size: give them taller lines
+    ratio = 1.4 if rtl else 1.2
+    ts = ParagraphStyle('CoverTitle', fontName=get_font_name(ty.heading_family, bold=True),
+                        fontSize=size, leading=size * ratio, alignment=align,
+                        textColor=_safe_color(theme.colors.text_primary), spaceAfter=size * 0.45)
     flowables.append(Paragraph(_md_inline(block.title), ts))
+
+    def line(name, text, fs, color, after=0.0):
+        return Paragraph(text, ParagraphStyle(name, fontName=get_font_name(ty.body_family), fontSize=fs,
+                                              leading=fs * (1.6 if _is_rtl(text) else 1.3),
+                                              alignment=2 if _is_rtl(text) else align,
+                                              textColor=_safe_color(color), spaceAfter=after))
     if block.subtitle:
-        ss = ParagraphStyle('CoverSub', fontName=get_font_name(theme.typography.body_family),
-                            fontSize=theme.typography.base_size * 1.3,
-                            textColor=_safe_color(theme.colors.text_secondary), spaceAfter=30)
-        flowables.append(Paragraph(_md_inline(block.subtitle), ss))
+        flowables.append(line('CoverSub', _md_inline(block.subtitle), ty.base_size * 1.3,
+                              theme.colors.text_secondary, 30))
     if block.author:
-        a_sty = ParagraphStyle('CoverAuthor', fontName=get_font_name(theme.typography.body_family),
-                               fontSize=theme.typography.base_size,
-                               textColor=_safe_color(theme.colors.text_muted))
-        flowables.append(Paragraph(f"{_label('prepared_by')} {_md_inline(block.author)}", a_sty))
+        flowables.append(line('CoverAuthor', f"{_label('prepared_by')} {_md_inline(block.author)}",
+                              ty.base_size, theme.colors.text_muted))
     if block.date:
-        d_sty = ParagraphStyle('CoverDate', fontName=get_font_name(theme.typography.body_family),
-                               fontSize=theme.typography.base_size,
-                               textColor=_safe_color(theme.colors.text_muted))
         flowables.append(Spacer(1, 60))
-        flowables.append(Paragraph(_md_inline(block.date), d_sty))
+        flowables.append(line('CoverDate', _md_inline(block.date), ty.base_size, theme.colors.text_muted))
     flowables.append(PageBreak())
     return flowables
 

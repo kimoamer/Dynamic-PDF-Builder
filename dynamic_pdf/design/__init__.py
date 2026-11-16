@@ -13,7 +13,7 @@ from .profile import Profile, ProfileDecision, select_profile, resolve_profile_n
 from .recipes import (DesignRecipe, EVIDENCE_RECIPES, EvidenceRecipe, RECIPES, apply_evidence_recipe,
                       apply_recipe, recipe_for)
 from .tokens import DesignTokens, compile_tokens, heading_size
-from .reviewed_quality import apply_reviewed_quality
+from .reviewed_quality import apply_evidence_typography, apply_reviewed_quality
 
 
 class DesignPlan(BaseModel):
@@ -69,6 +69,8 @@ def plan_design(doc: SemanticDocument, requested: Optional[str] = None,
         notes += apply_brand(theme, brand)
     script = "bilingual" if doc.stats.bilingual else doc.direction
     notes += apply_reviewed_quality(theme, script=script, preserve_brand=bool(brand))
+    if evidence is not None:
+        notes += apply_evidence_typography(theme, recipe)
     tokens = compile_tokens(theme)
     return DesignPlan(decision=decision, recipe=recipe, theme=theme, tokens=tokens,
                       section_numbering=recipe.section_numbering or doc.meta.section_numbering,

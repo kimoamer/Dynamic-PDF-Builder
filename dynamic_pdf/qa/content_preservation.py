@@ -123,7 +123,23 @@ def _paragraphs(root) -> List[str]:
         for child in list(parent):
             if child.tag == _MC_FALLBACK:
                 parent.remove(child)
-    return [_squash("".join(t.text or "" for t in p.iter(_W + "t"))) for p in root.iter(_W + "p")]
+    breaks = {_W + "br", _W + "cr", _W + "tab"}
+
+    def text(p) -> str:              # a line break or tab between runs separates words
+        return "".join((e.text or "") if e.tag == _W + "t" else " " for e in p.iter()
+                       if e.tag == _W + "t" or e.tag in breaks)
+    return [_squash(text(p)) for p in root.iter(_W + "p")]
+
+
+def _toc_entries(body) -> List[str]:
+    """Texts of the contents-list entries (paragraph styles TOC1, TOC2 ...), numbers included."""
+    out = []
+    for p in body.iter(_W + "p"):
+        style = p.find(f"{_W}pPr/{_W}pStyle")
+        val = style.get(_W + "val", "") if style is not None else ""
+        if re.fullmatch(r"TOC\d", val):
+            out.append(_squash("".join(t.text or "" for t in p.iter(_W + "t"))))
+    return out
 
 
 def check_docx_content(ledger: ContentLedger, data: bytes) -> LayerResult:
@@ -140,9 +156,10 @@ def check_docx_content(ledger: ContentLedger, data: bytes) -> LayerResult:
     full = "\n".join(_paragraphs(body))
     shown = _shown(ledger)
     wanted = Counter(text for _, _, text in shown if text)
-    # a contents list repeats each heading once
-    listed = Counter(text for kind, _, text in set(shown) if kind in ("heading", "section_opener", "performance_page")
-                     ) if any(d[1] == "table_of_contents" for d in ledger.block_digests) else Counter()
+    # a contents list repeats the headings it lists, down to its depth: count its own entries
+    entries = _toc_entries(body)
+    headings = {text for kind, _, text in shown if kind in ("heading", "section_opener", "performance_page")}
+    listed = Counter({h: sum(1 for e in entries if e == h or e.endswith(" " + h)) for h in headings})
     # and an opening page's strip lists the chapters
     listed.update(_squash(plain_text(e.text)) for e in ledger.entries if e.kind.startswith("chapters"))
     lines = Counter(full.split("\n"))

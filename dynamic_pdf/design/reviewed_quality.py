@@ -82,3 +82,21 @@ def apply_reviewed_quality(theme: Theme, *, script: str = "ltr", palette: str = 
         c.drop_cap = c.primary
     return [f"human-reviewed formal standard: {script}, body {body:g}pt, H1 {h1:g}pt, "
             f"cover {title:g}pt; {'brand palette retained' if preserve_brand else palette + ' palette'}"]
+
+
+def apply_evidence_typography(theme: Theme, recipe) -> List[str]:
+    """An evidence recipe the caller asked for by name keeps the type it was measured with.
+
+    Only the recipe's own size, leading and heading ramp return; margins, spacing and palette
+    stay as the reviewed standard set them, and the evidence gate still decides whether the
+    recipe is used at all."""
+    ty = theme.typography
+    ty.base_size = ty.body_size = recipe.base_size
+    ty.line_height = recipe.line_height
+    if recipe.heading_ramp_locked:
+        ty.heading_scale = list(recipe.heading_scale)
+        ty.heading_h1_size = ty.heading_h2_size = ty.heading_h3_size = 0
+    ty.caption_size_ratio = ty.caption_size / ty.base_size
+    ty.note_size_ratio = ty.note_size / ty.base_size
+    return [f"evidence recipe typography kept over the reviewed standard: {recipe.base_size:g}pt / "
+            f"{recipe.line_height:g}"]
