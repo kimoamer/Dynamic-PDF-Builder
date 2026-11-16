@@ -46,14 +46,14 @@ plotly   = ["plotly>=5.0", "kaleido>=0.2"]
 pdf      = ["pikepdf>=8.0"]
 qa       = ["pymupdf>=1.23"]          # visual QA (AGPL; optional)
 qa-permissive = ["pypdfium2>=5.0"]    # visual QA without AGPL: PDFium (BSD-3/Apache-2.0); PyMuPDF wins when both
-ranker   = ["lightgbm>=4.0"]          # optional learned candidate ranker (MIT); not in "all"
+ranker   = ["lightgbm>=4.0"]          # to TRAIN the learned selector (MIT); using a model needs nothing; not in "all"
 ai       = ["anthropic>=2.8"]         # optional AI layer, network and API key only when a caller asks; not in "all"
 mcp      = ["mcp>=1.2"]               # optional MCP server for agents (dynamic_pdf.ai.mcp_server); not in "all"
 analyzer = ["pymupdf>=1.23"]          # tools/reference_analyzer only (AGPL; local dev tool, not in "all")
 qrcode   = ["qrcode[pil]>=7.4"]
 rtl      = ["arabic-reshaper>=3.0", "python-bidi>=0.6"]  # already in core; kept for compatibility
 all      = ["dynamic-pdf-builder[charts,diagrams,plotly,pdf,qrcode,rtl,qa,xlsx]"]
-dev      = ["pytest>=8.0", "pymupdf>=1.23", "pikepdf>=8.0", "ruff>=0.3", "mypy>=1.8"]
+dev      = ["pytest>=8.0", "pymupdf>=1.23", "pikepdf>=8.0", "ruff>=0.3", "mypy>=1.8", "lightgbm>=4.0"]
 
 [tool.setuptools.dynamic]
 version = {attr = "dynamic_pdf.__version__"}
@@ -62,7 +62,7 @@ version = {attr = "dynamic_pdf.__version__"}
 include = ["dynamic_pdf*"]
 
 [tool.setuptools.package-data]
-dynamic_pdf = ["fonts/bundled/*.ttf", "fonts/bundled/catalog.json", "fonts/bundled/LICENSES/*.txt", "design/approved_grammar.json", "data/*.json"]
+dynamic_pdf = ["fonts/bundled/*.ttf", "fonts/bundled/catalog.json", "fonts/bundled/LICENSES/*.txt", "design/approved_grammar.json", "models/*.json", "data/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

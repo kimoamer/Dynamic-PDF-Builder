@@ -155,7 +155,7 @@ class DocumentBuilder:
     def design(self, mode: str = "auto", brand=None, recipe: Optional[str] = None,
                recipe_gate: str = "evidence", *, direction: Optional[str] = None,
                variants: Optional[int] = None, grammar=False, ai=None, critic=None,
-               brief: Optional[str] = None) -> 'DocumentBuilder':
+               brief: Optional[str] = None, ranker: Optional[str] = None) -> 'DocumentBuilder':
         """Enable intelligent design: ``"auto"`` selects a profile from the
         content; a profile name forces it. ``brand`` is a ``BrandKit`` or dict.
         Content is never altered — only typography, layout and navigation.
@@ -176,7 +176,9 @@ class DocumentBuilder:
         ``design_variants``) makes ``export()``/``render()`` deliver the recommended design that
         passed the hard gates; ``ExportResult.design`` says which and why. When none passes,
         the stable designed output is delivered and the result's status is ``"fallback"``.
-        Without them nothing changes."""
+        ``ranker`` asks for the learned selector among those designs: ``"auto"`` for the model
+        packaged with this release, or a model's path (see ``design_variants``). Without them
+        nothing changes."""
         from .design import BrandKit, EVIDENCE_RECIPES, resolve_profile_name
         from .design.directions import DIRECTIONS
         from .design.evidence_gate import GATES
@@ -192,9 +194,9 @@ class DocumentBuilder:
         if variants is not None and not 1 <= variants <= len(DIRECTIONS):
             raise ValueError(f"variants must be between 1 and {len(DIRECTIONS)}")
         self._variant_request = None
-        if direction is not None or variants is not None or grammar:
+        if direction is not None or variants is not None or grammar or ranker not in (None, "off"):
             self._variant_request = {"families": None if direction in (None, "auto") else [direction],
-                                     "n": variants or 3, "grammar": grammar or None}
+                                     "n": variants or 3, "grammar": grammar or None, "ranker": ranker}
         self._evidence_recipe, self._recipe_gate = recipe, recipe_gate
         self._ai, self._critic, self._ai_brief = ai, critic, brief
         self._design_explicit = True
@@ -339,7 +341,8 @@ class DocumentBuilder:
                               + repr(self._policy)).encode()).hexdigest()
         if self._variant_result is None or self._variant_result[0] != key:
             r = self._variant_request
-            self._variant_result = (key, self.design_variants(n=r["n"], families=r["families"], grammar=r["grammar"]))
+            self._variant_result = (key, self.design_variants(n=r["n"], families=r["families"], grammar=r["grammar"],
+                                                              ranker=r.get("ranker")))
         self.last_variants = self._variant_result[1]
         return self.last_variants
 
@@ -407,7 +410,7 @@ class DocumentBuilder:
 
     def design_variants(self, n: int = 3, families=None, brand=None, budget=None, office: bool = False,
                         grammar=None, grammar_rules=None, ranker_model=None, ai=None, critic=None,
-                        brief: Optional[str] = None):
+                        brief: Optional[str] = None, ranker: Optional[str] = None):
         """Several complete designs of this document, each a different art direction, and
         a recommendation among those that pass the hard gates.
 
@@ -420,7 +423,8 @@ class DocumentBuilder:
         another approved file; ``grammar_rules`` limits it to named rules. Each report lists
         the rules a design used in ``grammar_rules``. Without it nothing changes.
 
-        ``ranker_model`` names a trained variant ranker whose gate passed. It only reorders
+        ``ranker`` is ``"auto"`` (the model packaged with this release) or the path of a trained
+        model whose gate passed; ``ranker_model`` is the older name for a path. It only reorders
         designs that passed the hard gates, and ``stats["selection"]`` says which selector
         chose. A missing or refused model leaves the fixed selection in place.
 
@@ -432,7 +436,7 @@ class DocumentBuilder:
         return generate_variants(self.build(), policy=self._policy, brand=kit or self._brand,
                                  base_theme=_gt(self._theme) if self._theme_explicit else None, n=n,
                                  families=families, budget=budget, office=office, grammar=grammar,
-                                 grammar_rules=grammar_rules, ranker_model=ranker_model,
+                                 grammar_rules=grammar_rules, ranker_model=ranker_model, ranker=ranker,
                                  ai=ai or getattr(self, "_ai", None), critic=critic or getattr(self, "_critic", None),
                                  request=brief or getattr(self, "_ai_brief", None))
 

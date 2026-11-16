@@ -19,3 +19,4 @@ pymupdf==2.1; python_version >= "3.11"
 pikepdf==10.18.2; python_version >= "3.11"
 ruff==0.17.5
 mypy==2.4.1
+lightgbm==4.7.0

@@ -135,6 +135,8 @@ def _design_args(p):
                    help='Art direction: "auto" or a name (corporate_conservative, editorial_modern, ...)')
     p.add_argument("--grammar", action="store_true", help="Follow the packaged approved design grammar")
     p.add_argument("--brand", default=None, metavar="FILE", help="Brand kit as a JSON file (colours, fonts, logo)")
+    p.add_argument("--ranker", default=None, metavar="auto|FILE",
+                   help='Learned selector among the valid designs: "auto" (the packaged model) or a model file')
 
 
 def _brand(path):
@@ -195,7 +197,7 @@ def _cmd_variants(args):
         sys.exit(1)
     out = args.output or os.path.splitext(args.input)[0] + "-variants"
     made = builder.design_variants(n=args.n, families=families, brand=_brand(args.brand), office=args.office,
-                                   grammar=True if args.grammar else None)
+                                   grammar=True if args.grammar else None, ranker=args.ranker)
     paths = made.export(out)
     for v in made.variants:
         r = v.report
@@ -243,7 +245,7 @@ def _cmd_render(args):
     if args.section_numbers:
         builder.section_numbering(True)
     builder.design(None if args.design == "none" else args.design, brand=_brand(args.brand),
-                   direction=args.direction, variants=args.variants, grammar=args.grammar)
+                   direction=args.direction, variants=args.variants, grammar=args.grammar, ranker=args.ranker)
     if args.compose != "off":
         builder.compose(args.compose)
 

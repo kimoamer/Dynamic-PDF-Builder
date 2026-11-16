@@ -199,7 +199,7 @@ def test_trainer_preflight_blocks_before_model_or_lightgbm(batch, tmp_path):
     spec = importlib.util.spec_from_file_location("trainer", "scripts/train_variant_ranker.py")
     trainer = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(trainer)
-    model = tmp_path / "should-not-exist.txt"
+    model = tmp_path / "should-not-exist.json"
     with pytest.raises(SystemExit, match="data-quality preflight blocked training"):
         trainer.main(["--dataset", str(dataset), "--batches", str(path.parent),
                       "--split", str(split), "--out", str(model)])

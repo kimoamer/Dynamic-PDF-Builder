@@ -504,21 +504,24 @@ def generate_variants(source, *, policy=None, brand: Optional[BrandKit] = None, 
                       families: Optional[Sequence[str]] = None, budget: Optional[VariantBudget] = None,
                       office: bool = False, grammar=None, grammar_rules: Optional[Sequence[str]] = None,
                       ranker_model: Optional[str] = None, ai=None, critic=None,
-                      request: Optional[str] = None) -> VariantSet:
+                      request: Optional[str] = None, ranker: Optional[str] = None) -> VariantSet:
     """Up to ``n`` (3–5) designs of ``source`` and a recommendation.
 
     ``grammar`` is ``True`` for the packaged approved grammar, a path, or a ``Grammar``.
     A design the grammar breaks falls back to the same direction without it.
 
-    ``ranker_model`` names a trained ranker for the valid designs. It never runs by itself,
-    and ``stats["selection"]`` says which selector chose. Any problem keeps the fixed rule.
+    ``ranker`` asks for the learned selector among the valid designs: ``"auto"`` for the model
+    packaged with this release, or a model's path (``ranker_model`` is the older name for a
+    path). ``None`` or ``"off"`` keeps the fixed rule. The model replaces the fixed choice only
+    when it is sure enough (``variant_ranker.choose``), ``stats["selection"]`` says which
+    selector chose and what moved it, and any problem with a model keeps the fixed rule.
 
     ``ai`` is a ``dynamic_pdf.ai.Director``: it ranks the directions, starts each design from its
     section treatments and emphasis, and its first valid design is recommended. ``request`` is a
     caller's brief in words, for the Director. ``critic`` is a ``dynamic_pdf.ai.Critic`` that may
     refine each design for a few more renders. Both are opt-in; every design they shape passes the
     same hard gates, and ``stats["ai"]`` reports what each model was asked and whether it was used.
-    A named ``ranker_model`` still has the last word among the valid designs."""
+    A learned selector that was asked for still has the last word among the valid designs."""
     from ..design.grammar import resolve
     if request and ai is None:
         raise ValueError("a brief is read by a model: pass ai=dynamic_pdf.ai.Director(...), or leave the brief out")
@@ -555,9 +558,10 @@ def generate_variants(source, *, policy=None, brand: Optional[BrandKit] = None, 
         fixed = best
         best = min(valid, key=lambda v: order.index(v.id) if v.id in order else len(order))
         selection = {"selector": "ai", "model": director["model"], "deterministic_choice": fixed.id}
-    if best is not None and ranker_model:
-        from .variant_ranker import choose
-        best, selection = choose(valid, best, ranker_model)
+    from .variant_ranker import choose, context_features
+    context = context_features(brief)             # the document, the same for each of its designs
+    if best is not None and (ranker or ranker_model):
+        best, selection = choose(valid, best, ranker or ranker_model, context=context)
     if best is None:
         reasons = ["no design passed the hard gates: keep the stable designed output"]
     else:
@@ -565,7 +569,13 @@ def generate_variants(source, *, policy=None, brand: Optional[BrandKit] = None, 
                    *best.plan.fit_reasons,
                    f"ranked first by {selection['model']} among the valid designs; no person has judged it"
                    if selection["selector"] == "ai" else
+                   f"chosen by the learned selector {selection['model']}, a student of AI comparisons; "
+                   "no person has judged it" if selection["selector"] == "learned" else
                    "chosen from fit rules and page measurements; no person has judged it"]
+        if selection.get("abstained"):
+            reasons.append(f"the learned selector preferred {selection['learned_choice']} but was not sure enough "
+                           f"({selection['margin']:g} against a threshold of {selection['threshold']:g}): the fixed choice stands")
+        reasons += [f"learned selector: {r}" for r in selection.get("reasons", [])]
         for v in valid:
             if v is not best:
                 reasons.append(f"not chosen: {v.name} (fit {v.report.fit:g}, index {v.report.index:g})")
@@ -573,7 +583,7 @@ def generate_variants(source, *, policy=None, brand: Optional[BrandKit] = None, 
         if v.report.status == "rejected":
             reasons.append(f"rejected: {v.name}: {'; '.join(v.report.hard_failures[:3])}")
     stats = {"renders": run.renders, "seconds": round(time.monotonic() - run.start, 2),
-             "budget": budget.model_dump(), "plain_pages": base_pages, "selection": selection,
+             "budget": budget.model_dump(), "plain_pages": base_pages, "selection": selection, "context": context,
              "source_sha256": hashlib.sha256(source.model_dump_json().encode("utf-8")).hexdigest()}
     if director is not None or critic is not None:
         stats["ai"] = {"director": director, "critic": {v.id: v.report.ai for v in variants if v.report.ai}}

@@ -227,13 +227,19 @@ class TestLearnedRanker:
         assert "fallback_reason" in made.stats["selection"]
 
     def write(self, tmp_path, **record):
-        import hashlib
-        model = tmp_path / "m.txt"
-        model.write_text("tree\nversion=v4\n", encoding="utf-8")
-        base = {"format": VR.MODEL_FORMAT, "features": VR.FEATURES, "gate": {"passed": True},
-                "model_sha256": hashlib.sha256(model.read_bytes()).hexdigest()}
-        (tmp_path / "m.json").write_text(json.dumps({**base, **record}), encoding="utf-8")
-        return str(model)
+        model = {"trees": [[0, 0.0, -1.0, 1.0]]}          # one split on the first fact
+        base = {"format": VR.MODEL_FORMAT, "features": VR.FEATURES, "context": VR.CONTEXT, "gate": {"passed": True},
+                "model": model, "model_sha256": VR.model_digest(model)}
+        path = tmp_path / "m.json"
+        path.write_text(json.dumps({**base, **record}), encoding="utf-8")
+        return str(path)
+
+    def test_a_clean_record_loads_and_prefers_by_its_trees(self, tmp_path):
+        ranker = VR.VariantRanker.load(self.write(tmp_path))
+        more, less = dict.fromkeys(VR.FEATURES, 0.0), dict.fromkeys(VR.FEATURES, 0.0)
+        more["fit"] = 2.0
+        assert ranker.prob(more, less) > 0.5 > ranker.prob(less, more)
+        assert ranker.prob(more, less) + ranker.prob(less, more) == pytest.approx(1.0)      # antisymmetric
 
     @pytest.mark.parametrize("record,reason", [({"gate": {"passed": False}}, "gate"), ({"model_sha256": "0"}, "match"),
                                                ({"features": ["x"]}, "features"), ({"format": "x"}, "format")])
@@ -241,17 +247,20 @@ class TestLearnedRanker:
         with pytest.raises(VR.RankerRefused, match=reason):
             VR.VariantRanker.load(self.write(tmp_path, **record))
 
-    def test_no_record_no_model(self, tmp_path):
+    def test_a_file_that_is_not_a_record_is_no_model(self, tmp_path):
         model = tmp_path / "m.txt"
         model.write_text("tree\n", encoding="utf-8")
         with pytest.raises(VR.RankerRefused, match="training record"):
             VR.VariantRanker.load(str(model))
+        with pytest.raises(VR.RankerRefused, match="trees"):
+            VR.VariantRanker.load(self.write(tmp_path, model={"trees": [[999, 0.0, 1.0, 2.0]]},
+                                             model_sha256=VR.model_digest({"trees": [[999, 0.0, 1.0, 2.0]]})))
 
     def test_a_learned_choice_says_so(self):
         class Fake:
             record, digest = {"labels": "ai_preference_distillation"}, "abc"
 
-            def scores(self, rows):
+            def scores(self, rows, context=None):
                 return [0.2, 0.8]
 
         a, b = FakeVariant("a"), FakeVariant("b")

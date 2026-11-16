@@ -201,7 +201,7 @@ class TestWeights:
 
     def record(self, tmp_path, **change):
         m = W.fit(self.pairs())
-        rec = {"format": W.FORMAT, "model": m, "model_sha256": W.digest(m), "gate": {"passed": True}}
+        rec = {"format": W.FORMAT, "features": VR.FEATURES, "model": m, "model_sha256": W.digest(m), "gate": {"passed": True}}
         rec.update(change)
         path = tmp_path / "w.json"
         path.write_text(json.dumps(rec), encoding="utf-8")
@@ -212,7 +212,7 @@ class TestWeights:
         a, b = FakeVariant("a", fit=0.5), FakeVariant("b", fit=2.0)
         best, note = VR.choose([a, b], a, path)
         assert best is b and note["selector"] == "learned" and note["deterministic_choice"] == "a"
-        assert set(W.measured(a)) == set(W.FEATURES)
+        assert set(VR.variant_features(a)) == set(VR.FEATURES)
 
     @pytest.mark.parametrize("change,reason", [({"gate": {"passed": False}}, "gate"), ({"model_sha256": "0"}, "match"),
                                                ({"format": "x"}, "format")])
@@ -226,12 +226,12 @@ class TestWeights:
     def test_altered_or_unconstrained_weights_are_refused(self, tmp_path):
         path, m = self.record(tmp_path)
         broken = dict(m, weights=[-1.0] * len(W.FEATURES))
-        rec = {"format": W.FORMAT, "model": broken, "model_sha256": W.digest(broken), "gate": {"passed": True}}
+        rec = {"format": W.FORMAT, "features": VR.FEATURES, "model": broken, "model_sha256": W.digest(broken),
+               "gate": {"passed": True}}
         (tmp_path / "w.json").write_text(json.dumps(rec), encoding="utf-8")
         with pytest.raises(VR.RankerRefused, match="monotone"):
             W.WeightsRanker.load(path)
-        broken = dict(m, features=W.FEATURES[:-1])
-        rec.update(model=broken, model_sha256="x")
+        rec.update(features=VR.FEATURES[:-1])
         (tmp_path / "w.json").write_text(json.dumps(rec), encoding="utf-8")
         with pytest.raises(VR.RankerRefused, match="features"):
             W.WeightsRanker.load(path)
@@ -286,8 +286,10 @@ class TestWeightsTrainer:
         assert rec["agreement"]["learned"] == 1.0 and "held_out_brier" in rec["calibration"]
         assert rec["gate"]["checks"]["not_a_fixture"] is False and rec["gate"]["passed"] is False
         assert rec["model_sha256"] == W.digest(rec["model"])
-        with pytest.raises(VR.RankerRefused, match="gate"):
+        with pytest.raises(VR.RankerRefused, match="fixture"):      # a fixture is refused, whatever its gate says
             W.WeightsRanker.load(str(out))
+        monkeypatch.setattr(VR, "ALLOW_FIXTURES", True)              # tests may load one
+        assert W.WeightsRanker.load(str(out)).record["synthetic_fixture"] is True
 
     def test_a_weights_model_is_one_json_file(self, tmp_path, trainer):
         with pytest.raises(SystemExit, match="json"):

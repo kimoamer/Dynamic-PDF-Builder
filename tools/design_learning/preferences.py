@@ -78,6 +78,7 @@ def generate(batch_dir: str, docs: Optional[List[str]] = None, n: int = 4, gramm
                              "pdf_sha256": _sha(v.pdf), "docx_sha256": _sha(v.docx), "pages": v.report.pages,
                              "grammar_rules": v.report.grammar_rules, "grammar_version": v.report.grammar_version,
                              "deterministic_pick": made.recommended is v, "features": variant_features(v),
+                             "context": made.stats.get("context"),
                              "layout_facts": measure(v.pdf, made.stats.get("plain_pages"))})
     with open(os.path.join(batch_dir, "candidates.jsonl"), "w", encoding="utf-8", newline="\n") as f:
         for r in rows:

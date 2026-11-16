@@ -71,7 +71,7 @@ def main(argv=None) -> int:
     t.add_argument("--name", required=True, help="model name under training/models")
     t.add_argument("--min-pairs", type=int, default=200)
     t.add_argument("--kind", choices=("lightgbm", "weights"), default="lightgbm",
-                   help="weights: calibrated monotone weights, no LightGBM needed (written as <name>.json)")
+                   help="weights: calibrated monotone weights, no LightGBM needed. Either is written as <name>.json")
     t.add_argument("--human-audit", help="separate verified human-review JSONL, never AI training labels")
     t.add_argument("--provenance", help="local source author/asset group manifest JSON")
     e = sub.add_parser("evaluate", help="read a model's training record and gate")
@@ -138,7 +138,7 @@ def main(argv=None) -> int:
             P.report(A.check(dataset))
     elif args.cmd == "train":
         script = os.path.join(P.ROOT, "scripts", "train_variant_ranker.py")
-        out = os.path.join(p["models"], args.name + (".json" if args.kind == "weights" else ".txt"))
+        out = os.path.join(p["models"], args.name + ".json")
         argv_train = [sys.executable, script, "--dataset", dataset, "--batches", os.path.join(p["ai_preferences"], "batches"),
                       "--split", p["document_split"], "--out", out, "--min-pairs", str(args.min_pairs), "--kind", args.kind]
         if args.human_audit:

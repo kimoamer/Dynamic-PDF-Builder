@@ -77,6 +77,27 @@ deliver the learned choice end to end and report it; with `ranker="off"` every f
 byte for byte as today; the tree walker matches LightGBM's own predictions on 1,000 random
 vectors; rendering never imports LightGBM.
 
+**Progress (2026-11-16): done.** Each point is tested in `tests/test_m16_selector.py`.
+
+- `intelligence/variant_ranker.py` is the one slot: 47 measured facts (`FEATURES`), the
+  document's context (`CONTEXT`, recorded once a document in `stats["context"]` and in new
+  `candidates.jsonl` rows), both model kinds, the checks on a record, and `choose`.
+- A model is one JSON file. The trainer exports LightGBM's trees into it; the package walks
+  them. On 1,000 random vectors the walker and LightGBM differ by less than 1e-9, and an
+  80-tree model is 25 KB. A subprocess test uses a tree model with LightGBM made unimportable.
+- `ranker=` is on `design_variants()`, `design()` (so `export()` and `render()`), `compose()`
+  and the CLI (`--ranker`). `"auto"` finds no packaged model yet and says so.
+- The model abstains below its record's `override_threshold` (0.6 until M18 calibrates it),
+  and a choice it makes lists the facts that moved it.
+- The composer's separate ranker, `scripts/train_ranker.py` and `scripts/collect_preferences.py`
+  are gone; `compose("smart", ranker=...)` uses the same slot on the layout facts.
+- The scoreboard reports, for the three-variant pass, how often a model chose, overrode,
+  abstained or was refused, and takes `--ranker`.
+- With no model, or `ranker="off"`, or a refused model, output is byte for byte as before.
+
+Not done here, by design: no model is trained or packaged, the booster's training settings
+(L10) and the gate (L11) are unchanged until M18.
+
 ### M17. Labels worth learning from (M elapsed; mostly unattended)
 
 - **Judges see pages, not thumbnails** (L6). Each comparison sends the two designs as PDFs or

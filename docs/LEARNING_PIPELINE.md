@@ -44,14 +44,15 @@ and configuration enter it: no page text, artwork or complete page arrangement.
 | Runtime | Offline |
 | --- | --- |
 | `approved_grammar.json`, only with `grammar=True` | PDFs, analysis, graphs, review notes |
-| A model file, only with `ranker_model=<path>` | Preference rows, batches, the trainer |
+| A model file, only with `ranker="auto"` or `ranker=<path>` | Preference rows, batches, the trainer |
 
 Without those arguments `design_variants()` behaves exactly as it did in M7.9. Nothing is
 loaded from `D:\`, `training/` or `docs/` at runtime.
 
 ```python
 made = builder.design_variants(n=4, brand=brand, grammar=True)
-made = builder.design_variants(n=4, brand=brand, grammar=True, ranker_model=r"training\models\ranker-1.txt")
+made = builder.design_variants(n=4, brand=brand, grammar=True, ranker=r"training\models\ranker-1.json")
+builder.design("auto", variants=3, ranker="auto").export("out.pdf")     # the model packaged with a release, if any
 ```
 
 ## Add 10 or 100 new reports
@@ -184,8 +185,9 @@ python -m tools.design_learning evaluate --name ranker-1
 
 Training stops with a message below 200 usable comparisons. Ties, abstentions, low-confidence
 rows, pairs that flipped, repeats and superseded designs are left out. A trained model is written
-to `training/models/ranker-1.txt` with `ranker-1.json`, and the record's gate decides whether it
-may load:
+as one file, `training/models/ranker-1.json`: the training record with the model inside. LightGBM
+is needed to train the booster and never to use it; its trees are walked in plain Python. The
+record's gate decides whether the model may load:
 
 | Gate | Required |
 | --- | --- |
@@ -198,7 +200,10 @@ may load:
 
 Finishing training is not a pass. The ranker only reorders designs that already passed the hard
 QA gates. A model that fails any check, is altered or is missing leaves the deterministic selector
-in charge. It never activates itself: a caller must name it.
+in charge. It never activates itself: a caller must ask for it, with `ranker="auto"` or a path, on
+`design_variants()`, `design(variants=...)`, `compose("smart", ...)` or the CLI (`--ranker`). Even
+then it replaces the fixed choice only when its win probability over that choice reaches the
+record's `override_threshold`; below it the model abstains and the result says so.
 
 ## Automatic and needing approval
 
@@ -222,7 +227,7 @@ python -m tools.design_learning trace annual_report
 ```
 
 ```bash
-python -m tools.design_learning trace annual_report --model training/models/ranker-1.txt
+python -m tools.design_learning trace annual_report --model training/models/ranker-1.json
 ```
 
 `trace` generates a fictional document. In your own code the same facts are on the result:
@@ -237,7 +242,8 @@ print(made.stats["selection"])
 - `grammar_rules` empty means no rule was applied to that design.
 - An observation ending in "does without them" means a rule failed a gate and the design fell back.
 - `selection.selector` is `learned` only when a model chose. It then gives the model, its hash, the
-  scores and what the deterministic selector would have chosen.
+  scores, what the deterministic selector would have chosen, the margin and the facts that moved it.
+- `selection.abstained` means the model preferred another design but was not sure enough.
 - `selection.fallback_reason` says why a named model was not used.
 
 To see the grammar changing pages, run the measured comparison:

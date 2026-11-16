@@ -1283,11 +1283,12 @@ reasons, per-page occupancy, renders, wall/CPU time, memory, corrections, PDF/DO
 fallbacks and unverified checks. DOCX uses the same decisions and is checked on its own
 LibreOffice rendering when available (`unverified` otherwise).
 
-An optional learned ranker (`pip install "dynamic-pdf-builder[ranker]"`, LightGBM, CPU)
-can re-order *valid* candidates. No model ships: collect real preferences with
-`scripts/collect_preferences.py`, train with `scripts/train_ranker.py` (refuses < 40
-labelled pairs, reports document-grouped CV accuracy, saves LightGBM's text format —
-never pickle), then pass `compose("smart", ranker_model="model.txt")`.
+A learned selector can choose among *valid* results: `ranker="auto"` (the model packaged
+with a release) or `ranker="model.json"` on `design_variants()`, `design(variants=...)`,
+`compose("smart", ...)` and the CLI (`--ranker`). It is one small JSON file read in plain
+Python, so using it needs no LightGBM; it replaces the fixed choice only when it is sure
+enough, and the result says which selector chose and why. No model ships yet: the data does
+not pass the training gate (`docs/LEARNED_RANKER_PLAN.md`), so `"auto"` keeps the fixed rule.
 
 ## Visual quality assurance
 
