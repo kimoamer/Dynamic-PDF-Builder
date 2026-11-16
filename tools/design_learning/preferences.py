@@ -190,11 +190,12 @@ def sheets(batch_dir: str, pairs_per_doc: int = 2, seed: int = 79, repeats: int 
     return {"sheets": len(key), "folder": out}
 
 def record(batch_dir: str, answers: str, dataset: str, *, model: str, date: str, method: str,
-           source: str = "pdf") -> dict:
+           source: str = "pdf", extra: Optional[dict] = None) -> dict:
     """Join answers to the key, and append the dataset rows.
 
     An answer row: ``{comparison, preferred, criteria, justification, confidence, pages, formats_inspected}``.
-    ``pages`` cites pages on the sheet as ``A3`` or ``B1``."""
+    ``pages`` cites pages on the sheet as ``A3`` or ``B1``. ``extra`` adds traced fields, such as
+    the prompt hash of a scripted review, to every row."""
     word = source == "word"
     key = {k["comparison"]: k for k in _load(os.path.join(batch_dir, "key-word.json" if word else "key.json"))["comparisons"]}
     cands = {(c["document"], c["candidate"]): c for c in _jsonl(os.path.join(batch_dir, "candidates.jsonl"))}
@@ -220,7 +221,7 @@ def record(batch_dir: str, answers: str, dataset: str, *, model: str, date: str,
                      "supporting_pages": ans.get("pages") or [], "formats_inspected": ans.get("formats_inspected") or (["word"] if word else ["pdf"]),
                      "pages_shown": k["pages_shown"], "pages_total": k["pages_total"], "shown_px": k["shown_px"],
                      "reversed_repeat": k["reversed_repeat"], "reviewer_type": "ai", "model": model, "review_date": date,
-                     "evaluation_method": method, "grammar_version": a.get("grammar_version")})
+                     "evaluation_method": method, "grammar_version": a.get("grammar_version"), **(extra or {})})
     os.makedirs(os.path.dirname(dataset), exist_ok=True)
     with open(dataset, "a", encoding="utf-8", newline="\n") as f:
         for r in rows:
@@ -242,7 +243,7 @@ def check(dataset: str) -> dict:
     bad = [r.get("comparison") for r in rows if r.get("reviewer_type") != "ai" or not r.get("model")]
     if bad:
         raise SystemExit(f"rows that do not say they are AI work: {bad}")
-    pair = lambda r: (r["batch"], r["document"], frozenset((r["a"]["candidate"], r["b"]["candidate"])))  # noqa: E731
+    pair = lambda r: (r.get("model"), r["batch"], r["document"], frozenset((r["a"]["candidate"], r["b"]["candidate"])))  # noqa: E731
     first = {pair(r): r for r in rows if not r["reversed_repeat"]}
     same = differ = 0
     flips = []

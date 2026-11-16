@@ -120,10 +120,19 @@ def text_chars(f) -> int:
 def _split_chars(f) -> int:
     """A piece of a split paragraph keeps its lines but not its fragments. Each line
     ending stands for the space it replaced."""
-    lines = f.blPara.lines
-    if f.blPara.kind == 0:
-        return sum(len(" ".join(words)) + 1 for _, words in lines)
-    return sum(sum(len(w.text) for w in line.words) + 1 for line in lines)
+    hyphenates = bool(getattr(f.style, "hyphenationLang", ""))
+    total = 0
+    for line in f.blPara.lines:
+        if isinstance(line, tuple):                 # (extra space, words)
+            words = line[1]
+            text = " ".join(words)
+            broken = bool(words) and type(words[-1]).__name__ == "_SplitWordHY"
+        else:
+            text = "".join(w.text for w in line.words)
+            broken = hyphenates and len(text) > 1 and text[-1] == "-" and text[-2].isalpha()
+        # a hyphenation break adds a hyphen and replaces no space
+        total += len(text) - 1 if broken else len(text) + 1
+    return total
 
 
 def union_area(rects) -> float:
@@ -164,6 +173,23 @@ def union_length(intervals) -> float:
     return total
 
 
+def _leaf_tag(canv, f):
+    """Tagged PDF: the marked content a placed flowable other than a paragraph (paragraphs tag
+    themselves) or a container (its paragraphs do) is drawn in."""
+    tagger = getattr(canv, "_dpb_tagger", None)
+    if tagger is None:
+        return None
+    from reportlab.platypus import Paragraph
+    if isinstance(f, Paragraph) or isinstance(getattr(f, "_content", None), list):
+        return None
+    from ..layout.tagging import flowable_tag
+    info = flowable_tag(f)
+    if info is None:
+        return None
+    mark = len(canv._code)
+    return (tagger, mark) if tagger.begin(canv, *info) else None
+
+
 class GeoFrame(Frame):
     """A Frame that records placed regions into a shared ``Geometry``."""
 
@@ -173,7 +199,10 @@ class GeoFrame(Frame):
     def add(self, flowable, canv, trySplit=0):
         y0 = self._y
         at_top = getattr(self, "_atTop", 0)
+        tagging = _leaf_tag(canv, flowable)
         placed = super().add(flowable, canv, trySplit)
+        if tagging:
+            tagging[0].close(canv, tagging[1], bool(placed))
         geo = self.geometry
         children = getattr(flowable, "_dpb_children", None)
         if placed and geo is not None and children is not None:

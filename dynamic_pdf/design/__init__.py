@@ -36,6 +36,9 @@ class DesignPlan(BaseModel):
             "direction": self.decision.direction,
             "reasons": self.decision.reasons,
             "scores": self.decision.scores,
+            "confidence": self.decision.confidence,
+            "uncertain": self.decision.uncertain,
+            "audience": self.decision.audience,
             "base_theme": self.recipe.base_theme,
             "typography": {
                 "body": f"{self.theme.typography.body_family} {self.tokens.body_size}pt / "

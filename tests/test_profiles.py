@@ -62,11 +62,15 @@ def test_profiles_produce_distinct_designs():
 
 
 def test_auto_toc_inserted_for_long_structured_docs():
-    b = DocumentBuilder.from_markdown(fixture_text("manual.md")).design("auto")
+    # the manual fixture fits on one page, so it gets no contents page (M10); a long one does
+    md = "---\ntitle: Widget Manual\n---\n" + "".join(
+        f"# Chapter {i}\n\n" + ("Install the widget and configure the server with care. " * 60 + "\n\n") * 3
+        for i in range(1, 7))
+    b = DocumentBuilder.from_markdown(md).design("auto")
     b.render()
     assert b.last_design.toc_inserted
     doc = open_pdf(b.render())
-    assert "Table of Contents" in doc[0].get_text()
+    assert any("Table of Contents" in doc[i].get_text() for i in range(2))    # after the cover
     assert len(doc.get_toc()) >= 4
 
 

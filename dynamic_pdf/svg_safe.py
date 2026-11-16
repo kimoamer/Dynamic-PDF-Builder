@@ -176,6 +176,8 @@ def rasterise(svg: bytes, width_px: int = 1600) -> bytes:
     """A transparent PNG of cleaned SVG, for renderers that cannot keep vectors.
     Uses Matplotlib, already a core dependency: ReportLab's own bitmap renderer
     is an optional extra."""
+    from .utils.optional import require_matplotlib
+    require_matplotlib()
     from matplotlib.backends.backend_agg import FigureCanvasAgg
     from matplotlib.figure import Figure
     from matplotlib.patches import PathPatch

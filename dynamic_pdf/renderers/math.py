@@ -10,8 +10,8 @@ def render_math(block, theme):
 def math_png(latex: str, dpi: int = 220) -> bytes:
     """Render LaTeX (matplotlib mathtext subset) to a tight PNG."""
     import io
-    import matplotlib
-    matplotlib.use("Agg")
+    from ..utils.optional import require_matplotlib
+    require_matplotlib()
     import matplotlib.pyplot as plt
     fig = plt.figure(figsize=(7, 1.2))
     fig.patch.set_alpha(0)

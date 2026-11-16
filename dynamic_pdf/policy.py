@@ -38,6 +38,10 @@ class ResourceLimits:
     max_table_cells: int = 250_000         # per table
     max_mermaid_chars: int = 50_000        # per diagram source
     renderer_timeout_s: float = 20.0       # external renderer (browser) timeout
+    # per request, enforced by the worker (dynamic_pdf.service); None = no limit
+    render_timeout_s: Optional[float] = None
+    max_pages: Optional[int] = None
+    max_memory_mb: Optional[int] = None    # address space; POSIX only
 
 
 @dataclass(frozen=True)

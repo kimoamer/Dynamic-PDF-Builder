@@ -8,12 +8,12 @@ reasons so ``design_explain()`` can show why a layout was chosen.
 """
 from __future__ import annotations
 
-import re
 from enum import Enum
 from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
+from ..core.keywords import keywords, pattern
 from ..core.normalize import SemanticDocument
 
 
@@ -46,6 +46,10 @@ class ProfileDecision(BaseModel):
     explicit: bool = False
     reasons: List[str] = Field(default_factory=list)
     scores: Dict[str, float] = Field(default_factory=dict)
+    confidence: float = 1.0            # calibrated: share of such decisions that were right
+    uncertain: bool = False            # the evidence was split; a balanced general layout is used
+    alternatives: List[str] = Field(default_factory=list)   # the closest other types, when uncertain
+    audience: Optional[str] = None     # meta.audience and what it was read as, when given
 
 
 def resolve_profile_name(name: str) -> Profile:
@@ -59,26 +63,39 @@ def resolve_profile_name(name: str) -> Profile:
         raise ValueError(f"Unknown document type {name!r}. Valid: {valid}") from None
 
 
-_KW = {
-    Profile.PROPOSAL: r"\b(proposal|scope|deliverables?|work ?plan|investment|pricing|"
-                      r"next steps|timeline|milestones?|our approach)\b|عرض|نطاق العمل|المخرجات|الخطوات التالية",
-    Profile.ACADEMIC_REPORT: r"\b(abstract|methods?|methodology|literature review|results|"
-                             r"discussion|conclusions?|references|hypothes[ie]s)\b|الملخص|المنهجية|المراجع",
-    Profile.TECHNICAL_MANUAL: r"\b(installation|install|configuration|setup|usage|troubleshooting|"
-                              r"api|reference|getting started|requirements|procedure)\b|التثبيت|الإعداد",
-    Profile.EXECUTIVE_REPORT: r"\b(executive summary|key findings|recommendations?|highlights|"
-                              r"overview|kpis?|outlook|summary)\b|الملخص التنفيذي|التوصيات|النتائج الرئيسية",
-    Profile.FINANCIAL_REPORT: r"\b(revenue|ebitda|balance sheet|income statement|cash flow|"
-                              r"fiscal|earnings|profit|assets|liabilities|budget)\b|الإيرادات|الميزانية|الأرباح",
-    Profile.INVOICE: r"\b(invoice|bill to|amount due|subtotal|tax|qty|quantity|unit price)\b|فاتورة",
-    Profile.CORPORATE_MEMO: r"\bmemo(randum)?\b|(?m:^\s*(to|from|subject|cc|re)\s*:)|مذكرة",
-    Profile.LETTER: r"\b(dear|sincerely|regards|yours (truly|faithfully))\b|المحترم|تحية طيبة|وتفضلوا",
-}
+_KW = tuple(Profile(k) for k in keywords()["profiles"])    # keyword lists: dynamic_pdf/data/keywords.json
+UNCERTAIN_BELOW = 0.6           # a confidence under this is reported as uncertain
 
 
 def _kw_hits(profile: Profile, texts: List[str]) -> int:
-    pat = re.compile(_KW[profile], re.IGNORECASE)
+    pat = pattern("profiles", profile.value)
     return sum(1 for t in texts if pat.search(t))
+
+
+def audience_hint(audience: Optional[str]) -> Optional[dict]:
+    """What ``meta.audience`` suggests: ``{"name", "purpose", "profile"}`` for the first
+    audience group whose words it uses, or None."""
+    if not audience:
+        return None
+    groups = keywords()["audiences"]
+    for name in groups["_order"]:
+        if pattern("audiences", name).search(audience):
+            g = groups[name]
+            return {"name": name, "purpose": g["purpose"], "profile": g["profile"]}
+    return None
+
+
+def confidence(best: float, second: float) -> float:
+    """How often a decision with this lead was right on the labelled calibration set
+    (``tests/data/document_types.json``, split ``calibration``)."""
+    table = keywords()["profile_confidence"]
+    if best < table["no_signal_below"]:
+        return table["no_signal"]
+    lead = best - second
+    for edge, value in zip(table["lead_edges"], table["values"]):
+        if lead < edge:
+            return value
+    return table["values"][-1]
 
 
 def select_profile(doc: SemanticDocument, requested: Optional[str] = None) -> ProfileDecision:
@@ -127,10 +144,9 @@ def select_profile(doc: SemanticDocument, requested: Optional[str] = None) -> Pr
     add(Profile.FINANCIAL_REPORT, min(3, fin_hits * 1.0), f"{fin_hits} financial table columns")
     inv_hits = _kw_hits(Profile.INVOICE, st.table_headers)
     add(Profile.INVOICE, min(3, inv_hits * 1.0), f"{inv_hits} invoice table columns")
-    if re.match(r"^\s*(dear|to whom|hello|hi)\b|^\s*(السيد|السيدة|الأستاذ|عزيزي|سعادة)",
-                st.first_paragraph, re.IGNORECASE):
+    if pattern("salutation").search(st.first_paragraph):
         add(Profile.LETTER, 2.5, "opens with a salutation")
-    memo_fields = len(re.findall(r"(?mi)^\s*(to|from|subject|cc|date|re)\s*:", st.first_paragraph))
+    memo_fields = len(pattern("memo_fields").findall(st.first_paragraph))
     if memo_fields >= 2:
         add(Profile.CORPORATE_MEMO, 2.5, f"memo header block ({memo_fields} To/From/Subject fields)")
     if _kw_hits(Profile.LETTER, st.last_paragraphs):
@@ -150,14 +166,34 @@ def select_profile(doc: SemanticDocument, requested: Optional[str] = None) -> Pr
             scores[p] = 0
             why[p] = []
 
-    best = max(scores, key=lambda p: (scores[p], p == Profile.EXECUTIVE_REPORT))
-    if scores[best] < 1.5:
+    hint = audience_hint(doc.meta.audience)
+    if hint and hint["profile"]:
+        add(Profile(hint["profile"]), 1.5, f"meta.audience {doc.meta.audience!r} reads as {hint['name']}")
+    audience = None
+    if (doc.meta.audience or "").strip():
+        audience = (f"{doc.meta.audience!r}: read as {hint['name']}" + (
+            f", +1.5 for {hint['profile']}" if hint["profile"] else ", no document type implied")
+                    if hint else f"{doc.meta.audience!r}: no audience group matched; not used")
+
+    order = list(Profile)
+    ranked = sorted(scores, key=lambda p: (-scores[p], p != Profile.EXECUTIVE_REPORT, order.index(p)))
+    best, second = ranked[0], ranked[1]
+    conf = confidence(scores[best], scores[second])
+    uncertain = scores[best] >= keywords()["profile_confidence"]["no_signal_below"] and conf < UNCERTAIN_BELOW
+    alternatives: List[str] = []
+    if scores[best] < keywords()["profile_confidence"]["no_signal_below"]:
         best = Profile.GENERAL
         reasons = ["no strong content signal; using balanced general layout"]
+    elif uncertain:
+        alternatives = [best.value, second.value]
+        reasons = [f"uncertain ({conf:.0%}): {best.value} {scores[best]:.1f} against {second.value} "
+                   f"{scores[second]:.1f}; using balanced general layout"] + why[best]
+        best = Profile.GENERAL
     else:
         reasons = why[best]
     if doc.direction == "rtl":
         reasons = reasons + [f"right-to-left direction (language '{doc.language}', "
                              f"RTL ratio {doc.stats.rtl_ratio:.0%})"]
     return ProfileDecision(profile=best, direction=doc.direction, reasons=reasons,
-                           scores={p.value: round(v, 2) for p, v in scores.items() if v})
+                           scores={p.value: round(v, 2) for p, v in scores.items() if v},
+                           confidence=conf, uncertain=uncertain, alternatives=alternatives, audience=audience)

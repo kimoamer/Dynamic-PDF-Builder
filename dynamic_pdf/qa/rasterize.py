@@ -6,12 +6,12 @@ from typing import List
 
 
 def rasterize_pdf(data: bytes, out_dir: str, prefix: str = "page", dpi: int = 80) -> List[str]:
-    import pymupdf
+    from .pdf_backend import open_pdf
     os.makedirs(out_dir, exist_ok=True)
     paths = []
-    for i, page in enumerate(pymupdf.open(stream=data, filetype="pdf"), start=1):
+    for i, page in enumerate(open_pdf(data), start=1):
         p = os.path.join(out_dir, f"{prefix}-{i:03d}.png")
-        page.get_pixmap(dpi=dpi).save(p)
+        page.save_png(p, dpi)
         paths.append(p)
     return paths
 

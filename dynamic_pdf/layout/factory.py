@@ -137,6 +137,9 @@ def _visual_line(line, kind: int, base: str):
     return line.clone(words=empty + [frags[fi].clone(text="".join(cs)) for fi, cs in runs])
 
 
+_TAG_ATTRS = ("_dpb_role", "_dpb_level", "_dpb_key", "_dpb_cell", "_dpb_alt", "_dpb_block")
+
+
 class Paragraph(_RLParagraph):
     """ReportLab ``Paragraph`` with bidirectional text drawn correctly.
 
@@ -177,10 +180,19 @@ class Paragraph(_RLParagraph):
     def split(self, availWidth, availHeight):
         base = self._bidi_base()
         parts = super().split(availWidth, availHeight)
+        tagged = {k: v for k, v in self.__dict__.items() if k in _TAG_ATTRS}
+        if "_dpb_role" in tagged:                # the pieces are one element of the structure tree
+            from .tagging import _key
+            tagged["_dpb_key"] = _key(self)
         for p in parts:
             if isinstance(p, Paragraph):
                 p._dpb_base = base
+                p.__dict__.update(tagged)
         return parts
+
+    def drawOn(self, canvas, x, y, _sW=0):
+        from .tagging import draw_tagged
+        return draw_tagged(self, canvas, lambda: super(Paragraph, self).drawOn(canvas, x, y, _sW))
 
     def drawPara(self, debug=0):
         base = self._bidi_base()
@@ -307,23 +319,31 @@ def _md_inline(text: str) -> str:
     """
     if not text:
         return ""
+    from ..core.numbering import resolve_refs
+    text = resolve_refs(text, lambda label, anchor: (f"[{label.replace('[', '(').replace(']', ')')}](#{anchor})"
+                                                     if anchor else label))
     # Arabic is shaped here in logical order; Paragraph reorders each laid-out
     # line for display (reordering before line breaking reversed line order)
     if _ARABIC_RE.search(text):
         text = _reshape(text)
     text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    # Inline code spans and backslash escapes ("\*" is a literal "*", as in CommonMark and
+    # the DOCX) are protected from further inline processing; whichever starts first wins
+    codes: list = []
+    escapes: list = []
+
+    def _stash(m):
+        if m.group(1) is None:
+            escapes.append(m.group(2))
+            return f"\x01{len(escapes) - 1}\x01"
+        codes.append(m.group(1))
+        return f"\x00{len(codes) - 1}\x00"
+    text = re.sub(r'`([^`]+?)`|\\(&lt;|&gt;|&amp;|[!-/:-@\[-`{-~])', _stash, text)
     text = _restore_safe_tags(text)
     # Markdown line breaks, as in the DOCX (core.inline): a blank line inside the block or a
     # hard break ("  " or "\" before the newline) starts a new line; a soft break is a space
     text = re.sub(r"\n[ \t]*\n\s*", "<br/>", text)
     text = re.sub(r"(?: {2,}|\\)\n", "<br/>", text)
-    # Inline code spans are protected from further inline processing
-    codes: list = []
-
-    def _stash(m):
-        codes.append(m.group(1))
-        return f"\x00{len(codes) - 1}\x00"
-    text = re.sub(r'`([^`]+?)`', _stash, text)
     # Smart typography
     text = text.replace('---', '\u2014')    # em-dash
     text = text.replace('--', '\u2013')     # en-dash
@@ -351,7 +371,7 @@ def _md_inline(text: str) -> str:
     text = re.sub(r'\x00(\d+)\x00',
                   lambda m: f'<font face="Courier" size="9" backColor="#E8E8E8">{codes[int(m.group(1))]}</font>',
                   text)
-    return text
+    return re.sub(r'\x01(\d+)\x01', lambda m: escapes[int(m.group(1))], text)
 
 
 def _safe_color(h: str, fallback: str = "#000000") -> HexColor:
@@ -482,7 +502,14 @@ class DropCapParagraph(Flowable):
             'DropCapCont', fontName=self.body_font, fontSize=self.body_size,
             leading=self.body_leading, textColor=_safe_color(self.body_color))
         cont = ParagraphStyle('DropCapCont', parent=style, firstLineIndent=0, spaceBefore=0)
-        return [head, Paragraph(html_mod.escape(tail_text), cont)]
+        parts = [head, Paragraph(html_mod.escape(tail_text), cont)]
+        if "_dpb_role" in self.__dict__:         # tagged PDF: both pieces are one paragraph
+            from .tagging import _key
+            tagged = {k: v for k, v in self.__dict__.items() if k in _TAG_ATTRS}
+            tagged["_dpb_key"] = _key(self)
+            for p in parts:
+                p.__dict__.update(tagged)
+        return parts
 
     def draw(self):
         c = self.canv
@@ -960,6 +987,9 @@ def create_flowables(block, theme: Theme, ctx: RenderContext = None) -> list:
             # page-break logic in the engine splits the paragraph if needed)
             out[-1].keepWithNext = 1
             out[-1]._dpb_keep_tail = int(hints["keep_tail_with_next"])
+        if out and hints.get("page_start"):
+            from reportlab.platypus.flowables import PageBreakIfNotEmpty
+            out.insert(0, PageBreakIfNotEmpty())    # page-break optimizer (layout/breaks.py)
         return out
     except Exception as e:
         btype = getattr(block, "type", type(block).__name__)
@@ -989,6 +1019,26 @@ def _body_style(theme: Theme, indent: bool = True) -> ParagraphStyle:
         allowWidows=0,      # no single last line at the top of a page
         allowOrphans=0,     # no single first line at the bottom of a page
     )
+
+
+@lru_cache(maxsize=32)
+def _hyphenation_lang(language: str) -> str:
+    try:
+        import pyphen
+    except ImportError:
+        return ""
+    return pyphen.language_fallback((language or "en").replace("-", "_")) or ""
+
+
+def _hyphenated(style: ParagraphStyle) -> ParagraphStyle:
+    """Justified left-to-right body paragraphs break long words at the document language's
+    hyphenation points (pyphen), so word gaps stay even. Only the body-paragraph branches call
+    this: headings, tables, code and right-to-left text are never hyphenated."""
+    lang = _hyphenation_lang(getattr(_diag.current(), "language", "en"))
+    if not lang or style.alignment != TA_JUSTIFY:
+        return style
+    return ParagraphStyle(style.name + "Hy", parent=style, hyphenationLang=lang,
+                          hyphenationMinWordLength=8)   # fewer breaks, equally even gaps on the corpus
 
 
 def _arabic_font(theme: Theme, bold: bool = False) -> str:
@@ -1102,7 +1152,7 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
                               firstLineIndent=0, spaceAfter=sp.paragraph_spacing_after * 1.5,
                               textColor=_safe_color(theme.colors.text_secondary),
                               alignment=4)
-        return [Paragraph(_md_inline(block.text), lead)]
+        return [Paragraph(_md_inline(block.text), lead if _is_rtl(block.text) else _hyphenated(lead))]
     if btype == "paragraph":
         raw = block.text
         is_rtl = _is_rtl(raw)
@@ -1146,7 +1196,7 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
             # no first-line indent in Arabic, as the DOCX renderer and the RTL recipes already do
             rtl_style = ParagraphStyle('RTL', parent=bs, alignment=4, fontName=body_font, firstLineIndent=0)
             return [Paragraph(text, rtl_style)]
-        return [Paragraph(text, bs)]
+        return [Paragraph(text, _hyphenated(bs))]
 
     # ─── Rich Text ───
     if btype == "rich_text":
@@ -1458,8 +1508,11 @@ def _render_table(block, theme, bs, ctx=None):
                for ci, c in enumerate(cells)]
         return list(reversed(out)) if tbl_rtl else out
     data = [_row(block.headers or [], h_sty, h_num)] if block.headers else []
-    for row in block.rows:
-        data.append(_row(row, c_sty, c_num))
+    totals = set(hints.get("total_rows") or [])       # rows the author labelled total: set bold, ruled above
+    t_sty = ParagraphStyle('TDt', parent=c_sty, fontName=body_font)
+    t_num = ParagraphStyle('TDtn', parent=t_sty, alignment=2)
+    for ri, row in enumerate(block.rows):
+        data.append(_row(row, t_sty, t_num) if ri in totals else _row(row, c_sty, c_num))
     # Footer row (summary/totals)
     if block.footer_row:
         f_sty = ParagraphStyle('TF', parent=bs, firstLineIndent=0,
@@ -1488,6 +1541,10 @@ def _render_table(block, theme, bs, ctx=None):
         from .art import table_commands
         cmds = table_commands(hints["design"], theme, len(data), ncols, bool(block.headers), bool(block.footer_row),
                               pad, hints.get("current_col"), tbl_rtl)
+    head = 1 if block.headers else 0
+    for ri in sorted(totals):
+        if 0 <= ri < len(block.rows):
+            cmds.append(('LINEABOVE', (0, ri + head), (-1, ri + head), 0.9, _safe_color(theme.colors.text_primary)))
     avail = ctx.available_width if ctx else None
     col_widths = block.column_widths
     if not col_widths and hints.get("col_fractions") and avail:
@@ -1498,14 +1555,19 @@ def _render_table(block, theme, bs, ctx=None):
         col_widths = [w * avail / sum(col_widths) for w in col_widths]   # never overflow the frame
     if col_widths and tbl_rtl:
         col_widths = list(reversed(col_widths))
+    from .tagging import new_key
+    tkey = new_key()
+    for ri, row in enumerate(data):              # structure tree: Table > TR > TH/TD, reading order
+        for ci, cell in enumerate(row):
+            cell._dpb_cell = (tkey, ri, len(row) - 1 - ci if tbl_rtl else ci, ri == 0 and bool(block.headers))
     t = Table(data, colWidths=col_widths, style=TableStyle(cmds),
               repeatRows=1 if block.headers else 0)
     t.hAlign = 'RIGHT' if tbl_rtl else 'LEFT'
     t.spaceAfter = theme.spacing.block_gap
     flowables = []
-    label = ""
-    if block.table_number:
-        label = f"Table {block.table_number}"
+    from ..core.numbering import exhibit_label
+    number, anchor = exhibit_label(block)
+    label = number or ""
     if block.caption:
         label = f"{label}: {block.caption}" if label else block.caption
     if label:
@@ -1517,6 +1579,9 @@ def _render_table(block, theme, bs, ctx=None):
                                  fontName=cap_font, alignment=cap_align)
         cap = Paragraph(_md_inline(label), cap_sty)
         cap.keepWithNext = 1          # caption never separated from its table
+        if anchor:
+            from ..core.inline import plain_text
+            cap._exhibit_entry = ("table", plain_text(label), anchor)
         flowables.append(cap)
     flowables.append(t)
     if hints.get("keep_together"):
@@ -1624,9 +1689,9 @@ def _figure_text(block, theme, width=None):
     lang = _diag.current().language
     size = theme.typography.base_size * theme.typography.caption_size_ratio
     out = []
-    text = ""
-    if block.figure_number:
-        text = f"{_i18n('figure', lang)} {block.figure_number}"
+    from ..core.numbering import exhibit_label
+    number, anchor = exhibit_label(block)
+    text = number or ""
     if block.caption:
         text = f"{text}: {block.caption}" if text else block.caption
     if text:
@@ -1637,6 +1702,9 @@ def _figure_text(block, theme, width=None):
                              textColor=_safe_color(theme.colors.text_muted),
                              alignment=2 if rtl and width else 1, spaceAfter=theme.spacing.block_gap)
         out.append(Paragraph(_md_inline(text) if rtl else f"<i>{_md_inline(text)}</i>", sty))
+        if anchor:
+            from ..core.inline import plain_text
+            out[-1]._exhibit_entry = ("figure", plain_text(text), anchor)
     if block.source:
         note = f"{_i18n('source', lang)}: {block.source}"
         rtl = _is_rtl(note)
@@ -1772,7 +1840,7 @@ def _fit_figure(flowables, block):
     out = list(flowables)
     target = out
     if len(out) == 1 and isinstance(out[0], KeepTogether):
-        out[0] = FigureGroup(out[0]._content)
+        out[0] = FigureGroup(list(out[0]._content))     # a copy: the cached figure must stay unwrapped
         target = out[0]._content
     for k, f in enumerate(target):
         if not isinstance(f, (Paragraph, Spacer)) and getattr(f, "bleed_left", None) is None:
@@ -1810,7 +1878,10 @@ def _cached_figure(ctx, block, theme, build):
            str((block.hints or {}).get("figure_size")))
     if key not in cache:
         cache[key] = build()
-    return list(cache[key])
+    # fresh copies: a render sets keep-with-next and size state on its flowables, which must not
+    # carry into the next render that reuses this figure
+    import copy
+    return [copy.copy(f) for f in cache[key]]
 
 
 def _render_chart(block, theme):
@@ -1825,8 +1896,8 @@ def _render_diagram(block, theme):
 
 def _render_math(block, theme):
     try:
-        import matplotlib
-        matplotlib.use('Agg')
+        from ..utils.optional import require_matplotlib
+        require_matplotlib()
         import matplotlib.pyplot as plt
         import matplotlib.mathtext as mathtext
         import tempfile, os
@@ -2457,13 +2528,19 @@ class DocumentTOC(_RLTableOfContents):
     and every entry links to its heading destination.
     """
 
-    def __init__(self, depth: int = 3, rtl: bool = False, number_style=None, **kw):
+    def __init__(self, depth: int = 3, rtl: bool = False, number_style=None, kind: str = "contents", **kw):
         super().__init__(**kw)
+        self.kind = kind                 # "contents", or "figures" / "tables": a list of captions
         self.depth = depth
         self.rtl = rtl
         self.number_style = number_style
 
     def wrap(self, availWidth, availHeight):
+        if self.kind != "contents" and not self._lastEntries:
+            # nothing numbered (yet): an empty list, not ReportLab's placeholder text
+            self._table = Table([[""]], colWidths=[availWidth])
+            self.width, self.height = self._table.wrapOn(self.canv, availWidth, availHeight)
+            return self.width, self.height
         if not self.rtl:
             return super().wrap(availWidth, availHeight)
         # Right-to-left TOC: title flush right, page number on the left (start of
@@ -2487,6 +2564,10 @@ class DocumentTOC(_RLTableOfContents):
         return self.width, self.height
 
     def notify(self, kind, stuff):
+        if self.kind != "contents":
+            if kind == f"DPBExhibit:{self.kind}":
+                super().notify('TOCEntry', stuff)
+            return
         if kind == 'TOCEntry' and stuff[0] >= self.depth:
             return
         super().notify(kind, stuff)
@@ -2507,7 +2588,8 @@ def _render_toc_placeholder(block, theme, ctx):
         spaceBefore=0, spaceAfter=12,
     )
     lang = getattr(ctx, "language", "en") if ctx else "en"
-    toc_title = _i18n_label("toc", lang)
+    kind = getattr(block, "kind", "contents")
+    toc_title = _i18n_label({"figures": "lof", "tables": "lot"}.get(kind, "toc"), lang)
     if _is_rtl(toc_title):
         title_sty = ParagraphStyle('TOCTitleRTL', parent=title_sty, alignment=2,
                                    fontName=_arabic_font(theme, bold=True))
@@ -2536,7 +2618,7 @@ def _render_toc_placeholder(block, theme, ctx):
                              fontSize=theme.typography.base_size * 0.9,
                              textColor=_safe_color(theme.colors.text_secondary), alignment=0)
     toc = DocumentTOC(depth=depth_limit, rtl=rtl, number_style=num_sty, levelStyles=level_styles,
-                      dotsMinLevel=0, rightColumnWidth=48)
+                      dotsMinLevel=0, rightColumnWidth=48, kind={"figures": "figure", "tables": "table"}.get(kind, kind))
     flowables.append(toc)
     flowables.append(Spacer(1, 8))
     flowables.append(PageBreak())

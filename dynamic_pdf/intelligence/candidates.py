@@ -106,7 +106,8 @@ def _hint(block, **kw):
 
 def apply(name: str, doc, theme, page_w: float, measures: List[BlockMeasure]) -> Tuple[object, object, List[str]]:
     """Return (doc', theme', changes) for candidate ``name``."""
-    d = doc.model_copy(deep=True)
+    from ..layout.breaks import without_page_starts
+    d = without_page_starts(doc)    # they were planned for the designed rhythm
     t = theme.model_copy(deep=True)
     changes: List[str] = []
     ty = t.typography

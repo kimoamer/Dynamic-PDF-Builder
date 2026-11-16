@@ -74,9 +74,18 @@ def _squash(text: str) -> str:
     return " ".join(text.split())
 
 
+def _as_set(text: str, ledger: ContentLedger) -> str:
+    """The visible text of an author string: a ``{ref:id}`` reads as its label."""
+    if "{ref:" in text and ledger.refs:
+        from ..core.numbering import REF
+        labels = dict(ledger.refs)
+        text = REF.sub(lambda m: labels.get(m.group(1), m.group(0)), text)
+    return plain_text(text)
+
+
 def _shown(ledger: ContentLedger) -> List[tuple]:
     """Block type, kind and visible text of what readers are meant to see."""
-    return [(e.block_type, e.kind, _squash(plain_text(e.text))) for e in ledger.entries
+    return [(e.block_type, e.kind, _squash(_as_set(e.text, ledger))) for e in ledger.entries
             if e.block_type in _SHOWN_TYPES and e.kind not in _HIDDEN_KINDS]
 
 
@@ -110,7 +119,7 @@ def check_fragments(ledger: ContentLedger, geometry) -> LayerResult:
         if not pieces:
             unsure.append(f"block {e.block}: no text fragments were recorded")
             continue
-        got, want = pieces[-1][2], _set_length(plain_text(e.text))
+        got, want = pieces[-1][2], _set_length(_as_set(e.text, ledger))
         if abs(got - want) <= len(pieces):
             continue
         message = f"block {e.block}: {got} characters placed, {want} in the source"
@@ -124,10 +133,18 @@ def _paragraphs(root) -> List[str]:
             if child.tag == _MC_FALLBACK:
                 parent.remove(child)
     breaks = {_W + "br", _W + "cr", _W + "tab"}
+    # a Word footnote reference shows its number; a custom mark follows it as text
+    numbers = {el: str(i) for i, el in enumerate(
+        (r for r in root.iter(_W + "footnoteReference") if r.get(_W + "customMarkFollows") not in ("1", "true")), 1)}
+
+    def piece(e) -> str:
+        if e.tag == _W + "t":
+            return e.text or ""
+        return numbers.get(e, "") if e.tag == _W + "footnoteReference" else " "
 
     def text(p) -> str:              # a line break or tab between runs separates words
-        return "".join((e.text or "") if e.tag == _W + "t" else " " for e in p.iter()
-                       if e.tag == _W + "t" or e.tag in breaks)
+        return "".join(piece(e) for e in p.iter()
+                       if e.tag in (_W + "t", _W + "footnoteReference") or e.tag in breaks)
     return [_squash(text(p)) for p in root.iter(_W + "p")]
 
 
@@ -201,6 +218,15 @@ def _fold(text: str) -> str:
     return "".join(c for c in unicodedata.normalize("NFKC", text.lower()) if not unicodedata.combining(c))
 
 
+# a page or column break between the two halves comes out as blank lines in between
+_SOFT_BREAK = re.compile(r"(?<=[^\W\d_])-\n\s*(?=[^\W\d_])")
+
+
+def _dehyphenate(text: str) -> str:
+    """Rejoin words that justified text broke at a hyphenation point ("ex-\\ncluded")."""
+    return _SOFT_BREAK.sub("", text)
+
+
 def _arabic_tokens(text: str) -> Counter:
     return Counter(min(w, w[::-1]) for w in _ARABIC.findall(_fold(text)))
 
@@ -214,15 +240,18 @@ def _either_way(word: str) -> str:
 def check_pdf_content(ledger: ContentLedger, data: bytes, initials: Sequence[str] = ()) -> LayerResult:
     """The page text holds every word of the source. Extra words prove nothing here:
     bands and contents repeat text, which is why repeats are checked on the fragments."""
+    from .pdf_backend import open_pdf
     try:
-        import pymupdf
+        pdf = open_pdf(data)
     except ImportError:
-        return LayerResult("pdf", UNKNOWN, ["PyMuPDF is not installed"])
-    with pymupdf.open(stream=data, filetype="pdf") as pdf:
-        page_text = "\n".join(page.get_text() for page in pdf)
+        return LayerResult("pdf", UNKNOWN, ["no PDF reader (PyMuPDF or pypdfium2) is installed"])
+    with pdf:
+        page_text = pdf.text()
     source = "\n".join([t for _, _, t in _shown(ledger)] + list(ledger.band_texts))
     folded = _fold(page_text)
-    have = Counter(map(_either_way, _LATIN.findall(folded)))
+    # either reading of a line-end hyphen: a hyphenation break, or the author's own hyphen
+    have = (Counter(map(_either_way, _LATIN.findall(folded)))
+            | Counter(map(_either_way, _LATIN.findall(_dehyphenate(folded)))))
     want = Counter(map(_either_way, _LATIN.findall(_fold(source))))
     for word in map(_fold, initials):             # a drop cap draws its letter apart from the word
         if have[word] < want[word] and word[1:] in folded:
@@ -237,15 +266,14 @@ def same_extracted_words(first: bytes, second: bytes) -> Optional[bool]:
     """Whether two PDFs use the same Arabic and Latin words. Shaping and extraction are
     the same on both sides, so this holds where a comparison with the source cannot.
     Counts and digits are left out: a shorter document repeats its bands and page
-    numbers fewer times. None when PyMuPDF is missing."""
-    try:
-        import pymupdf
-    except ImportError:
+    numbers fewer times. None when no PDF reader is installed."""
+    from .pdf_backend import backend_name, open_pdf
+    if backend_name() is None:
         return None
 
     def words(data: bytes) -> set:
-        with pymupdf.open(stream=data, filetype="pdf") as pdf:
-            text = "\n".join(page.get_text() for page in pdf)
+        with open_pdf(data) as pdf:
+            text = _dehyphenate(pdf.text())
         return set(_arabic_tokens(text)) | {w for w in _LATIN.findall(_fold(text)) if w.isalpha()}
     return words(first) == words(second)
 

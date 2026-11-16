@@ -50,7 +50,7 @@
  "layout": [
   "headings: shallow outline: stronger H1 contrast",
   "measure: 77 chars/line",
-  "tables: table 4: 3 cols, 2 rows; 11.5pt; kept on one page; numeric columns [2] right-aligned",
+  "tables: table 4: 3 cols, 2 rows; 11.5pt; kept on one page; numeric columns [2] right-aligned; columns: category×2, currency (would also read as a bar chart by category)",
   "exhibits: 1 heading intro(s) kept with the table or figure they introduce",
   "pagination: 1 page: fits on one page; nothing to tighten"
  ]

@@ -20,7 +20,9 @@ class Meta(BaseModel):
     direction: Optional[str] = None             # "ltr" | "rtl" | None (auto-detect)
     document_type: Optional[str] = None         # e.g. executive_report, proposal, academic_report
     audience: Optional[str] = None              # free text, e.g. "board", "engineers"
+    exhibit_numbering: bool = False             # number captioned tables and figures (also on with {ref:id})
     encrypt: bool = False                       # Password-protect
+    tagged: bool = False                        # Tagged PDF: structure tree for assistive technology
     owner_password: Optional[str] = None
     user_password: Optional[str] = None
     page_system: Optional[PageSystem] = None    # slot-based bands, in place of the theme's

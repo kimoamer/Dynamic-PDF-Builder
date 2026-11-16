@@ -3,7 +3,7 @@
 - **Repository:** `kimoamer/Dynamic-PDF-Builder`
 - **Reviewed revision:** `001ec36` (`main`, the merge of PR #25)
 - **Date:** 2026-11-13
-- **Status:** review and plan only. This document changes no runtime code.
+- **Status:** M8 to M15 implemented on 2026-11-16; section 5a says which "Done when" targets are met and what blocks the rest.
 - **Verified on:** Linux, Python 3.13.18, ReportLab 5.0.1, PyMuPDF 2.1, LibreOffice. Microsoft Word, Playwright and LightGBM were not available.
 
 ## 1. Summary
@@ -241,6 +241,32 @@ res.design.recommended, res.design.reasons
 from dynamic_pdf.ai import Critic, Director   # M13: optional extra, off unless asked for
 b.design(direction="auto", variants=3, ai=Director(context="brief"), critic=Critic(rounds=2))
 ```
+
+## 5a. Status after M9 to M15 (2026-11-16)
+
+Numbers were measured on each milestone's branch before the merge, on Linux with LibreOffice
+standing in for Word. "Blocked" means the code exists and the target needs something this
+repository cannot supply: data, people, a key, a licence or a validator.
+
+| Milestone | Met | Not met, and why |
+| --- | --- | --- |
+| M9 | One facts schema (`intelligence/facts.py`, `PageFacts` v2) read by scoring, critique, ranker, dataset and scoreboard. Forecast page count exact on 18 of 18 documents (was 13), mean score error 0.37 (was 3.19). Three-variant median time 1.18 s to 0.80 s (29 to 32% lower on a shared machine). `export()` delivers the recommended variant; CLI `variants` explains it. | `compose("smart")` is not yet an axis of the variant search (both read one weights table). Directions are not rendered in parallel. |
+| M10 | Column roles 221 of 222 right on 64 labelled tables, no period column read as a measure. Nine lint rules, each catching a planted defect, one true warning on the fixtures. Document type 50 of 51 on the held-out half of 102 labelled documents. No contents page under four pages unless asked. | The labelled sets were written by the implementer, not reviewed by people. Footnotes at the foot of the page, shared scales in `figure_matrix`, crowded chart labels and numbering of charts and diagrams are open. |
+| M11 | Over 32 documents: body pages under 60% full 24 to 11, lead-ins parted from their exhibit 5 to 1, no document gains a page; handbook 4 to 0 underfilled pages. Default on. | One near-empty last page remains (`wide_data`, forced by a landscape run). Word and PDF page counts differ in 7 of 32 (target 2 of 48): the causes are contents length, chart size and Arabic text in Word, not breaks. Real Word was not available. Long documents take 3 to 4 times longer to prepare when a plan is verified. |
+| M12 | Scripted blind review with two or more judges and an agreement report; `VariantSet.accept()`; a local A/B page; calibrated monotone weights behind the existing gate; a model loads only when named. | Blocked: the preflight audit is not ready (69 verified comparisons of 200, 0 of 20 human decisions, one author group). Nothing was trained. |
+| M13 | `dynamic_pdf.ai`: provider interface on the official SDK, schema-validated replies, deterministic fallback, a reply cache, Director, Critic, content assistance, CLI `schema`, an MCP server. Without the extra, behaviour and output are unchanged (tested). | Blocked: no API key or panel, so preference over the deterministic selector, gate rejection rate and cost were not measured. Tested with fake providers only. |
+| M14 | A verbatim search finds Arabic source text in the PDF. Loose justified lines 21.3% to 1.6%. QA and variants run without PyMuPDF, on PDFium. Real Word footnotes. A contrast check. | Blocked: no PDF/UA validator could be installed (veraPDF is not on PyPI); the opt-in tagged PDF still leaves list bullets, contents entries and decoration outside the tree. HarfBuzz shaping was not adopted (it needs `rlbidi`, not on PyPI). OMML math is open. |
+| M15 | Streaming that commits only complete blocks and previews mid-construct; sandboxed templates over CSV, JSON and XLSX with escaping; batch rendering with a shared figure cache; a `charts` extra (8.3 MB wheel, budget 10 MB); a service mode that enforces limits per request. | Font packs. Matplotlib stays a core dependency for this release, as planned. |
+
+After the merge, the scoreboard (`benchmarks/scoreboard.py`, 18 documents, LibreOffice for DOCX)
+meets every budget in `benchmarks/scoreboard_baseline.json`: gate pass rate 1.0 for every
+direction, 7 near-empty last pages, forecast page count exact on all 18 and mean score error 0.37,
+three-variant median 0.77 s, DOCX page parity 0.787 (was 0.766). The full suite passes (1175 tests).
+
+Owner decisions taken as section 7 recommends: the reviewed standard stays as bounds already
+settled in M8; AI is an opt-in extra; PDF/UA is a spike, not a requirement; PyMuPDF stays
+optional behind `qa/pdf_backend.py`. Decision 5 (who gives the human judgments) is still open and
+is what M12 and M13 wait on.
 
 ## 6. Order and first steps
 

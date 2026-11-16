@@ -2,6 +2,11 @@
 Train the optional ranker of design variants from AI preference comparisons.
 
     python scripts/train_variant_ranker.py --dataset D --batches DIR --split S --out M.txt
+    python scripts/train_variant_ranker.py --kind weights ... --out W.json
+
+``--kind weights`` fits calibrated, monotone weights over measured facts
+(``dynamic_pdf.intelligence.variant_weights``) and needs no LightGBM; ``lightgbm`` is
+the optional booster. Both pass the same preflight audit and the same gate.
 
 This is AI preference distillation, not human-supervised training. Ties, abstentions,
 low-confidence answers and pairs that flipped when reversed are left out. Documents are
@@ -20,6 +25,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from dynamic_pdf.intelligence.objective import design_score  # noqa: E402
 from dynamic_pdf.intelligence.variant_ranker import FEATURES, MODEL_FORMAT, pair_features  # noqa: E402
 
 GATE = {"min_pairs": 200, "min_training_documents": 8, "min_evaluation_documents": 3, "min_gain": 0.03, "min_agreement": 0.6}
@@ -41,11 +47,16 @@ def usable(rows):
     for r in rows:
         if r.get("reviewer_type") != "ai":
             raise SystemExit("this trainer takes AI comparisons only; human labels stay in their own dataset")
-    seen = {}
+    seen, once = {}, set()
     for r in rows:
         seen.setdefault(pair(r), set()).add(won(r))
-    return [r for r in rows if r["preferred"] in ("A", "B") and r["confidence"] != "low" and len(seen[pair(r)]) == 1
-            and not r["reversed_repeat"]]
+    out = []
+    for r in rows:                                  # judges who agree on a comparison count it once
+        if r["preferred"] in ("A", "B") and r["confidence"] != "low" and len(seen[pair(r)]) == 1 \
+                and not r["reversed_repeat"] and (r["batch"], r["comparison"]) not in once:
+            once.add((r["batch"], r["comparison"]))
+            out.append(r)
+    return out
 
 
 def load_candidates(batches):
@@ -76,9 +87,9 @@ def examples(rows, cands):
 
 
 def deterministic_agreement(picks):
-    """How often the shipped selector's ordering (fit * 6 + index) matches the comparison."""
+    """How often the shipped selector's ordering (the objective's design score) matches the comparison."""
     def score(c):
-        return c["features"]["fit"] * 6 + c["features"]["index"]
+        return design_score(c["features"]["fit"], c["features"]["index"])
     hits = sum(score(w) > score(lo) for _, w, lo in picks)
     return hits / len(picks) if picks else None
 
@@ -109,21 +120,25 @@ def main(argv=None) -> int:
     ap.add_argument("--batches", required=True)
     ap.add_argument("--split", required=True)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--kind", choices=("lightgbm", "weights"), default="lightgbm")
     ap.add_argument("--min-pairs", type=int, default=GATE["min_pairs"])
     ap.add_argument("--synthetic-fixture", action="store_true", help="tests only: marks the record, and the gate never passes")
     ap.add_argument("--human-audit", help="separate traceable human quality review JSONL; never treated as AI labels")
     ap.add_argument("--provenance", help="local document author/asset provenance JSON; required by preflight gate")
     a = ap.parse_args(argv)
+    if a.kind == "weights" and not a.out.lower().endswith(".json"):
+        sys.exit("a weights model is one JSON file: give --out a .json path")
     # Fail before importing LightGBM, creating datasets or touching a model output.
     # This gate complements (rather than replaces) the post-training evaluation gate.
     from tools.design_learning.reference_sampling import audit
     preflight = audit(a.dataset, a.batches, a.split, a.human_audit, a.provenance)
     if not preflight["ready"]:
         sys.exit("M7.7/M7.10 data-quality preflight blocked training: " + "; ".join(preflight["issues"]))
-    try:
-        import lightgbm  # noqa: F401
-    except ImportError:
-        sys.exit('lightgbm is required: pip install "dynamic-pdf-builder[ranker]"')
+    if a.kind == "lightgbm":
+        try:
+            import lightgbm  # noqa: F401
+        except ImportError:
+            sys.exit('lightgbm is required: pip install "dynamic-pdf-builder[ranker]"')
     rows = read_jsonl(a.dataset)
     cands = load_candidates(a.batches)
     kept = [r for r in usable(rows) if all((r["batch"], r["document"], r[s]["candidate"]) in cands for s in "ab")]
@@ -138,12 +153,23 @@ def main(argv=None) -> int:
     _, _, _, test_picks = examples(test, cands)
     if not X:
         sys.exit("no comparisons outside the evaluation documents")
-    model = train(X, y)
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
-    model.save_model(a.out)
-    with open(a.out, "rb") as f:
-        digest = hashlib.sha256(f.read()).hexdigest()
-    learned, fixed = learned_agreement(model, test_picks), deterministic_agreement(test_picks)
+    extra = {}
+    if a.kind == "weights":
+        from dynamic_pdf.intelligence import variant_weights as W
+        facts = lambda picks: [(W.from_candidate(w), W.from_candidate(lo)) for _, w, lo in picks]  # noqa: E731
+        weights = W.fit(facts(train_picks))
+        held = W.evaluate(weights, facts(test_picks))
+        learned, digest = held["agreement"], W.digest(weights)
+        extra = {"format": W.FORMAT, "features": W.FEATURES, "model": weights,
+                 "calibration": {"held_out_brier": held["brier"], "held_out_log_loss": held["log_loss"]}}
+    else:
+        model = train(X, y)
+        model.save_model(a.out)
+        with open(a.out, "rb") as f:
+            digest = hashlib.sha256(f.read()).hexdigest()
+        learned = learned_agreement(model, test_picks)
+    fixed = deterministic_agreement(test_picks)
     train_docs, test_docs = {d for d, *_ in train_picks}, {d for d, *_ in test_picks}
     checks = {"enough_pairs": len(kept) >= GATE["min_pairs"], "enough_training_documents": len(train_docs) >= GATE["min_training_documents"],
               "enough_evaluation_documents": len(test_docs) >= GATE["min_evaluation_documents"],
@@ -155,8 +181,8 @@ def main(argv=None) -> int:
               "documents": {"training": sorted(train_docs), "evaluation": sorted(test_docs)},
               "agreement": {"learned": learned, "deterministic": fixed}, "synthetic_fixture": a.synthetic_fixture,
               "gate": {"rules": GATE, "checks": checks, "passed": all(checks.values())},
-              "note": "A pass allows the model to be loaded when a caller names it. It is never activated by itself."}
-    with open(os.path.splitext(a.out)[0] + ".json", "w", encoding="utf-8", newline="\n") as f:
+              "note": "A pass allows the model to be loaded when a caller names it. It is never activated by itself.", **extra}
+    with open(a.out if a.kind == "weights" else os.path.splitext(a.out)[0] + ".json", "w", encoding="utf-8", newline="\n") as f:
         json.dump(record, f, ensure_ascii=False, indent=1)
     print(json.dumps({"agreement": record["agreement"], "gate": record["gate"]["passed"], "checks": checks}))
     return 0

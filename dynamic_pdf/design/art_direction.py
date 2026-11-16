@@ -17,6 +17,9 @@ from typing import Dict, List, Optional, Tuple
 from pydantic import BaseModel, Field
 
 from ..core.content_ledger import build_content_ledger
+from ..core.keywords import keywords, pattern
+from ..core.numbering import uses_numbering
+from ..core.table_types import read_cell
 from ..core.normalize import SemanticDocument, is_rtl_text
 from ..fonts.manager import covering_face
 from ..schema.blocks import (CoverPageBlock, FigureCell, FigureMatrixBlock, HeadingBlock, ImageBlock, ImageTextPanelBlock,
@@ -30,20 +33,12 @@ from .archetypes import ink as dark_ink
 from .archetypes import mix
 from .directions import DIRECTIONS, Direction, page_system, palette
 from .focal import focal_point
+from .profile import audience_hint
 
-_SUMMARY = re.compile(r"summary|highlight|overview|letter|foreword|recommendation|at a glance|in brief|in numbers"
-                      r"|كلمة|ملخص|أبرز|رسالت", re.I)
-_APPENDIX = re.compile(r"appendix|annex|notes? to|references|bibliography|ملحق|إيضاحات|المراجع", re.I)
-_PURPOSES = (
-    ("financial_statements", re.compile(r"statement|interim|accounts|القوائم|fund\b|صندوق", re.I)),
-    ("annual_report", re.compile(r"annual|yearbook|التقرير السنوي|البيان السنوي", re.I)),
-    ("board_paper", re.compile(r"decision paper|board|committee", re.I)),
-    ("sustainability", re.compile(r"sustainab|esg|climate|الاستدامة", re.I)),
-    ("impact", re.compile(r"impact", re.I)),
-    ("policy", re.compile(r"policy|brief\b", re.I)),
-    ("proposal", re.compile(r"proposal|tender|bid\b", re.I)),
-    ("manual", re.compile(r"manual|installation|handbook|guide\b", re.I)),
-)
+# keyword lists: dynamic_pdf/data/keywords.json
+_SUMMARY = pattern("sections", "summary")
+_APPENDIX = pattern("sections", "appendix")
+_PURPOSES = tuple((p, pattern("purposes", p)) for p in keywords()["purposes"]["_order"])
 _PROFILE_PURPOSE = {"academic_report": "research", "technical_manual": "manual", "proposal": "proposal",
                     "corporate_memo": "memo", "data_report": "report", "executive_report": "report"}
 _AUDIENCE = {"financial_statements": "investors and auditors", "annual_report": "stakeholders and the public",
@@ -88,6 +83,7 @@ class SectionBrief(BaseModel):
 class DocumentBrief(BaseModel):
     purpose: str
     audience: str
+    audience_source: str = "purpose"             # meta.audience, or read from the purpose
     profile: str
     language: str                                 # rtl | ltr | bilingual
     words: int
@@ -211,6 +207,9 @@ def read_brief(sem: SemanticDocument, profile: str, estimated_pages: float) -> D
     sections = [_brief_section(blocks[h].text if h is not None else "", [blocks[i] for i in idx])
                 for h, idx in _sections(blocks)]
     purpose = next((p for p, rx in _PURPOSES if rx.search(title)), None)
+    hint = audience_hint(sem.meta.audience)
+    if purpose is None and hint:
+        purpose = hint["purpose"]               # the author named the readers; the title did not say
     purpose = purpose or _PROFILE_PURPOSE.get(profile, "report")
     words = sum(s.words for s in sections)
     tables, charts = sum(s.tables for s in sections), sum(s.charts for s in sections)
@@ -218,7 +217,10 @@ def read_brief(sem: SemanticDocument, profile: str, estimated_pages: float) -> D
     exhibits = tables + charts + metrics
     density = "dense" if exhibits * 90 > words else "sparse" if words < 350 and not exhibits else "normal"
     language = "rtl" if sem.direction == "rtl" else "bilingual" if sem.stats.bilingual else "ltr"
-    return DocumentBrief(purpose=purpose, audience=_AUDIENCE.get(purpose, _AUDIENCE["report"]), profile=profile,
+    audience = sem.meta.audience.strip() if (sem.meta.audience or "").strip() else _AUDIENCE.get(purpose, _AUDIENCE["report"])
+    return DocumentBrief(purpose=purpose, audience=audience,
+                         audience_source="meta.audience" if (sem.meta.audience or "").strip() else "purpose",
+                         profile=profile,
                          language=language, words=words, density=density, estimated_pages=round(estimated_pages, 1),
                          sections=sections, tables=tables, charts=charts, metrics=metrics, photos=photos,
                          quotes=sum(s.quotes for s in sections), author_cover=sem.stats.has_cover,
@@ -387,7 +389,7 @@ def _chart(b, d: Direction, primary: str, muted: str, adjust: Adjust) -> None:
     if b.colors:
         return
     data = b.data if isinstance(b.data, dict) else {}
-    periods = data and all(re.search(r"\d", str(k)) for k in data)
+    periods = data and all(read_cell(str(k)).kind in ("year", "period") for k in data)
     if b.chart_type in ("bar", "column") and periods and len(data) > 1:
         b.colors = [muted] * (len(data) - 1) + [primary]     # the current period carries the tone
     else:
@@ -404,9 +406,10 @@ def _table(b, d: Direction) -> None:
         return
     if d.table != "default" and not b.header_bg:
         hints = {**hints, "design": d.table}
-        numeric = hints.get("numeric_cols") or []
-        if d.table == "ledger" and len(numeric) >= 2:
-            hints["current_col"] = sorted(numeric)[0]
+        # the tint marks the latest period when periods run across the columns; a column of
+        # years down the side is a label, not a period of figures
+        if d.table == "ledger" and hints.get("current_period_col") is not None:
+            hints["current_col"] = hints["current_period_col"]
     b.hints = hints
 
 
@@ -605,6 +608,7 @@ def _compose(sem, d: Direction, primary: str, adjust: Adjust, plan: ArtDirection
         return
     blocks, out, i = sem.blocks, [], 0
     panels, since_panel, appendix = 0, MIN_PANEL_GAP, False
+    numbered = uses_numbering(sem)            # a numbered table or figure keeps its caption, number and anchor
     while i < len(blocks):
         b = blocks[i]
         since_panel += 1
@@ -629,14 +633,14 @@ def _compose(sem, d: Direction, primary: str, adjust: Adjust, plan: ArtDirection
             plan.decisions.append(f"paired columns: {len(rows)} paragraphs in two languages, row by row")
             i = j
             continue
-        if e.get("ledger_tables") and b.type == "table":
+        if e.get("ledger_tables") and b.type == "table" and not numbered:
             made = _ledger(b)
             if made:
                 out.append(made)
                 plan.decisions.append("ledger: figures once, labelled from each language's edge")
                 i += 1
                 continue
-        if (e.get("image_panel") and _is_photo(b) and not appendix and panels < MAX_PANELS
+        if (e.get("image_panel") and _is_photo(b) and not appendix and panels < MAX_PANELS and not numbered
                 and since_panel >= MIN_PANEL_GAP and i + 1 < len(blocks) and blocks[i + 1].type == "paragraph"
                 and 12 <= _words(blocks[i + 1].text) <= PANEL_WORDS and _plain_text(blocks[i + 1].text)):
             out.append(_panel(b, blocks[i + 1].text, d, panels, primary, rtl))
@@ -724,6 +728,11 @@ def direct(sem: SemanticDocument, direction: Direction, *, brand: Optional[Brand
                                        f"{theme.typography.base_size:g}/{theme.typography.line_height:g}",
                             bands=d.bands)
     plan.decisions += notes
+    if brief.audience_source == "meta.audience":
+        hint = audience_hint(brief.audience)
+        plan.decisions.append(f"audience: {brief.audience!r} from meta.audience" + (
+            f", read as {hint['name']}; purpose {brief.purpose.replace('_', ' ')}" if hint else
+            "; no audience group matched, so the purpose comes from the title and type"))
     primary = dark_ink(theme)
     muted = theme.colors.text_secondary
     logo = brand.logo if brand else None

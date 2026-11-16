@@ -52,12 +52,26 @@ def main(argv=None) -> int:
     x.add_argument("--date", required=True)
     x.add_argument("--method", default="blind whole-document sheets, labels A/B, PDF pages viewed as images")
     x.add_argument("--source", choices=("pdf", "word"), default="pdf")
+    x = gs.add_parser("review", help="blind AI review of a batch's sheets by two or more judges (Message Batches API)")
+    x.add_argument("batch")
+    x.add_argument("--judge", action="append", required=True, help="a model id; give at least two")
+    x.add_argument("--source", choices=("pdf", "word"), default="pdf")
+    x.add_argument("--date", help="review date recorded on every row (default today)")
+    x.add_argument("--no-wait", action="store_true", help="submit or check, and return without waiting")
+    x.add_argument("--poll", type=float, default=60.0, help="seconds between status checks")
+    x = gs.add_parser("judge", help="a local page where a person judges the blind sheets")
+    x.add_argument("batch")
+    x.add_argument("--reviewer", required=True, help="the person's full name")
+    x.add_argument("--source", choices=("pdf", "word"), default="pdf")
+    x.add_argument("--port", type=int, default=8765)
     gs.add_parser("check")
     x = gs.add_parser("readiness", help="is the dataset ready for a training experiment? Trains nothing")
     x.add_argument("--out", help="write the report to this folder")
     t = sub.add_parser("train", help="train the optional variant ranker (needs lightgbm)")
     t.add_argument("--name", required=True, help="model name under training/models")
     t.add_argument("--min-pairs", type=int, default=200)
+    t.add_argument("--kind", choices=("lightgbm", "weights"), default="lightgbm",
+                   help="weights: calibrated monotone weights, no LightGBM needed (written as <name>.json)")
     t.add_argument("--human-audit", help="separate verified human-review JSONL, never AI training labels")
     t.add_argument("--provenance", help="local source author/asset group manifest JSON")
     e = sub.add_parser("evaluate", help="read a model's training record and gate")
@@ -103,6 +117,20 @@ def main(argv=None) -> int:
         elif args.step == "record":
             P.report(A.record(work(args.batch), args.answers, dataset, model=args.model, date=args.date, method=args.method,
                               source=args.source))
+        elif args.step == "review":
+            from .ai_review import run as review
+            humans = os.path.join(p["human_preferences"], "human-audit.jsonl")
+            P.report(review(work(args.batch), dataset, args.judge, source=args.source, date=args.date,
+                            wait=not args.no_wait, poll=args.poll, human_audit=humans if os.path.isfile(humans) else None))
+        elif args.step == "judge":
+            from .ab_page import Judging, serve
+            j = Judging(work(args.batch), os.path.join(p["human_preferences"], "human-audit.jsonl"), args.reviewer, args.source)
+            server = serve(j, args.port)
+            print(f"open http://127.0.0.1:{server.server_address[1]}/ ; {len(j.todo())} sheets to judge; Ctrl+C to stop")
+            try:
+                server.serve_forever()
+            except KeyboardInterrupt:
+                pass
         elif args.step == "readiness":
             from .readiness import report as readiness
             P.report(readiness(dataset, os.path.join(p["ai_preferences"], "batches"), p["document_split"], args.out))
@@ -110,9 +138,9 @@ def main(argv=None) -> int:
             P.report(A.check(dataset))
     elif args.cmd == "train":
         script = os.path.join(P.ROOT, "scripts", "train_variant_ranker.py")
-        out = os.path.join(p["models"], args.name + ".txt")
+        out = os.path.join(p["models"], args.name + (".json" if args.kind == "weights" else ".txt"))
         argv_train = [sys.executable, script, "--dataset", dataset, "--batches", os.path.join(p["ai_preferences"], "batches"),
-                      "--split", p["document_split"], "--out", out, "--min-pairs", str(args.min_pairs)]
+                      "--split", p["document_split"], "--out", out, "--min-pairs", str(args.min_pairs), "--kind", args.kind]
         if args.human_audit:
             argv_train += ["--human-audit", args.human_audit]
         if args.provenance:

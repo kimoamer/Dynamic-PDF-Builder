@@ -45,6 +45,7 @@ class ExportResult:
         self.diagnostics = diagnostics or []
         self.qa = {}             # format -> QAReport (when exported with qa=True)
         self.composition = None  # dict (CompositionReport) when compose() is active
+        self.design = None       # DesignChoice when design(direction=/variants=/grammar=) chose the design
 
     _RANK = {"ok": 0, "fallback": 1, "unverified": 2, "degraded": 3, "failed": 4}
 
@@ -72,6 +73,8 @@ class ExportResult:
         if cst == "fallback" or any("designed layout" in f for f in c.get("fallbacks", [])):
             found.append(("fallback", "composition fell back to the designed layout: "
                           + "; ".join(c.get("fallbacks", [])[:2])))
+        if self.design is not None and self.design.fallback:
+            found.append(("fallback", "no design variant passed the hard gates: the stable designed output was used"))
         status = max((s for s, _ in found), key=self._RANK.__getitem__, default="ok")
         return status, [why for _, why in found]
 
@@ -127,6 +130,10 @@ class DocumentBuilder:
         self._composition = None
         self.last_composition = None
         self._fit_cache: dict = {}
+        self._figure_cache = None        # a dict shares rendered figures between builders (batch)
+        self._variant_request = None     # set by design(direction=/variants=/grammar=); None = one design
+        self._variant_result = None      # (key, VariantSet) of the last variant search
+        self.last_variants = None
 
     # ─── Semantic / design layer ───────────────────────────────────
 
@@ -146,7 +153,9 @@ class DocumentBuilder:
         return self
 
     def design(self, mode: str = "auto", brand=None, recipe: Optional[str] = None,
-               recipe_gate: str = "evidence") -> 'DocumentBuilder':
+               recipe_gate: str = "evidence", *, direction: Optional[str] = None,
+               variants: Optional[int] = None, grammar=False, ai=None, critic=None,
+               brief: Optional[str] = None) -> 'DocumentBuilder':
         """Enable intelligent design: ``"auto"`` selects a profile from the
         content; a profile name forces it. ``brand`` is a ``BrandKit`` or dict.
         Content is never altered — only typography, layout and navigation.
@@ -155,17 +164,43 @@ class DocumentBuilder:
         or ``"auto"`` for the one covering this document). It is used only if its
         comparison evidence supports it and this document passes the safety checks;
         otherwise the existing design stays and ``design_explain()`` says why.
-        ``recipe_gate="preview"`` renders it regardless, for comparisons."""
+        ``recipe_gate="preview"`` renders it regardless, for comparisons.
+
+        ``ai`` (a ``dynamic_pdf.ai.Director``), ``critic`` (a ``dynamic_pdf.ai.Critic``) and
+        ``brief`` (what the caller wants, in words, for the Director) are opt-in and used by
+        ``design_variants()``. A brief needs a Director: without one it raises ``ValueError``
+        rather than being silently ignored.
+
+        ``direction`` (``"auto"`` or a name from ``design.directions.DIRECTIONS``), ``variants``
+        (how many directions to try, 1 to 5, default 3) or ``grammar`` (as in
+        ``design_variants``) makes ``export()``/``render()`` deliver the recommended design that
+        passed the hard gates; ``ExportResult.design`` says which and why. When none passes,
+        the stable designed output is delivered and the result's status is ``"fallback"``.
+        Without them nothing changes."""
         from .design import BrandKit, EVIDENCE_RECIPES, resolve_profile_name
+        from .design.directions import DIRECTIONS
         from .design.evidence_gate import GATES
         if recipe is not None and recipe != "auto" and recipe not in EVIDENCE_RECIPES:
             raise ValueError(f"unknown evidence recipe {recipe!r}; choose from {sorted(EVIDENCE_RECIPES)}")
         if recipe_gate not in GATES:
             raise ValueError(f"recipe_gate must be one of {GATES}")
+        if brief is not None and ai is None:
+            raise ValueError("brief= is read by a model: pass ai=dynamic_pdf.ai.Director(...) "
+                             "(the 'ai' extra), or leave the brief out")
+        if direction is not None and direction != "auto" and direction not in DIRECTIONS:
+            raise ValueError(f"unknown direction {direction!r}; choose 'auto' or one of {sorted(DIRECTIONS)}")
+        if variants is not None and not 1 <= variants <= len(DIRECTIONS):
+            raise ValueError(f"variants must be between 1 and {len(DIRECTIONS)}")
+        self._variant_request = None
+        if direction is not None or variants is not None or grammar:
+            self._variant_request = {"families": None if direction in (None, "auto") else [direction],
+                                     "n": variants or 3, "grammar": grammar or None}
         self._evidence_recipe, self._recipe_gate = recipe, recipe_gate
+        self._ai, self._critic, self._ai_brief = ai, critic, brief
         self._design_explicit = True
         if mode is None or mode == "none":
             self._design_mode = None       # explicit opt-out: classic theme rendering
+            self._variant_request = None
             return self
         if mode != "auto":
             resolve_profile_name(mode)   # validate early
@@ -211,6 +246,8 @@ class DocumentBuilder:
         from .core.normalize import normalize
         from .intelligence import Composer
         from .themes import get_theme as _gt
+        if self._variant_request:
+            raise ValueError("compose() cannot yet be combined with design(direction=/variants=/grammar=)")
         doc, theme = self._prepared_base()
         theme = theme or _gt(doc.theme)
         key = hashlib.sha256((doc.model_dump_json() + theme.model_dump_json()
@@ -287,7 +324,24 @@ class DocumentBuilder:
         if self._compose_active():
             d, t, _, _, _ = self._composed()
             return d, t
+        if self._variant_request and self._design_mode is not None:
+            chosen = self._variant_set().recommended
+            if chosen is not None:
+                return chosen.document, chosen.theme
         return self._prepared_base()
+
+    def _variant_set(self):
+        """The variant search ``design(direction=/variants=/grammar=)`` asked for (cached)."""
+        import hashlib
+        key = hashlib.sha256((self.build().model_dump_json() + repr(sorted(self._variant_request.items()))
+                              + str(self._theme_explicit)
+                              + (self._brand.model_dump_json() if self._brand else "") + self._theme
+                              + repr(self._policy)).encode()).hexdigest()
+        if self._variant_result is None or self._variant_result[0] != key:
+            r = self._variant_request
+            self._variant_result = (key, self.design_variants(n=r["n"], families=r["families"], grammar=r["grammar"]))
+        self.last_variants = self._variant_result[1]
+        return self.last_variants
 
     def _prepared_base(self):
         """(Document, Theme | None) ready for a renderer, applying the design plan."""
@@ -322,14 +376,21 @@ class DocumentBuilder:
         cached = self._fit_cache.get(key)
         if cached is None:
             fit_pages(sem, plan, self._policy)
-            self._fit_cache = {key: (plan.theme, plan.layout)}
+            from .layout.breaks import fit_breaks
+            breaks = None if self._evidence_recipe else fit_breaks(sem.to_document(), plan, self._policy)
+            self._fit_cache = {key: (plan.theme, plan.layout, breaks)}
         else:
-            plan.theme, plan.layout = cached
+            plan.theme, plan.layout, breaks = cached
             from .design.tokens import compile_tokens
             plan.tokens = compile_tokens(plan.theme)
+        from .design.planner import drop_short_contents
+        drop_short_contents(sem, plan)
         if self._evidence_recipe:
             sem, plan = self._gated(base_sem, sem, plan, key)
         self.last_design = plan
+        if breaks:
+            from .layout.breaks import with_breaks
+            return with_breaks(sem.to_document(), *breaks), plan.theme
         return sem.to_document(), plan.theme
 
     def _gated(self, base_sem, sem, plan, key):
@@ -345,7 +406,8 @@ class DocumentBuilder:
         return self._gate_cache[key]
 
     def design_variants(self, n: int = 3, families=None, brand=None, budget=None, office: bool = False,
-                        grammar=None, grammar_rules=None, ranker_model=None):
+                        grammar=None, grammar_rules=None, ranker_model=None, ai=None, critic=None,
+                        brief: Optional[str] = None):
         """Several complete designs of this document, each a different art direction, and
         a recommendation among those that pass the hard gates.
 
@@ -360,7 +422,9 @@ class DocumentBuilder:
 
         ``ranker_model`` names a trained variant ranker whose gate passed. It only reorders
         designs that passed the hard gates, and ``stats["selection"]`` says which selector
-        chose. A missing or refused model leaves the fixed selection in place."""
+        chose. A missing or refused model leaves the fixed selection in place.
+
+        ``ai``, ``critic`` and ``brief`` default to those given to ``design()``; see there."""
         from .design import BrandKit
         from .intelligence.variants import generate_variants
         from .themes import get_theme as _gt
@@ -368,15 +432,29 @@ class DocumentBuilder:
         return generate_variants(self.build(), policy=self._policy, brand=kit or self._brand,
                                  base_theme=_gt(self._theme) if self._theme_explicit else None, n=n,
                                  families=families, budget=budget, office=office, grammar=grammar,
-                                 grammar_rules=grammar_rules, ranker_model=ranker_model)
+                                 grammar_rules=grammar_rules, ranker_model=ranker_model,
+                                 ai=ai or getattr(self, "_ai", None), critic=critic or getattr(self, "_critic", None),
+                                 request=brief or getattr(self, "_ai_brief", None))
 
     def design_explain(self) -> dict:
         """Why each style/layout decision was made (profile, reasons, recipe)."""
         if self._design_mode is None and self._brand is None:
             return {"profile": None, "reasons": ["design() not enabled; using theme "
                                                  f"'{self._theme}' as-is"]}
+        if self._variant_request and self._design_mode is not None:
+            vs = self._variant_set()
+            if vs.recommended is not None:
+                return {**vs.recommended.plan.explain(), "variants": vs.choice().to_dict()}
         self._prepared()
         return self.last_design.explain()
+
+    def lint(self, rules=None) -> list:
+        """Warnings about the content: totals against their rows, shares against 100,
+        repeated headings, unresolved references, mixed digits, inconsistent number and
+        date formats, images without alt text, empty sections. Never edits anything.
+        Returns ``dynamic_pdf.qa.lint.LintWarning`` items; ``rules`` limits the rules run."""
+        from .qa.lint import lint
+        return lint(self.semantic(), rules)
 
     # ─── Render policy (caller-owned; never taken from document payloads) ───
 
@@ -413,7 +491,15 @@ class DocumentBuilder:
     def meta(self, title: Optional[str] = None, author: Optional[str] = None,
              language: str = "en", subject: Optional[str] = None,
              keywords: Optional[List[str]] = None,
-             description: Optional[str] = None) -> 'DocumentBuilder':
+             description: Optional[str] = None, audience: Optional[str] = None,
+             tagged: bool = False) -> 'DocumentBuilder':
+        """Document metadata. ``audience`` names the readers in free text ("board",
+        "engineers", "investors"); the design reads it and ``design_explain()`` says how.
+        ``tagged=True``: a tagged PDF (structure tree, alt text, artifacts; needs pikepdf)."""
+        if audience:
+            self._meta.audience = audience
+        if tagged:
+            self._meta.tagged = True
         if title:
             self._meta.title = title
         if author:
@@ -450,6 +536,12 @@ class DocumentBuilder:
     def section_numbering(self, enabled: bool = True) -> 'DocumentBuilder':
         """Enable automatic heading numbering (1, 1.1, 1.1.2, ...)."""
         self._meta.section_numbering = enabled
+        return self
+
+    def exhibit_numbering(self, enabled: bool = True) -> 'DocumentBuilder':
+        """Number captioned tables and figures ("Table 1", "Figure 2"). A ``{ref:id}`` in the
+        text, or a list of figures or tables, turns it on as well."""
+        self._meta.exhibit_numbering = enabled
         return self
 
     def encrypt(self, owner_password: str, user_password: str = "") -> 'DocumentBuilder':
@@ -829,6 +921,16 @@ class DocumentBuilder:
         self._blocks.append(TOCBlock(depth=depth, style=style))
         return self
 
+    def list_of_figures(self) -> 'DocumentBuilder':
+        """A list of the numbered figures, each linked to its caption. Turns numbering on."""
+        self._blocks.append(TOCBlock(kind="figures"))
+        return self
+
+    def list_of_tables(self) -> 'DocumentBuilder':
+        """A list of the numbered tables, each linked to its caption. Turns numbering on."""
+        self._blocks.append(TOCBlock(kind="tables"))
+        return self
+
     # Alias
     toc = table_of_contents
 
@@ -876,7 +978,7 @@ class DocumentBuilder:
 
     def _engine(self) -> LayoutEngine:
         doc, theme = self._prepared()
-        self.last_render = LayoutEngine(doc, policy=self._policy, theme=theme)
+        self.last_render = LayoutEngine(doc, policy=self._policy, theme=theme, cache=self._figure_cache)
         return self.last_render
 
     def render(self, output=None) -> Optional[bytes]:
@@ -980,7 +1082,7 @@ class DocumentBuilder:
             result.profile = self.last_design.decision.profile.value if self.last_design else None
             if self._compose_active():
                 result.composition = self.last_composition.model_dump()
-            return result
+            return self._note_design(result)
         if fmt == "pdf":
             self.render(path)
             result.pdf_path = path
@@ -995,6 +1097,15 @@ class DocumentBuilder:
         result.profile = self.last_design.decision.profile.value if self.last_design else None
         if self._compose_active():
             result.composition = self.last_composition.model_dump()
+        return self._note_design(result)
+
+    def _note_design(self, result: 'ExportResult') -> 'ExportResult':
+        """Say which variant was delivered, when design() asked for a variant search."""
+        if self._variant_request and self._design_mode is not None:
+            vs = self._variant_set()
+            result.design = vs.choice()
+            if vs.recommended is not None:
+                result.profile = vs.recommended.plan.brief.profile
         return result
 
     def export_both(self, directory: str, basename: Optional[str] = None,
@@ -1011,6 +1122,7 @@ class DocumentBuilder:
                            diagnostics=pdf.diagnostics + [dict(d, format="docx") for d in docx.diagnostics])
         res.qa = {**pdf.qa, **docx.qa}
         res.composition = self.last_composition.model_dump() if self._compose_active() else None
+        res.design = pdf.design
         return res
 
     def render_bytes(self) -> bytes:
@@ -1031,7 +1143,7 @@ class DocumentBuilder:
                       policy: Optional[RenderPolicy] = None) -> 'DocumentBuilder':
         """Create a DocumentBuilder pre-populated from a Markdown string.
 
-        Front matter keys ``title``, ``author``, ``subject``, ``description``,
+        Front matter keys ``title``, ``author``, ``subject``, ``description``, ``audience``,
         ``keywords`` and ``language``/``lang`` populate document metadata.
         """
         from .markdown.preprocessors import preprocess_markdown
@@ -1042,7 +1154,7 @@ class DocumentBuilder:
             raise ResourceLimitError(
                 f"Markdown input length ({len(markdown)}) exceeds limit ({max_chars})")
         fm, blocks = parse_markdown(preprocess_markdown(markdown))
-        kw = {k: fm[k] for k in ("title", "author", "subject", "description") if isinstance(fm.get(k), str)}
+        kw = {k: fm[k] for k in ("title", "author", "subject", "description", "audience") if isinstance(fm.get(k), str)}
         if isinstance(fm.get("keywords"), list):
             kw["keywords"] = fm["keywords"]
         elif isinstance(fm.get("keywords"), str) and fm["keywords"]:
@@ -1056,6 +1168,8 @@ class DocumentBuilder:
             builder.document_type(fm["document_type"])
         if fm.get("direction") in ("ltr", "rtl"):
             builder.direction(fm["direction"])
+        if str(fm.get("numbering", "")).lower() in ("true", "yes", "1"):
+            builder._meta.exhibit_numbering = True
         builder.front_matter = fm
         builder._source_kind = "markdown"
         builder._source_text = markdown

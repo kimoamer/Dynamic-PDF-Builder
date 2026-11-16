@@ -1,0 +1,131 @@
+{
+  "_about": "Keyword lists read by the design layer and the table typer. Each list holds regular-expression fragments matched case-insensitively. 'en' fragments are matched as whole words; 'ar' fragments are matched anywhere, because Arabic attaches prefixes (al-, wa-, bi-, li-) to the word; 'raw' fragments are used exactly as written. Keep English and Arabic coverage together when editing.",
+  "profiles": {
+    "proposal": {
+      "en": ["proposal", "scope", "deliverables?", "work ?plan", "investment", "pricing", "next steps", "timeline", "milestones?", "our approach", "statement of work", "grant application", "funding request"],
+      "ar": ["عرض", "نطاق العمل", "المخرجات", "الخطوات التالية", "الجدول الزمني", "مراحل التنفيذ", "منهجيتنا", "التكلفة الإجمالية", "طلب منحة"]
+    },
+    "academic_report": {
+      "en": ["abstract", "methods?", "methodology", "literature review", "results", "discussion", "conclusions?", "references", "hypothes[ie]s"],
+      "ar": ["الملخص(?! التنفيذي)", "المنهجية", "المراجع", "الدراسات السابقة", "النتائج والمناقشة", "الفرضيات", "الخلاصة"]
+    },
+    "technical_manual": {
+      "en": ["installation", "install", "configuration", "setup", "usage", "troubleshooting", "api", "reference", "getting started", "requirements", "procedure"],
+      "ar": ["التثبيت", "الإعداد", "التهيئة", "الاستخدام", "استكشاف الأخطاء", "المتطلبات", "دليل المستخدم", "الإجراءات"]
+    },
+    "executive_report": {
+      "en": ["executive summary", "key findings", "recommendations?", "highlights", "overview", "kpis?", "outlook", "summary"],
+      "ar": ["الملخص التنفيذي", "التوصيات", "النتائج الرئيسية", "أبرز", "نظرة عامة", "مؤشرات الأداء", "التوقعات"]
+    },
+    "financial_report": {
+      "en": ["revenue", "ebitda", "balance sheet", "income statement", "cash flow", "fiscal", "earnings", "profit", "assets", "liabilities", "budget"],
+      "ar": ["الإيرادات", "الميزانية", "الأرباح", "قائمة الدخل", "التدفقات النقدية", "الأصول", "الخصوم", "المركز المالي", "صافي الربح"]
+    },
+    "invoice": {
+      "en": ["invoice", "bill to", "amount due", "subtotal", "tax", "qty", "quantity", "unit price"],
+      "ar": ["فاتورة", "المبلغ المستحق", "الكمية", "سعر الوحدة", "الضريبة", "المجموع الفرعي"]
+    },
+    "corporate_memo": {
+      "en": ["memo(randum)?"],
+      "ar": ["مذكرة", "مذكرة داخلية"],
+      "raw": ["(?m:^\\s*(to|from|subject|cc|re)\\s*:)", "(?m:^\\s*(إلى|من|الموضوع)\\s*:)"]
+    },
+    "letter": {
+      "en": ["dear", "sincerely", "regards", "yours (truly|faithfully)"],
+      "ar": ["المحترم", "تحية طيبة", "وتفضلوا", "مع خالص التحية", "وتقبلوا"]
+    }
+  },
+  "profile_confidence": {
+    "_about": "Document-type confidence by the lead of the best score over the next one: the share of decisions with that lead that were right on the calibration split of tests/data/document_types.json, Laplace-smoothed (a bucket with no documents is 0.5, so a near tie is uncertain) and never falling as the lead grows; tests/test_m10_roles.py recomputes it. Below no_signal_below no type has evidence and the general layout is chosen.",
+    "no_signal_below": 1.5,
+    "no_signal": 0.86,
+    "lead_edges": [0.1, 0.5, 1.0, 2.0],
+    "values": [0.5, 0.75, 0.75, 0.88, 0.97]
+  },
+  "salutation": {
+    "raw": ["^\\s*(dear|to whom|hello|hi)\\b", "^\\s*(السيد|السيدة|الأستاذ|عزيزي|سعادة|حضرة)"]
+  },
+  "memo_fields": {
+    "raw": ["(?m:^\\s*(to|from|subject|cc|date|re)\\s*:)", "(?m:^\\s*(إلى|من|الموضوع|التاريخ|نسخة إلى)\\s*:)"]
+  },
+  "sections": {
+    "summary": {
+      "en": ["summary", "highlights?", "overview", "letter", "foreword", "recommendations?", "at a glance", "in brief", "in numbers"],
+      "ar": ["كلمة", "ملخص", "أبرز", "رسالة", "رسالت", "نظرة عامة", "التوصيات", "بالأرقام"]
+    },
+    "appendix": {
+      "en": ["appendix", "appendices", "annex", "notes? to", "references", "bibliography"],
+      "ar": ["ملحق", "الملاحق", "إيضاحات", "المراجع", "قائمة المصادر"]
+    }
+  },
+  "purposes": {
+    "_order": ["financial_statements", "annual_report", "board_paper", "sustainability", "impact", "policy", "proposal", "manual"],
+    "financial_statements": {"raw": ["statement", "interim", "accounts", "القوائم", "fund\\b", "صندوق"]},
+    "annual_report": {"raw": ["annual", "yearbook", "التقرير السنوي", "البيان السنوي"]},
+    "board_paper": {"raw": ["decision paper", "board", "committee", "مجلس الإدارة", "اللجنة"]},
+    "sustainability": {"raw": ["sustainab", "esg", "climate", "الاستدامة", "المناخ"]},
+    "impact": {"raw": ["impact", "الأثر"]},
+    "policy": {"raw": ["policy", "brief\\b", "السياسة", "ورقة سياسات"]},
+    "proposal": {"raw": ["proposal", "tender", "bid\\b", "عرض فني", "مقترح"]},
+    "manual": {"raw": ["manual", "installation", "handbook", "guide\\b", "دليل"]}
+  },
+  "audiences": {
+    "_about": "meta.audience is free text. A match names the purpose it suggests and the document type it supports; the first entry that matches wins.",
+    "_order": ["investors", "directors", "executives", "engineers", "researchers", "clients", "public", "colleagues"],
+    "investors": {"en": ["investors?", "shareholders?", "auditors?", "analysts?", "lenders?"], "ar": ["المستثمر", "المساهم", "المراجع الخارجي", "المدقق"],
+                  "purpose": "financial_statements", "profile": "financial_report"},
+    "directors": {"en": ["board", "directors?", "committee", "trustees?"], "ar": ["مجلس الإدارة", "أعضاء المجلس", "اللجنة"],
+                  "purpose": "board_paper", "profile": "executive_report"},
+    "executives": {"en": ["executives?", "leadership", "management", "c-suite", "ceo"], "ar": ["الإدارة العليا", "القيادة", "التنفيذيين"],
+                   "purpose": "report", "profile": "executive_report"},
+    "engineers": {"en": ["engineers?", "developers?", "technicians?", "operators?", "administrators?", "admins?", "devops"], "ar": ["المهندس", "المطور", "الفني", "مسؤولي الأنظمة"],
+                  "purpose": "manual", "profile": "technical_manual"},
+    "researchers": {"en": ["researchers?", "academics?", "reviewers?", "scholars?", "students?"], "ar": ["الباحث", "الأكاديمي", "المحكم", "الطلاب"],
+                    "purpose": "research", "profile": "academic_report"},
+    "clients": {"en": ["clients?", "customers?", "funders?", "buyers?", "procurement", "prospects?"], "ar": ["العميل", "العملاء", "الجهة المانحة", "المشتريات"],
+                "purpose": "proposal", "profile": "proposal"},
+    "public": {"en": ["public", "citizens?", "stakeholders?", "community", "supporters?", "donors?"], "ar": ["الجمهور", "المواطن", "أصحاب المصلحة", "المجتمع", "المتبرع"],
+               "purpose": "annual_report", "profile": null},
+    "colleagues": {"en": ["colleagues?", "staff", "team", "employees?", "all hands"], "ar": ["الزملاء", "الموظف", "الفريق", "منسوبي"],
+                   "purpose": "memo", "profile": "corporate_memo"}
+  },
+  "tables": {
+    "period_header": {
+      "raw": ["^(fiscal |financial |calendar |reporting )?(year|period|quarter|month|week|date|day)( ended| ending| end| of [\\w ]+)?$",
+              "^(fy|cy|as of|as at|due|due date|deadline|start|end|start date|end date|from|to|when)$",
+              "^(السنة|السنة المالية|العام|العام المالي|الفترة|الربع|الشهر|الأسبوع|التاريخ|اليوم|تاريخ [\\w ]+|موعد التسليم|الاستحقاق)$"]
+    },
+    "identifier_header": {
+      "raw": ["^(#|no\\.?|nr\\.?|id|code|ref\\.?|reference|sku|serial|serial no\\.?|item (no\\.?|code)|account( no\\.?| code)?|invoice( no\\.?)?|order( no\\.?)?|po( no\\.?)?|ticket|key|error code|status code|http status|endpoint|field|parameter|variable|option|flag|command)$",
+              "^(رقم|الرقم|م|الرمز|كود|المرجع|رقم الحساب|رقم الفاتورة|المعرف)$"]
+    },
+    "money_header": {
+      "en": ["price", "amount", "cost", "costs", "fee", "fees", "revenue", "revenues", "sales", "salary", "salaries", "budget", "balance", "income", "expenses?", "profit", "ebitda", "ebit", "earnings", "spend", "capex", "opex", "bookings", "pipeline", "payment", "value", "total due", "net income", "debit", "credit", "assets", "liabilities", "equity", "cash"],
+      "ar": ["السعر", "المبلغ", "التكلفة", "التكاليف", "الرسوم", "الإيرادات", "المبيعات", "الرواتب", "الميزانية", "الرصيد", "الدخل", "المصروفات", "الربح", "الأرباح", "القيمة", "النفقات", "الأصول", "الخصوم", "النقد"]
+    },
+    "percent_header": {
+      "raw": ["%", "٪", "\\bpercent(age)?\\b", "\\bpct\\b", "بالمئة", "في المائة"]
+    },
+    "share_header": {
+      "en": ["share", "% of (total|revenue|sales|budget|portfolio)", "mix", "distribution", "breakdown", "weight", "allocation", "composition", "split"],
+      "ar": ["الحصة", "النسبة من", "التوزيع", "الوزن", "التركيبة"]
+    },
+    "total": {
+      "raw": ["^\\s*(grand )?total\\b", "\\btotals?\\s*$", "^\\s*(sum|overall|all)\\s*$", "^\\s*(الإجمالي|إجمالي|المجموع|مجموع|الكلي|المجموع الكلي)"]
+    },
+    "subtotal": {
+      "raw": ["^\\s*sub-?\\s?total", "^\\s*(المجموع الفرعي|إجمالي فرعي|الإجمالي الفرعي)"]
+    },
+    "months": {
+      "_about": "month and weekday names: a cell made of one of these and at most a day and year is a period",
+      "en": ["jan(uary)?", "feb(ruary)?", "mar(ch)?", "apr(il)?", "may", "june?", "july?", "aug(ust)?", "sept?(ember)?", "oct(ober)?", "nov(ember)?", "dec(ember)?", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
+      "ar": ["يناير", "فبراير", "مارس", "أبريل", "إبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر", "محرم", "صفر", "ربيع الأول", "ربيع الآخر", "جمادى الأولى", "جمادى الآخرة", "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"]
+    },
+    "currency": {
+      "raw": ["[$€£¥₹₩₺₽﷼]", "\\b(usd|eur|gbp|sar|aed|egp|qar|kwd|bhd|omr|jod|jpy|cny|inr|chf|cad|aud|sek|nok|dkk|try)\\b", "ر\\.?\\s?س", "ريال", "درهم", "دينار", "جنيه", "دولار", "يورو"]
+    },
+    "placeholder": {
+      "raw": ["^(-|—|–|n/?a|n\\.a\\.|nil|none|null|tbd|tbc|\\.\\.\\.|…|\\*|x|لا يوجد|غير متاح|غير متوفر|لا ينطبق)$"]
+    }
+  }
+}

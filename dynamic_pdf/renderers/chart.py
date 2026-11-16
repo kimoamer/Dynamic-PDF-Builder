@@ -22,8 +22,8 @@ import os
 import math
 import tempfile
 
-import matplotlib
-matplotlib.use("Agg")
+from ..utils.optional import require_matplotlib
+matplotlib = require_matplotlib()   # before numpy: both come with the charts extra
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import matplotlib.cm as cm
@@ -35,16 +35,119 @@ from svglib.svglib import svg2rlg
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
+# twelve distinct hues: the old list repeated red, green, orange and blue from its seventh colour
 _FALLBACK_COLORS = [
     "#4f81bd", "#c0504d", "#9bbb59", "#8064a2",
-    "#4bacc6", "#f79646", "#2c4770", "#be4b48",
-    "#70ad47", "#ed7d31", "#5b9bd5", "#a5a5a5",
+    "#4bacc6", "#f79646", "#8c564b", "#e377c2",
+    "#7f7f7f", "#bcbd22", "#1f3a5f", "#f2c80f",
 ]
 
+
 def _colors(block, n: int) -> list:
-    """Return n colors from block.colors or the fallback palette."""
-    base = block.colors if block.colors else _FALLBACK_COLORS
-    return [base[i % len(base)] for i in range(n)]
+    """n colours: the author's, repeated as given, or the palette, which never repeats a
+    colour: past its end come lighter, then darker, versions of each hue."""
+    if block.colors:
+        return [block.colors[i % len(block.colors)] for i in range(n)]
+    base = _FALLBACK_COLORS
+    out = []
+    for i in range(n):
+        tier, hue = divmod(i, len(base))
+        if tier == 0:
+            out.append(base[hue])
+        else:
+            rgb = mcolors.to_rgb(base[hue])
+            towards = 1.0 if tier % 2 else 0.0          # lighter, darker, lighter ...
+            mix = min(0.75, 0.38 * ((tier + 1) // 2))
+            out.append(mcolors.to_hex([c + (towards - c) * mix for c in rgb]))
+    return out
+
+
+# ─── Numbers as the document writes them ───────────────────────────────────────
+
+_ARABIC_DIGITS = str.maketrans("0123456789,.-%", "٠١٢٣٤٥٦٧٨٩٬٫-٪")
+
+
+def _digits() -> str:
+    """"arabic" when the document being rendered writes its figures in Arabic-Indic digits."""
+    from .. import policy as _policy
+    col = _policy._current.get()
+    return getattr(col, "digits", "western") if col is not None else "western"
+
+
+def _decimals(values) -> int:
+    """Decimal places the data shows, at most 2."""
+    out = 0
+    for v in values:
+        text = f"{float(v):.6f}".rstrip("0")
+        out = max(out, len(text.split(".")[1]) if "." in text else 0)
+    return min(out, 2)
+
+
+def _num(v, decimals: int = 0, sign: bool = False, percent: bool = False) -> str:
+    """A figure with thousands separators, in the document's digits."""
+    text = f"{float(v):{'+' if sign else ''},.{decimals}f}" + ("%" if percent else "")
+    return text.translate(_ARABIC_DIGITS) if _digits() == "arabic" else text
+
+
+def _value_axis(axis) -> None:
+    """Tick labels in the same format as the values."""
+    from matplotlib.ticker import FuncFormatter
+    axis.set_major_formatter(FuncFormatter(
+        lambda v, _: _num(v, 0 if abs(v - round(v)) < 1e-9 else min(2, len(f"{v:.6g}".split(".")[-1])))))
+
+
+# ─── What each chart can show ──────────────────────────────────────────────────
+
+_ONE_SERIES = {"bar", "horizontal_bar", "pie", "donut", "funnel", "waterfall", "treemap", "sparkline",
+               "histogram"}
+_PARTS = {"pie", "donut", "funnel", "treemap"}       # parts of a whole: no negatives, not all zero
+
+
+def _is_num(v) -> bool:
+    if isinstance(v, bool):
+        return False
+    if isinstance(v, (int, float)):
+        return math.isfinite(v)
+    try:
+        return math.isfinite(float(v))
+    except (TypeError, ValueError):
+        return False
+
+
+def _check_data(key: str, data) -> None:
+    """Refuse data that the chart type cannot draw truthfully, saying what it needs."""
+    if key in ("gauge", "scatter", "bubble", "heatmap"):
+        return                                        # these check their own shapes
+    if data is None or (hasattr(data, "__len__") and len(data) == 0):
+        raise ValueError(f"{key} chart has no data")
+    if key in _ONE_SERIES and isinstance(data, dict) and (
+            "series" in data or any(isinstance(v, (dict, list, tuple)) for v in data.values())):
+        names = list(data.get("series", data))[:4]
+        raise ValueError(f"{key} chart shows one series {{label: value}}; got several ({', '.join(map(str, names))})"
+                         " — use grouped_bar, stacked_bar or line for several series")
+    if key in _ONE_SERIES or (isinstance(data, dict) and "series" not in data and
+                              not any(isinstance(v, dict) for v in data.values())):
+        labels, raw = _raw_pairs(data)
+        bad = [f"{lab}={val!r}" for lab, val in zip(labels, raw) if not _is_num(val)]
+        if bad:
+            raise ValueError(f"{key} chart values must be numbers; got {', '.join(bad[:3])}")
+        if key in _PARTS:
+            neg = [f"{lab}={val}" for lab, val in zip(labels, raw) if float(val) < 0]
+            if neg:
+                raise ValueError(f"a {key} chart shows parts of a whole and cannot show negative values "
+                                 f"({', '.join(neg[:3])}); use a bar chart")
+            if not any(float(v) for v in raw):
+                raise ValueError(f"every value of the {key} chart is zero: there is no whole to divide")
+
+
+def _raw_pairs(data):
+    if isinstance(data, dict):
+        return [str(k) for k in data], list(data.values())
+    if isinstance(data, (list, tuple)):
+        if data and isinstance(data[0], dict):
+            return [str(d.get("label", i)) for i, d in enumerate(data)], [d.get("value") for d in data]
+        return [str(i) for i in range(len(data))], list(data)
+    return ["data"], [data]
 
 
 def _style_ax(ax, theme=None):
@@ -62,7 +165,7 @@ def _style_ax(ax, theme=None):
 def _add_legend(ax, **kwargs):
     """Add legend only when the axes contain labeled artists."""
     handles, labels = ax.get_legend_handles_labels()
-    if handles:
+    if len(handles) > 1:                 # one series is named by the title; a legend would cover data
         ax.legend(fontsize=8, framealpha=0.7, **kwargs)
 
 
@@ -101,7 +204,7 @@ def _visual(text: str) -> str:
 def _shape_arabic(fig, block) -> None:
     """Shape every piece of Arabic text in a finished figure: title, axis labels,
     tick labels, legend entries and annotations. Figures without Arabic are untouched."""
-    if not _ARABIC_TEXT.search(str(block.data) + "".join(
+    if _digits() != "arabic" and not _ARABIC_TEXT.search(str(block.data) + "".join(
             str(getattr(block, k, "") or "") for k in ("title", "x_label", "y_label"))):
         return
     face = _arabic_face()
@@ -204,12 +307,12 @@ def _bar(block, theme):
     fig, ax = _fig(block)
     c = _colors(block, len(labels))
     bars = ax.bar(labels, values, color=c, width=0.6, zorder=3)
-    ax.bar_label(bars, fmt="%.4g", padding=3, fontsize=8, color="#444444")
+    dec = _decimals(values)
+    ax.bar_label(bars, labels=[_num(v, dec) for v in values], padding=3, fontsize=8, color="#444444")
     _style_ax(ax, theme)
+    _value_axis(ax.yaxis)
     _label_axes(ax, block)
-    if block.legend:
-        patches = [mpatches.Patch(color=c[i], label=labels[i]) for i in range(len(labels))]
-        ax.legend(handles=patches, fontsize=8, framealpha=0.7)
+    # one series: each bar is named on its axis, so no legend repeats the labels over the bars
     fig.tight_layout()
     return fig
 
@@ -219,7 +322,8 @@ def _horizontal_bar(block, theme):
     fig, ax = _fig(block)
     c = _colors(block, len(labels))
     bars = ax.barh(labels, values, color=c, height=0.6, zorder=3)
-    ax.bar_label(bars, fmt="%.4g", padding=3, fontsize=8, color="#444444")
+    ax.bar_label(bars, labels=[_num(v, _decimals(values)) for v in values], padding=3, fontsize=8, color="#444444")
+    _value_axis(ax.xaxis)
     ax.spines["left"].set_visible(False)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
@@ -243,7 +347,8 @@ def _grouped_bar(block, theme):
     for i, (name, vals) in enumerate(series.items()):
         offset = (i - len(names) / 2 + 0.5) * w
         bars = ax.bar(x + offset, vals, w, label=name, color=c[i], zorder=3)
-        ax.bar_label(bars, fmt="%.4g", padding=2, fontsize=7, color="#444444")
+        ax.bar_label(bars, labels=[_num(v, _decimals(vals)) for v in vals], padding=2, fontsize=7,
+                     color="#444444")
     ax.set_xticks(x)
     ax.set_xticklabels(cats, rotation=15 if len(cats) > 5 else 0, ha="right")
     _style_ax(ax, theme)
@@ -341,7 +446,7 @@ def _pie(block, theme):
     fig, ax = plt.subplots(figsize=(block.width, block.height))
     wedges, texts, autotexts = ax.pie(
         values, labels=labels, colors=c,
-        autopct="%1.1f%%", startangle=90,
+        autopct=lambda p: _num(p, 1, percent=True), startangle=90,
         pctdistance=0.82,
         wedgeprops={"linewidth": 1.5, "edgecolor": "white"},
     )
@@ -363,7 +468,7 @@ def _donut(block, theme):
     fig, ax = plt.subplots(figsize=(block.width, block.height))
     wedges, texts, autotexts = ax.pie(
         values, labels=labels, colors=c,
-        autopct="%1.1f%%", startangle=90,
+        autopct=lambda p: _num(p, 1, percent=True), startangle=90,
         pctdistance=0.78,
         wedgeprops={"linewidth": 1.5, "edgecolor": "white", "width": 0.5},
     )
@@ -549,7 +654,8 @@ def _waterfall(block, theme):
         top = bottoms[i] + bar_heights[i]
         ax.plot([x[i] + 0.3, x[i + 1] - 0.3], [top, top],
                 color="#aaaaaa", linewidth=0.8, linestyle="--", zorder=2)
-    ax.bar_label(bars, labels=[f"{v:+.4g}" if i < len(labels) - 1 else f"{v:.4g}"
+    dec = _decimals(values)
+    ax.bar_label(bars, labels=[_num(v, dec, sign=True) if i < len(labels) - 1 else _num(v, dec)
                                 for i, v in enumerate(values)],
                  padding=3, fontsize=8, color="#444444")
     ax.set_xticks(x)
@@ -572,17 +678,26 @@ def _funnel(block, theme):
     max_val = max(values) if values else 1
     fig, ax = plt.subplots(figsize=(block.width, block.height))
     ax.set_facecolor("#ffffff")
-    ax.set_xlim(-max_val * 0.05, max_val * 1.05)
     ax.set_ylim(-0.5, len(labels) - 0.5)
-
+    dec = _decimals(values)
+    texts = [f"{label}  {_num(val, dec)}" for label, val in zip(labels, values)]
+    # width of a label as a share of the widest stage (9 pt bold, about 0.6 em a character)
+    span_pt = block.width * 72 * 0.9
+    share = [len(t) * 9 * 0.6 / span_pt for t in texts]
+    right = max_val * 1.05
     for i, (label, val) in enumerate(zip(labels, values)):
         y = len(labels) - 1 - i
         left = (max_val - val) / 2
-        bar = ax.barh(y, val, left=left, height=0.7,
-                      color=c[i], edgecolor="white", linewidth=0.8, zorder=3)
-        ax.text(max_val / 2, y, f"{label}  {val:.4g}",
-                ha="center", va="center", fontsize=9,
-                color="white", fontweight="bold", zorder=4)
+        ax.barh(y, val, left=left, height=0.7, color=c[i], edgecolor="white", linewidth=0.8, zorder=3)
+        if val / max_val >= share[i] + 0.06:
+            ax.text(max_val / 2, y, texts[i], ha="center", va="center", fontsize=9,
+                    color="white", fontweight="bold", zorder=4)
+        else:                          # too narrow for its label: set beside the stage, readable
+            x = left + val + max_val * 0.03
+            ax.text(x, y, texts[i], ha="left", va="center", fontsize=9, color="#333333",
+                    fontweight="bold", zorder=4)
+            right = max(right, x + share[i] * max_val * 1.1)
+    ax.set_xlim(-max_val * 0.05, right)
 
     ax.set_yticks([])
     ax.set_xticks([])
@@ -642,12 +757,12 @@ def _gauge(block, theme):
     ax.plot(0, 0, "o", color="#333333", markersize=8, zorder=5)
 
     # Labels
-    ax.text(0, -0.15, f"{val:.4g}", ha="center", va="center",
+    ax.text(0, -0.15, _num(val, _decimals([val])), ha="center", va="center",
             fontsize=18, fontweight="bold", color="#222222")
     ax.text(0, -0.38, inner_label, ha="center", va="center",
             fontsize=9, color="#666666")
-    ax.text(-1.1, -0.05, f"{vmin:.4g}", ha="center", fontsize=8, color="#888888")
-    ax.text(1.1, -0.05, f"{vmax:.4g}", ha="center", fontsize=8, color="#888888")
+    ax.text(-1.1, -0.05, _num(vmin, _decimals([vmin])), ha="center", fontsize=8, color="#888888")
+    ax.text(1.1, -0.05, _num(vmax, _decimals([vmax])), ha="center", fontsize=8, color="#888888")
 
     ax.set_xlim(-1.3, 1.3)
     ax.set_ylim(-0.5, 1.15)
@@ -794,6 +909,7 @@ def render_chart(block, theme):
             raise BlockRenderError(
                 "chart", f'unsupported type "{block.chart_type}"; supported: {", ".join(_RENDERERS)}')
 
+        _check_data(key, block.data)
         fig = renderer(block, theme)
         _shape_arabic(fig, block)
         drawing = _fig_to_drawing(fig, block, theme)
@@ -824,6 +940,7 @@ def chart_png(block, theme, dpi: int = 200) -> bytes:
         raise BlockRenderError(
             "chart", f'unsupported type "{block.chart_type}"; supported: {", ".join(_RENDERERS)}')
     try:
+        _check_data(key, block.data)
         fig = renderer(block, theme)
         _shape_arabic(fig, block)
         buf = io.BytesIO()
