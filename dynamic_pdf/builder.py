@@ -127,6 +127,7 @@ class DocumentBuilder:
         self._composition = None
         self.last_composition = None
         self._fit_cache: dict = {}
+        self._figure_cache = None        # a dict shares rendered figures between builders (batch)
 
     # ─── Semantic / design layer ───────────────────────────────────
 
@@ -876,7 +877,7 @@ class DocumentBuilder:
 
     def _engine(self) -> LayoutEngine:
         doc, theme = self._prepared()
-        self.last_render = LayoutEngine(doc, policy=self._policy, theme=theme)
+        self.last_render = LayoutEngine(doc, policy=self._policy, theme=theme, cache=self._figure_cache)
         return self.last_render
 
     def render(self, output=None) -> Optional[bytes]:

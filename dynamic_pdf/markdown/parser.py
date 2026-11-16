@@ -55,13 +55,17 @@ def markdown_to_blocks(md_text: str) -> list:
     return parse_markdown(md_text)[1]
 
 
-def _parse_body(md_text: str) -> list:
+def _tokens(md_text: str) -> list:
+    """markdown-it tokens exactly as the block parser sees them (also used by streaming)."""
     # Footnote definitions ("[^1]: text") would otherwise be consumed by
     # CommonMark as link reference definitions and silently disappear.
     md_text = re.sub(r'(?m)^\[\^(\w+)\]:', _FN_DEF_SENTINEL + r'\1:', md_text)
-
     md = MarkdownIt("commonmark", {"html": False}).enable(["table", "strikethrough"])
-    tokens = md.parse(md_text)
+    return md.parse(md_text)
+
+
+def _parse_body(md_text: str) -> list:
+    tokens = _tokens(md_text)
     blocks = []
     footnotes = {}
     idx = 0

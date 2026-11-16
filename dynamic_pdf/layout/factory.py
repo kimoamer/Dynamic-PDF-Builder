@@ -312,18 +312,23 @@ def _md_inline(text: str) -> str:
     if _ARABIC_RE.search(text):
         text = _reshape(text)
     text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    # Inline code spans and backslash escapes ("\*" is a literal "*", as in CommonMark and
+    # the DOCX) are protected from further inline processing; whichever starts first wins
+    codes: list = []
+    escapes: list = []
+
+    def _stash(m):
+        if m.group(1) is None:
+            escapes.append(m.group(2))
+            return f"\x01{len(escapes) - 1}\x01"
+        codes.append(m.group(1))
+        return f"\x00{len(codes) - 1}\x00"
+    text = re.sub(r'`([^`]+?)`|\\(&lt;|&gt;|&amp;|[!-/:-@\[-`{-~])', _stash, text)
     text = _restore_safe_tags(text)
     # Markdown line breaks, as in the DOCX (core.inline): a blank line inside the block or a
     # hard break ("  " or "\" before the newline) starts a new line; a soft break is a space
     text = re.sub(r"\n[ \t]*\n\s*", "<br/>", text)
     text = re.sub(r"(?: {2,}|\\)\n", "<br/>", text)
-    # Inline code spans are protected from further inline processing
-    codes: list = []
-
-    def _stash(m):
-        codes.append(m.group(1))
-        return f"\x00{len(codes) - 1}\x00"
-    text = re.sub(r'`([^`]+?)`', _stash, text)
     # Smart typography
     text = text.replace('---', '\u2014')    # em-dash
     text = text.replace('--', '\u2013')     # en-dash
@@ -351,7 +356,7 @@ def _md_inline(text: str) -> str:
     text = re.sub(r'\x00(\d+)\x00',
                   lambda m: f'<font face="Courier" size="9" backColor="#E8E8E8">{codes[int(m.group(1))]}</font>',
                   text)
-    return text
+    return re.sub(r'\x01(\d+)\x01', lambda m: escapes[int(m.group(1))], text)
 
 
 def _safe_color(h: str, fallback: str = "#000000") -> HexColor:
@@ -1825,8 +1830,8 @@ def _render_diagram(block, theme):
 
 def _render_math(block, theme):
     try:
-        import matplotlib
-        matplotlib.use('Agg')
+        from ..utils.optional import require_matplotlib
+        require_matplotlib()
         import matplotlib.pyplot as plt
         import matplotlib.mathtext as mathtext
         import tempfile, os

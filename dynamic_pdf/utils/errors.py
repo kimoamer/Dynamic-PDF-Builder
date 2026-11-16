@@ -52,3 +52,11 @@ class QualityError(DynamicPDFError):
     def __init__(self, message: str, report=None):
         self.report = report
         super().__init__(message)
+
+
+class TemplateError(DynamicPDFError):
+    """A document template is invalid or refers to data that is not there."""
+
+
+class MissingDependencyError(DynamicPDFError):
+    """An optional dependency needed for this feature is not installed."""
