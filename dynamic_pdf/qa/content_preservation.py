@@ -124,10 +124,18 @@ def _paragraphs(root) -> List[str]:
             if child.tag == _MC_FALLBACK:
                 parent.remove(child)
     breaks = {_W + "br", _W + "cr", _W + "tab"}
+    # a Word footnote reference shows its number; a custom mark follows it as text
+    numbers = {el: str(i) for i, el in enumerate(
+        (r for r in root.iter(_W + "footnoteReference") if r.get(_W + "customMarkFollows") not in ("1", "true")), 1)}
+
+    def piece(e) -> str:
+        if e.tag == _W + "t":
+            return e.text or ""
+        return numbers.get(e, "") if e.tag == _W + "footnoteReference" else " "
 
     def text(p) -> str:              # a line break or tab between runs separates words
-        return "".join((e.text or "") if e.tag == _W + "t" else " " for e in p.iter()
-                       if e.tag == _W + "t" or e.tag in breaks)
+        return "".join(piece(e) for e in p.iter()
+                       if e.tag in (_W + "t", _W + "footnoteReference") or e.tag in breaks)
     return [_squash(text(p)) for p in root.iter(_W + "p")]
 
 

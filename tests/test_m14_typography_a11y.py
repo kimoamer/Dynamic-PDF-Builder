@@ -199,3 +199,55 @@ def test_contrast_check_without_pymupdf(no_pymupdf):
 def test_default_designs_have_no_low_contrast_body_text():
     _, rep = _sample().design().qa("pdf")
     assert not [f for f in rep.findings if f.code == "low_contrast"], rep.summary()
+
+
+# ── DOCX: real Word footnotes ────────────────────────────────────────────
+
+FN_MD = ("Sleep supports recall.[^1] Doses vary.[^dagger] See note one again.[^1]\n\n"
+         "[^1]: Data available on [request](https://example.com/data).\n"
+         "[^dagger]: Two participants withdrew.\n"
+         "[^9]: Defined but never referenced.\n")
+
+
+def _parts(data: bytes) -> dict:
+    import zipfile
+    with zipfile.ZipFile(io.BytesIO(data)) as z:
+        return {n: z.read(n).decode("utf-8") for n in z.namelist() if n.endswith((".xml", ".rels"))}
+
+
+def test_referenced_footnotes_are_word_footnotes():
+    from conftest import docx_text, open_docx
+    data = DocumentBuilder.from_markdown(FN_MD).render_docx()
+    parts = _parts(data)
+    notes, body = parts["word/footnotes.xml"], parts["word/document.xml"]
+    assert "footnotes+xml" in parts["[Content_Types].xml"]
+    assert "relationships/footnotes" in parts["word/_rels/document.xml.rels"]
+    assert body.count("<w:footnoteReference") == 2                   # one per note; a repeat stays a marker
+    assert 'w:customMarkFollows="1"' in body and '<w:t xml:space="preserve">dagger</w:t>' in body
+    assert "Data available on" in notes and "Two participants withdrew." in notes and "<w:footnoteRef/>" in notes
+    assert "https://example.com/data" in parts["word/_rels/footnotes.xml.rels"]   # the link works in the note
+    assert "Data available" not in body and "Two participants" not in body         # not also in the flow
+    assert "Defined but never referenced." in body and "Defined but" not in notes  # unreferenced: as before
+    d = open_docx(data)                                     # python-docx opens it; the styles exist
+    assert d.styles["Footnote Text"] and d.styles["Footnote Reference"]
+    text = docx_text(data)
+    assert "Two participants withdrew." in text and "again" in text
+
+
+def test_footnoted_docx_keeps_its_content_ledger():
+    from dynamic_pdf.core.content_ledger import build_content_ledger
+    from dynamic_pdf.qa.content_preservation import VERIFIED, check_docx_content
+    b = DocumentBuilder.from_markdown(FN_MD)
+    result = check_docx_content(build_content_ledger(b.semantic().to_document()), b.render_docx())
+    assert result.status == VERIFIED, result.details          # "recall.1" reads with its number
+
+
+def test_libreoffice_sets_the_footnotes_at_the_foot_of_the_page():
+    from dynamic_pdf.qa.docx_checks import docx_to_pdf
+    pdf = docx_to_pdf(DocumentBuilder.from_markdown(FN_MD).render_docx())
+    if not pdf:
+        pytest.skip("LibreOffice is not available")
+    page = pymupdf.open(stream=pdf, filetype="pdf")[0]
+    note = page.search_for("Two participants withdrew.")
+    body = page.search_for("Sleep supports recall.")
+    assert note and body and note[0].y0 > page.rect.height * 0.6 > body[0].y1

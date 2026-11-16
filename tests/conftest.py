@@ -55,7 +55,7 @@ def open_docx(data: bytes):
 
 
 def docx_text(data: bytes) -> str:
-    """All visible text: body paragraphs, tables (recursively), headers/footers."""
+    """All visible text: body paragraphs, tables (recursively), headers/footers, footnotes."""
     d = open_docx(data)
     out = []
 
@@ -70,4 +70,10 @@ def docx_text(data: bytes) -> str:
     for s in d.sections:
         walk(s.header)
         walk(s.footer)
+    from docx.oxml.ns import qn
+    for part in d.part.package.iter_parts():
+        if part.partname == "/word/footnotes.xml":
+            from lxml import etree
+            root = etree.fromstring(part.blob)
+            out += ["".join(t.text or "" for t in p.iter(qn("w:t"))) for p in root.iter(qn("w:p"))]
     return "\n".join(out)

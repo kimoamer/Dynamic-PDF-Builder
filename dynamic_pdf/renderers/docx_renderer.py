@@ -76,6 +76,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         self.table_no = 0
         self.content_width_pt = 0.0
         self.headings_rendered: List[str] = []
+        self.notes = None
 
     # ═════════════════════════ entry ═════════════════════════
 
@@ -85,6 +86,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         configure_styles(doc, self.tokens, self.theme, self.rtl_doc)
         from ..layout.factory import _hyphenation_lang
         set_hyphenation(doc, not self.rtl_doc and bool(_hyphenation_lang(self.sem.language)))   # as the PDF
+        from .docx_footnotes import Footnotes
+        self.notes = Footnotes(doc, self.sem.blocks, self.tokens.note_size)
         self.lists = F.ListNumbering(doc, indent_twips=int(self.tokens.list_indent * 20) or 360,
                                      bullet_font=word_font(self.tokens.fonts.body))
         self._setup_section()
@@ -395,6 +398,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                     if F.has_complex_script(tr.text):
                         F.set_complex_script_format(run, size, bool(f.bold))
 
+            if tr.footnote_ref and self.notes and self.notes.reference(paragraph, tr.footnote_ref, self._note_text):
+                continue
             if tr.link:
                 F.add_hyperlink(paragraph, tr.link, tr.text, fmt)
             else:
@@ -1237,7 +1242,14 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
 
     # ─── academic ───
 
+    def _note_text(self, p, text: str):
+        if is_rtl_text(text):
+            F.set_paragraph_bidi(p)
+        self._runs(p, text)
+
     def _b_footnote(self, c, b):
+        if self.notes and self.notes.skip_block(b.marker):
+            return                                   # set as a Word footnote at its reference
         p = self._para(c, "Note", b.text)
         r = p.add_run(b.marker)
         r.font.superscript = True
