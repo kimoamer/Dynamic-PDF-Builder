@@ -307,6 +307,9 @@ def _md_inline(text: str) -> str:
     """
     if not text:
         return ""
+    from ..core.numbering import resolve_refs
+    text = resolve_refs(text, lambda label, anchor: (f"[{label.replace('[', '(').replace(']', ')')}](#{anchor})"
+                                                     if anchor else label))
     # Arabic is shaped here in logical order; Paragraph reorders each laid-out
     # line for display (reordering before line breaking reversed line order)
     if _ARABIC_RE.search(text):
@@ -1463,8 +1466,11 @@ def _render_table(block, theme, bs, ctx=None):
                for ci, c in enumerate(cells)]
         return list(reversed(out)) if tbl_rtl else out
     data = [_row(block.headers or [], h_sty, h_num)] if block.headers else []
-    for row in block.rows:
-        data.append(_row(row, c_sty, c_num))
+    totals = set(hints.get("total_rows") or [])       # rows the author labelled total: set bold, ruled above
+    t_sty = ParagraphStyle('TDt', parent=c_sty, fontName=body_font)
+    t_num = ParagraphStyle('TDtn', parent=t_sty, alignment=2)
+    for ri, row in enumerate(block.rows):
+        data.append(_row(row, t_sty, t_num) if ri in totals else _row(row, c_sty, c_num))
     # Footer row (summary/totals)
     if block.footer_row:
         f_sty = ParagraphStyle('TF', parent=bs, firstLineIndent=0,
@@ -1493,6 +1499,10 @@ def _render_table(block, theme, bs, ctx=None):
         from .art import table_commands
         cmds = table_commands(hints["design"], theme, len(data), ncols, bool(block.headers), bool(block.footer_row),
                               pad, hints.get("current_col"), tbl_rtl)
+    head = 1 if block.headers else 0
+    for ri in sorted(totals):
+        if 0 <= ri < len(block.rows):
+            cmds.append(('LINEABOVE', (0, ri + head), (-1, ri + head), 0.9, _safe_color(theme.colors.text_primary)))
     avail = ctx.available_width if ctx else None
     col_widths = block.column_widths
     if not col_widths and hints.get("col_fractions") and avail:
@@ -1508,9 +1518,9 @@ def _render_table(block, theme, bs, ctx=None):
     t.hAlign = 'RIGHT' if tbl_rtl else 'LEFT'
     t.spaceAfter = theme.spacing.block_gap
     flowables = []
-    label = ""
-    if block.table_number:
-        label = f"Table {block.table_number}"
+    from ..core.numbering import exhibit_label
+    number, anchor = exhibit_label(block)
+    label = number or ""
     if block.caption:
         label = f"{label}: {block.caption}" if label else block.caption
     if label:
@@ -1522,6 +1532,9 @@ def _render_table(block, theme, bs, ctx=None):
                                  fontName=cap_font, alignment=cap_align)
         cap = Paragraph(_md_inline(label), cap_sty)
         cap.keepWithNext = 1          # caption never separated from its table
+        if anchor:
+            from ..core.inline import plain_text
+            cap._exhibit_entry = ("table", plain_text(label), anchor)
         flowables.append(cap)
     flowables.append(t)
     if hints.get("keep_together"):
@@ -1629,9 +1642,9 @@ def _figure_text(block, theme, width=None):
     lang = _diag.current().language
     size = theme.typography.base_size * theme.typography.caption_size_ratio
     out = []
-    text = ""
-    if block.figure_number:
-        text = f"{_i18n('figure', lang)} {block.figure_number}"
+    from ..core.numbering import exhibit_label
+    number, anchor = exhibit_label(block)
+    text = number or ""
     if block.caption:
         text = f"{text}: {block.caption}" if text else block.caption
     if text:
@@ -1642,6 +1655,9 @@ def _figure_text(block, theme, width=None):
                              textColor=_safe_color(theme.colors.text_muted),
                              alignment=2 if rtl and width else 1, spaceAfter=theme.spacing.block_gap)
         out.append(Paragraph(_md_inline(text) if rtl else f"<i>{_md_inline(text)}</i>", sty))
+        if anchor:
+            from ..core.inline import plain_text
+            out[-1]._exhibit_entry = ("figure", plain_text(text), anchor)
     if block.source:
         note = f"{_i18n('source', lang)}: {block.source}"
         rtl = _is_rtl(note)
@@ -2462,13 +2478,19 @@ class DocumentTOC(_RLTableOfContents):
     and every entry links to its heading destination.
     """
 
-    def __init__(self, depth: int = 3, rtl: bool = False, number_style=None, **kw):
+    def __init__(self, depth: int = 3, rtl: bool = False, number_style=None, kind: str = "contents", **kw):
         super().__init__(**kw)
+        self.kind = kind                 # "contents", or "figures" / "tables": a list of captions
         self.depth = depth
         self.rtl = rtl
         self.number_style = number_style
 
     def wrap(self, availWidth, availHeight):
+        if self.kind != "contents" and not self._lastEntries:
+            # nothing numbered (yet): an empty list, not ReportLab's placeholder text
+            self._table = Table([[""]], colWidths=[availWidth])
+            self.width, self.height = self._table.wrapOn(self.canv, availWidth, availHeight)
+            return self.width, self.height
         if not self.rtl:
             return super().wrap(availWidth, availHeight)
         # Right-to-left TOC: title flush right, page number on the left (start of
@@ -2492,6 +2514,10 @@ class DocumentTOC(_RLTableOfContents):
         return self.width, self.height
 
     def notify(self, kind, stuff):
+        if self.kind != "contents":
+            if kind == f"DPBExhibit:{self.kind}":
+                super().notify('TOCEntry', stuff)
+            return
         if kind == 'TOCEntry' and stuff[0] >= self.depth:
             return
         super().notify(kind, stuff)
@@ -2512,7 +2538,8 @@ def _render_toc_placeholder(block, theme, ctx):
         spaceBefore=0, spaceAfter=12,
     )
     lang = getattr(ctx, "language", "en") if ctx else "en"
-    toc_title = _i18n_label("toc", lang)
+    kind = getattr(block, "kind", "contents")
+    toc_title = _i18n_label({"figures": "lof", "tables": "lot"}.get(kind, "toc"), lang)
     if _is_rtl(toc_title):
         title_sty = ParagraphStyle('TOCTitleRTL', parent=title_sty, alignment=2,
                                    fontName=_arabic_font(theme, bold=True))
@@ -2541,7 +2568,7 @@ def _render_toc_placeholder(block, theme, ctx):
                              fontSize=theme.typography.base_size * 0.9,
                              textColor=_safe_color(theme.colors.text_secondary), alignment=0)
     toc = DocumentTOC(depth=depth_limit, rtl=rtl, number_style=num_sty, levelStyles=level_styles,
-                      dotsMinLevel=0, rightColumnWidth=48)
+                      dotsMinLevel=0, rightColumnWidth=48, kind={"figures": "figure", "tables": "table"}.get(kind, kind))
     flowables.append(toc)
     flowables.append(Spacer(1, 8))
     flowables.append(PageBreak())

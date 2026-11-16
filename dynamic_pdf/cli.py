@@ -8,6 +8,7 @@ Usage:
     dynamic-pdf render input.json -o output.pdf
     dynamic-pdf render invoice.md --data invoice.json --data lines=lines.csv
     dynamic-pdf batch letter.md --data people.csv -o out/ --name "letter-{{ id }}"
+    dynamic-pdf lint input.md [--json] [--strict]
     dynamic-pdf themes
     dynamic-pdf schema -o document.schema.json
     dynamic-pdf version
@@ -65,6 +66,12 @@ def main():
     batch_p.add_argument("--permissive", action="store_true")
     batch_p.add_argument("--allow-remote-assets", action="store_true")
 
+    # ─── lint ───
+    lint_p = sub.add_parser("lint", help="Report content warnings (totals, references, formats ...); edits nothing")
+    lint_p.add_argument("input", help="Input file (.md or .json)")
+    lint_p.add_argument("--json", action="store_true", help="Print the warnings as JSON")
+    lint_p.add_argument("--strict", action="store_true", help="Exit with code 1 when there are warnings")
+
     # ─── themes ───
     sub.add_parser("themes", help="List available themes")
 
@@ -93,6 +100,8 @@ def main():
             for note in getattr(e, "__notes__", ()):
                 print(f"  {note}", file=sys.stderr)
             sys.exit(2)
+    elif args.command == "lint":
+        _cmd_lint(args)
     elif args.command == "themes":
         _cmd_themes()
     elif args.command == "schema":
@@ -216,6 +225,33 @@ def _cmd_batch(args):
         paths += [p for p in (res.pdf_path, res.docx_path) if p]
         diagnostics += res.diagnostics
     _report(paths, diagnostics)
+
+
+def _cmd_lint(args):
+    from . import DocumentBuilder
+    if not os.path.exists(args.input):
+        print(f"Error: File not found: {args.input}", file=sys.stderr)
+        sys.exit(1)
+    with open(args.input, "r", encoding="utf-8") as f:
+        content = f.read()
+    if args.input.lower().endswith(".json"):
+        import json
+        from .schema.document import Document
+        doc = Document.model_validate(json.loads(content))
+        builder = DocumentBuilder(theme=doc.theme)
+        builder._meta, builder._blocks = doc.meta, list(doc.blocks)
+    else:
+        builder = DocumentBuilder.from_markdown(content)
+    warnings = builder.lint()
+    if args.json:
+        import json
+        print(json.dumps([w.to_dict() for w in warnings], ensure_ascii=False, indent=1))
+    else:
+        for w in warnings:
+            print(w)
+        print(f"{len(warnings)} warning{'s' if len(warnings) != 1 else ''}" if warnings else "no warnings")
+    if args.strict and warnings:
+        sys.exit(1)
 
 
 def _cmd_themes():

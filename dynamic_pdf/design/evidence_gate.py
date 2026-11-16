@@ -89,7 +89,7 @@ def safety_failures(base: dict, prop: dict) -> List[str]:
 def run_gate(name: str, gate: str, base_sem, sem, plan, requested, brand, base_theme, policy):
     """Returns the (semantic document, plan) to render; ``plan.recipe_outcome`` records the outcome."""
     from . import apply_plan, plan_design
-    from .planner import fit_pages, plan_layout
+    from .planner import drop_short_contents, fit_pages, plan_layout
     recipe, why_not = resolve_recipe(name, plan, base_sem.stats.bilingual)
     if recipe is None:
         plan.recipe_outcome = RecipeOutcome(recipe=None if name == "auto" else name, status="not_applicable",
@@ -108,6 +108,7 @@ def run_gate(name: str, gate: str, base_sem, sem, plan, requested, brand, base_t
     prop_sem = apply_plan(base_sem, prop_plan)
     prop_plan.layout = plan_layout(prop_sem, prop_plan)
     fit_pages(prop_sem, prop_plan, policy)
+    drop_short_contents(prop_sem, prop_plan)
 
     outcome.baseline = measure(sem, plan.theme, policy)
     outcome.proposed = measure(prop_sem, prop_plan.theme, policy)

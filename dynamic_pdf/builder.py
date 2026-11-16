@@ -337,6 +337,8 @@ class DocumentBuilder:
             plan.theme, plan.layout = cached
             from .design.tokens import compile_tokens
             plan.tokens = compile_tokens(plan.theme)
+        from .design.planner import drop_short_contents
+        drop_short_contents(sem, plan)
         if self._evidence_recipe:
             sem, plan = self._gated(base_sem, sem, plan, key)
         self.last_design = plan
@@ -393,6 +395,14 @@ class DocumentBuilder:
         self._prepared()
         return self.last_design.explain()
 
+    def lint(self, rules=None) -> list:
+        """Warnings about the content: totals against their rows, shares against 100,
+        repeated headings, unresolved references, mixed digits, inconsistent number and
+        date formats, images without alt text, empty sections. Never edits anything.
+        Returns ``dynamic_pdf.qa.lint.LintWarning`` items; ``rules`` limits the rules run."""
+        from .qa.lint import lint
+        return lint(self.semantic(), rules)
+
     # ─── Render policy (caller-owned; never taken from document payloads) ───
 
     def quality(self, mode: str = STRICT) -> 'DocumentBuilder':
@@ -428,7 +438,11 @@ class DocumentBuilder:
     def meta(self, title: Optional[str] = None, author: Optional[str] = None,
              language: str = "en", subject: Optional[str] = None,
              keywords: Optional[List[str]] = None,
-             description: Optional[str] = None) -> 'DocumentBuilder':
+             description: Optional[str] = None, audience: Optional[str] = None) -> 'DocumentBuilder':
+        """Document metadata. ``audience`` names the readers in free text ("board",
+        "engineers", "investors"); the design reads it and ``design_explain()`` says how."""
+        if audience:
+            self._meta.audience = audience
         if title:
             self._meta.title = title
         if author:
@@ -465,6 +479,12 @@ class DocumentBuilder:
     def section_numbering(self, enabled: bool = True) -> 'DocumentBuilder':
         """Enable automatic heading numbering (1, 1.1, 1.1.2, ...)."""
         self._meta.section_numbering = enabled
+        return self
+
+    def exhibit_numbering(self, enabled: bool = True) -> 'DocumentBuilder':
+        """Number captioned tables and figures ("Table 1", "Figure 2"). A ``{ref:id}`` in the
+        text, or a list of figures or tables, turns it on as well."""
+        self._meta.exhibit_numbering = enabled
         return self
 
     def encrypt(self, owner_password: str, user_password: str = "") -> 'DocumentBuilder':
@@ -844,6 +864,16 @@ class DocumentBuilder:
         self._blocks.append(TOCBlock(depth=depth, style=style))
         return self
 
+    def list_of_figures(self) -> 'DocumentBuilder':
+        """A list of the numbered figures, each linked to its caption. Turns numbering on."""
+        self._blocks.append(TOCBlock(kind="figures"))
+        return self
+
+    def list_of_tables(self) -> 'DocumentBuilder':
+        """A list of the numbered tables, each linked to its caption. Turns numbering on."""
+        self._blocks.append(TOCBlock(kind="tables"))
+        return self
+
     # Alias
     toc = table_of_contents
 
@@ -1046,7 +1076,7 @@ class DocumentBuilder:
                       policy: Optional[RenderPolicy] = None) -> 'DocumentBuilder':
         """Create a DocumentBuilder pre-populated from a Markdown string.
 
-        Front matter keys ``title``, ``author``, ``subject``, ``description``,
+        Front matter keys ``title``, ``author``, ``subject``, ``description``, ``audience``,
         ``keywords`` and ``language``/``lang`` populate document metadata.
         """
         from .markdown.preprocessors import preprocess_markdown
@@ -1057,7 +1087,7 @@ class DocumentBuilder:
             raise ResourceLimitError(
                 f"Markdown input length ({len(markdown)}) exceeds limit ({max_chars})")
         fm, blocks = parse_markdown(preprocess_markdown(markdown))
-        kw = {k: fm[k] for k in ("title", "author", "subject", "description") if isinstance(fm.get(k), str)}
+        kw = {k: fm[k] for k in ("title", "author", "subject", "description", "audience") if isinstance(fm.get(k), str)}
         if isinstance(fm.get("keywords"), list):
             kw["keywords"] = fm["keywords"]
         elif isinstance(fm.get("keywords"), str) and fm["keywords"]:
@@ -1071,6 +1101,8 @@ class DocumentBuilder:
             builder.document_type(fm["document_type"])
         if fm.get("direction") in ("ltr", "rtl"):
             builder.direction(fm["direction"])
+        if str(fm.get("numbering", "")).lower() in ("true", "yes", "1"):
+            builder._meta.exhibit_numbering = True
         builder.front_matter = fm
         builder._source_kind = "markdown"
         builder._source_text = markdown

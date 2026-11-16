@@ -34,6 +34,7 @@ from ..core.inline import parse_inline, plain_text
 from ..core.normalize import SemanticDocument, coerce_child, is_rtl_text
 from ..design.archetypes import ink as _ink, mix as _mix
 from ..design.tokens import compile_tokens
+from ..core.table_types import table_types
 from ..media import (LOW_RESOLUTION_DPI, check_resolution, fit_image, flow_box, ingest, normal_mode,
                      physical_side)
 from ..schema.enums import Orientation, PageSize
@@ -52,7 +53,6 @@ _PAGE_SIZES_PT = {PageSize.A4: (595.28, 841.89), PageSize.LETTER: (612, 792),
 _VARIANT_COLORS = {"info": "info", "warning": "warning", "error": "error",
                    "success": "success", "tip": "tip", "danger": "error", "note": "info"}
 WRAPS_FLOAT = ("paragraph", "rich_text", "bullet_list", "numbered_list", "checklist")   # may sit beside a float
-_NUMERIC = re.compile(r"^[\s$€£¥%+\-−(),.\d٠-٩]+$")
 
 
 class DocxRenderer(ArchetypeDocx, CompositionDocx):
@@ -429,6 +429,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         if not (self.rtl_doc or is_rtl_text(full)):
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         self._runs(p, full)
+        return p
 
     def _boxed(self, container, fill: str, bar: Optional[str] = None):
         """A single-cell table used as a framed container (callouts, abstracts)."""
@@ -679,10 +680,14 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
 
     def _table(self, c, b, hints):
         size = hints.get("font_size")
-        if b.caption or b.table_number:
-            label = f"Table {b.table_number}" if b.table_number else ""
+        from ..core.numbering import exhibit_label
+        label, anchor = exhibit_label(b)
+        if b.caption or label:
+            label = label or ""
             full = f"{label}: {b.caption}" if (label and b.caption) else (b.caption or label)
             p = self._para(c, "Caption", full)
+            if anchor:
+                F.add_bookmark(p, F.bookmark_name(anchor), self.bm)
             p.alignment = None if (self.rtl_doc or is_rtl_text(full)) else WD_ALIGN_PARAGRAPH.LEFT
             p.paragraph_format.keep_with_next = True
             p.paragraph_format.space_after = Pt(3)
@@ -703,12 +708,9 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         sample = [plain_text(str(x)) for x in (headers or (rows[0] if rows else [])) if str(x).strip()]
         if sample and sum(is_rtl_text(x) for x in sample) * 2 > len(sample):
             F.set_table_bidi(t)
-        # numeric columns are right-aligned (decimal-friendly)
-        numeric_cols = set()
-        for ci in range(ncols):
-            vals = [r[ci] for r in rows if ci < len(r) and str(r[ci]).strip()]
-            if vals and sum(bool(_NUMERIC.match(plain_text(str(v)))) for v in vals) / len(vals) >= 0.8:
-                numeric_cols.add(ci)
+        # columns of figures are right-aligned (decimal-friendly); a column of years or codes is not
+        numeric_cols = set(hints["numeric_cols"] if "numeric_cols" in hints else table_types(b).numeric_cols)
+        totals = set(hints.get("total_rows") or [])
         hdr_bg = b.header_bg or self.tokens.colors["table_header_bg"]
         hdr_fg = b.header_text_color or self.tokens.colors["table_header_text"]
         r0 = 0
@@ -743,7 +745,9 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                     p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
                 if hints.get("keep_together") and ri < len(all_rows) - 1:
                     p.paragraph_format.keep_with_next = True
-                self._runs(p, val, bold=True if is_footer else None, size=size)
+                if ri in totals:
+                    F.set_cell_borders(cell, top=("single", 8, self.tokens.colors["text_primary"]))
+                self._runs(p, val, bold=True if (is_footer or ri in totals) else None, size=size)
         widths = None
         if b.column_widths and len(b.column_widths) == ncols:
             # v0.3 semantics: points; scaled down if wider than the text block
@@ -758,10 +762,10 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                 for row in t.rows:
                     row.cells[ci].width = Pt(wv)
         if hints.get("design"):
-            self._art_table(t, hints, has_header, bool(b.footer_row))
+            self._art_table(t, hints, has_header, bool(b.footer_row), {r0 + ri for ri in totals})
         self._spacer_after(c)
 
-    def _art_table(self, t, hints, has_header, has_footer):
+    def _art_table(self, t, hints, has_header, has_footer, total_rows=()):
         """Rules and tone in place of a grid, cell by cell so that Word keeps them."""
         dark = _ink(self.theme) if self.theme is not None else self.tokens.colors["primary"]
         hair = self.tokens.colors["border"]
@@ -779,7 +783,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                         sides["top"] = ("single", 12, dark)
                 if ledger and ri == last:
                     sides["bottom"] = ("single", 12, dark)
-                if has_footer and ri == last:
+                if (has_footer and ri == last) or ri in total_rows:
                     sides["top"] = ("single", 8, dark)
                 F.set_cell_borders(cell, **sides)
                 if current == ci:
@@ -904,9 +908,12 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
     def _figure_caption(self, c, b):
         from ..i18n import label as _i18n
         lang = "ar" if self.rtl_doc else self.sem.language
-        if b.caption or b.figure_number:
-            label = f"{_i18n('figure', lang)} {b.figure_number}" if b.figure_number else ""
-            self._caption(c, label, b.caption)
+        from ..core.numbering import exhibit_label
+        label, anchor = exhibit_label(b)
+        if b.caption or label:
+            p = self._caption(c, label or "", b.caption)
+            if anchor and p is not None:
+                F.add_bookmark(p, F.bookmark_name(anchor), self.bm)
         if b.source:
             self._caption(c, "", f"{_i18n('source', lang)}: {b.source}")
 
@@ -1398,6 +1405,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         self._page_break(c)
 
     def _b_table_of_contents(self, c, b):
+        if getattr(b, "kind", "contents") != "contents":
+            return self._exhibit_list(c, b)
         title = self._label("toc")
         p = self._para(c, "TOC Heading", title)
         self._runs(p, title)
@@ -1422,6 +1431,22 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                 p.style = self.doc.styles[f"TOC {min(o.level, 3)}"]
             F.add_hyperlink(p, f"#{o.id}", text)
         F.end_field(first if not entries else p)
+        self._page_break(c)
+
+    def _exhibit_list(self, c, b):
+        """A list of figures or tables: each caption, linked to it. Word cannot rebuild it
+        from these captions, so it is written out rather than as a field."""
+        from ..core.numbering import current
+        from ..i18n import label as _i18n
+        kind = "figure" if b.kind == "figures" else "table"
+        title = self._label("lof" if kind == "figure" else "lot")
+        p = self._para(c, "TOC Heading", title)
+        self._runs(p, title)
+        num = current()
+        for ex in (num.listed(kind) if num else []):
+            text = f"{_i18n(kind, num.language)} {ex.number}" + (f": {ex.caption}" if ex.caption else "")
+            p = self._para(c, "Normal", text)
+            F.add_hyperlink(p, f"#{ex.anchor}", text)
         self._page_break(c)
 
     def _b_page_break(self, c, b):
@@ -1503,6 +1528,10 @@ def render_docx(sem: SemanticDocument, theme: Theme, policy=None):
     from ..policy import DiagnosticCollector, RenderPolicy
     col = DiagnosticCollector(policy or RenderPolicy())
     _policy.check_limit("Block count", len(sem.blocks), col.policy.limits.max_blocks)
+    from ..core.numbering import number_document
+    col.numbering = number_document(sem)          # table and figure numbers, {ref:id}
+    from ..i18n import digit_style
+    col.digits = digit_style(sem)                 # how generated figures are written
     token = _policy.activate(col)
     try:
         renderer = DocxRenderer(sem, theme, col)

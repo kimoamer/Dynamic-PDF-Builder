@@ -5,7 +5,7 @@ from typing import List
 
 from reportlab.pdfbase.pdfmetrics import stringWidth
 
-from ..core.inline import plain_text
+from ..core.inline import parse_inline
 from ..fonts import get_font_name, register_fonts
 
 
@@ -36,14 +36,24 @@ def column_metrics(headers: List[str], rows: List[List[str]], family: str, size:
     cells = [(headers, True)] + [(r, False) for r in rows]
     for row, is_head in cells:
         for ci in range(ncols):
-            txt = plain_text(str(row[ci])) if ci < len(row) else ""
-            w_nat = text_width(txt, family, size, bold=is_head) + padding
-            longest_word = max((text_width(wd, family, size, bold=is_head) for wd in txt.split()),
+            runs = parse_inline(str(row[ci])) if ci < len(row) else []
+            w_nat = sum(_run_width(r.text, r.code, family, size, is_head) for r in runs) + padding
+            longest_word = max((_run_width(wd, r.code, family, size, is_head) for r in runs for wd in r.text.split()),
                                default=0.0) + padding + 2.0   # slack: avoid splitting a word
 
             mins[ci] = max(mins[ci], longest_word)
             nats[ci] = max(nats[ci], w_nat)
     return mins, nats
+
+
+CODE_FONT, CODE_SIZE = "Courier", 9.0      # how the PDF sets inline code (layout.factory._md_inline)
+
+
+def _run_width(text: str, code: bool, family: str, size: float, bold: bool) -> float:
+    """Inline code is set in a monospace face, wider than the body face; measured as drawn."""
+    if code:
+        return stringWidth(text, CODE_FONT, CODE_SIZE)
+    return text_width(text, family, size, bold=bold)
 
 
 def fit_columns(mins: List[float], nats: List[float], avail: float):

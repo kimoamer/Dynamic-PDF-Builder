@@ -333,6 +333,7 @@ class TOCBlock(BaseBlock):
     type: Literal["table_of_contents"] = "table_of_contents"
     depth: int = 3
     style: str = "default"
+    kind: Literal["contents", "figures", "tables"] = "contents"   # contents, or a list of figures or tables
 
 class WatermarkBlock(BaseBlock):
     type: Literal["watermark"] = "watermark"

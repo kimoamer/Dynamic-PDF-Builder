@@ -331,6 +331,11 @@ class _EngineDocTemplate(BaseDocTemplate):
         super().handle_documentBegin()
 
     def afterFlowable(self, flowable):
+        exhibit = getattr(flowable, "_exhibit_entry", None)
+        if exhibit:                      # a numbered caption: a link target and a list entry
+            kind, text, key = exhibit
+            self.canv.bookmarkPage(key)
+            self.notify(f"DPBExhibit:{kind}", (0, _entry_markup(text), self.page, key))
         entry = getattr(flowable, "_toc_entry", None)
         if not entry:
             return
@@ -344,13 +349,17 @@ class _EngineDocTemplate(BaseDocTemplate):
         olevel = min(level - 1, self._outline_level + 1)
         self._outline_level = olevel
         c.addOutlineEntry(text, key, level=olevel, closed=olevel >= 1)
-        entry = xml_escape(text)
-        if _ARABIC_BASE.search(text):
-            from .factory import _apply_rtl
-            from ..fonts import get_font_name
-            from ..fonts.manager import current_arabic_face
-            entry = f'<font name="{get_font_name(current_arabic_face())}">{xml_escape(_apply_rtl(text))}</font>'
-        self.notify('TOCEntry', (level - 1, entry, self.page, key))
+        self.notify('TOCEntry', (level - 1, _entry_markup(text), self.page, key))
+
+
+def _entry_markup(text: str) -> str:
+    """A contents-list entry: escaped, and shaped in the Arabic face when it is Arabic."""
+    if _ARABIC_BASE.search(text):
+        from .factory import _apply_rtl
+        from ..fonts import get_font_name
+        from ..fonts.manager import current_arabic_face
+        return f'<font name="{get_font_name(current_arabic_face())}">{xml_escape(_apply_rtl(text))}</font>'
+    return xml_escape(text)
 
 
 # ═══════════════════════ Colour Helpers ═══════════════════════
@@ -1216,6 +1225,10 @@ class LayoutEngine:
         self.diagnostics.language = ctx.language
         doc_template._dpb_geometry = self.geometry
 
+        from ..core.numbering import number_document
+        self.diagnostics.numbering = number_document(self.document)     # table and figure numbers, {ref:id}
+        from ..i18n import digit_style
+        self.diagnostics.digits = digit_style(self.document)            # how generated figures are written
         token = _policy.activate(self.diagnostics)
         try:
             self._page_counter = _PageCounter(doc_template)

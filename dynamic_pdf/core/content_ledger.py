@@ -4,7 +4,8 @@ A record of what a document says, independent of how it is laid out.
 The ledger keeps every author string exactly as written, in order, with repeats, plus
 the bytes of each asset. Moving or resizing an image leaves it unchanged; losing,
 repeating, reordering or rewording anything does not. Text the renderers generate (a
-table of contents, figure numbers) is not part of it.
+table of contents, figure numbers) is not part of it; what a ``{ref:id}`` reads as is kept
+beside it, so the rendered text can be checked.
 """
 
 from __future__ import annotations
@@ -43,6 +44,7 @@ class ContentLedger:
     bands: Tuple[str, ...]                              # band items as declared
     band_texts: Tuple[str, ...]                         # those with fixed text, fields filled in
     assets: Tuple[Tuple[str, str], ...]                 # where an asset is used, sha256 of its bytes
+    refs: Tuple[Tuple[str, str], ...] = ()              # each {ref:id} and the label set in its place
 
     def fingerprint(self) -> str:
         return hashlib.sha256(json.dumps(asdict(self), ensure_ascii=False, sort_keys=True).encode()).hexdigest()
@@ -62,7 +64,7 @@ class ContentLedger:
             out.append("reordered: the same text in a different order")
         if not out and self.block_digests != other.block_digests:
             out.append("changed: a block's content differs")
-        for name in ("meta", "bands", "assets"):
+        for name in ("meta", "bands", "assets", "refs"):
             if getattr(self, name) != getattr(other, name):
                 out.append(f"changed: {name}")
         return out
@@ -146,4 +148,5 @@ def build_content_ledger(doc, assets=None, theme=None) -> ContentLedger:
         values = band_values(doc, theme.header_footer if theme is not None else None)[0]
         band_texts = tuple(filled for filled in (fill_fields(i, values) for i in bands
                                                  if not any(f in i for f in _LIVE)) if filled)
-    return ContentLedger(tuple(entries), tuple(digests), meta, bands, band_texts, tuple(hashes))
+    from .numbering import ledger_refs
+    return ContentLedger(tuple(entries), tuple(digests), meta, bands, band_texts, tuple(hashes), ledger_refs(doc))
