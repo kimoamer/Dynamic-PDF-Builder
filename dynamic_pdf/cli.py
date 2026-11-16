@@ -9,6 +9,8 @@ Usage:
     dynamic-pdf render invoice.md --data invoice.json --data lines=lines.csv
     dynamic-pdf batch letter.md --data people.csv -o out/ --name "letter-{{ id }}"
     dynamic-pdf lint input.md [--json] [--strict]
+    dynamic-pdf render input.md --direction auto --grammar --brand brand.json
+    dynamic-pdf variants input.md -o designs/ -n 3
     dynamic-pdf themes
     dynamic-pdf schema -o document.schema.json
     dynamic-pdf version
@@ -49,6 +51,22 @@ def main():
                           help="Allow fetching http(s) images (public hosts only)")
     render_p.add_argument("--data", action="append", default=[], metavar="[NAME=]FILE",
                           help="Fill the input as a template from a .json/.csv/.xlsx file (repeatable)")
+    _design_args(render_p)
+    render_p.add_argument("--variants", type=int, default=None, metavar="N",
+                          help="Try N art directions and export the recommended valid one")
+
+    # ─── variants ───
+    var_p = sub.add_parser("variants", help="Write several art-directed designs and explain the recommendation")
+    var_p.add_argument("input", help="Input file (.md or .json)")
+    var_p.add_argument("-o", "--output", default=None, metavar="DIR",
+                       help="Directory for the designs and decisions.json (default: <input>-variants)")
+    var_p.add_argument("-n", type=int, default=3, help="How many directions to try, 1 to 5 (default: 3)")
+    var_p.add_argument("-t", "--theme", default="claude", help="Theme name (default: claude)")
+    var_p.add_argument("--office", action="store_true", help="Also open each DOCX in LibreOffice")
+    var_p.add_argument("--permissive", action="store_true", help=argparse.SUPPRESS)
+    var_p.add_argument("--allow-remote-assets", action="store_true",
+                       help="Allow fetching http(s) images (public hosts only)")
+    _design_args(var_p)
 
     # ─── batch ───
     batch_p = sub.add_parser("batch", help="Render one document per data record from a template")
@@ -84,10 +102,10 @@ def main():
 
     args = parser.parse_args()
 
-    if args.command == "render":
+    if args.command in ("render", "variants"):
         from .utils.errors import DynamicPDFError
         try:
-            _cmd_render(args)
+            (_cmd_render if args.command == "render" else _cmd_variants)(args)
         except DynamicPDFError as e:
             print(f"Error: {type(e).__name__}: {e}", file=sys.stderr)
             sys.exit(2)
@@ -112,6 +130,88 @@ def main():
         parser.print_help()
 
 
+def _design_args(p):
+    p.add_argument("--direction", default=None, metavar="NAME",
+                   help='Art direction: "auto" or a name (corporate_conservative, editorial_modern, ...)')
+    p.add_argument("--grammar", action="store_true", help="Follow the packaged approved design grammar")
+    p.add_argument("--brand", default=None, metavar="FILE", help="Brand kit as a JSON file (colours, fonts, logo)")
+
+
+def _brand(path):
+    if not path:
+        return None
+    import json
+    from .design import BrandKit
+    with open(path, "r", encoding="utf-8") as f:
+        return BrandKit(**json.load(f))
+
+
+def _load(args, policy):
+    from . import DocumentBuilder
+    input_path = args.input
+    if not os.path.exists(input_path):
+        print(f"Error: File not found: {input_path}", file=sys.stderr)
+        sys.exit(1)
+    with open(input_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    is_json = os.path.splitext(input_path)[1].lower() == ".json"
+    context = None
+    if getattr(args, "data", None):
+        from .templates import load_context, render_template
+        context = load_context(args.data)
+        if not is_json:
+            content = render_template(content, context)
+    if is_json:
+        import json
+        from .schema.document import Document
+        payload = json.loads(content)
+        if context is not None:
+            from .templates import render_json_template
+            payload = render_json_template(payload, context)
+        if args.theme != "claude":
+            payload["theme"] = args.theme
+        doc = Document.model_validate(payload)
+        builder = DocumentBuilder(theme=doc.theme, policy=policy)
+        builder._meta = doc.meta
+        builder._blocks = list(doc.blocks)
+        builder._source_kind = "json"
+        builder._source_text = content
+        return builder
+    return DocumentBuilder.from_markdown(content, theme=args.theme, policy=policy)
+
+
+def _cmd_variants(args):
+    from .design.directions import DIRECTIONS
+    policy = _policy_from_args(args)
+    builder = _load(args, policy)
+    families = None
+    if args.direction and args.direction != "auto":
+        if args.direction not in DIRECTIONS:
+            print(f"Error: unknown direction {args.direction!r}; choose from {sorted(DIRECTIONS)}", file=sys.stderr)
+            sys.exit(1)
+        families = [args.direction]
+    if not 1 <= args.n <= len(DIRECTIONS):
+        print(f"Error: -n must be between 1 and {len(DIRECTIONS)}", file=sys.stderr)
+        sys.exit(1)
+    out = args.output or os.path.splitext(args.input)[0] + "-variants"
+    made = builder.design_variants(n=args.n, families=families, brand=_brand(args.brand), office=args.office,
+                                   grammar=True if args.grammar else None)
+    paths = made.export(out)
+    for v in made.variants:
+        r = v.report
+        mark = "*" if v is made.recommended else " "
+        line = f"{mark} {v.id}: {r.status}, {r.pages} pages, fit {r.fit:g}, index {r.index:g}, score {r.score:g}"
+        print(line + (f" -> {', '.join(paths[v.id].values())}" if paths.get(v.id) else ""))
+        for f in r.hard_failures[:3]:
+            print(f"    rejected: {f}")
+    print(f"recommended: {made.recommended.id if made.recommended else 'none'}")
+    for why in made.reasons:
+        print(f"  - {why}")
+    print(f"decisions: {os.path.join(out, 'decisions.json')}")
+    if made.recommended is None:
+        sys.exit(4)
+
+
 def _policy_from_args(args):
     from .policy import RenderPolicy
     from .assets import AssetPolicy
@@ -134,48 +234,16 @@ def _report(paths, diagnostics):
 
 
 def _cmd_render(args):
-    from . import DocumentBuilder
-
     input_path = args.input
-    if not os.path.exists(input_path):
-        print(f"Error: File not found: {input_path}", file=sys.stderr)
-        sys.exit(1)
-
     out_ext = os.path.splitext(args.output)[1].lower().lstrip(".") if args.output else ""
     fmt = args.format or (out_ext if out_ext in ("pdf", "docx") else "pdf")
     stem = os.path.splitext(args.output)[0] if args.output else os.path.splitext(input_path)[0]
-    ext = os.path.splitext(input_path)[1].lower()
     policy = _policy_from_args(args)
-
-    with open(input_path, "r", encoding="utf-8") as f:
-        content = f.read()
-    context = None
-    if args.data:
-        from .templates import load_context, render_template
-        context = load_context(args.data)
-        if ext != ".json":
-            content = render_template(content, context)
-
-    if ext == ".json":
-        import json
-        from .schema.document import Document
-        payload = json.loads(content)
-        if context is not None:
-            from .templates import render_json_template
-            payload = render_json_template(payload, context)
-        if args.theme != "claude":
-            payload["theme"] = args.theme
-        doc = Document.model_validate(payload)
-        builder = DocumentBuilder(theme=doc.theme, policy=policy)
-        builder._meta = doc.meta
-        builder._blocks = list(doc.blocks)
-        builder._source_kind = "json"
-        builder._source_text = content
-    else:
-        builder = DocumentBuilder.from_markdown(content, theme=args.theme, policy=policy)
+    builder = _load(args, policy)
     if args.section_numbers:
         builder.section_numbering(True)
-    builder.design(None if args.design == "none" else args.design)
+    builder.design(None if args.design == "none" else args.design, brand=_brand(args.brand),
+                   direction=args.direction, variants=args.variants, grammar=args.grammar)
     if args.compose != "off":
         builder.compose(args.compose)
 
@@ -195,6 +263,10 @@ def _cmd_render(args):
                 import json
                 with open(args.report, "w", encoding="utf-8") as fh:
                     json.dump(c, fh, ensure_ascii=False, indent=1)
+        if res.design is not None and target == targets[-1]:
+            print(f"design: {res.design.recommended or 'stable designed output (no variant passed)'}")
+            for why in res.design.reasons[:4]:
+                print(f"  - {why}")
         if res.status != "ok":
             print(f"{target} status: {res.status} — " + "; ".join(res.status_reasons), file=sys.stderr)
         for rep in res.qa.values():

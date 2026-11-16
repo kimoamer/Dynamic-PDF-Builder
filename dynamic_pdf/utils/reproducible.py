@@ -26,12 +26,17 @@ def render_time() -> datetime.datetime:
     return datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0)
 
 
+def zip_stamp(when: datetime.datetime) -> tuple:
+    """``when`` as a zip entry's date and time."""
+    return max(_ZIP_EPOCH, when.timetuple()[:6])
+
+
 def stamp_zip(data: bytes, when: datetime.datetime) -> bytes:
     """``data`` (a zip package such as a DOCX) with every entry dated ``when``.
 
     Entry order, names, contents and compression are kept; only the entry timestamps change,
     which are otherwise the wall-clock time of saving and differ on every render."""
-    stamp = max(_ZIP_EPOCH, when.timetuple()[:6])
+    stamp = zip_stamp(when)
     src = zipfile.ZipFile(io.BytesIO(data))
     out = io.BytesIO()
     with zipfile.ZipFile(out, "w") as dst:

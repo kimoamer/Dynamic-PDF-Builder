@@ -79,6 +79,7 @@ class Page:
     def text_dict(self) -> dict: ...
     def rawdict(self) -> dict: ...
     def drawings(self) -> List[Box]: ...
+    def fills(self) -> List[Box]: ...                      # boxes of filled paths (panels, bands, rules)
     def images(self) -> List[dict]: ...                     # bbox, transform, width, height
     def paint_log(self) -> List[Tuple[str, Box]]: ...      # ("fill-text" | "fill-image", box) in paint order
     def link_targets(self) -> List[int]: ...               # internal links' page index, -1 if unresolved
@@ -126,6 +127,9 @@ class _MuPage(Page):
 
     def drawings(self):
         return [tuple(d["rect"]) for d in self._p.get_drawings()]
+
+    def fills(self):
+        return [tuple(d["rect"]) for d in self._p.get_drawings() if d.get("fill") is not None]
 
     def images(self):
         return self._p.get_image_info()
@@ -279,6 +283,15 @@ class _PdfiumPage(Page):
 
     def drawings(self):
         return [self._box(*o.get_bounds()) for o in self._objects(self._raw.FPDF_PAGEOBJ_PATH)]
+
+    def fills(self):
+        raw, out = self._raw, []
+        mode, stroke = ctypes.c_int(), ctypes.c_int()
+        for o in self._objects(raw.FPDF_PAGEOBJ_PATH):
+            if raw.FPDFPath_GetDrawMode(o.raw, ctypes.byref(mode), ctypes.byref(stroke)) and \
+                    mode.value != raw.FPDF_FILLMODE_NONE:
+                out.append(self._box(*o.get_bounds()))
+        return out
 
     def images(self):
         out = []

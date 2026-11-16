@@ -122,7 +122,12 @@ def render_with_qa(builder, fmt: str, max_attempts: int = MAX_ATTEMPTS, visual_d
             theme = builder.last_render.theme
             sem_doc = builder.last_render.document
             sp = theme.spacing
-            report = check_pdf(data, margins={"left": sp.page_margin_left, "right": sp.page_margin_right},
+            margins = {"left": sp.page_margin_left, "right": sp.page_margin_right}
+            hang = max(((b.hints or {}).get("hang") or 0 for b in sem_doc.blocks if b.type == "heading"), default=0)
+            if hang:        # an art direction's headings hang into the start margin by design
+                from ..core.normalize import normalize
+                margins["right" if normalize(sem_doc).direction == "rtl" else "left"] -= hang
+            report = check_pdf(data, margins=margins,
                                heading_texts=[o.text for o in builder.semantic().outline],
                                **qa_context(sem_doc, theme))
         else:

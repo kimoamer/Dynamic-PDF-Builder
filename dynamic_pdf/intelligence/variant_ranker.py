@@ -34,7 +34,12 @@ def variant_features(v) -> Dict[str, float]:
     compositions = [s.composition for s in plan.sections] if plan else []
     openers = [s.opener for s in plan.sections] if plan else []
     bands = (plan.bands if plan else "") or ""
-    size, leading = _typography(plan.typography if plan else "")
+    # type as measured on the page (PageFacts), never as a description says it should be. Where no
+    # body line wraps the page cannot show the leading; the compiled theme set it.
+    facts = r.facts or {}
+    ty = getattr(getattr(v, "theme", None), "typography", None)
+    size = float(facts.get("body_size") or 0.0)
+    leading = float(facts.get("body_leading") or (ty.line_height if ty and size else 0.0))
     estimated = plan.brief.estimated_pages if plan else 0
     out = {
         "pages": float(r.pages), "page_growth": r.pages / estimated if estimated else 1.0, "fit": r.fit, "index": r.index,
@@ -48,15 +53,6 @@ def variant_features(v) -> Dict[str, float]:
     for key in ("sparse_share", "alike_share", "page_variety", "type_contrast", "image_share", "last_page_ink"):
         out[key] = float(h.get(key, 0.0))
     return out
-
-
-def _typography(text: str) -> tuple:
-    tail = text.rsplit(" ", 1)[-1] if text else ""
-    try:
-        size, leading = tail.split("/")
-        return float(size), float(leading)
-    except ValueError:
-        return 0.0, 0.0
 
 
 def vector(features: Dict[str, float]) -> List[float]:
