@@ -20,6 +20,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from dynamic_pdf.intelligence.objective import design_score  # noqa: E402
 from dynamic_pdf.intelligence.variant_ranker import FEATURES, MODEL_FORMAT, pair_features  # noqa: E402
 
 GATE = {"min_pairs": 200, "min_training_documents": 8, "min_evaluation_documents": 3, "min_gain": 0.03, "min_agreement": 0.6}
@@ -76,9 +77,9 @@ def examples(rows, cands):
 
 
 def deterministic_agreement(picks):
-    """How often the shipped selector's ordering (fit * 6 + index) matches the comparison."""
+    """How often the shipped selector's ordering (the objective's design score) matches the comparison."""
     def score(c):
-        return c["features"]["fit"] * 6 + c["features"]["index"]
+        return design_score(c["features"]["fit"], c["features"]["index"])
     hits = sum(score(w) > score(lo) for _, w, lo in picks)
     return hits / len(picks) if picks else None
 

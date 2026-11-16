@@ -9,6 +9,7 @@ recommendation from heuristics, not a verdict on beauty.
 """
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import os
@@ -26,7 +27,9 @@ from ..design.art_direction import Adjust, ArtDirectionPlan, content_changes, di
 from ..design.directions import DIRECTIONS, Direction
 from ..i18n import LABELS
 from ..qa.content_preservation import _fold
+from .facts import read_pdf, with_layout
 from .geometry import Geometry
+from .objective import design_score, gates
 from .scoring import score_layout
 
 
@@ -56,6 +59,8 @@ class VariantReport(BaseModel):
     unverified: List[str] = Field(default_factory=list)
     grammar_rules: List[str] = Field(default_factory=list)   # approved rules this design used
     grammar_version: Optional[str] = None
+    facts: Dict[str, float] = Field(default_factory=dict)    # measured document facts (PageFacts)
+    score: float = 0.0                                       # the soft score the recommendation ranks by
 
 
 @dataclass
@@ -68,10 +73,27 @@ class Variant:
     docx: Optional[bytes] = None
     document: object = None
     theme: object = None
+    facts: object = None                         # PageFacts of the delivered render
 
     @property
     def valid(self) -> bool:
         return self.report.status == "valid"
+
+
+@dataclass
+class DesignChoice:
+    """Which design an export delivered and why (``ExportResult.design``)."""
+
+    recommended: Optional[str]                   # direction id, None when no design passed
+    reasons: List[str]
+    fallback: bool                               # True: the stable designed output was delivered
+    variants: Dict[str, str] = field(default_factory=dict)    # direction id -> status
+    scores: Dict[str, float] = field(default_factory=dict)    # direction id -> soft score (valid designs)
+    selection: Dict = field(default_factory=dict)
+
+    def to_dict(self) -> dict:
+        return {"recommended": self.recommended, "reasons": self.reasons, "fallback": self.fallback,
+                "variants": self.variants, "scores": self.scores, "selection": self.selection}
 
 
 @dataclass
@@ -87,6 +109,12 @@ class VariantSet:
 
     def __len__(self):
         return len(self.variants)
+
+    def choice(self) -> DesignChoice:
+        return DesignChoice(self.recommended.id if self.recommended else None, list(self.reasons), self.fallback,
+                            {v.id: v.report.status for v in self.variants},
+                            {v.id: v.report.score for v in self.variants if v.valid},
+                            dict(self.stats.get("selection") or {}))
 
     def to_dict(self) -> dict:
         return {"recommended": self.recommended.id if self.recommended else None, "reasons": self.reasons,
@@ -223,20 +251,27 @@ class _Runner:
             return f"output budget of {self.budget.max_output_mb:g} MB used"
         return None
 
-    def _render(self, doc, theme):
+    def _render(self, doc, theme, cache=None):
         from ..layout.engine import LayoutEngine
         geo = Geometry()
-        eng = LayoutEngine(doc, policy=self.policy, theme=theme, geometry=geo)
+        eng = LayoutEngine(doc, policy=self.policy, theme=theme, geometry=geo, cache=cache)
         buf = io.BytesIO()
         eng.render(buf)
         self.renders += 1
         return buf.getvalue(), geo
 
-    def _attempt(self, direction: Direction, adjust: Adjust, why: List[str]):
+    def _attempt(self, direction: Direction, adjust: Adjust, why: List[str], cache: dict):
+        """One design and its render. ``cache`` holds this direction's figures and renders: an
+        adjustment that leaves the document and theme as they were is not rendered again."""
         made = direct(self.sem, direction, brand=self.brand, base_theme=self.base_theme, adjust=adjust,
                       fit_reasons=why)
-        pdf, geo = self._render(made.document, made.theme)
-        return made, pdf, geo
+        key = ("render", hashlib.sha256((made.document.model_dump_json()
+                                         + made.theme.model_dump_json()).encode()).hexdigest())
+        if key in cache:
+            return (made, *cache[key], False)
+        pdf, geo = self._render(made.document, made.theme, cache)
+        cache[key] = (pdf, geo, read_pdf(pdf, plain_pages=self.base_pages))
+        return (made, *cache[key], True)
 
     def run(self, direction: Direction, fit: float, why: List[str]) -> Variant:
         from ..qa.visual_critique import HEURISTIC_LABEL
@@ -249,44 +284,48 @@ class _Runner:
             return Variant(direction.id, direction.name, None, rep)
         adjust = Adjust()
         titles = [o.text for o in self.sem.outline if o.level == 1]
-        made, pdf, geo = self._attempt(direction, adjust, why)
+        cache: dict = {}                          # figures drawn once for all of this direction's renders
+        made, pdf, geo, facts, _ = self._attempt(direction, adjust, why, cache)
         rep.renders = 1
-        critique = self._look(made, pdf, titles)
+        critique = self._look(made, facts, titles)
         steps: List[str] = []
         for _ in range(self.budget.max_refinements):
             step = _next_refinement(critique, adjust, made.plan, titles, self.base_pages)
             if step is None or self.spent():
                 break
             trial = step[0]
-            t_made, t_pdf, t_geo = self._attempt(direction, trial, why)
-            rep.renders += 1
-            t_critique = self._look(t_made, t_pdf, titles)
+            t_made, t_pdf, t_geo, t_facts, rendered = self._attempt(direction, trial, why, cache)
+            rep.renders += rendered
+            t_critique = self._look(t_made, t_facts, titles)
             adjust = trial                        # a rejected change is not tried again
             before, after = _faults(critique, self.base_pages), _faults(t_critique, self.base_pages)
             if after < before or (after == before and t_critique.index >= critique.index):
-                made, pdf, geo, critique = t_made, t_pdf, t_geo, t_critique
+                made, pdf, geo, critique, facts = t_made, t_pdf, t_geo, t_critique, t_facts
                 steps.append(f"kept: {step[1]} (index {critique.index})")
             else:
                 steps.append(f"undone: {step[1]} (index fell to {t_critique.index})")
         made.plan.refinements = steps
         rep.refinements = steps
         docx = self._docx(made, rep)
-        self._gate(made, pdf, geo, docx, critique, rep)
-        rep.pages = len(critique.pages) or len(geo.pages)
+        self._gate(made, pdf, geo, docx, facts, rep)
+        rep.pages = facts.page_count or len(geo.pages)
         rep.heuristics = critique.heuristics
         rep.index = critique.index
+        rep.score = design_score(rep.fit, rep.index)
+        rep.facts = {**facts.document, **{f"layout_{k}": v for k, v in facts.layout.items()}}
         rep.observations = [o.note for o in critique.observations]
         rep.seconds = round(time.monotonic() - began, 2)
         self.bytes += len(pdf) + len(docx or b"")
-        return Variant(direction.id, direction.name, made.plan, rep, pdf, docx, made.document, made.theme)
+        return Variant(direction.id, direction.name, made.plan, rep, pdf, docx, made.document, made.theme, facts)
 
-    def _look(self, made, pdf: bytes, titles: Sequence[str]):
-        from ..qa.visual_critique import critique_pdf
-        first = critique_pdf(pdf)
+    def _look(self, made, facts, titles: Sequence[str]):
+        """The critique of one render, from its facts: the PDF is read and rasterized once."""
+        from ..qa.visual_critique import critique_facts
+        first = critique_facts(facts)
         contents = [v["toc"] for v in LABELS.values()] if any(
             b.type == "table_of_contents" for b in made.document.blocks) else []
         quiet = _intended(made.plan, first.pages, [*titles, *contents])
-        return critique_pdf(pdf, intended=quiet) if quiet else first
+        return critique_facts(facts, intended=quiet) if quiet else first
 
     def _docx(self, made, rep: VariantReport) -> Optional[bytes]:
         from ..renderers.docx_renderer import render_docx
@@ -296,7 +335,7 @@ class _Runner:
             rep.hard_failures.append(f"docx: {type(e).__name__}: {e}")
             return None
 
-    def _gate(self, made, pdf, geo, docx, critique, rep: VariantReport) -> None:
+    def _gate(self, made, pdf, geo, docx, facts, rep: VariantReport) -> None:
         from ..core.content_ledger import build_content_ledger
         from ..policy import AssetPolicy
         from ..qa.content_preservation import UNKNOWN, check_preservation
@@ -304,11 +343,10 @@ class _Runner:
         from ..qa.loop import glyph_findings, qa_context
         from ..qa.media_checks import check_docx_media, check_pdf_media
         from ..qa.pdf_checks import check_pdf
-        from ..qa.visual_critique import hard_failures
         doc, theme = made.document, made.theme
         brand = [self.brand.logo] if self.brand and self.brand.logo else []
         changes = content_changes(self.source, doc, theme, brand)
-        layout = score_layout(geo, doc, theme)
+        with_layout(facts, score_layout(geo, doc, theme))
         sem = normalize(doc)
         heads = [o.text for o in sem.outline]
         pdf_rep = docx_rep = preservation = None
@@ -333,9 +371,8 @@ class _Runner:
                     rep.unverified += [f"preservation {layer.name}: {x}" for x in layer.details]
         except ImportError:
             rep.unverified.append("preservation of the PDF text needs PyMuPDF")
-        rep.hard_failures += hard_failures(content=changes, pdf_report=pdf_rep, docx_report=docx_rep,
-                                           preservation=preservation, layout_errors=layout.hard_errors, media=media,
-                                           smallest_type=theme.typography.base_size, critique=critique)
+        rep.hard_failures += gates(facts, content=changes, pdf_report=pdf_rep, docx_report=docx_rep,
+                                   preservation=preservation, media=media, smallest_type=theme.typography.base_size)
         if self.office and docx:
             version = office_version()
             converted = docx_to_pdf(docx) if version else None
@@ -383,7 +420,7 @@ def generate_variants(source, *, policy=None, brand: Optional[BrandKit] = None, 
             chosen = ranked[:n]
         variants = [_with_grammar(run, grammar, grammar_rules, brief, d, fit, why) for d, fit, why in chosen]
     valid = [v for v in variants if v.valid]
-    best = max(valid, key=lambda v: v.report.fit * 6 + v.report.index, default=None)
+    best = max(valid, key=lambda v: v.report.score, default=None)
     selection = {"selector": "deterministic", "model": None}
     if best is not None and ranker_model:
         from .variant_ranker import choose

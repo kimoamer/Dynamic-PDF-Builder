@@ -125,7 +125,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         buf = io.BytesIO()
         doc.save(buf)
         fonts = self.tokens.fonts
-        return embed_fonts(buf.getvalue(), (fonts.heading, fonts.body, fonts.arabic))
+        return embed_fonts(buf.getvalue(), (fonts.heading, fonts.body, fonts.arabic), when=self.render_time)
 
     def _label(self, key):
         from ..i18n import label
@@ -332,14 +332,25 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
 
     # ═════════════════════════ primitives ═════════════════════════
 
+    def _style_id(self, name: str):
+        """The id ``paragraph.style = name`` would set (None for the default style). python-docx
+        searches every style for the default on each assignment, which dominated table-heavy DOCX."""
+        ids = self.__dict__.setdefault("_style_ids", {})
+        if name not in ids:
+            from docx.enum.style import WD_STYLE_TYPE
+            ids[name] = self.doc.part.get_style_id(self.doc.styles[name], WD_STYLE_TYPE.PARAGRAPH)
+        return ids[name]
+
     def _para(self, container, style: Optional[str] = None, text_hint: str = ""):
         if isinstance(container, _Cell) and not getattr(container, "_dpb_used", False):
             container._dpb_used = True
             p = container.paragraphs[0]
             if style:
-                p.style = self.doc.styles[style]
+                p._p.style = self._style_id(style)
         else:
-            p = container.add_paragraph(style=style)
+            p = container.add_paragraph()
+            if style is not None:
+                p._p.style = self._style_id(style)
         rtl = self.rtl_doc if not text_hint else (is_rtl_text(text_hint) or (
             self.rtl_doc and not re.search(r"[A-Za-z]", text_hint)))
         if rtl:
@@ -1509,5 +1520,5 @@ def render_docx(sem: SemanticDocument, theme: Theme, policy=None):
         data = renderer.render()
     finally:
         _policy.deactivate(token)
-    from ..utils.reproducible import stamp_zip
-    return stamp_zip(data, renderer.render_time), col
+    # render() dated every zip entry with renderer.render_time when it embedded the fonts
+    return data, col

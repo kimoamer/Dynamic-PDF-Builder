@@ -1772,7 +1772,7 @@ def _fit_figure(flowables, block):
     out = list(flowables)
     target = out
     if len(out) == 1 and isinstance(out[0], KeepTogether):
-        out[0] = FigureGroup(out[0]._content)
+        out[0] = FigureGroup(list(out[0]._content))     # a copy: the cached figure must stay unwrapped
         target = out[0]._content
     for k, f in enumerate(target):
         if not isinstance(f, (Paragraph, Spacer)) and getattr(f, "bleed_left", None) is None:
@@ -1810,7 +1810,10 @@ def _cached_figure(ctx, block, theme, build):
            str((block.hints or {}).get("figure_size")))
     if key not in cache:
         cache[key] = build()
-    return list(cache[key])
+    # fresh copies: a render sets keep-with-next and size state on its flowables, which must not
+    # carry into the next render that reuses this figure
+    import copy
+    return [copy.copy(f) for f in cache[key]]
 
 
 def _render_chart(block, theme):

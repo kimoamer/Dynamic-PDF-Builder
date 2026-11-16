@@ -43,12 +43,23 @@ def _settings(xml: str) -> str:
     return xml[:place] + "<w:embedTrueTypeFonts/>" + xml[place:]
 
 
-def embed_fonts(docx: bytes, families: Iterable[str]) -> bytes:
-    """The same document with these catalog families inside. Others are left to Word."""
+def embed_fonts(docx: bytes, families: Iterable[str], when=None) -> bytes:
+    """The same document with these catalog families inside. Others are left to Word.
+    ``when`` dates every entry (as ``stamp_zip`` does) in the same pass, so the package,
+    fonts included, is compressed once."""
+    from ..utils.reproducible import stamp_zip, zip_stamp
     catalog = font_catalog()
     wanted = sorted({f for f in families if f in catalog})
     if not wanted:
-        return docx
+        return stamp_zip(docx, when) if when is not None else docx
+    stamp = zip_stamp(when) if when is not None else None
+
+    def dated(name: str):
+        if stamp is None:
+            return name
+        info = zipfile.ZipInfo(name, date_time=stamp)      # what writestr(name) would make, dated
+        info.compress_type, info.external_attr = zipfile.ZIP_DEFLATED, 0o600 << 16
+        return info
     parts: List[Tuple[str, bytes]] = []
     entries, rels = [], []
     number = 0
@@ -81,11 +92,11 @@ def embed_fonts(docx: bytes, families: Iterable[str]) -> bytes:
                 data = text.replace("</w:fonts>", "".join(e for _, e in entries) + "</w:fonts>").encode("utf-8")
             elif item.filename == "word/_rels/fontTable.xml.rels":
                 continue
-            dst.writestr(item.filename, data)
-        dst.writestr("word/_rels/fontTable.xml.rels",
+            dst.writestr(dated(item.filename), data)
+        dst.writestr(dated("word/_rels/fontTable.xml.rels"),
                      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
                      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
                      + "".join(rels) + "</Relationships>")
         for name, data in parts:
-            dst.writestr(name, data)
+            dst.writestr(dated(name), data)
     return out.getvalue()

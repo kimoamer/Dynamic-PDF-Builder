@@ -22,9 +22,9 @@ from pydantic import BaseModel, Field
 
 from .analysis import FORCED_BREAK_AFTER, NO_CONTENT
 from .geometry import Geometry
+from .objective import WEIGHTS as OBJECTIVE_WEIGHTS, layout_score
 
-WEIGHTS = {"utilization": 0.22, "balance": 0.12, "efficiency": 0.20, "readability": 0.20,
-           "typography": 0.10, "placement": 0.10, "tables": 0.06}
+WEIGHTS = OBJECTIVE_WEIGHTS["layout"]     # the layout part of the one objective
 MIN_BODY_PT = 9.0
 MIN_TABLE_PT = 7.5
 MIN_LEADING = 1.25
@@ -233,8 +233,7 @@ def score_layout(geo: Geometry, doc, theme, *, typography_errors: Optional[List[
                "typography": typography, "placement": round(placement, 3), "tables": round(tables, 3),
                "wasted": round(wasted_total, 3), "pages": float(len(pages)), "cpl": read["cpl"],
                "separated_figures": float(separated)}
-    raw = sum(WEIGHTS[k] * metrics[k] for k in WEIGHTS)
-    score = round(100 * raw - 25 * wasted_total, 2)
+    score = layout_score(metrics, wasted_total)
     errors = list(dict.fromkeys(errors))
     return LayoutScore(valid=not errors, score=score, hard_errors=errors, metrics=metrics,
                        pages=page_metrics)
