@@ -258,6 +258,11 @@ repository cannot supply: data, people, a key, a licence or a validator.
 | M14 | A verbatim search finds Arabic source text in the PDF. Loose justified lines 21.3% to 1.6%. QA and variants run without PyMuPDF, on PDFium. Real Word footnotes. A contrast check. | Blocked: no PDF/UA validator could be installed (veraPDF is not on PyPI); the opt-in tagged PDF still leaves list bullets, contents entries and decoration outside the tree. HarfBuzz shaping was not adopted (it needs `rlbidi`, not on PyPI). OMML math is open. |
 | M15 | Streaming that commits only complete blocks and previews mid-construct; sandboxed templates over CSV, JSON and XLSX with escaping; batch rendering with a shared figure cache; a `charts` extra (8.3 MB wheel, budget 10 MB); a service mode that enforces limits per request. | Font packs. Matplotlib stays a core dependency for this release, as planned. |
 
+After the merge, the scoreboard (`benchmarks/scoreboard.py`, 18 documents, LibreOffice for DOCX)
+meets every budget in `benchmarks/scoreboard_baseline.json`: gate pass rate 1.0 for every
+direction, 7 near-empty last pages, forecast page count exact on all 18 and mean score error 0.37,
+three-variant median 0.77 s, DOCX page parity 0.787 (was 0.766). The full suite passes (1175 tests).
+
 Owner decisions taken as section 7 recommends: the reviewed standard stays as bounds already
 settled in M8; AI is an opt-in extra; PDF/UA is a spike, not a requirement; PyMuPDF stays
 optional behind `qa/pdf_backend.py`. Decision 5 (who gives the human judgments) is still open and
