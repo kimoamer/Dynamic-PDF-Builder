@@ -222,6 +222,21 @@ def _fold(text: str) -> str:
 _SOFT_BREAK = re.compile(r"(?<=[^\W\d_])-\n\s*(?=[^\W\d_])")
 
 
+def _split_over_bands(text: str, word: str, need: int) -> int:
+    """How many times ``word`` was hyphenated at a page or column end, with the running foot and
+    head extracted between its halves ("estim-", "Page 3 of 4", "ated"): the first part ends a
+    line with a hyphen and the rest starts a later line close after it."""
+    found = 0
+    for m in re.finditer(r"([^\W\d_]+)-\n", text):
+        head = m.group(1).split()[-1] if m.group(1) else ""
+        if found >= need or not head or not word.startswith(head) or len(head) >= len(word):
+            continue
+        tail = re.escape(word[len(head):])
+        if re.search(rf"(?m)^\s*{tail}(?![^\W\d_])", text[m.end():m.end() + 400]):
+            found += 1
+    return found
+
+
 def _dehyphenate(text: str) -> str:
     """Rejoin words that justified text broke at a hyphenation point ("ex-\\ncluded")."""
     return _SOFT_BREAK.sub("", text)
@@ -256,7 +271,10 @@ def check_pdf_content(ledger: ContentLedger, data: bytes, initials: Sequence[str
     for word in map(_fold, initials):             # a drop cap draws its letter apart from the word
         if have[word] < want[word] and word[1:] in folded:
             want[word] -= 1
-    failed = [f"missing {n}: {w!r}" for w, n in (want - have).items()]
+    missing = want - have
+    for word in list(missing):
+        missing[word] -= _split_over_bands(folded, word, missing[word])
+    failed = [f"missing {n}: {w!r}" for w, n in (+missing).items()]
     short = _arabic_tokens(source) - _arabic_tokens(page_text)
     unsure = [f"{sum(short.values())} Arabic words could not be matched in the extracted text"] if short else []
     return _result("pdf", failed, unsure)

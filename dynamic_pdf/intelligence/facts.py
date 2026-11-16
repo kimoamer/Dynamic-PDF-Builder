@@ -203,7 +203,10 @@ def _leading(pages: List[dict], body: float) -> float:
             edge[round(ln["x0"])] = max(edge.get(round(ln["x0"]), 0.0), ln["x1"])
         for a, b in zip(lines, lines[1:]):
             step = b["origin"] - a["origin"]
-            wrapped = a["x1"] >= edge[round(a["x0"])] - 3 * body      # a full line: its paragraph goes on
+            right = edge[round(a["x0"])]
+            # a full line of a real column: its paragraph goes on. Short lines alone set no
+            # column edge, or two one-line paragraphs read as a wrapped one
+            wrapped = right - a["x0"] >= 15 * body and a["x1"] >= right - 3 * body
             if wrapped and abs(a["x0"] - b["x0"]) < 2 and 0.9 * body < step < 2.2 * body:
                 steps.append(step)
     return round(statistics.median(steps) / body, 2) if steps and body else 0.0
