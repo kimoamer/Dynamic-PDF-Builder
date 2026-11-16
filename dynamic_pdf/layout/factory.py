@@ -1073,6 +1073,10 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
     sp = theme.spacing
     btype = block.type
 
+    # a paper sets the paragraph under a heading flush left: the heading already marks its start
+    flush = btype == "paragraph" and getattr(ctx, "after_heading", False) and theme.decorations.paper
+    ctx.after_heading = btype == "heading"
+
     # ─── Reset drop cap flag for any non-paragraph block ───
     if btype not in ("heading", "paragraph") and ctx.apply_drop_cap_next:
         ctx.apply_drop_cap_next = False
@@ -1093,7 +1097,7 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
 
         # Section numbering
         display_text = block.text
-        if ctx.section_numbering or block.numbered:
+        if (ctx.section_numbering or block.numbered) and not (block.hints or {}).get("unnumbered"):
             from ..i18n import written_number
             number = written_number(ctx.next_heading_number(block.level), block.text)
             display_text = f"{number}  {block.text}"
@@ -1202,7 +1206,7 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
             # no first-line indent in Arabic, as the DOCX renderer and the RTL recipes already do
             rtl_style = ParagraphStyle('RTL', parent=bs, alignment=4, fontName=body_font, firstLineIndent=0)
             return [Paragraph(text, rtl_style)]
-        return [Paragraph(text, _hyphenated(bs))]
+        return [Paragraph(text, _hyphenated(bs_no_indent if flush else bs))]
 
     # ─── Rich Text ───
     if btype == "rich_text":
@@ -1273,7 +1277,14 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
 
     # ─── Chart ───
     if btype == "chart":
-        return _fit_figure(_cached_figure(ctx, block, theme, lambda: _render_chart(block, theme)), block)
+        from ..core.numbering import exhibit_label
+        number, anchor = exhibit_label(block)
+        # a numbered chart carries its title as a caption under it, as a numbered image does
+        drawn = block.model_copy(update={"title": None}) if number and block.title else block
+        figure = _cached_figure(ctx, drawn, theme, lambda: _render_chart(drawn, theme))
+        if number:
+            figure = _chart_caption(figure, block, number, anchor, theme, bs_no_indent)
+        return _fit_figure(figure, block)
 
     # ─── Diagram ───
     if btype == "diagram":
@@ -1501,6 +1512,8 @@ def _render_table(block, theme, bs, ctx=None):
     ncols = max([len(block.headers or [])] + [len(r) for r in block.rows] + [1])
     numeric = set(hints.get("numeric_cols") or [])
     pad = float(hints.get("cell_padding", 10))
+    # a paper rules its tables (top, under the header, bottom) and fills nothing
+    design = hints.get("design") or ("booktabs" if theme.decorations.paper and not block.header_bg else None)
     body_font = _arabic_font(theme, bold=True) if tbl_rtl else get_font_name(theme.typography.body_family, bold=True)
     cell_font = _arabic_font(theme) if tbl_rtl else get_font_name(theme.typography.body_family)
     tbl_align = 2 if tbl_rtl else 0
@@ -1508,7 +1521,7 @@ def _render_table(block, theme, bs, ctx=None):
     h_sty = ParagraphStyle('TH', parent=bs, firstLineIndent=0,
                            fontName=body_font,
                            textColor=_safe_color(block.header_text_color or (
-                               theme.colors.text_primary if hints.get("design") else theme.colors.text_on_primary)),
+                               theme.colors.text_primary if design else theme.colors.text_on_primary)),
                            alignment=tbl_align)
     c_sty = ParagraphStyle('TD', parent=bs, firstLineIndent=0, fontName=cell_font, alignment=tbl_align)
     h_num = ParagraphStyle('THn', parent=h_sty, alignment=2)
@@ -1549,9 +1562,9 @@ def _render_table(block, theme, bs, ctx=None):
     if block.footer_row:
         cmds.append(('BACKGROUND', (0, -1), (-1, -1), _safe_color(theme.colors.surface)))
         cmds.append(('LINEABOVE', (0, -1), (-1, -1), 1.5, _safe_color(theme.colors.text_primary)))
-    if hints.get("design"):
+    if design:
         from .art import table_commands
-        cmds = table_commands(hints["design"], theme, len(data), ncols, bool(block.headers), bool(block.footer_row),
+        cmds = table_commands(design, theme, len(data), ncols, bool(block.headers), bool(block.footer_row),
                               pad, hints.get("current_col"), tbl_rtl)
     head = 1 if block.headers else 0
     for ri in sorted(totals):
@@ -1565,6 +1578,15 @@ def _render_table(block, theme, bs, ctx=None):
         col_widths = [f / total * (avail - 1.0) for f in fr]     # exact fit, never overflow
     elif col_widths and avail and sum(col_widths) > avail:
         col_widths = [w * avail / sum(col_widths) for w in col_widths]   # never overflow the frame
+    centred = False
+    if design == "booktabs" and not block.column_widths and avail:
+        # a small table in a paper is as wide as its content and centred, not stretched to the measure
+        from ..design.measure import column_metrics
+        size = float(hints.get("font_size") or theme.typography.base_size)
+        _, nats = column_metrics([str(h) for h in block.headers or []], [[str(c) for c in r] for r in block.rows],
+                                 theme.typography.body_family, size, padding=pad * 1.2 + 22)
+        if len(nats) == ncols and sum(nats) <= avail * 0.8:
+            col_widths, centred = list(nats), True
     if col_widths and tbl_rtl:
         col_widths = list(reversed(col_widths))
     from .tagging import new_key
@@ -1574,8 +1596,8 @@ def _render_table(block, theme, bs, ctx=None):
             cell._dpb_cell = (tkey, ri, len(row) - 1 - ci if tbl_rtl else ci, ri == 0 and bool(block.headers))
     t = Table(data, colWidths=col_widths, style=TableStyle(cmds),
               repeatRows=1 if block.headers else 0)
-    t.hAlign = 'RIGHT' if tbl_rtl else 'LEFT'
-    t.spaceAfter = theme.spacing.block_gap
+    t.hAlign = 'CENTER' if centred else 'RIGHT' if tbl_rtl else 'LEFT'
+    t.spaceAfter = theme.spacing.block_gap * (1.6 if theme.decorations.paper else 1.0)
     flowables = []
     from ..core.numbering import exhibit_label
     number, anchor = exhibit_label(block)
@@ -1589,6 +1611,10 @@ def _render_table(block, theme, bs, ctx=None):
                                  fontSize=theme.typography.base_size * theme.typography.caption_size_ratio,
                                  textColor=_safe_color(theme.colors.text_muted), spaceAfter=4,
                                  fontName=cap_font, alignment=cap_align)
+        if theme.decorations.paper:
+            cap_sty = _paper_caption(theme, bs, label, after=6)
+            if number and block.caption:           # "Table 1:" in bold, then the caption
+                label = f"**{number}:** {block.caption}"
         cap = Paragraph(_md_inline(label), cap_sty)
         cap.keepWithNext = 1          # caption never separated from its table
         if anchor:
@@ -1713,7 +1739,12 @@ def _figure_text(block, theme, width=None):
                              else "Helvetica",
                              textColor=_safe_color(theme.colors.text_muted),
                              alignment=2 if rtl and width else 1, spaceAfter=theme.spacing.block_gap)
-        out.append(Paragraph(_md_inline(text) if rtl else f"<i>{_md_inline(text)}</i>", sty))
+        if theme.decorations.paper:              # as the paper's table and chart captions
+            shown = f"**{number}:** {block.caption}" if number and block.caption else text
+            out.append(Paragraph(_md_inline(shown), _paper_caption(theme, _body_style(theme, indent=False), text,
+                                                                   before=2, after=theme.spacing.block_gap)))
+        else:
+            out.append(Paragraph(_md_inline(text) if rtl else f"<i>{_md_inline(text)}</i>", sty))
         if anchor:
             from ..core.inline import plain_text
             out[-1]._exhibit_entry = ("figure", plain_text(text), anchor)
@@ -1879,6 +1910,23 @@ def _two_column_list(items, bullet_type, theme, bs, sp, ctx, start=1):
     return [t]
 
 
+def _chart_caption(figure: list, block, number: str, anchor, theme, bs) -> list:
+    """The figure with "Figure N: title" set under it in place of its trailing gap, kept on one page."""
+    text = f"{number}: {block.title}" if block.title else number
+    if theme.decorations.paper:
+        style = _paper_caption(theme, bs, text, before=2, after=theme.spacing.block_gap * 1.4)
+        text = f"**{number}:** {block.title}" if block.title else f"**{number}**"
+    else:
+        size = theme.typography.base_size * theme.typography.caption_size_ratio
+        style = ParagraphStyle('ChartCap', parent=bs, fontSize=size, leading=size * 1.3, alignment=1,
+                               textColor=_safe_color(theme.colors.text_muted), spaceAfter=theme.spacing.block_gap)
+    cap = Paragraph(_md_inline(text), style)
+    if anchor:
+        from ..core.inline import plain_text
+        cap._exhibit_entry = ("figure", plain_text(text), anchor)
+    return [KeepTogether([f for f in figure if not isinstance(f, Spacer)] + [cap])]     # as a captioned image
+
+
 def _cached_figure(ctx, block, theme, build):
     """Reuse expensive figure flowables (matplotlib → drawing) across the
     candidate renders of one composition (request-local cache)."""
@@ -1886,7 +1934,7 @@ def _cached_figure(ctx, block, theme, build):
     if cache is None:
         return build()
     key = ("fig", block.model_dump_json(exclude={"hints"}), theme.colors.model_dump_json(),
-           theme.spacing.block_gap, (block.hints or {}).get("figure_scale"),
+           theme.spacing.block_gap, theme.decorations.paper, (block.hints or {}).get("figure_scale"),
            str((block.hints or {}).get("figure_size")))
     if key not in cache:
         cache[key] = build()
@@ -1916,17 +1964,19 @@ def _render_math(block, theme):
         from svglib.svglib import svg2rlg
 
         # Use a dedicated figure sized to fit the math expression
-        fig = plt.figure(figsize=(7, 1.2))
-        fig.patch.set_alpha(0)
-        fig.text(0.5, 0.5, f"${block.latex}$", fontsize=13,
-                 ha='center', va='center',
-                 usetex=False)          # matplotlib mathtext — no LaTeX install needed
+        from ..renderers.chart import _paper_rc
+        with _paper_rc(theme):          # a paper's equations in a Times-like face, as its text
+            fig = plt.figure(figsize=(7, 1.2))
+            fig.patch.set_alpha(0)
+            fig.text(0.5, 0.5, f"${block.latex}$", fontsize=13,
+                     ha='center', va='center',
+                     usetex=False)          # matplotlib mathtext — no LaTeX install needed
 
-        with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as tf:
-            fig.savefig(tf.name, format="svg", bbox_inches="tight",
-                        transparent=True, dpi=150)
-            tf_name = tf.name
-        plt.close(fig)
+            with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as tf:
+                fig.savefig(tf.name, format="svg", bbox_inches="tight",
+                            transparent=True, dpi=150)
+                tf_name = tf.name
+            plt.close(fig)
 
         drawing = svg2rlg(tf_name)
         os.unlink(tf_name)
@@ -2109,6 +2159,9 @@ def _render_score(block, theme):
 
 
 def _render_cover(block, theme, ctx=None):
+    if (block.hints or {}).get("title_block"):
+        from .cover import title_block
+        return title_block(block, theme)
     if (block.background_image or block.background_color or block.layout) and ctx is not None \
             and getattr(ctx, "page_geometry", None) is not None:
         from .cover import designed_cover
@@ -2248,8 +2301,44 @@ def _render_footnote(block, theme, bs):
     return [Paragraph(f"<super>{marker}</super> {_md_inline(block.text)}", sty)]
 
 
+def _paper_caption(theme, bs, text: str, before: float = 0.0, after: float = 0.0) -> ParagraphStyle:
+    """A paper's caption: centred, in the text colour, a size under the body."""
+    size = theme.typography.base_size * 0.9
+    return ParagraphStyle('PaperCap', parent=bs, firstLineIndent=0, fontSize=size, leading=size * 1.35,
+                          fontName=_arabic_font(theme) if _is_rtl(text) else get_font_name(theme.typography.body_family),
+                          textColor=_safe_color(theme.colors.text_primary), alignment=1,
+                          spaceBefore=before, spaceAfter=after)
+
+
+def _paper_abstract(block, theme, bs):
+    """A paper's abstract: a centred label, then the text set narrower and a little smaller
+    than the body, with each part's label run into its first line."""
+    ty = theme.typography
+    inset = 28.0
+    size = ty.base_size * 0.92
+    label = ParagraphStyle('AbsHead', fontName=get_font_name(ty.heading_family, bold=True), fontSize=ty.base_size,
+                           leading=ty.base_size * 1.3, alignment=1, spaceAfter=ty.base_size * 0.5,
+                           textColor=bs.textColor)
+    text = ParagraphStyle('AbsBody', parent=bs, firstLineIndent=0, leftIndent=inset, rightIndent=inset,
+                          fontSize=size, leading=size * ty.line_height, spaceBefore=0, spaceAfter=size * 0.25)
+    out = [Paragraph(_md_inline(_label("abstract")), label)]
+    for field in block.fields:
+        run_in = f"<b>{_md_inline(field.label)}:</b> " if (field.label or "").strip() else ""
+        out.append(Paragraph(run_in + _md_inline(field.text), _hyphenated(text)))
+    if block.keywords:
+        words = ", ".join(block.keywords)
+        out.append(Paragraph(f"<b>{_md_inline(_label('keywords'))}:</b> {_md_inline(words)}",
+                             ParagraphStyle('AbsKW', parent=text, alignment=2 if _is_rtl(words) else 0,
+                                            spaceBefore=size * 0.4)))
+    out[-1].style = ParagraphStyle('AbsLast', parent=out[-1].style, spaceAfter=theme.spacing.block_gap * 1.6)
+    out[0].keepWithNext = 1
+    return out
+
+
 def _render_abstract(block, theme, bs):
     """IMRAD structured abstract in a bordered box."""
+    if theme.decorations.paper:
+        return _paper_abstract(block, theme, bs)
     flowables = []
     title_sty = ParagraphStyle('AbsTitle',
                                fontName=get_font_name(theme.typography.heading_family, bold=True),
@@ -2296,13 +2385,28 @@ def _render_bibliography(block, theme, bs):
                                fontName=get_font_name(theme.typography.heading_family, bold=True),
                                fontSize=theme.typography.base_size * 1.3,
                                spaceBefore=12, spaceAfter=8)
+    paper = theme.decorations.paper
+    if paper:                       # set as the paper's sections are, without a number
+        from ..design.tokens import heading_size
+        size = heading_size(theme, 1)
+        title_sty = ParagraphStyle('BibTitleP', parent=title_sty, fontSize=size, leading=size * 1.2,
+                                   textColor=_safe_color(theme.colors.text_primary),
+                                   spaceBefore=theme.spacing.heading_spacing_before[0],
+                                   spaceAfter=theme.spacing.heading_spacing_after[0])
     flowables.append(Paragraph(_md_inline(_label("references")), title_sty))
+    flowables[-1].keepWithNext = 1
     ref_sty = ParagraphStyle('BibEntry', parent=bs, firstLineIndent=-24,
                              leftIndent=24,
                              fontSize=theme.typography.base_size * 0.9,
                              spaceBefore=2, spaceAfter=4)
+    # the text cites [1], [2]: entries keyed by number carry that number, whatever the style
+    keyed = paper and block.style != "ieee" and all((e.key or "").strip().isdigit() for e in block.entries)
+    if paper:
+        ref_sty = ParagraphStyle('BibEntryP', parent=ref_sty, alignment=0, spaceBefore=0, spaceAfter=3)
     for i, entry in enumerate(block.entries, 1):
-        if block.style == "ieee":
+        if keyed:
+            text = f"[{entry.key.strip()}] {entry.authors} ({entry.year}). {entry.title}. <i>{entry.source}</i>."
+        elif block.style == "ieee":
             text = f"[{i}] {entry.authors}, \"{entry.title},\" <i>{entry.source}</i>, {entry.year}."
         elif block.style == "chicago":
             text = f"{entry.authors}. {entry.title}. <i>{entry.source}</i>, {entry.year}."

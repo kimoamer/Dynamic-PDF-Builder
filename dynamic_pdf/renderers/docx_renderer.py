@@ -63,6 +63,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         self.theme = theme
         self.render_time = render_time()       # SOURCE_DATE_EPOCH when set, as for the PDF
         self.tokens = compile_tokens(theme)
+        self.paper = bool(theme.decorations.paper)     # a scholarly paper's conventions, as in the PDF
+        self._after_heading = self._flush = False
         self.col = collector or _policy.current()
         self.rtl_doc = sem.direction == "rtl"
         self.shape_seq = 4000
@@ -448,7 +450,19 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         p = self._para(container, "Caption", full)
         if not (self.rtl_doc or is_rtl_text(full)):
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        if self.paper:
+            return self._paper_caption(p, label, text)
         self._runs(p, full)
+        return p
+
+    def _paper_caption(self, p, label: Optional[str], text: Optional[str]):
+        """A paper's caption: "Table 1:" in bold, then the caption, in the text colour, centred."""
+        size, ink = self.tokens.body_size * 0.9, self.tokens.colors["text_primary"]
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        if label:
+            self._runs(p, f"{label}:" if text else label, bold=True, size=size, color=ink)
+        if text:
+            self._runs(p, f" {text}" if label else text, size=size, color=ink, italic=False)
         return p
 
     def _boxed(self, container, fill: str, bar: Optional[str] = None):
@@ -482,6 +496,9 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         handler = getattr(self, f"_b_{t}", None)
         if handler is None:
             raise BlockRenderError(t, "no DOCX renderer for this block type")
+        # a paper sets the paragraph under a heading flush left
+        self._flush = self.paper and t == "paragraph" and self._after_heading
+        self._after_heading = t == "heading"
         handler(c, b)
 
     # ─── text ───
@@ -489,7 +506,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
     def _b_heading(self, c, b):
         lvl = max(1, min(6, b.level))
         text = b.text
-        if self.sem.meta.section_numbering or b.numbered:
+        if (self.sem.meta.section_numbering or b.numbered) and not (b.hints or {}).get("unnumbered"):
             idx = lvl - 1
             self.heading_counters[idx] += 1
             for i in range(idx + 1, 6):
@@ -574,6 +591,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             p.paragraph_format.keep_with_next = True
         if is_rtl_text(b.text) or self.rtl_doc:
             p.paragraph_format.first_line_indent = None
+        elif self._flush:
+            p.paragraph_format.first_line_indent = Pt(0)
         self._runs(p, b.text)
 
     def _b_rich_text(self, c, b):
@@ -712,7 +731,12 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             p.alignment = None if (self.rtl_doc or is_rtl_text(full)) else WD_ALIGN_PARAGRAPH.LEFT
             p.paragraph_format.keep_with_next = True
             p.paragraph_format.space_after = Pt(3)
-            self._runs(p, full)
+            if self.paper:
+                self._paper_caption(p, label or None, b.caption)
+            else:
+                self._runs(p, full)
+        # a paper rules its tables (top, under the header, bottom) and fills nothing
+        design = hints.get("design") or ("booktabs" if self.paper and not b.header_bg else None)
         headers = list(b.headers or [])
         rows = [list(r) for r in b.rows]
         ncols = max([len(headers)] + [len(r) for r in rows] + [1])
@@ -741,14 +765,14 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             F.set_cant_split(row)
             for ci, h in enumerate(headers):
                 cell = row.cells[ci]
-                if not hints.get("design"):
+                if not design:
                     F.set_cell_shading(cell, hdr_bg)
                 p = self._para(cell, "Table Text", str(h))
                 if ci in numeric_cols:
                     p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
                 p.paragraph_format.keep_with_next = True
                 self._runs(p, str(h), bold=True, size=size,
-                           color=self.tokens.colors["text_primary"] if hints.get("design") else hdr_fg)
+                           color=self.tokens.colors["text_primary"] if design else hdr_fg)
             r0 = 1
         alt = self.tokens.colors.get("table_row_alt", "#F7F9FC")
         all_rows = rows + ([list(b.footer_row)] if b.footer_row else [])
@@ -759,7 +783,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             for ci in range(ncols):
                 val = str(data[ci]) if ci < len(data) else ""
                 cell = row.cells[ci]
-                if b.style == "striped" and ri % 2 == 1 and not is_footer and not hints.get("design"):
+                if b.style == "striped" and ri % 2 == 1 and not is_footer and not design:
                     F.set_cell_shading(cell, alt)
                 p = self._para(cell, "Table Text", val)
                 if ci in numeric_cols:
@@ -776,14 +800,25 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             widths = [w * scale for w in b.column_widths]
         elif hints.get("col_fractions") and len(hints["col_fractions"]) == ncols:
             widths = [f * self.content_width_pt for f in hints["col_fractions"]]
+        if design == "booktabs" and not b.column_widths:
+            # a small table in a paper is as wide as its content and centred (as in the PDF)
+            from ..design.measure import column_metrics
+            _, nats = column_metrics([str(h) for h in headers], [[str(x) for x in r] for r in rows],
+                                     self.theme.typography.body_family, float(size or self.tokens.body_size),
+                                     padding=float(hints.get("cell_padding", 10)) * 1.2 + 22)
+            if len(nats) == ncols and sum(nats) <= self.content_width_pt * 0.8:
+                widths = list(nats)
+                tblW = F._get_or_add(t._tbl.tblPr, "w:tblW")
+                tblW.set(F.qn("w:type"), "dxa")
+                tblW.set(F.qn("w:w"), str(int(sum(nats) * 20)))
         if widths:
             F.set_table_layout_fixed(t)
             for ci, wv in enumerate(widths):
                 t.columns[ci].width = Pt(wv)
                 for row in t.rows:
                     row.cells[ci].width = Pt(wv)
-        if hints.get("design"):
-            self._art_table(t, hints, has_header, bool(b.footer_row), {r0 + ri for ri in totals})
+        if design:
+            self._art_table(t, {**hints, "design": design}, has_header, bool(b.footer_row), {r0 + ri for ri in totals})
         self._spacer_after(c)
 
     def _art_table(self, t, hints, has_header, has_footer, total_rows=()):
@@ -791,17 +826,22 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         dark = _ink(self.theme) if self.theme is not None else self.tokens.colors["primary"]
         hair = self.tokens.colors["border"]
         ledger = hints["design"] == "ledger"
+        ruled = hints["design"] == "booktabs"      # a paper: three rules, no lines between rows
         F.set_table_borders(t, size=0)
         last = len(t.rows) - 1
         current = hints.get("current_col")
         for ri, row in enumerate(t.rows):
             head = has_header and ri == 0
             for ci, cell in enumerate(row.cells):
-                sides = {"bottom": ("single", 3, hair), "left": None, "right": None}
+                sides = {"bottom": None if ruled else ("single", 3, hair), "left": None, "right": None}
+                if ruled and ri == 0:
+                    sides["top"] = ("single", 8, dark)
                 if head:
-                    sides["bottom"] = ("single", 8, dark)
+                    sides["bottom"] = ("single", 5 if ruled else 8, dark)
                     if ledger:
                         sides["top"] = ("single", 12, dark)
+                if ruled and ri == last:
+                    sides["bottom"] = ("single", 8, dark)
                 if ledger and ri == last:
                     sides["bottom"] = ("single", 12, dark)
                 if (has_footer and ri == last) or ri in total_rows:
@@ -1022,12 +1062,19 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             self._page_parts(sec, b.name)
 
     def _b_chart(self, c, b):
+        from ..core.numbering import exhibit_label
         from .chart import chart_png
-        png = chart_png(b, self.theme)
+        label, anchor = exhibit_label(b)
+        # a numbered chart carries its title as a caption under it, as a numbered image does
+        png = chart_png(b.model_copy(update={"title": None}) if label and b.title else b, self.theme)
         alt = f"{b.chart_type} chart" + (f": {b.title}" if b.title else "")
         data_txt = _short_data(b.data)
         self._picture(c, png, f"{alt}. Data: {data_txt}" if data_txt else alt,
                       max_width_pt=min(self.content_width_pt, 6.3 * 72))
+        if label:
+            p = self._caption(c, label, b.title)
+            if anchor and p is not None:
+                F.add_bookmark(p, F.bookmark_name(anchor), self.bm)
         self._spacer_after(c)
 
     def _b_diagram(self, c, b):
@@ -1053,7 +1100,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
     def _b_math(self, c, b):
         from .math import math_png
         try:
-            png = math_png(b.latex)
+            png = math_png(b.latex, paper=self.paper)
         except Exception as e:
             self.col.warn("math_fallback", f"Math rendered as source text ({type(e).__name__}: {e})")
             p = self._para(c, "Code")
@@ -1277,7 +1324,31 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         p.add_run(" ")
         self._runs(p, b.text)
 
+    def _paper_abstract(self, c, b):
+        """A paper's abstract: a centred label, then the text set narrower and a little smaller."""
+        size, inset = self.tokens.body_size * 0.92, Pt(28)
+        head = self._para(c, "Normal", self._label("abstract"))
+        head.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        head.paragraph_format.keep_with_next = True
+        head.paragraph_format.space_after = Pt(self.tokens.body_size * 0.5)
+        self._runs(head, self._label("abstract"), bold=True)
+        parts = [(f.label, f.text, False) for f in b.fields]
+        if b.keywords:
+            parts.append((self._label("keywords"), ", ".join(b.keywords), True))
+        for label, text, last in parts:
+            p = self._para(c, "Normal", text)
+            pf = p.paragraph_format
+            pf.left_indent = pf.right_indent = inset
+            pf.space_after = Pt(size * 0.25)
+            p.alignment = WD_ALIGN_PARAGRAPH.LEFT if last else WD_ALIGN_PARAGRAPH.JUSTIFY
+            if (label or "").strip():
+                self._runs(p, f"{label}: ", bold=True, size=size)
+            self._runs(p, text, size=size)
+        self._spacer_after(c, self.tokens.block_gap)
+
     def _b_abstract(self, c, b):
+        if self.paper:
+            return self._paper_abstract(c, b)
         cell = self._boxed(c, self.tokens.colors["surface"], self.tokens.colors["accent"])
         self._runs(self._para(cell, "Heading 4", self._label("abstract")), self._label("abstract"))
         for f in b.fields:
@@ -1290,13 +1361,19 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             self._runs(p, ", ".join(b.keywords), italic=True)
 
     def _b_bibliography(self, c, b):
-        self._runs(self._para(c, "Heading 2", self._label("references")), self._label("references"))
+        # a paper sets "References" as it sets its sections; entries keyed by number carry it,
+        # because the text cites [1], [2]
+        self._runs(self._para(c, "Heading 1" if self.paper else "Heading 2", self._label("references")),
+                   self._label("references"))
+        keyed = self.paper and b.style != "ieee" and all((e.key or "").strip().isdigit() for e in b.entries)
         for i, e in enumerate(b.entries, 1):
             p = self._para(c, "Normal", e.title)
             pf = p.paragraph_format
             pf.left_indent = Pt(24)
             pf.first_line_indent = Pt(-24)
-            if b.style == "ieee":
+            if keyed:
+                self._runs(p, f"[{e.key.strip()}] {e.authors} ({e.year}). {e.title}. *{e.source}*.")
+            elif b.style == "ieee":
                 self._runs(p, f"[{i}] {e.authors}, “{e.title},” *{e.source}*, {e.year}.")
             else:
                 self._runs(p, f"{e.authors} ({e.year}). {e.title}. *{e.source}*.")
@@ -1411,7 +1488,29 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
     def tokens_h1_ratio(self) -> float:
         return self.tokens.heading_sizes[0] / self.tokens.body_size
 
+    def _title_block(self, c, b):
+        """A paper's opening: title, authors and an optional line, centred at the head of page
+        one, the text following on the same page."""
+        ink = self.tokens.colors["text_primary"]
+        lines = [(b.title, self.tokens.heading_sizes[0] * 1.2, True, False, self.tokens.heading_sizes[0] * 0.7),
+                 (b.author, self.tokens.body_size * 1.1, False, False, self.tokens.body_size * 0.4),
+                 (b.subtitle, self.tokens.body_size, False, True, self.tokens.body_size * 0.3),
+                 (b.date, self.tokens.body_size, False, True, self.tokens.body_size * 0.3)]
+        first = True
+        for text, size, bold, italic, after in lines:
+            if not text:
+                continue
+            p = self._para(c, "Title" if bold else "Normal", text)
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p.paragraph_format.space_before = Pt(self.tokens.body_size if first else 0)
+            p.paragraph_format.space_after = Pt(after)
+            self._runs(p, text, bold=bold or None, italic=italic or None, size=size, color=ink)
+            first = False
+        self._spacer_after(c, self.tokens.body_size * 1.6)
+
     def _b_cover_page(self, c, b):
+        if (b.hints or {}).get("title_block"):
+            return self._title_block(c, b)
         if b.background_image or b.background_color or b.layout:
             return self._designed_cover(c, b)
         sp = self._para(c, "Normal")
@@ -1449,7 +1548,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         counters = [0] * 6
         for i, o in enumerate(entries):
             text = o.text
-            if self.sem.meta.section_numbering:
+            if self.sem.meta.section_numbering and not (self.sem.blocks[o.block_index].hints or {}).get("unnumbered"):
                 counters[o.level - 1] += 1
                 for j in range(o.level, 6):
                     counters[j] = 0

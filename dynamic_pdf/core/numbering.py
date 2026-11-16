@@ -4,8 +4,8 @@ Table and figure numbers, references by id, and lists of figures and tables.
 Numbers are generated text: the author's captions and ``{ref:id}`` markers stay as written,
 and the renderers set "Table 2" or "Figure 3" beside them. Numbering is on when the document
 asks for it (``meta.exhibit_numbering``), refers to something with ``{ref:id}``, or has a list
-of figures or tables. Then every captioned table and image (and any with an ``id``) is
-numbered in document order. A number the author set (``table_number``, ``figure_number``) is
+of figures or tables. Then every captioned table and image, and every titled chart (and any
+with an ``id``), is numbered in document order. A number the author set (``table_number``, ``figure_number``) is
 kept. A reference to a heading reads its section number when sections are numbered and its
 title otherwise.
 """
@@ -55,6 +55,8 @@ def _content_key(block):
         return ("image", block.src, block.caption, block.id)
     if t == "table":
         return ("table", tuple(block.headers or []), block.caption, block.id, len(block.rows))
+    if t == "chart":
+        return ("chart", block.chart_type, block.title, block.id, str(block.data)[:200])
     return None
 
 
@@ -97,19 +99,22 @@ def number_document(doc) -> Numbering:
     for b in _walk(doc.blocks):
         if b.type == "heading":
             text = plain_text(b.text)
-            heads[b.level - 1] += 1
-            heads[b.level:] = [0] * (6 - b.level)
+            counted = (doc.meta.section_numbering or b.numbered) and not (b.hints or {}).get("unnumbered")
+            if counted:
+                heads[b.level - 1] += 1
+                heads[b.level:] = [0] * (6 - b.level)
             num = ".".join(str(n) for n in heads[:b.level] if n)
-            shown = (f"{label('section', lang)} {num}" if doc.meta.section_numbering or b.numbered else text)
+            shown = f"{label('section', lang)} {num}" if counted else text
             hid = b.id or _slug(text)
             if hid and hid not in out.refs:
                 out.refs[hid] = (shown, b.id)        # only a heading with an id carries a bookmark
             continue
-        kind = {"table": "table", "image": "figure"}.get(b.type)
+        kind = {"table": "table", "image": "figure", "chart": "figure"}.get(b.type)
         if kind is None:
             continue
-        own = b.table_number if kind == "table" else b.figure_number
-        if not (own or (out.on and (b.caption or b.id))):
+        caption = b.title if b.type == "chart" else b.caption      # a chart's title is its caption
+        own = b.table_number if kind == "table" else getattr(b, "figure_number", None)
+        if not (own or (out.on and (caption or b.id))):
             continue
         counts[kind] += 1
         n = own or counts[kind]
@@ -117,7 +122,7 @@ def number_document(doc) -> Numbering:
         while anchor in used:
             anchor += "-"
         used.add(anchor)
-        ex = Exhibit(kind, n, plain_text(b.caption or ""), anchor)
+        ex = Exhibit(kind, n, plain_text(caption or ""), anchor)
         out.exhibits[id(b)] = ex
         key = _content_key(b)
         if key is not None:

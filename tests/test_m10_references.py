@@ -106,7 +106,8 @@ def test_content_ledger_and_preservation_still_pass(photo):
     ledger = build_content_ledger(designed)
     assert ("tab-sales", "Table 1") in ledger.refs and ("method", "Section 1") in ledger.refs
     # numbering adds nothing to the author's text: the same strings, {ref:id} markers included
-    assert ledger.strings() == build_content_ledger(b.build()).strings()
+    # (a title block the design builds from the metadata is not the numbering's doing)
+    assert [e.text for e in ledger.entries if e.block_type != "cover_page"] == build_content_ledger(b.build()).strings()
     report = check_preservation(ledger, pdf=b.render(), docx=b.render_docx())
     assert report.status == VERIFIED, report.to_dict()
 

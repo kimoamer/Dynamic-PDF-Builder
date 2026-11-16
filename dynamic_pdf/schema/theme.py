@@ -257,6 +257,9 @@ class DecorationConfig(BaseModel):
     code_border_radius: float = 4.0
     table_header_bold: bool = True
     table_row_alternating: bool = True
+    # a scholarly paper's conventions: title block, plain abstract, ruled tables, captions,
+    # greyscale figures, numbered references (set by the academic design recipe)
+    paper: bool = False
     # Drop Cap
     drop_cap_enabled: bool = False
     drop_cap_lines: int = 3

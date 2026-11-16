@@ -43,6 +43,37 @@ _FALLBACK_COLORS = [
 ]
 
 
+_GREYS = ["#6b6b6b", "#b3b3b3", "#333333", "#d6d6d6", "#8c8c8c", "#4d4d4d"]
+_ONE_TONE = {"bar", "vertical_bar", "horizontal_bar", "line", "area", "histogram", "scatter", "bubble",
+             "waterfall", "sparkline", "gauge"}
+
+
+def _paper(theme) -> bool:
+    return bool(getattr(getattr(theme, "decorations", None), "paper", False))
+
+
+def _paper_block(block, key: str):
+    """A paper's figure prints in greys: one tone where there is one series, a ramp otherwise.
+    Colours the author chose stay."""
+    update = {}
+    if (block.width, block.height) == (6.0, 4.0) and not (getattr(block, "hints", None) or {}).get("figure_size"):
+        update.update(width=4.6, height=2.9)       # the default size is a slide's; a paper's figure sits in the text
+    if not block.colors:
+        data = block.data
+        one = key in _ONE_TONE and not (isinstance(data, dict)
+                                        and any(isinstance(v, (dict, list)) for v in data.values()))
+        update["colors"] = _GREYS[:1] if one else _GREYS
+    return block.model_copy(update=update) if update else block
+
+
+def _paper_rc(theme):
+    """Figure text in a Times-like face (STIX ships with Matplotlib) to sit with a paper's serif text."""
+    import contextlib
+    if not _paper(theme):
+        return contextlib.nullcontext()
+    return plt.rc_context({"font.family": "STIXGeneral", "mathtext.fontset": "stix"})
+
+
 def _colors(block, n: int) -> list:
     """n colours: the author's, repeated as given, or the palette, which never repeats a
     colour: past its end come lighter, then darker, versions of each hue."""
@@ -910,9 +941,12 @@ def render_chart(block, theme):
                 "chart", f'unsupported type "{block.chart_type}"; supported: {", ".join(_RENDERERS)}')
 
         _check_data(key, block.data)
-        fig = renderer(block, theme)
-        _shape_arabic(fig, block)
-        drawing = _fig_to_drawing(fig, block, theme)
+        if _paper(theme):
+            block = _paper_block(block, key)
+        with _paper_rc(theme):
+            fig = renderer(block, theme)
+            _shape_arabic(fig, block)
+            drawing = _fig_to_drawing(fig, block, theme)
 
         if drawing:
             from reportlab.platypus import Spacer
@@ -941,12 +975,15 @@ def chart_png(block, theme, dpi: int = 200) -> bytes:
             "chart", f'unsupported type "{block.chart_type}"; supported: {", ".join(_RENDERERS)}')
     try:
         _check_data(key, block.data)
-        fig = renderer(block, theme)
-        _shape_arabic(fig, block)
-        buf = io.BytesIO()
-        fig.savefig(buf, format="png", bbox_inches="tight", dpi=dpi,
-                    facecolor=fig.get_facecolor())
-        plt.close(fig)
+        if _paper(theme):
+            block = _paper_block(block, key)
+        with _paper_rc(theme):
+            fig = renderer(block, theme)
+            _shape_arabic(fig, block)
+            buf = io.BytesIO()
+            fig.savefig(buf, format="png", bbox_inches="tight", dpi=dpi,
+                        facecolor=fig.get_facecolor())
+            plt.close(fig)
         return buf.getvalue()
     except BlockRenderError:
         raise

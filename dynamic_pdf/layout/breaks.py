@@ -254,7 +254,7 @@ class BreakReport:
 def _items(doc, theme, policy=None, cache=None):
     """(runs of (items, ends the document, frozen), usable frame height) from measured blocks.
     A run starts on a fresh page; a frozen run holds something the model does not cover."""
-    from ..intelligence.analysis import FORCED_BREAK_AFTER, NO_CONTENT, measure_blocks
+    from ..intelligence.analysis import NO_CONTENT, forces_break, measure_blocks
     from ..layout.engine import _uses_media_model
     if _uses_media_model(doc.blocks):
         return None, 0.0
@@ -274,7 +274,7 @@ def _items(doc, theme, policy=None, cache=None):
     for m, b in zip(ms, doc.blocks):
         hints = b.hints or {}
         starts = m.break_before or hints.get("drop") or m.landscape != landscape or (
-            m.index > 0 and doc.blocks[m.index - 1].type in FORCED_BREAK_AFTER)
+            m.index > 0 and forces_break(doc.blocks[m.index - 1]))
         landscape = m.landscape
         if starts and cur:
             segments.append((cur, False, frozen))

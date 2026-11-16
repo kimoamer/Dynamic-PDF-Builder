@@ -387,6 +387,6 @@ def test_arabic_digit_runs_compare_up_to_reversal_only_in_the_pdf():
     assert _either_way("٢٠٢٥") != _either_way("٢٠٢٦")
 
 
-def test_direction_ids_are_the_five_requested():
+def test_direction_ids_are_the_five_requested_and_the_paper():
     assert set(DIRECTIONS) == {"corporate_conservative", "editorial_modern", "executive_premium",
-                               "financial_data", "arabic_institutional"}
+                               "financial_data", "arabic_institutional", "academic_paper"}

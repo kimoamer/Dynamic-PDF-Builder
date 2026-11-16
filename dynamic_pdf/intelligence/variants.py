@@ -197,7 +197,7 @@ def _initials(doc, theme) -> List[str]:
 
 def _intended(plan: ArtDirectionPlan, pdf_pages, opener_titles: Sequence[str]) -> List[int]:
     """Pages planned to be quiet: the cover, contents, opening pages and statement pages."""
-    pages = {1} if plan.cover not in ("masthead", "none") else set()
+    pages = {1} if plan.cover not in ("masthead", "title_block", "none") else set()
     titles = {_words(t) for t in opener_titles}
     for p in pdf_pages:
         if _words(p.first_line) in titles or (p.words <= 60 and p.largest_type >= 18 and p.page > 1):

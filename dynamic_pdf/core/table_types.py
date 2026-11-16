@@ -213,6 +213,11 @@ def _role(header: str, cells: List[Cell], first: bool) -> Column:
     if ident_head and share("number", "identifier", "year") >= 0.8 and not money_head:
         return Column("identifier")
     figures = [c for c in filled if c.kind in ("percent", "currency", "number", "year")]
+    # "4 h", "6 h", "8 h" down the first column are the rows' names (the levels compared),
+    # not figures to line up: each cell carries its unit and no two are alike
+    if (first and n >= 2 and all(c.kind == "number" and c.unit for c in filled)
+            and len({(c.value, c.unit) for c in filled}) == n and not unit):
+        return Column("category")
     if len(figures) / n >= 0.8:
         decimals = max(c.decimals for c in figures)
         units = [c.unit for c in figures if c.unit]

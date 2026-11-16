@@ -214,8 +214,21 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
     _keep_intros_with_exhibits(sem, lp)
     lp.estimated_pages = _estimate_pages(sem, theme, width)
 
+    # ── a paper does not number its abstract, references or acknowledgements ──
+    if plan.recipe.paper:
+        from ..core.keywords import pattern
+        plain = pattern("sections", "unnumbered")
+        for b in sem.blocks:
+            if b.type == "heading" and plain.fullmatch(" ".join(plain_text(b.text).split()).lower()):
+                b.hints = {**(b.hints or {}), "unnumbered": True}
+    # ── a paper opens with its title and authors on page one, never on a cover ──
+    from .art_direction import _opens_with_title
+    if plan.recipe.paper and not st.has_cover and sem.meta.title and not _opens_with_title(sem):
+        sem.blocks.insert(0, CoverPageBlock(title=sem.meta.title, subtitle=sem.meta.subject or sem.meta.description,
+                                            author=sem.meta.author, hints={"title_block": True}))
+        lp.log("title", "paper: title and authors set at the head of page one")
     # ── cover page from metadata (only for long, titled reports) ──
-    if (profile in _COVER_PROFILES and not st.has_cover and sem.meta.title
+    elif (profile in _COVER_PROFILES and not st.has_cover and sem.meta.title
             and lp.estimated_pages >= 3):
         cover = CoverPageBlock(title=sem.meta.title,
                                subtitle=sem.meta.subject or sem.meta.description,
@@ -302,12 +315,13 @@ def drop_short_contents(sem: SemanticDocument, plan: DesignPlan) -> None:
     if not plan.toc_inserted or lp is None or lp.measured_pages is None:
         return
     pages = lp.measured_pages - 1                 # the inserted contents page ends with a page break
-    if pages >= MIN_CONTENTS_PAGES:
+    floor = max(MIN_CONTENTS_PAGES, plan.recipe.toc_min_pages)
+    if pages >= floor:
         return
     sem.blocks = [b for b in sem.blocks if not (b.type == "table_of_contents" and b.kind == "contents")]
     plan.toc_inserted = False
     note = (f"{pages} page{'s' if pages != 1 else ''} of content measured: no contents page "
-            f"under {MIN_CONTENTS_PAGES} pages unless the author adds one")
+            f"under {floor} pages unless the author adds one")
     if not any(d.target == "contents" and d.decision == note for d in lp.decisions):
         lp.log("contents", note)
 
