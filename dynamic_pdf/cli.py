@@ -6,6 +6,8 @@ Usage:
     dynamic-pdf render input.md -o output.docx --design auto
     dynamic-pdf render input.md --format both
     dynamic-pdf render input.json -o output.pdf
+    dynamic-pdf render invoice.md --data invoice.json --data lines=lines.csv
+    dynamic-pdf batch letter.md --data people.csv -o out/ --name "letter-{{ id }}"
     dynamic-pdf themes
     dynamic-pdf version
 """
@@ -43,6 +45,24 @@ def main():
                           help="Inspect rendered pages, auto-fix layout defects (bounded retries), report findings")
     render_p.add_argument("--allow-remote-assets", action="store_true",
                           help="Allow fetching http(s) images (public hosts only)")
+    render_p.add_argument("--data", action="append", default=[], metavar="[NAME=]FILE",
+                          help="Fill the input as a template from a .json/.csv/.xlsx file (repeatable)")
+
+    # ─── batch ───
+    batch_p = sub.add_parser("batch", help="Render one document per data record from a template")
+    batch_p.add_argument("template", help="Template file (.md or .json)")
+    batch_p.add_argument("--data", required=True, metavar="FILE",
+                         help="Records: a .csv/.xlsx file or a JSON list")
+    batch_p.add_argument("--context", action="append", default=[], metavar="[NAME=]FILE",
+                         help="Data shared by every document (repeatable)")
+    batch_p.add_argument("-o", "--output", default=".", metavar="DIR", help="Output directory")
+    batch_p.add_argument("--name", default="document-{{ index }}",
+                         help='File name template (default: "document-{{ index }}")')
+    batch_p.add_argument("-f", "--format", choices=["pdf", "docx", "both"], default="pdf")
+    batch_p.add_argument("--design", default="auto", metavar="PROFILE")
+    batch_p.add_argument("-t", "--theme", default=None)
+    batch_p.add_argument("--permissive", action="store_true")
+    batch_p.add_argument("--allow-remote-assets", action="store_true")
 
     # ─── themes ───
     sub.add_parser("themes", help="List available themes")
@@ -58,6 +78,15 @@ def main():
             _cmd_render(args)
         except DynamicPDFError as e:
             print(f"Error: {type(e).__name__}: {e}", file=sys.stderr)
+            sys.exit(2)
+    elif args.command == "batch":
+        from .utils.errors import DynamicPDFError
+        try:
+            _cmd_batch(args)
+        except DynamicPDFError as e:
+            print(f"Error: {type(e).__name__}: {e}", file=sys.stderr)
+            for note in getattr(e, "__notes__", ()):
+                print(f"  {note}", file=sys.stderr)
             sys.exit(2)
     elif args.command == "themes":
         _cmd_themes()
@@ -104,11 +133,20 @@ def _cmd_render(args):
 
     with open(input_path, "r", encoding="utf-8") as f:
         content = f.read()
+    context = None
+    if args.data:
+        from .templates import load_context, render_template
+        context = load_context(args.data)
+        if ext != ".json":
+            content = render_template(content, context)
 
     if ext == ".json":
         import json
         from .schema.document import Document
         payload = json.loads(content)
+        if context is not None:
+            from .templates import render_json_template
+            payload = render_json_template(payload, context)
         if args.theme != "claude":
             payload["theme"] = args.theme
         doc = Document.model_validate(payload)
@@ -149,6 +187,27 @@ def _cmd_render(args):
                 print(f"  fixed: {fix}")
             for f in rep.findings:
                 print(f"  {f.severity}: [{f.code}] {f.message}", file=sys.stderr)
+    _report(paths, diagnostics)
+
+
+def _cmd_batch(args):
+    from .templates import load_context, load_data, render_batch
+    from .utils.errors import TemplateError
+    with open(args.template, "r", encoding="utf-8") as f:
+        template = f.read()
+    records = load_data(args.data)
+    if not isinstance(records, list):
+        raise TemplateError(f"{args.data} must hold a list of records")
+    results = render_batch(
+        template, records, args.output,
+        kind="json" if args.template.lower().endswith(".json") else "markdown",
+        name=args.name, formats=("pdf", "docx") if args.format == "both" else (args.format,),
+        design=None if args.design == "none" else args.design, theme=args.theme,
+        policy=_policy_from_args(args), context=load_context(args.context))
+    paths, diagnostics = [], []
+    for res in results:
+        paths += [p for p in (res.pdf_path, res.docx_path) if p]
+        diagnostics += res.diagnostics
     _report(paths, diagnostics)
 
 

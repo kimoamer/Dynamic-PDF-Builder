@@ -14,8 +14,8 @@ import os
 import math
 import tempfile
 
-import matplotlib
-matplotlib.use("Agg")
+from ..utils.optional import require_matplotlib
+matplotlib = require_matplotlib()   # before numpy: both come with the charts extra
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import matplotlib.patheffects as pe

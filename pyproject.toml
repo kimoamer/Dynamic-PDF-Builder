@@ -28,7 +28,7 @@ dependencies = [
     "pydantic>=2.0.0",
     "markdown-it-py>=3.0.0",
     "pygments>=2.17.0",
-    "matplotlib>=3.8.0",
+    "matplotlib>=3.8.0",      # also the "charts" extra; stays in core for this release (R5)
     "Pillow>=10.0.0",
     "latex2mathml>=3.76",
     "svglib>=1.5.0",
@@ -39,6 +39,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+charts   = ["matplotlib>=3.8.0"]      # charts, math, diagrams; still a core dependency for this release
+xlsx     = ["openpyxl>=3.1"]          # XLSX data sources for templates
 diagrams = ["playwright>=1.40"]
 plotly   = ["plotly>=5.0", "kaleido>=0.2"]
 pdf      = ["pikepdf>=8.0"]
@@ -47,7 +49,7 @@ ranker   = ["lightgbm>=4.0"]          # optional learned candidate ranker (MIT);
 analyzer = ["pymupdf>=1.23"]          # tools/reference_analyzer only (AGPL; local dev tool, not in "all")
 qrcode   = ["qrcode[pil]>=7.4"]
 rtl      = ["arabic-reshaper>=3.0", "python-bidi>=0.6"]  # already in core; kept for compatibility
-all      = ["dynamic-pdf-builder[diagrams,plotly,pdf,qrcode,rtl,qa]"]
+all      = ["dynamic-pdf-builder[charts,diagrams,plotly,pdf,qrcode,rtl,qa,xlsx]"]
 dev      = ["pytest>=8.0", "pymupdf>=1.23", "pikepdf>=8.0", "ruff>=0.3", "mypy>=1.8"]
 
 [tool.setuptools.dynamic]
