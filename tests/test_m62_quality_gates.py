@@ -177,14 +177,20 @@ def _first_last_pages(doc, theme):
     return first, last
 
 
-def test_arabic_report_tables_stay_with_their_lead_in_text():
+def test_arabic_report_tables_stay_with_their_lead_in_text(monkeypatch):
+    import dynamic_pdf.layout.breaks as B
+    real = B.plan_document
+    monkeypatch.setattr(B, "plan_document", lambda *a, **k: ([], [], "off"))
+    natural = STRESS["arabic_long_report"](None).design("auto")
+    assert B.page_facts(*natural._prepared())["separated"] >= 1   # the M6.1 defect, breaks left to ReportLab
+    monkeypatch.setattr(B, "plan_document", real)
     b = STRESS["arabic_long_report"](None).design("auto").compose("smart")
     pdf = b.render()
     r = b.last_composition
     base = r.candidates[0]
-    assert base.metrics["separated_figures"] >= 1          # the M6.1 defect is present in the baseline
-    # any candidate may fix it ("grouped" did; at the reviewed sizes "compact" also saves pages)
-    assert r.status == "ok" and r.strategy != "baseline"
+    # the designed layout's page-break search (M11) or any candidate may fix it
+    # ("grouped" did; at the reviewed sizes "compact" also saves pages)
+    assert r.status == "ok"
     chosen = next(c for c in r.candidates if c.name == r.strategy)
     assert chosen.metrics["separated_figures"] == 0 and chosen.valid
     assert chosen.pages <= base.pages + 1

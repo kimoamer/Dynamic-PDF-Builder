@@ -960,6 +960,9 @@ def create_flowables(block, theme: Theme, ctx: RenderContext = None) -> list:
             # page-break logic in the engine splits the paragraph if needed)
             out[-1].keepWithNext = 1
             out[-1]._dpb_keep_tail = int(hints["keep_tail_with_next"])
+        if out and hints.get("page_start"):
+            from reportlab.platypus.flowables import PageBreakIfNotEmpty
+            out.insert(0, PageBreakIfNotEmpty())    # page-break optimizer (layout/breaks.py)
         return out
     except Exception as e:
         btype = getattr(block, "type", type(block).__name__)
