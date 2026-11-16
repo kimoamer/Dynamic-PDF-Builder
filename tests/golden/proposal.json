@@ -84,7 +84,7 @@
  "layout": [
   "headings: shallow outline: stronger H1 contrast",
   "measure: 80 chars/line",
-  "tables: table 5: 2 cols, 2 rows; 10.5pt; kept on one page",
+  "tables: table 5: 2 cols, 2 rows; 10.5pt; kept on one page; columns: category, period",
   "lead: opening paragraph set as a lead (larger, no indent)",
   "pagination: 1 page: fits on one page; nothing to tighten"
  ]
