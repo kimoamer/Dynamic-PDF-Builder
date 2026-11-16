@@ -332,9 +332,11 @@ class DocumentBuilder:
         cached = self._fit_cache.get(key)
         if cached is None:
             fit_pages(sem, plan, self._policy)
-            self._fit_cache = {key: (plan.theme, plan.layout)}
+            from .layout.breaks import fit_breaks
+            breaks = None if self._evidence_recipe else fit_breaks(sem.to_document(), plan, self._policy)
+            self._fit_cache = {key: (plan.theme, plan.layout, breaks)}
         else:
-            plan.theme, plan.layout = cached
+            plan.theme, plan.layout, breaks = cached
             from .design.tokens import compile_tokens
             plan.tokens = compile_tokens(plan.theme)
         from .design.planner import drop_short_contents
@@ -342,6 +344,9 @@ class DocumentBuilder:
         if self._evidence_recipe:
             sem, plan = self._gated(base_sem, sem, plan, key)
         self.last_design = plan
+        if breaks:
+            from .layout.breaks import with_breaks
+            return with_breaks(sem.to_document(), *breaks), plan.theme
         return sem.to_document(), plan.theme
 
     def _gated(self, base_sem, sem, plan, key):

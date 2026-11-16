@@ -56,7 +56,7 @@ class LayoutPlan(BaseModel):
     decisions: List[LayoutDecision] = Field(default_factory=list)
     estimated_pages: float = 0.0
     measured_pages: Optional[int] = None
-    trial_renders: int = 0          # PDF renders spent by fit_pages
+    trial_renders: int = 0          # PDF renders spent by fit_pages and fit_breaks
 
     def log(self, target: str, decision: str):
         self.decisions.append(LayoutDecision(target=target, decision=decision))

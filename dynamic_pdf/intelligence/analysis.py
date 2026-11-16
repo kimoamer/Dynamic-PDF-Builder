@@ -38,6 +38,10 @@ class BlockMeasure:
     landscape: bool = False
     break_before: bool = False
     tail: float = 0.0        # height of the last lines kept with the next block (keep-tail hint)
+    ink: float = 0.0         # drawn height without spacing (what a page's fill counts)
+    space_before: float = 0.0   # ``height`` = space_before + body + space_after
+    body: float = 0.0
+    space_after: float = 0.0
 
 
 @dataclass
@@ -64,16 +68,30 @@ def frame_geometry(doc, theme, policy=None) -> FrameGeometry:
                          env.left, env.bottom)
 
 
-def _flowable_height(f, canv, width: float, avail: float) -> float:
+def _flowable_height(f, canv, width: float, avail: float, spacing: bool = True) -> float:
     from reportlab.platypus.doctemplate import ActionFlowable
     from reportlab.platypus.flowables import UseUpSpace
     if isinstance(f, (ActionFlowable, UseUpSpace)):
         return 0.0          # page breaks / template switches occupy no content height
     w, h = f.wrapOn(canv, width, avail)
     if isinstance(f, KeepTogether) or h >= 0xfffff:
-        h = sum(_flowable_height(c, canv, width, avail) for c in f._content)
+        h = sum(_flowable_height(c, canv, width, avail, spacing) for c in f._content)
         return h
-    return h + f.getSpaceBefore() + f.getSpaceAfter()
+    return h + (f.getSpaceBefore() + f.getSpaceAfter() if spacing else 0.0)
+
+
+def _outer_space(flows) -> Tuple[float, float]:
+    """Space before the first and after the last flowable that takes room. A frame drops the
+    first at a page top, and the last need not fit at a page foot."""
+    from reportlab.platypus.doctemplate import ActionFlowable
+    from reportlab.platypus.flowables import UseUpSpace
+    real = [f for f in flows if not isinstance(f, (ActionFlowable, UseUpSpace))]
+    if not real:
+        return 0.0, 0.0
+    first, last = real[0], real[-1]
+    before = _outer_space(first._content)[0] if isinstance(first, KeepTogether) else first.getSpaceBefore()
+    after = _outer_space(last._content)[1] if isinstance(last, KeepTogether) else last.getSpaceAfter()
+    return before, after
 
 
 def _min_piece(f, canv, width: float, full: float) -> Tuple[bool, float]:
@@ -95,7 +113,7 @@ def measure_blocks(doc, theme, policy=None, cache=None) -> Tuple[List[BlockMeasu
     the landscape width) using the renderer's own flowables."""
     from .. import policy as _policy
     from ..layout.engine import _landscape_indices, _role_for
-    from ..layout.factory import RenderContext, create_flowables
+    from ..layout.factory import FRAME_PADDING, RenderContext, create_flowables
     from ..policy import DiagnosticCollector, RenderPolicy
 
     fg = frame_geometry(doc, theme, policy)
@@ -117,8 +135,13 @@ def measure_blocks(doc, theme, policy=None, cache=None) -> Tuple[List[BlockMeasu
             ctx.available_width = width
             flows = create_flowables(b, theme, ctx) or []
             role_of = _role_for(b)
+            # flowables are built for the frame and wrapped, like the frame does, inside its padding
+            width, avail = width - 2 * FRAME_PADDING, avail - 2 * FRAME_PADDING
             heights = [_flowable_height(f, canv, width, avail) for f in flows]
             total = sum(heights)
+            ink = sum(_flowable_height(f, canv, width, avail, False) for f in flows
+                      if type(f).__name__ not in ("Spacer", "CondPageBreak"))
+            before, after = _outer_space(flows)
             roles = [role_of(f) for f in flows]
             level = next((getattr(f, "_dpb_level", 0) for f in flows if getattr(f, "_toc_entry", None)), 0)
             tail_h = 0.0
@@ -142,7 +165,8 @@ def measure_blocks(doc, theme, policy=None, cache=None) -> Tuple[List[BlockMeasu
                              next((r for r in roles if r != "space"), "space"))
             out.append(BlockMeasure(i, b.type, main_role, total, piece, splittable,
                                     bool(keep), level, is_land,
-                                    bool((b.hints or {}).get("break_before")), tail_h))
+                                    bool((b.hints or {}).get("break_before") or (b.hints or {}).get("page_start")),
+                                    tail_h, ink, before, max(0.0, total - before - after), after))
     finally:
         _policy.deactivate(token)
     return out, fg
