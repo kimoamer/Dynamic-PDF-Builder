@@ -119,8 +119,9 @@ def main(argv=None) -> int:
                               source=args.source))
         elif args.step == "review":
             from .ai_review import run as review
+            humans = os.path.join(p["human_preferences"], "human-audit.jsonl")
             P.report(review(work(args.batch), dataset, args.judge, source=args.source, date=args.date,
-                            wait=not args.no_wait, poll=args.poll))
+                            wait=not args.no_wait, poll=args.poll, human_audit=humans if os.path.isfile(humans) else None))
         elif args.step == "judge":
             from .ab_page import Judging, serve
             j = Judging(work(args.batch), os.path.join(p["human_preferences"], "human-audit.jsonl"), args.reviewer, args.source)

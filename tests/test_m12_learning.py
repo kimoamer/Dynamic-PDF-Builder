@@ -118,6 +118,15 @@ def row(cid, preferred, model, batch="t", a="x", b="y", repeat=False):
             "b": {"candidate": b}, "preferred": preferred, "confidence": "medium", "reversed_repeat": repeat, "model": model}
 
 
+def test_agreement_with_people_is_reported_where_they_judged_the_same_sheet():
+    rows = [row("cmp-1", "A", "m1"), row("cmp-1", "B", "m2"), row("cmp-2", "A", "m1", a="p", b="q")]
+    humans = [{"batch": "t", "comparison": "cmp-1", "preferred": "A", "reviewer_type": "human"},
+              {"batch": "t", "comparison": "cmp-1", "preferred": "A", "reviewer_type": "ai"}]       # not a person
+    r = ai_review.agreement(rows, humans)
+    assert r["with_humans"] == {"m1": {"judgments": 1, "same_answer": 1}, "m2": {"judgments": 1, "same_answer": 0}}
+    assert r["pairs"][0]["sheets"] == 1 and r["pairs"][0]["same_answer"] == 0 and r["pairs"][0]["cohen_kappa"] is not None
+
+
 def test_agreeing_judges_count_a_comparison_once_and_disagreeing_ones_not_at_all():
     rows = [row("cmp-1", "A", "m1"), row("cmp-1", "A", "m2"), row("cmp-2", "A", "m1", a="p", b="q"),
             row("cmp-2", "B", "m2", a="p", b="q")]

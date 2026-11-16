@@ -86,8 +86,10 @@ def requests(batch_dir: str, judges: List[str], source: str = "pdf") -> List[dic
 
 
 def run(batch_dir: str, dataset: str, judges: List[str], *, client=None, source: str = "pdf", date: Optional[str] = None,
-        wait: bool = True, poll: float = 60.0, sleep: Callable[[float], None] = time.sleep) -> dict:
-    """Submit the batch, or collect it if it was submitted before."""
+        wait: bool = True, poll: float = 60.0, sleep: Callable[[float], None] = time.sleep,
+        human_audit: Optional[str] = None) -> dict:
+    """Submit the batch, or collect it if it was submitted before. ``human_audit`` is the people's
+    judgments file; where they judged the same sheets, agreement with them is reported too."""
     if len(judges) < 2 or len(set(judges)) < len(judges):
         raise SystemExit("name at least two different judges, so their agreement can be reported")
     if client is None:
@@ -115,10 +117,10 @@ def run(batch_dir: str, dataset: str, judges: List[str], *, client=None, source:
         sleep(poll)
     if status != "ended":
         return {"message_batch": state["message_batch"], "status": status, "note": "run the same command again to collect"}
-    return collect(batch_dir, dataset, client, state)
+    return collect(batch_dir, dataset, client, state, _jsonl(human_audit) if human_audit else [])
 
 
-def collect(batch_dir: str, dataset: str, client, state: dict) -> dict:
+def collect(batch_dir: str, dataset: str, client, state: dict, humans: List[dict] = ()) -> dict:
     from dynamic_pdf.ai.provider import to_reply
     answers: Dict[int, List[dict]] = defaultdict(list)
     refused: List[dict] = []
@@ -154,7 +156,8 @@ def collect(batch_dir: str, dataset: str, client, state: dict) -> dict:
                                  source=state["source"], extra={"prompt_sha256": state["prompt_sha256"],
                                                                 "message_batch": state["message_batch"]})["recorded"]
     batch = os.path.basename(batch_dir.rstrip("/\\"))
-    report = agreement([r for r in _jsonl(dataset) if r["batch"] == batch and r.get("message_batch") == state["message_batch"]])
+    report = agreement([r for r in _jsonl(dataset) if r["batch"] == batch and r.get("message_batch") == state["message_batch"]],
+                       [h for h in humans if h.get("batch") == batch])
     report.update(recorded=recorded, not_recorded=refused)
     _dump(os.path.join(batch_dir, "agreement.json"), report)
     _dump(os.path.join(batch_dir, RUN_FILE), {**state, "collected": True})
@@ -171,9 +174,9 @@ def _kappa(x: List[str], y: List[str]) -> Optional[float]:
     return round((seen - chance) / (1 - chance), 3) if chance < 1 else 1.0
 
 
-def agreement(rows: List[dict]) -> dict:
-    """How often each pair of judges gave the same answer to the same sheet, and how often each
-    judge agreed with itself when the sides were swapped."""
+def agreement(rows: List[dict], humans: List[dict] = ()) -> dict:
+    """How often each pair of judges gave the same answer to the same sheet, how often each judge
+    agreed with itself when the sides were swapped, and how often it agreed with people."""
     by: Dict[tuple, Dict[str, str]] = defaultdict(dict)
     for r in rows:
         by[(r["batch"], r["comparison"])][r["model"]] = r["preferred"]
@@ -193,7 +196,15 @@ def agreement(rows: List[dict]) -> dict:
         won = lambda r: {"A": r["a"]["candidate"], "B": r["b"]["candidate"]}.get(r["preferred"])  # noqa: E731
         reps = [(first[key(r)], r) for r in mine if r["reversed_repeat"] and key(r) in first]
         swapped[judge] = {"repeats": len(reps), "consistent": sum(won(a) == won(b) for a, b in reps)}
-    return {"judges": judges, "pairs": pairs, "reversed_repeats": swapped,
+    people: Dict[tuple, List[str]] = defaultdict(list)
+    for h in humans:
+        if h.get("reviewer_type") == "human":
+            people[(h["batch"], h["comparison"])].append(h["preferred"])
+    with_humans = {}
+    for judge in judges:
+        seen = [(by[k][judge], p) for k, ps in people.items() if judge in by.get(k, {}) for p in ps]
+        with_humans[judge] = {"judgments": len(seen), "same_answer": sum(a == p for a, p in seen)}
+    return {"judges": judges, "pairs": pairs, "reversed_repeats": swapped, "with_humans": with_humans,
             "note": "AI judges agreeing with each other is not evidence of quality; it bounds how noisy one judge is."}
 
 
