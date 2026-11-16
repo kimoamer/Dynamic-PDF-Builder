@@ -327,6 +327,8 @@ class DocumentBuilder:
             plan.theme, plan.layout = cached
             from .design.tokens import compile_tokens
             plan.tokens = compile_tokens(plan.theme)
+        from .design.planner import drop_short_contents
+        drop_short_contents(sem, plan)
         if self._evidence_recipe:
             sem, plan = self._gated(base_sem, sem, plan, key)
         self.last_design = plan
@@ -421,7 +423,11 @@ class DocumentBuilder:
     def meta(self, title: Optional[str] = None, author: Optional[str] = None,
              language: str = "en", subject: Optional[str] = None,
              keywords: Optional[List[str]] = None,
-             description: Optional[str] = None) -> 'DocumentBuilder':
+             description: Optional[str] = None, audience: Optional[str] = None) -> 'DocumentBuilder':
+        """Document metadata. ``audience`` names the readers in free text ("board",
+        "engineers", "investors"); the design reads it and ``design_explain()`` says how."""
+        if audience:
+            self._meta.audience = audience
         if title:
             self._meta.title = title
         if author:
@@ -1039,7 +1045,7 @@ class DocumentBuilder:
                       policy: Optional[RenderPolicy] = None) -> 'DocumentBuilder':
         """Create a DocumentBuilder pre-populated from a Markdown string.
 
-        Front matter keys ``title``, ``author``, ``subject``, ``description``,
+        Front matter keys ``title``, ``author``, ``subject``, ``description``, ``audience``,
         ``keywords`` and ``language``/``lang`` populate document metadata.
         """
         from .markdown.preprocessors import preprocess_markdown
@@ -1050,7 +1056,7 @@ class DocumentBuilder:
             raise ResourceLimitError(
                 f"Markdown input length ({len(markdown)}) exceeds limit ({max_chars})")
         fm, blocks = parse_markdown(preprocess_markdown(markdown))
-        kw = {k: fm[k] for k in ("title", "author", "subject", "description") if isinstance(fm.get(k), str)}
+        kw = {k: fm[k] for k in ("title", "author", "subject", "description", "audience") if isinstance(fm.get(k), str)}
         if isinstance(fm.get("keywords"), list):
             kw["keywords"] = fm["keywords"]
         elif isinstance(fm.get("keywords"), str) and fm["keywords"]:

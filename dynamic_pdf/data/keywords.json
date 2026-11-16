@@ -2,12 +2,12 @@
   "_about": "Keyword lists read by the design layer and the table typer. Each list holds regular-expression fragments matched case-insensitively. 'en' fragments are matched as whole words; 'ar' fragments are matched anywhere, because Arabic attaches prefixes (al-, wa-, bi-, li-) to the word; 'raw' fragments are used exactly as written. Keep English and Arabic coverage together when editing.",
   "profiles": {
     "proposal": {
-      "en": ["proposal", "scope", "deliverables?", "work ?plan", "investment", "pricing", "next steps", "timeline", "milestones?", "our approach", "statement of work"],
-      "ar": ["عرض", "نطاق العمل", "المخرجات", "الخطوات التالية", "الجدول الزمني", "مراحل التنفيذ", "منهجيتنا", "التكلفة الإجمالية"]
+      "en": ["proposal", "scope", "deliverables?", "work ?plan", "investment", "pricing", "next steps", "timeline", "milestones?", "our approach", "statement of work", "grant application", "funding request"],
+      "ar": ["عرض", "نطاق العمل", "المخرجات", "الخطوات التالية", "الجدول الزمني", "مراحل التنفيذ", "منهجيتنا", "التكلفة الإجمالية", "طلب منحة"]
     },
     "academic_report": {
       "en": ["abstract", "methods?", "methodology", "literature review", "results", "discussion", "conclusions?", "references", "hypothes[ie]s"],
-      "ar": ["الملخص", "المنهجية", "المراجع", "الدراسات السابقة", "النتائج والمناقشة", "الفرضيات", "الخلاصة"]
+      "ar": ["الملخص(?! التنفيذي)", "المنهجية", "المراجع", "الدراسات السابقة", "النتائج والمناقشة", "الفرضيات", "الخلاصة"]
     },
     "technical_manual": {
       "en": ["installation", "install", "configuration", "setup", "usage", "troubleshooting", "api", "reference", "getting started", "requirements", "procedure"],
@@ -35,11 +35,18 @@
       "ar": ["المحترم", "تحية طيبة", "وتفضلوا", "مع خالص التحية", "وتقبلوا"]
     }
   },
+  "profile_confidence": {
+    "_about": "Document-type confidence by the lead of the best score over the next one: the share of decisions with that lead that were right on the calibration split of tests/data/document_types.json, Laplace-smoothed (a bucket with no documents is 0.5, so a near tie is uncertain) and never falling as the lead grows; tests/test_m10_roles.py recomputes it. Below no_signal_below no type has evidence and the general layout is chosen.",
+    "no_signal_below": 1.5,
+    "no_signal": 0.86,
+    "lead_edges": [0.1, 0.5, 1.0, 2.0],
+    "values": [0.5, 0.75, 0.75, 0.88, 0.97]
+  },
   "salutation": {
     "raw": ["^\\s*(dear|to whom|hello|hi)\\b", "^\\s*(السيد|السيدة|الأستاذ|عزيزي|سعادة|حضرة)"]
   },
   "memo_fields": {
-    "raw": ["(?mi)^\\s*(to|from|subject|cc|date|re)\\s*:", "(?m)^\\s*(إلى|من|الموضوع|التاريخ|نسخة إلى)\\s*:"]
+    "raw": ["(?m:^\\s*(to|from|subject|cc|date|re)\\s*:)", "(?m:^\\s*(إلى|من|الموضوع|التاريخ|نسخة إلى)\\s*:)"]
   },
   "sections": {
     "summary": {

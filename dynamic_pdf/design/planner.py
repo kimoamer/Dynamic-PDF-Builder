@@ -288,6 +288,28 @@ def _keep_intros_with_exhibits(sem: SemanticDocument, lp: LayoutPlan) -> None:
         lp.log("exhibits", f"{kept} heading intro(s) kept with the table or figure they introduce")
 
 
+# ─────────────────────────── contents ───────────────────────────
+
+MIN_CONTENTS_PAGES = 4      # a contents page is navigation; a shorter document is read straight through
+
+
+def drop_short_contents(sem: SemanticDocument, plan: DesignPlan) -> None:
+    """Remove a contents page the design inserted when the measured document, without it,
+    runs to fewer than ``MIN_CONTENTS_PAGES`` pages. A contents block the author wrote stays."""
+    lp = plan.layout
+    if not plan.toc_inserted or lp is None or lp.measured_pages is None:
+        return
+    pages = lp.measured_pages - 1                 # the inserted contents page ends with a page break
+    if pages >= MIN_CONTENTS_PAGES:
+        return
+    sem.blocks = [b for b in sem.blocks if b.type != "table_of_contents"]
+    plan.toc_inserted = False
+    note = (f"{pages} page{'s' if pages != 1 else ''} of content measured: no contents page "
+            f"under {MIN_CONTENTS_PAGES} pages unless the author adds one")
+    if not any(d.target == "contents" and d.decision == note for d in lp.decisions):
+        lp.log("contents", note)
+
+
 # ─────────────────────────── page fit ───────────────────────────
 
 def _tighten(theme, spacing: float, margins: float, leading_cut: float):

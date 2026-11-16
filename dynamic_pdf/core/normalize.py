@@ -192,7 +192,7 @@ def _normalize_block(block: Any):
 
 
 def _is_number(s: str) -> bool:
-    return bool(re.fullmatch(r"[\s$€£¥%+\-−(),.\d٠-٩]+", s or "")) and any(c.isdigit() for c in s)
+    return bool(re.fullmatch(r"[\s$€£¥%+\-−(),.\d٠-٩٫٬٪]+", s or "")) and any(c.isdigit() for c in s)
 
 
 # ─────────────────────────── main entry ───────────────────────────
