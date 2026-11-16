@@ -230,6 +230,15 @@ class TestAnthropicProvider:
         assert AnthropicProvider(model="another-model", client=client, cache_dir="").model == "another-model"
 
 
+def test_without_the_extra_the_default_provider_says_how_to_get_it(monkeypatch):
+    from dynamic_pdf.ai import AnthropicProvider
+    monkeypatch.setitem(sys.modules, "anthropic", None)
+    with pytest.raises(ImportError, match=r"dynamic-pdf-builder\[ai\]"):
+        AnthropicProvider()
+    with pytest.raises(ImportError, match=r"\[ai\]"):
+        Director().provider
+
+
 def test_the_package_and_default_rendering_never_import_the_ai_layer():
     code = ("import sys, dynamic_pdf\n"
             "b = dynamic_pdf.DocumentBuilder(); b.heading('A', 1); b.paragraph('Text.'); b.render()\n"
