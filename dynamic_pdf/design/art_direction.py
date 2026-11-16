@@ -608,7 +608,7 @@ def _compose(sem, d: Direction, primary: str, adjust: Adjust, plan: ArtDirection
         return
     blocks, out, i = sem.blocks, [], 0
     panels, since_panel, appendix = 0, MIN_PANEL_GAP, False
-    numbered = uses_numbering(sem)            # a numbered table keeps its number and its anchor
+    numbered = uses_numbering(sem)            # a numbered table or figure keeps its caption, number and anchor
     while i < len(blocks):
         b = blocks[i]
         since_panel += 1
@@ -640,7 +640,7 @@ def _compose(sem, d: Direction, primary: str, adjust: Adjust, plan: ArtDirection
                 plan.decisions.append("ledger: figures once, labelled from each language's edge")
                 i += 1
                 continue
-        if (e.get("image_panel") and _is_photo(b) and not appendix and panels < MAX_PANELS
+        if (e.get("image_panel") and _is_photo(b) and not appendix and panels < MAX_PANELS and not numbered
                 and since_panel >= MIN_PANEL_GAP and i + 1 < len(blocks) and blocks[i + 1].type == "paragraph"
                 and 12 <= _words(blocks[i + 1].text) <= PANEL_WORDS and _plain_text(blocks[i + 1].text)):
             out.append(_panel(b, blocks[i + 1].text, d, panels, primary, rtl))
