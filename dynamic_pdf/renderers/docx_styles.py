@@ -181,3 +181,33 @@ class _PPrHolder:
 
     def get_or_add_pPr(self):
         return self._el.get_or_add_pPr()
+
+
+def set_hyphenation(doc, on: bool) -> None:
+    """Word's twin of the PDF's hyphenation: automatic hyphenation for the document, suppressed
+    in Normal (so headings, tables, lists, captions and code never hyphenate) and allowed again
+    in Body Text, the style of justified body paragraphs."""
+    if not on:
+        return
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    settings = doc.settings.element
+    if settings.find(qn("w:autoHyphenation")) is None:
+        auto = OxmlElement("w:autoHyphenation")
+        after = settings.find(qn("w:defaultTabStop"))       # schema order: right after it
+        if after is not None:
+            after.addnext(auto)
+        else:
+            settings.insert(0, auto)
+    for name, val in (("Normal", "1"), ("Body Text", "0")):
+        pPr = doc.styles[name].element.get_or_add_pPr()
+        el = pPr.find(qn("w:suppressAutoHyphens"))
+        if el is None:
+            el = OxmlElement("w:suppressAutoHyphens")
+            pPr.insert_element_before(el, "w:kinsoku", "w:wordWrap", "w:overflowPunct", "w:topLinePunct",
+                                      "w:autoSpaceDE", "w:autoSpaceDN", "w:bidi", "w:adjustRightInd",
+                                      "w:snapToGrid", "w:spacing", "w:ind", "w:contextualSpacing",
+                                      "w:mirrorIndents", "w:suppressOverlap", "w:jc", "w:textDirection",
+                                      "w:textAlignment", "w:textboxTightWrap", "w:outlineLvl", "w:divId",
+                                      "w:cnfStyle", "w:rPr", "w:sectPr", "w:pPrChange")
+        el.set(qn("w:val"), val)

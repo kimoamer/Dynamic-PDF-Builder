@@ -45,7 +45,7 @@ from .docx_archetypes import ArchetypeDocx
 from .docx_compositions import CompositionDocx
 from ..fonts.manager import set_arabic_face
 from .docx_fonts import embed_fonts
-from .docx_styles import configure_styles, rgb, word_font
+from .docx_styles import configure_styles, rgb, set_hyphenation, word_font
 
 _PAGE_SIZES_PT = {PageSize.A4: (595.28, 841.89), PageSize.LETTER: (612, 792),
                   PageSize.LEGAL: (612, 1008)}
@@ -83,6 +83,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         doc = self.doc
         set_arabic_face(self.theme.typography.arabic_family)
         configure_styles(doc, self.tokens, self.theme, self.rtl_doc)
+        from ..layout.factory import _hyphenation_lang
+        set_hyphenation(doc, not self.rtl_doc and bool(_hyphenation_lang(self.sem.language)))   # as the PDF
         self.lists = F.ListNumbering(doc, indent_twips=int(self.tokens.list_indent * 20) or 360,
                                      bullet_font=word_font(self.tokens.fonts.body))
         self._setup_section()

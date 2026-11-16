@@ -201,6 +201,14 @@ def _fold(text: str) -> str:
     return "".join(c for c in unicodedata.normalize("NFKC", text.lower()) if not unicodedata.combining(c))
 
 
+_SOFT_BREAK = re.compile(r"(?<=[^\W\d_])-\n(?=[^\W\d_])")
+
+
+def _dehyphenate(text: str) -> str:
+    """Rejoin words that justified text broke at a hyphenation point ("ex-\\ncluded")."""
+    return _SOFT_BREAK.sub("", text)
+
+
 def _arabic_tokens(text: str) -> Counter:
     return Counter(min(w, w[::-1]) for w in _ARABIC.findall(_fold(text)))
 
@@ -222,7 +230,9 @@ def check_pdf_content(ledger: ContentLedger, data: bytes, initials: Sequence[str
         page_text = "\n".join(page.get_text() for page in pdf)
     source = "\n".join([t for _, _, t in _shown(ledger)] + list(ledger.band_texts))
     folded = _fold(page_text)
-    have = Counter(map(_either_way, _LATIN.findall(folded)))
+    # either reading of a line-end hyphen: a hyphenation break, or the author's own hyphen
+    have = (Counter(map(_either_way, _LATIN.findall(folded)))
+            | Counter(map(_either_way, _LATIN.findall(_dehyphenate(folded)))))
     want = Counter(map(_either_way, _LATIN.findall(_fold(source))))
     for word in map(_fold, initials):             # a drop cap draws its letter apart from the word
         if have[word] < want[word] and word[1:] in folded:
@@ -245,7 +255,7 @@ def same_extracted_words(first: bytes, second: bytes) -> Optional[bool]:
 
     def words(data: bytes) -> set:
         with pymupdf.open(stream=data, filetype="pdf") as pdf:
-            text = "\n".join(page.get_text() for page in pdf)
+            text = _dehyphenate("\n".join(page.get_text() for page in pdf))
         return set(_arabic_tokens(text)) | {w for w in _LATIN.findall(_fold(text)) if w.isalpha()}
     return words(first) == words(second)
 
