@@ -496,9 +496,11 @@ class DocumentBuilder:
              language: str = "en", subject: Optional[str] = None,
              keywords: Optional[List[str]] = None,
              description: Optional[str] = None, audience: Optional[str] = None,
-             tagged: bool = False) -> 'DocumentBuilder':
+             tagged: bool = False, reviewer: Optional[str] = None) -> 'DocumentBuilder':
         """Document metadata. ``audience`` names the readers in free text ("board",
         "engineers", "investors"); the design reads it and ``design_explain()`` says how.
+        ``reviewer`` names who suggested the CriticMarkup edits and comments in the text
+        (``{++added++}``, ``{--removed--}``, ``{>>comment<<}``); Word shows it on each change.
         ``tagged=True``: a tagged PDF (structure tree, alt text, artifacts; needs pikepdf)."""
         if audience:
             self._meta.audience = audience
@@ -514,6 +516,8 @@ class DocumentBuilder:
             self._meta.keywords = keywords
         if description:
             self._meta.description = description
+        if reviewer:
+            self._meta.reviewer = reviewer
         self._meta.language = language
         return self
 
@@ -1170,7 +1174,8 @@ class DocumentBuilder:
         """Create a DocumentBuilder pre-populated from a Markdown string.
 
         Front matter keys ``title``, ``author``, ``subject``, ``description``, ``audience``,
-        ``keywords`` and ``language``/``lang`` populate document metadata.
+        ``reviewer`` (who suggested the CriticMarkup edits and comments), ``keywords`` and
+        ``language``/``lang`` populate document metadata.
         """
         from .markdown.preprocessors import preprocess_markdown
         from .markdown.parser import parse_markdown
@@ -1180,7 +1185,7 @@ class DocumentBuilder:
             raise ResourceLimitError(
                 f"Markdown input length ({len(markdown)}) exceeds limit ({max_chars})")
         fm, blocks = parse_markdown(preprocess_markdown(markdown))
-        kw = {k: fm[k] for k in ("title", "author", "subject", "description", "audience") if isinstance(fm.get(k), str)}
+        kw = {k: fm[k] for k in ("title", "author", "subject", "description", "audience", "reviewer") if isinstance(fm.get(k), str)}
         if isinstance(fm.get("keywords"), list):
             kw["keywords"] = fm["keywords"]
         elif isinstance(fm.get("keywords"), str) and fm["keywords"]:

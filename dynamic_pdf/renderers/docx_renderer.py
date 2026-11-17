@@ -74,6 +74,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         self.doc = new_docx()
         self.bm = F.BookmarkCounter()
         self._seq: dict = {}                   # SEQ fields written so far, by sequence
+        self._revisions = 0                    # ids of tracked changes
         self.lists = None
         self.heading_counters = [0] * 6
         self.figure_no = 0
@@ -374,7 +375,11 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         """Add inline Markdown as real Word runs (links, emphasis, code, sup/sub…)."""
         arabic = self.tokens.fonts.arabic
         mono = word_font(self.tokens.fonts.mono)
+        commented: List = []                   # runs of the comment being written, and its text
         for tr in parse_inline(md_text or ""):
+            if commented and commented[-1] != tr.comment:
+                self._comment(commented)
+                commented = []
             if tr.line_break:
                 paragraph.add_run().add_break(WD_BREAK.LINE)
                 continue
@@ -422,8 +427,38 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             elif tr.link:
                 F.add_hyperlink(paragraph, tr.link, tr.text, fmt)
             else:
-                fmt(paragraph.add_run(tr.text))
+                run = paragraph.add_run(tr.text)
+                fmt(run)
+                if tr.inserted or tr.deleted:
+                    self._revise(run, tr.deleted)
+                if tr.comment:
+                    commented = (commented[:-1] if commented else []) + [run, tr.comment]
+        if commented:
+            self._comment(commented)
         return paragraph
+
+    def _reviewer(self) -> str:
+        return (getattr(self.sem.meta, "reviewer", None) or "Reviewer").strip() or "Reviewer"
+
+    def _revise(self, run, deleted: bool) -> None:
+        """A suggested addition or removal as a Word tracked change, to accept or reject."""
+        self._revisions += 1
+        mark = F.OxmlElement("w:del" if deleted else "w:ins")
+        mark.set(F.qn("w:id"), str(900000 + self._revisions))
+        mark.set(F.qn("w:author"), self._reviewer())
+        if self.render_time is not None:
+            mark.set(F.qn("w:date"), self.render_time.strftime("%Y-%m-%dT%H:%M:%SZ"))
+        run._r.addprevious(mark)
+        mark.append(run._r)
+        if deleted:                              # removed text is held as w:delText
+            for t in run._r.findall(F.qn("w:t")):
+                t.tag = F.qn("w:delText")
+
+    def _comment(self, commented) -> None:
+        """A reviewer's comment, anchored on the runs it remarks on."""
+        *runs, text = commented
+        who = self._reviewer()
+        self.doc.add_comment(runs, text=text, author=who, initials="".join(w[0] for w in who.split())[:3].upper())
 
     def _picture(self, container, data: bytes, alt: str, max_width_pt: Optional[float] = None,
                  width_pt: Optional[float] = None, align: str = "center"):

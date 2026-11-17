@@ -379,6 +379,7 @@ def _md_inline(text: str) -> str:
         return f"\x00{len(codes) - 1}\x00"
     text = re.sub(r'`([^`]+?)`|\\(&lt;|&gt;|&amp;|[!-/:-@\[-`{-~])', _stash, text)
     text = _restore_safe_tags(text)
+    text = _review_marks(text)
     # Markdown line breaks, as in the DOCX (core.inline): a blank line inside the block or a
     # hard break ("  " or "\" before the newline) starts a new line; a soft break is a space
     text = re.sub(r"\n[ \t]*\n\s*", "<br/>", text)
@@ -411,6 +412,36 @@ def _md_inline(text: str) -> str:
                   lambda m: f'<font face="Courier" size="9" backColor="#E8E8E8">{codes[int(m.group(1))]}</font>',
                   text)
     return _nest(re.sub(r'\x01(\d+)\x01', lambda m: escapes[int(m.group(1))], text))
+
+
+# CriticMarkup on escaped text, before "--" becomes a dash and "~~" a strike (core.inline parses the same)
+_CRITIC = re.compile(r"\{\+\+(?P<ins>.*?)\+\+\}|\{--(?P<del>.*?)--\}|\{~~(?P<old>.*?)~&gt;(?P<new>.*?)~~\}"
+                     r"|\{==(?P<mark>.*?)==\}\{&gt;&gt;(?P<on>.*?)&lt;&lt;\}|\{&gt;&gt;(?P<note>.*?)&lt;&lt;\}", re.S)
+_ADDED, _REMOVED, _NOTE = "#1A7F37", "#CF222E", "#8A6D00"
+
+
+def _review_marks(text: str) -> str:
+    """Suggested edits as a review copy shows them: additions underlined in green, removals
+    struck through in red, commented text highlighted with the comment after it, small."""
+    if "{" not in text:
+        return text
+
+    def note(c):
+        return f'<font size="7" color="{_NOTE}"> [{c.strip()}]</font>'
+
+    def sub(m):
+        g = m.groupdict()
+        if g["ins"] is not None:
+            return f'<u><font color="{_ADDED}">{g["ins"]}</font></u>'
+        if g["del"] is not None:
+            return f'<strike><font color="{_REMOVED}">{g["del"]}</font></strike>'
+        if g["old"] is not None:
+            return (f'<strike><font color="{_REMOVED}">{g["old"]}</font></strike>'
+                    f'<u><font color="{_ADDED}">{g["new"]}</font></u>')
+        if g["mark"] is not None:
+            return f'<font backColor="#FFF2A8">{g["mark"]}</font>{note(g["on"])}'
+        return note(g["note"])
+    return _CRITIC.sub(sub, text)
 
 
 _TAG = re.compile(r"<(/?)([a-zA-Z]+)[^<>]*?(/?)>")

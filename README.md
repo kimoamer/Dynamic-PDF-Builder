@@ -1268,6 +1268,32 @@ and captions kept on one page, comfortable line length for prose, heading ramps 
 outline depth, a lead paragraph for reports and proposals, and a metadata-only cover for long
 titled reports. Headings are kept with their content and widows/orphans are suppressed.
 
+### Suggested edits and comments
+
+Text can carry suggested edits and comments in [CriticMarkup](https://github.com/CriticMarkup/CriticMarkup-toolkit),
+the plain-text form people and language models use for suggestions:
+
+```markdown
+---
+reviewer: Policy AI
+---
+Revenue {~~fell~>rose~~} by 12%{>>source: Q3 ledger<<}. The board {--may--} {++will++} approve
+the {==capital budget==}{>>confirm with finance<<} in December.
+```
+
+| Markup | Word | PDF (a review copy) |
+| --- | --- | --- |
+| `{++added++}` | tracked insertion | underlined in green |
+| `{--removed--}` | tracked deletion | struck through in red |
+| `{~~old~>new~~}` | deletion then insertion | both |
+| `{==text==}{>>comment<<}` | comment on the text | text highlighted, comment after it in small type |
+| `{>>comment<<}` | comment on the word before it | comment after the word |
+
+In Word each change can be accepted or rejected, and changes and comments carry the
+`reviewer` (front matter, or `meta(reviewer=...)`; "Reviewer" when none is named). Text
+without markup is written as before. A suggestion is parsed on its own, so emphasis should
+open and close inside it.
+
 ## Intelligent page composition (CPU-only)
 
 `compose("smart")` adds a deterministic layout optimizer on top of `design()`. It needs

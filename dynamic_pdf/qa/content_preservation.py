@@ -140,13 +140,13 @@ def _paragraphs(root) -> List[str]:
         (r for r in root.iter(_W + "footnoteReference") if r.get(_W + "customMarkFollows") not in ("1", "true")), 1)}
 
     def piece(e) -> str:
-        if e.tag == _W + "t":
+        if e.tag in (_W + "t", _W + "delText"):        # a suggested removal is still on the page
             return e.text or ""
         return numbers.get(e, "") if e.tag == _W + "footnoteReference" else " "
 
     def text(p) -> str:              # a line break or tab between runs separates words
         return "".join(piece(e) for e in p.iter()
-                       if e.tag in (_W + "t", _W + "footnoteReference") or e.tag in breaks)
+                       if e.tag in (_W + "t", _W + "delText", _W + "footnoteReference") or e.tag in breaks)
     return [_squash(text(p)) for p in root.iter(_W + "p")]
 
 
