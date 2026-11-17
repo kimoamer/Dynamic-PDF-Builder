@@ -133,7 +133,7 @@ def test_export_status_reflects_qa(monkeypatch, tmp_path):
     monkeypatch.setattr(dc.shutil, "which", lambda name: None)
     res = DocumentBuilder().heading("H").paragraph("p").export(str(tmp_path / "a.docx"), qa=True)
     assert res.status == "unverified"
-    res = DocumentBuilder().quality("permissive").paragraph("Stars ★").export(str(tmp_path / "b.pdf"), qa=True)
+    res = DocumentBuilder().quality("permissive").paragraph("Greeting 你好").export(str(tmp_path / "b.pdf"), qa=True)
     assert res.status == "failed"
     res = DocumentBuilder().paragraph("fine").export(str(tmp_path / "c.pdf"), qa=True)
     assert res.status == "ok"

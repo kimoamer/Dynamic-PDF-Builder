@@ -309,6 +309,11 @@ makes the whole document right-to-left. Tables, lists, captions, page numbers, c
 follow. Arabic-Indic digits stay as written, and computed cells keep them. Amounts in words and
 references ("المعادلة (1)", "جدول 2") are written in Arabic in an Arabic document.
 
+Fonts: 45 bundled families (`dynamic_pdf.fonts.list_font_families()`, 23 of them Arabic) set with
+`b.fonts(heading=..., body=..., arabic=...)`; your own with `register_custom_font(name, path)`. Symbols
+(→ ✓ ★ ☐ ₹ ☎ ...) and emoji (😀 🚀 ✅ ...) draw from bundled fallback faces wherever they appear, and
+Word draws them with its own. Tashkeel, Persian and Urdu letters and ligatures such as ﷺ are shaped.
+
 ## Safety and settings
 
 - Remote images are refused unless `AssetPolicy(allow_remote=True)`; local files can be confined to a
@@ -326,3 +331,5 @@ references ("المعادلة (1)", "جدول 2") are written in Arabic in an Ar
 - Emphasis inside a suggested edit should open and close inside it.
 - Word lays out its own pages, so its page count can differ from the PDF's.
 - A long unbreakable word (an e-mail address, a long URL) can leave the justified line before it widely spaced.
+- Emoji in the PDF are drawn in one colour, each on its own: a flag shows its two letters, a family its
+  members, and skin tones are left out. Running headers and footers and chart labels draw text faces only.

@@ -9,7 +9,7 @@ description = "Generate beautifully designed PDF and fully editable DOCX documen
 authors = [
     { name = "Dynamic PDF Builder Contributors" }
 ]
-license = "MIT AND OFL-1.1"           # the code is MIT; the bundled fonts are under the SIL Open Font License
+license = "MIT AND OFL-1.1 AND Bitstream-Vera"   # the code is MIT; the bundled fonts are OFL, and DejaVu Sans is Bitstream Vera
 license-files = ["LICENSE", "dynamic_pdf/fonts/bundled/LICENSES/*.txt"]
 readme = "README.md"
 requires-python = ">=3.10"

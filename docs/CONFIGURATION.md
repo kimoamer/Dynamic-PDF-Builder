@@ -55,6 +55,9 @@ when the AI layer is asked), `SOURCE_DATE_EPOCH` (reproducible dates in the outp
   see each other's diagnostics or fonts.
 - **matplotlib:** the non-interactive backend is selected only if your process has not started
   `pyplot`. A notebook or an application keeps the backend it chose.
+- **ReportLab:** the ToUnicode map of an embedded font is corrected in two places: reshaped Arabic
+  glyphs extract as the letters the author wrote, and a character beyond U+FFFF (an emoji) is written
+  as the UTF-16 pair the PDF format requires. Every other entry is ReportLab's own.
 - **ReportLab:** one fault of ReportLab is corrected (it drops the author's hyphen from a
   compound word when a paragraph runs onto the next page). The correction is in force only
   while this library lays out its own paragraphs; your own ReportLab documents are unchanged.

@@ -59,7 +59,8 @@ pip install "dynamic-pdf-builder[all]"        # every extra above except qa (AGP
 pip install -e ".[dev]"                       # from a clone: testing and linting tools
 ```
 
-The code is MIT; the bundled fonts are OFL-1.1 (`License-Expression: MIT AND OFL-1.1`), with each
+The code is MIT; the bundled fonts are OFL-1.1, and the symbol fallback (a subset of DejaVu Sans) is
+under the Bitstream Vera licence (`License-Expression: MIT AND OFL-1.1 AND Bitstream-Vera`), with each
 font's licence shipped in the package.
 
 ---
@@ -1553,6 +1554,10 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
   references and lists of figures and tables are Word fields.
 
 **New**
+- Symbols and emoji draw in the PDF instead of boxes: ★ ☐ ₹ ☎ and the rest from a bundled symbol face
+  (a subset of DejaVu Sans), emoji from Noto Emoji, in any text, bold or Arabic. An emoji copies out of
+  the PDF as itself (ReportLab's ToUnicode entry for characters beyond U+FFFF is corrected). A character
+  no bundled font draws is reported as `missing_glyph`.
 - The certificate is set in a frame (a border, a hairline and gold corners) with its signatures centred,
   on one page in English and Arabic.
 - A logo in any kit's data (`"logo": "logo.png"`) heads the document: a letterhead on a letter, a logo

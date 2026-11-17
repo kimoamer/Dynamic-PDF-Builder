@@ -357,11 +357,18 @@ def _label(key):
     return _i18n_label(key, getattr(_p.current(), "language", "en"))
 
 
+# what joins or styles an emoji in a font that shapes sequences; here each would draw as a box or a swatch:
+# the variation selectors, the skin tones, and a joiner between two pictographs (never one in Arabic text)
+_EMOJI_GLUE = re.compile("[\ufe0e\ufe0f\U0001F3FB-\U0001F3FF]|(?<=[\u2190-\u2bff\U0001F000-\U0001FAFF\ufe0f])\u200d"
+                         "(?=[\u2190-\u2bff\U0001F000-\U0001FAFF])")
+
+
 def _glyph_fallback(text: str) -> str:
     from ..qa.glyphs import needs_fallback
     out, run_font, buf = [], None, []
     in_tag = False
-    for ch in text:
+    arabic = bool(_ARABIC_RE.search(text))
+    for ch in _EMOJI_GLUE.sub("", text):
         if ch == "<":
             in_tag = True
         if in_tag or ch.isascii():
@@ -371,7 +378,8 @@ def _glyph_fallback(text: str) -> str:
         elif unicodedata.bidirectional(ch) in ("R", "AL", "AN"):
             font = None
         else:
-            font = needs_fallback(ch)
+            # a sign the Latin face has may be missing from the Arabic face of a right-to-left paragraph (™)
+            font = needs_fallback(ch) or (needs_fallback(ch, current_arabic_face()) if arabic else None)
         if ch == ">":
             in_tag = False
         if font != run_font:

@@ -489,3 +489,20 @@ def test_a_built_cover_takes_the_title_off_the_next_page():
     blocks = b._prepared()[0].blocks
     assert blocks[0].type == "cover_page"
     assert [x.text for x in blocks if x.type == "heading"][0] == "Results"       # the title is on the cover only
+
+
+def test_symbols_and_emoji_draw_and_copy_out_intact():
+    import pypdfium2 as pdfium
+    b = DocumentBuilder().heading("Launch 🚀 done ✅").paragraph(
+        "Stars ★☆ ☐ ₹ and **bold 😀 🎉** thumbs 👍🏽 heart ❤️ family 👨‍👩‍👧.").paragraph("علامة ™ ونجمة ★ و 😀 في نص عربي")
+    text = pdfium.PdfDocument(b.render())[0].get_textpage().get_text_range()
+    for ch in "🚀✅★☆☐₹😀🎉👍❤👨👩👧":
+        assert ch in text, ch                                   # drawn by a font that has it, and extracted as itself
+    assert "️" not in text and "\U0001F3FD" not in text      # what would draw as a box is left out
+    from dynamic_pdf.layout.factory import _glyph_fallback
+    assert "‍" in _glyph_fallback("می‍خواهم")           # a joiner in Persian text is kept
+
+
+def test_a_character_no_font_draws_is_reported(tmp_path):
+    r = DocumentBuilder().paragraph("Hieroglyph 𓀀 here.").review(str(tmp_path / "r"), dpi=30)
+    assert not r["passed"] and any(i["code"] == "missing_glyph" for i in r["issues"])
