@@ -16,3 +16,7 @@ training/ai_preferences_v2/batches/*/renders/
 training/ai_preferences_v2/batches/*/assets/
 training/ai_preferences_v2/batches/*/sheets*/
 training/ai_preferences_v2/audit-sheets/
+
+# packaging output
+build/
+dist/
