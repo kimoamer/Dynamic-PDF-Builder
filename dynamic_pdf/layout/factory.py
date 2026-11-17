@@ -874,7 +874,7 @@ class DividerFlowable(Flowable):
             c.setDash([6, 4])
         elif self.style == "dotted":
             c.setDash([1.5, 3])
-        x0 = self.width - self.line_w if self.align == "right" else 0
+        x0 = {"right": self.width - self.line_w, "center": (self.width - self.line_w) / 2}.get(self.align, 0)
         c.line(x0, 8, x0 + self.line_w, 8)
         c.restoreState()
 
@@ -1549,7 +1549,7 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
 
     # ─── Signature ───
     if btype == "signature":
-        return _render_signature(block, theme)
+        return _render_signature(block, theme, ctx.available_width if ctx else None)
 
     # ─── Timeline ───
     if btype == "timeline":
@@ -2423,13 +2423,18 @@ def _render_columns(block, theme, count, ctx=None):
     total_w = ctx.available_width if ctx else 460
     col_widths = [total_w * r for r in ratios]
     rendered = []
-    for col in col_lists:
+    for col, cw in zip(col_lists, col_widths):
+        inner = copy.copy(ctx) if ctx else None
+        if inner is not None:
+            inner.available_width = cw - 8                  # what a block in this column may use
         cf = []
         for b in col:
-            cf.extend(create_flowables(b, theme, ctx))
+            cf.extend(create_flowables(b, theme, inner))
         rendered.append(cf)
+    # signatures side by side stand on one line, whether or not each has a picture over it
+    signing = all(getattr(b, "type", None) == "signature" for col in col_lists for b in col)
     t = Table([rendered], colWidths=col_widths, style=TableStyle([
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('VALIGN', (0, 0), (-1, -1), 'BOTTOM' if signing else 'TOP'),
         ('LEFTPADDING', (0, 0), (-1, -1), 8 if rtl else 0),       # the gap sits between the columns
         ('RIGHTPADDING', (0, 0), (-1, -1), 0 if rtl else 8),
         ('TOPPADDING', (0, 0), (-1, -1), 0),
@@ -2614,33 +2619,46 @@ def _render_bibliography(block, theme, bs):
     return flowables
 
 
-def _render_signature(block, theme):
-    """Signature: line + name + title + date."""
-    flowables = []
-    flowables.append(Spacer(1, 30))
+def _side(alignment: str, rtl: bool) -> str:
+    """A physical side for start, center or end (left and right stay as they are)."""
+    a = (alignment or "start").lower()
+    return {"start": "right" if rtl else "left", "end": "left" if rtl else "right"}.get(a, a if a in ("left", "right", "center") else "left")
+
+
+def _render_signature(block, theme, width=None):
+    """A signature: its picture over the line when there is one, then the name, title and date, all
+    set to one side (the start edge by default) of the space it is given: the page, or a column."""
     rtl = _is_rtl(" ".join(x for x in (block.name, block.title, block.date) if x))
+    side = _side(block.alignment, rtl)
+    align = {"left": 0, "center": 1, "right": 2}[side]
     font = (lambda bold=False: _arabic_font(theme, bold=bold)) if rtl else \
         (lambda bold=False: get_font_name(theme.typography.body_family, bold=bold))
+    flows = []
+    if block.image:
+        try:
+            buf, (iw, ih) = _load_image(block.image, _diag.current().policy.assets)
+            scale = min(block.line_width / iw, 46 / ih, 1.0 if iw <= block.line_width else 1e9)
+            flows.append(Image(buf, width=iw * scale, height=ih * scale))
+        except DynamicPDFError as e:
+            _diag.current().fail("asset_failed", f"Signature image: {e}", e)
     if block.show_line:
-        flowables.append(DividerFlowable(color=theme.colors.text_primary, thickness=1.0, width=block.line_width,
-                                         align="right" if rtl else "left"))   # at the start edge, with the name
+        flows.append(DividerFlowable(color=theme.colors.text_primary, thickness=0.8, width=block.line_width, align=side))
     # names are literal text: shaped, escaped, never read as markup
     size, lh = theme.typography.base_size, theme.typography.line_height
-    name_sty = ParagraphStyle('SigName', fontName=font(True), fontSize=size, leading=size * lh,
-                              spaceBefore=4, spaceAfter=2, alignment=2 if rtl else 0)
-    flowables.append(Paragraph(_plain_markup(block.name), name_sty))
-    if block.title:
-        title_sty = ParagraphStyle('SigTitle', fontName=font(), fontSize=size * 0.9, leading=size * 0.9 * lh,
-                                   textColor=_safe_color(theme.colors.text_secondary), spaceAfter=2,
-                                   alignment=2 if rtl else 0)
-        flowables.append(Paragraph(_plain_markup(block.title), title_sty))
-    if block.date:
-        date_sty = ParagraphStyle('SigDate', fontName=font(), fontSize=size * 0.85, leading=size * 0.85 * lh,
-                                  textColor=_safe_color(theme.colors.text_muted), spaceAfter=2,
-                                  alignment=2 if rtl else 0)
-        flowables.append(Paragraph(_plain_markup(block.date), date_sty))
-    flowables.append(Spacer(1, theme.spacing.block_gap))
-    return flowables
+    for text, sz, color, bold in ((block.name, size, theme.colors.text_primary, True),
+                                  (block.title, size * 0.9, theme.colors.text_secondary, False),
+                                  (block.date, size * 0.85, theme.colors.text_muted, False)):
+        if text:
+            flows.append(Paragraph(_plain_markup(text), ParagraphStyle(
+                'Sig', fontName=font(bold), fontSize=sz, leading=sz * lh, textColor=_safe_color(color),
+                spaceBefore=4 if bold else 0, spaceAfter=2, alignment=align)))
+    # one cell: its alignment places the picture and the line, here and inside a column alike
+    t = Table([[flows]], colWidths=[width] if width else None, style=TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), side.upper()), ('VALIGN', (0, 0), (-1, -1), 'BOTTOM'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0)]))
+    t.hAlign = side.upper()
+    return [Spacer(1, 12 if block.image else 30), t, Spacer(1, theme.spacing.block_gap)]
 
 
 class TimelineDot(Flowable):

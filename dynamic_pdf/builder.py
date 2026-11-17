@@ -21,7 +21,7 @@ from .schema.blocks import (
     ChecklistBlock, ChecklistItem, DefinitionListBlock, DefinitionItem,
     FootnoteBlock, AbstractBlock, AbstractField,
     BibliographyBlock, BibliographyEntry, CitationBlock,
-    SignatureBlock, TimelineBlock, TimelineEvent,
+    SignatureBlock, TimelineBlock, TimelineEvent, signature_row,
     ShapeBlock, QRCodeBlock, WatermarkBlock, TOCBlock,
     IntroductionPageBlock, DiagramBlock,
     TwoColumnBlock, ThreeColumnBlock, SidebarBlock,
@@ -880,8 +880,16 @@ class DocumentBuilder:
         return self
 
     def signature(self, name: str, title: Optional[str] = None,
-                  date: Optional[str] = None, show_line: bool = True) -> 'DocumentBuilder':
-        self._blocks.append(SignatureBlock(name=name, title=title, date=date, show_line=show_line))
+                  date: Optional[str] = None, show_line: bool = True, image: Optional[str] = None,
+                  alignment: str = "start") -> 'DocumentBuilder':
+        """A signature: ``image`` is a picture of it drawn over the line; ``alignment`` is start, center or end."""
+        self._blocks.append(SignatureBlock(name=name, title=title, date=date, show_line=show_line,
+                                           image=image, alignment=alignment))
+        return self
+
+    def signatures(self, signers: List[Dict[str, Any]]) -> 'DocumentBuilder':
+        """Several signatures side by side, one column each (each as ``signature`` takes it)."""
+        self._blocks.append(signature_row(signers))
         return self
 
     def timeline(self, events: List[Dict[str, str]],

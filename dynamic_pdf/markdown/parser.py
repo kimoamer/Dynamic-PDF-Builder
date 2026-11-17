@@ -181,6 +181,8 @@ def _parse_body(md_text: str) -> list:
                 blocks.append(MermaidBlock(diagram=code))
             elif lang == "chart":
                 blocks.append(_chart_block(code, fence_id))
+            elif lang in ("signature", "signatures"):
+                blocks.append(_signature_block(code))
             elif lang in ("math", "latex"):
                 blocks.append(MathBlock(latex=code, id=fence_id))
             else:
@@ -251,6 +253,23 @@ def _chart_block(code: str, anchor):
     spec = dict(spec)
     spec["chart_type"] = spec.pop("type", None) or spec["chart_type"]
     return ChartBlock(id=anchor, **spec)
+
+
+def _signature_block(code: str):
+    """A ```signature fence: a JSON object (one signature) or a list of them (side by side), each with
+    ``name`` and optionally ``title``, ``date``, ``image``, ``alignment``."""
+    import json
+    from ..schema.blocks import SignatureBlock, signature_row
+    try:
+        spec = json.loads(code)
+    except json.JSONDecodeError as e:
+        raise ValueError('a ```signature block holds JSON, as {"name": "Omar Hassan", "title": "Director"}; '
+                         f"this one does not parse: {e}") from None
+    if isinstance(spec, dict):
+        return SignatureBlock(**spec)
+    if isinstance(spec, list) and all(isinstance(x, dict) for x in spec):
+        return signature_row(spec)
+    raise ValueError('a ```signature block needs an object {"name": ...} or a list of them')
 
 
 def _attr_id(text: str):

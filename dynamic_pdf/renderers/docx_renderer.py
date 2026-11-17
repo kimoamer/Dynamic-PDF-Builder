@@ -1561,17 +1561,37 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         self._runs(self._para(c, "Normal"), f"[{b.key}]")
 
     def _b_signature(self, c, b):
+        from ..layout.factory import _side
+        rtl = self.rtl_doc or is_rtl_text(" ".join(x for x in (b.name, b.title, b.date) if x))
+        align = {"left": WD_ALIGN_PARAGRAPH.LEFT, "center": WD_ALIGN_PARAGRAPH.CENTER,
+                 "right": WD_ALIGN_PARAGRAPH.RIGHT}[_side(b.alignment, rtl)]
         sp = self._para(c, "Normal")
-        sp.paragraph_format.space_before = Pt(28)
+        sp.paragraph_format.space_before = Pt(10 if b.image else 28)
         sp.paragraph_format.keep_with_next = True
-        if b.show_line:
-            sp.add_run("_" * 34)
+        if b.image:                                         # the signature itself, over the line
+            try:
+                buf, (iw, ih) = load_image(b.image, self.col.policy.assets)
+                # as tall as fits the line's width, at most 46 points, never enlarged
+                sp.add_run().add_picture(buf, height=Pt(min(46.0, ih, ih * b.line_width / max(iw, 1))))
+                sp = self._para(c, "Normal")
+                sp.paragraph_format.keep_with_next = True
+            except DynamicPDFError as e:
+                self.col.fail("asset_failed", f"Signature image: {e}", e)
+        if b.show_line:                                     # no wider than the column it stands in
+            room = c.width.pt - 12 if getattr(c, "width", None) else self.content_width_pt
+            sp.add_run("_" * max(8, int(min(b.line_width, room) / 5.6)))
+        sp.alignment = align
         for txt, bold in ((b.name, True), (b.title, False), (b.date, False)):
             if txt:
                 p = self._para(c, "Normal", txt)
                 p.paragraph_format.space_after = Pt(0)
                 p.paragraph_format.keep_with_next = True
+                p.alignment = align
                 self._runs(p, txt, bold=bold or None)
+                last = p
+        if b.name:
+            last.paragraph_format.space_after = Pt(self.tokens.paragraph_after * 1.5)
+            last.paragraph_format.keep_with_next = False
 
     # ─── structure ───
 
@@ -1791,11 +1811,17 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         F.set_table_cell_margins(t, 0, 0, 0, 160)
         if self.rtl_doc:
             F.set_table_bidi(t)
-        for i, (blocks, ratio) in enumerate(zip(cols, ratios)):
+        kids = [[coerce_child(x) for x in blocks] for blocks in cols]
+        # signatures side by side stand on one line, whether or not each has a picture over it
+        signing = all(getattr(x, "type", None) == "signature" for col in kids for x in col)
+        for i, (blocks, ratio) in enumerate(zip(kids, ratios)):
             cell = t.rows[0].cells[i]
             cell.width = Pt(self.content_width_pt * ratio)
+            if signing:
+                from docx.enum.table import WD_ALIGN_VERTICAL
+                cell.vertical_alignment = WD_ALIGN_VERTICAL.BOTTOM
             for child in blocks:
-                self._block_safe(cell, coerce_child(child))
+                self._block_safe(cell, child)
         self._spacer_after(c)
 
     def _b_two_column(self, c, b):

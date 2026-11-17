@@ -338,3 +338,40 @@ def test_each_quote_style_renders_and_mirrors_in_arabic():
     docx = Document(io.BytesIO(DocumentBuilder().quote("نص الاقتباس هنا", attribution="كاتب").render_docx()))
     xml = docx.element.xml
     assert "<w:right " in xml and "<w:left w:val=\"single\"" not in xml       # the bar on the right
+
+
+def _signature_png(tmp_path):
+    from PIL import Image, ImageDraw
+    im = Image.new("RGBA", (360, 120), (0, 0, 0, 0))
+    ImageDraw.Draw(im).line([(10, 90), (60, 20), (120, 90), (200, 30), (340, 60)], fill=(20, 40, 120, 255), width=5)
+    path = tmp_path / "sig.png"
+    im.save(path)
+    return str(path)
+
+
+def test_signatures_take_a_picture_an_alignment_and_a_row(tmp_path):
+    import pypdfium2 as pdfium
+    import pypdfium2.raw as raw
+    from docx import Document
+    sig = _signature_png(tmp_path)
+    md = (f'```signature\n{{"name": "Omar Hassan", "title": "Director", "image": "{sig}"}}\n```\n\n'
+          '```signatures\n[{"name": "A. One", "alignment": "center"}, {"name": "B. Two"}, {"name": "C. Three"}]\n```\n')
+    b = DocumentBuilder.from_markdown(md)
+    assert [x.type for x in b._blocks] == ["signature", "three_column"]
+    pdf = pdfium.PdfDocument(b.render())
+    assert sum(o.type == raw.FPDF_PAGEOBJ_IMAGE for o in pdf[0].get_objects()) == 1
+    docx = Document(io.BytesIO(b.render_docx()))
+    assert len(docx.inline_shapes) == 1 and len(docx.tables) == 1
+    with pytest.raises(ValueError, match="holds JSON"):
+        DocumentBuilder.from_markdown("```signature\nname: x\n```\n")
+    with pytest.raises(ValueError, match="1 to 4 signatures"):
+        DocumentBuilder().signatures([{"name": str(i)} for i in range(5)])
+
+
+def test_signatures_in_a_row_stand_on_one_line(tmp_path):
+    import pypdfium2 as pdfium
+    pdf = DocumentBuilder().signatures([{"name": "Left signer", "image": _signature_png(tmp_path)},
+                                        {"name": "Right signer"}]).design(None).render()
+    tp = pdfium.PdfDocument(pdf)[0].get_textpage()
+    y = [tp.get_charbox(tp.search(n).get_next()[0])[1] for n in ("Left signer", "Right signer")]
+    assert abs(y[0] - y[1]) < 1                                      # both names on one baseline
