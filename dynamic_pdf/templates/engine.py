@@ -130,7 +130,19 @@ def _f_chart(value, name, label=None, *series):
                 "series": {s: [num(r[c], s) for r in body] for s, c in zip(series, cols)}})
 
 
-_FILTERS = {"safe": lambda v, n: Raw(v.value if isinstance(v, Raw) else v), "table": _f_table,
+def _f_words(value, name, *options):
+    """An amount in words: ``{{ total | words }}``, ``{{ total | words("SAR") }}``, ``{{ total | words("en", "USD") }}``."""
+    from ..core.words import amount_in_words
+    language = next((o for o in options if str(o).lower() in ("ar", "en")), "ar")
+    currency = next((o for o in options if str(o).lower() not in ("ar", "en")), None)
+    try:
+        amount = float(str(value).replace(",", "")) if not isinstance(value, (int, float)) else value
+        return amount_in_words(amount, language, currency)
+    except ValueError as e:
+        raise TemplateError(f"words: {name}: {e}") from None
+
+
+_FILTERS = {"safe": lambda v, n: Raw(v.value if isinstance(v, Raw) else v), "table": _f_table, "words": _f_words,
             "headers": _f_headers, "rows": _f_rows, "chart": _f_chart}
 
 

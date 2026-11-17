@@ -50,7 +50,7 @@ pip install "dynamic-pdf-builder[diagrams]"   # Mermaid diagrams via Playwright
 pip install "dynamic-pdf-builder[plotly]"     # Plotly charts
 pip install "dynamic-pdf-builder[pdf]"        # PDF merge / encrypt via pikepdf
 pip install "dynamic-pdf-builder[qrcode]"     # QR code blocks
-pip install "dynamic-pdf-builder[xlsx]"       # XLSX data sources; editable data behind Word charts
+pip install "dynamic-pdf-builder[xlsx]"       # XLSX data sources, workbook export, editable Word chart data
 pip install "dynamic-pdf-builder[qa]"         # PyMuPDF for QA (AGPL): faster and used when installed
 pip install "dynamic-pdf-builder[ai]"         # optional AI layer (needs an API key, only when asked)
 pip install "dynamic-pdf-builder[mcp]"        # MCP server for agents
@@ -1269,6 +1269,43 @@ and captions kept on one page, comfortable line length for prose, heading ramps 
 outline depth, a lead paragraph for reports and proposals, and a metadata-only cover for long
 titled reports. Headings are kept with their content and widows/orphans are suppressed.
 
+### Computed tables, amounts in words and workbooks
+
+A table cell that starts with `=` is a formula, written as in a spreadsheet. Cells are named as a
+spreadsheet names them (columns A, B, C ... and rows from 1, the header row), so a formula means
+the same in the document, in Word and in an exported workbook:
+
+```markdown
+| Item  | Qty | Price        | Amount             |
+|-------|-----|--------------|--------------------|
+| Paper | 3   | SAR 12.50    | =B2*C2             |
+| Toner | 2   | SAR 1,310.00 | =B3*C3             |
+| VAT   |     | 15%          | =SUM(D2:D3)*C4     |
+| Total |     |              | =SUM(ABOVE)        |
+| In words |  |              | =WORDS(D5)         |
+```
+
+Functions: `SUM`, `AVERAGE`, `MIN`, `MAX`, `COUNT`, `ROUND`, `ABS`, and Word's `ABOVE` and `LEFT`
+(the numbers above in the column, or to the left in the row). `15%` is 0.15. Arithmetic is decimal,
+so 0.1 + 0.2 is 0.3, and `ROUND` rounds half away from zero. A result is written as its column
+writes numbers: decimals, thousands separators, currency, percent sign, negatives in parentheses
+and Arabic-Indic digits. The document keeps the formulas; the PDF and the DOCX show the results.
+A formula that cannot be computed raises a `FormulaError` naming the table, the cell and why (in
+permissive mode the cell reads `#ERROR`), and `lint()` reports it in either mode.
+
+`WORDS(D5)` writes the amount in words, in the document's language: "فقط ثلاثة آلاف وستة وخمسون
+ريالاً وثلاث عشرة هللةً لا غير", or "Three thousand fifty-six riyals and thirteen halalas only". It
+takes the currency of the cells it reads, or a code: `=WORDS(D5, "EGP")`, `=WORDS(D5, "en", "USD")`.
+Arabic counts the noun as invoices do (ريالان، ثلاثة ريالات، أحد عشر ريالاً، مئتا ريال، ألفا ريال).
+Currencies: SAR, EGP, AED, KWD, QAR, OMR, BHD, JOD, USD, EUR, GBP (English). The same words are
+`dynamic_pdf.core.words.amount_in_words(1250.5, "ar", "SAR")` and the template filter
+`{{ total | words("SAR") }}`.
+
+`export("tables.xlsx")` (or `render_xlsx()`, CLI `render -o tables.xlsx`) writes every table as a
+sheet of a workbook, with the `xlsx` extra: numbers as numbers in the formats the document uses,
+and formulas as working spreadsheet formulas (`ABOVE` becomes the range it covers; `WORDS`, which
+no spreadsheet has, its text). Sheets read right to left in an Arabic document.
+
 ### Suggested edits and comments
 
 Text can carry suggested edits and comments in [CriticMarkup](https://github.com/CriticMarkup/CriticMarkup-toolkit),
@@ -1436,6 +1473,10 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
   references and lists of figures and tables are Word fields.
 
 **New**
+- Computed tables: spreadsheet formulas in cells (`=B2*C2`, `=SUM(ABOVE)`), computed in decimals and
+  written as their column writes numbers; amounts in words in Arabic and English (`=WORDS(D5)`,
+  `amount_in_words`, the template filter `words`); every table as a workbook with working formulas
+  (`export("x.xlsx")`, `render_xlsx()`).
 - Word: native equations (Office Math), native bar/line/area/pie/doughnut charts with an embedded
   workbook when openpyxl is installed, `SEQ`/`REF`/`TOC \c` fields that renumber in Word, and
   suggested edits and comments in CriticMarkup as tracked changes and Word comments (a review copy

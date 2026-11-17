@@ -33,7 +33,7 @@ def main():
     render_p.add_argument("input", help="Input file (.md or .json)")
     render_p.add_argument("-o", "--output", default=None,
                           help="Output path; .pdf or .docx (default: <input>.<format>)")
-    render_p.add_argument("-f", "--format", choices=["pdf", "docx", "both"], default=None,
+    render_p.add_argument("-f", "--format", choices=["pdf", "docx", "xlsx", "both"], default=None,
                           help="Output format (default: from --output extension, else pdf)")
     render_p.add_argument("--design", default="auto", metavar="PROFILE",
                           help='"auto" (default), a profile (executive_report, proposal, ...) '
@@ -250,7 +250,7 @@ def _report(paths, diagnostics):
 def _cmd_render(args):
     input_path = args.input
     out_ext = os.path.splitext(args.output)[1].lower().lstrip(".") if args.output else ""
-    fmt = args.format or (out_ext if out_ext in ("pdf", "docx") else "pdf")
+    fmt = args.format or (out_ext if out_ext in ("pdf", "docx", "xlsx") else "pdf")
     stem = os.path.splitext(args.output)[0] if args.output else os.path.splitext(input_path)[0]
     policy = _policy_from_args(args)
     builder = _load(args, policy)

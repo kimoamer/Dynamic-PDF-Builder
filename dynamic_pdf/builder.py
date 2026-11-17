@@ -40,6 +40,7 @@ class ExportResult:
                  diagnostics=None):
         self.pdf_path = pdf_path
         self.docx_path = docx_path
+        self.xlsx_path = None    # export("x.xlsx"): the tables as a workbook
         self.page_count = page_count
         self.profile = profile
         self.diagnostics = diagnostics or []
@@ -457,8 +458,12 @@ class DocumentBuilder:
         repeated headings, unresolved references, mixed digits, inconsistent number and
         date formats, images without alt text, empty sections. Never edits anything.
         Returns ``dynamic_pdf.qa.lint.LintWarning`` items; ``rules`` limits the rules run."""
+        from .core.normalize import normalize
         from .qa.lint import lint
-        return lint(self.semantic(), rules)
+        # a formula that cannot be computed is a warning here, whatever the error mode
+        sem = normalize(self.build(strict=False), source_kind=self._source_kind,
+                        source_text=self._source_text, front_matter=self.front_matter)
+        return lint(sem, rules)
 
     # ─── Render policy (caller-owned; never taken from document payloads) ───
 
@@ -981,8 +986,16 @@ class DocumentBuilder:
         self._blocks.extend(blocks)
         return self
 
-    def build(self) -> Document:
-        return Document(meta=self._meta, theme=self._theme, blocks=self._blocks)
+    def build(self, strict: Optional[bool] = None) -> Document:
+        """The document as it will be rendered: table formulas (cells that start with ``=``)
+        replaced by their results, computed afresh each time; ``_blocks`` keeps the formulas.
+        A formula that cannot be computed raises in strict mode and reads ``#ERROR`` otherwise."""
+        from .core.formulas import compute_blocks
+        meta = self._meta
+        arabic = (meta.language or "").lower().startswith("ar") or meta.rtl or meta.direction == "rtl"
+        blocks = compute_blocks(self._blocks, "ar" if arabic else "en",
+                                strict=self._policy.strict if strict is None else strict)
+        return Document(meta=self._meta, theme=self._theme, blocks=blocks)
 
     def _engine(self) -> LayoutEngine:
         doc, theme = self._prepared()
@@ -1080,15 +1093,33 @@ class DocumentBuilder:
         finally:
             self._policy = kept
 
+    def render_xlsx(self, output=None) -> Optional[bytes]:
+        """Every table as a sheet of a workbook, its numbers as numbers and its formulas as
+        spreadsheet formulas (needs openpyxl, the ``xlsx`` extra). Returns the bytes, or writes
+        them to ``output`` (a path or a file object)."""
+        from .renderers.xlsx_renderer import render_xlsx
+        doc = self.build()
+        data = render_xlsx(self._blocks, doc.blocks, doc.meta)
+        if output is None:
+            return data
+        from .layout.engine import _write_output
+        _write_output(output, data)
+        return None
+
     def export(self, path: str, format: Optional[str] = None, qa: bool = False) -> 'ExportResult':
-        """Export to ``path``; format inferred from the extension (``.pdf``/``.docx``)
-        unless given as ``"pdf"`` or ``"docx"``. ``qa=True`` inspects the rendered
-        pages, auto-fixes measurable layout defects (bounded retries) and attaches
-        the QA report."""
+        """Export to ``path``; format inferred from the extension (``.pdf``/``.docx``/``.xlsx``)
+        unless given as ``"pdf"``, ``"docx"`` or ``"xlsx"`` (the tables only, as a workbook).
+        ``qa=True`` inspects the rendered pages, auto-fixes measurable layout defects (bounded
+        retries) and attaches the QA report."""
         import os
         fmt = (format or os.path.splitext(path)[1].lstrip(".") or "pdf").lower()
+        if fmt == "xlsx":
+            self.render_xlsx(path)
+            result = ExportResult()
+            result.xlsx_path = path
+            return result
         if fmt not in ("pdf", "docx"):
-            raise ValueError(f"Unsupported export format {fmt!r}; use 'pdf' or 'docx'")
+            raise ValueError(f"Unsupported export format {fmt!r}; use 'pdf', 'docx' or 'xlsx'")
         if not self._design_explicit and self._design_mode is None:
             # export() is a new-style API: intelligent design unless opted out
             # with design(None). Legacy render()/render_bytes() are unchanged.

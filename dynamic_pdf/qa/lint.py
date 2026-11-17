@@ -27,7 +27,7 @@ from ..core.numbering import REF as _REF
 from ..core.table_types import ascii_digits, infer_table, read_cell
 
 RULES = ("total_mismatch", "percent_sum", "repeated_heading", "unresolved_ref", "mixed_digits",
-         "number_format", "date_format", "missing_alt_text", "empty_section")
+         "number_format", "date_format", "missing_alt_text", "empty_section", "formula_error")
 _NOT_PROSE = {"code", "mermaid", "math", "diagram", "qrcode", "shape", "spacer", "divider", "page_break",
               "watermark", "page_media", "table_of_contents"}
 _NOT_ADDITIVE = re.compile(r"average|mean|median|avg|rate|ratio|per\b|price|متوسط|معدل|نسبة|سعر", re.I)
@@ -333,6 +333,12 @@ def lint(sem: SemanticDocument, rules: Optional[Iterable[str]] = None) -> List[L
             out.append(LintWarning(rule, message, block, where))
 
     for i, b, rows, body in _tables(sem):
+        for r, row in enumerate(rows):
+            for c, cell in enumerate(row):
+                if str(cell).strip() == "#ERROR":      # a formula that could not be computed (permissive mode)
+                    from ..core.formulas import col_letter
+                    warn("formula_error", f"{col_letter(c)}{r + 2}: the formula could not be computed; "
+                                          "render in strict mode to see why", i, "table")
         _totals(i, b, rows, body, warn)
         _shares(i, b, rows, body, warn)
         _formats(i, b, rows, body, warn)
