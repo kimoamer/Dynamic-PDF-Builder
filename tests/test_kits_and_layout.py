@@ -578,3 +578,38 @@ def test_shapes_are_shapes_in_word_and_labels_read():
     assert "A" in pdfium.PdfDocument(b.render())[0].get_textpage().get_text_range()
     docx = Document(io.BytesIO(b.render_docx()))
     assert len(docx.inline_shapes) == 2 and not docx.tables               # pictures of the shapes, not table cells
+
+
+def test_a_page_border_frames_every_page_in_pdf_and_word():
+    import zipfile
+    import pypdfium2 as pdfium
+    md = "---\ntitle: T\npage_border: double\n---\n\n# T\n\n" + "Body text. " * 900
+    b = DocumentBuilder.from_markdown(md)
+    assert b._meta.page_border == "double"
+    pdf = pdfium.PdfDocument(b.render())
+    assert len(pdf) >= 2
+    for i in (0, len(pdf) - 1):                       # a dark line 18 points in from the left edge, half-way down
+        im = pdf[i].render(scale=2).to_pil().convert("L")
+        assert min(im.getpixel((x, im.height // 2)) for x in range(30, 42)) < 140
+    plain = pdfium.PdfDocument(DocumentBuilder().paragraph("x").render())[0].render(scale=2).to_pil().convert("L")
+    assert min(plain.getpixel((x, plain.height // 2)) for x in range(30, 42)) > 240
+    xml = zipfile.ZipFile(io.BytesIO(b.render_docx())).read("word/document.xml").decode()
+    assert 'w:pgBorders w:offsetFrom="page"' in xml and 'w:val="double"' in xml
+
+
+def test_word_check_boxes_can_be_ticked():
+    import zipfile
+    from docx import Document
+    data = DocumentBuilder.from_markdown("- [x] done\n- [ ] to do\n").render_docx()
+    xml = zipfile.ZipFile(io.BytesIO(data)).read("word/document.xml").decode()
+    assert xml.count("<w14:checkbox>") == 2 and '<w14:checked w14:val="1"/>' in xml and '<w14:checked w14:val="0"/>' in xml
+    assert [p.text.strip() for p in Document(io.BytesIO(data)).paragraphs if p.text.strip()] == ["done", "to do"]
+
+
+def test_encryption_never_leaves_a_word_file_or_workbook_in_the_clear(tmp_path):
+    from dynamic_pdf.utils.errors import EncryptionError
+    b = DocumentBuilder().table(["A"], [["1"]]).paragraph("secret").encrypt("owner", "user")
+    for call in (b.render_docx, b.render_xlsx, lambda: b.export(str(tmp_path / "x.docx"))):
+        with pytest.raises(EncryptionError, match="protects the PDF only"):
+            call()
+    assert not (tmp_path / "x.docx").exists()

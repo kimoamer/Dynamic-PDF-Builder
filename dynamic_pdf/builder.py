@@ -1096,6 +1096,7 @@ class DocumentBuilder:
         from .core.normalize import normalize
         from .renderers.docx_renderer import render_docx
         from .themes import get_theme as _get_theme
+        self._refuse_unprotected("Word document")
         doc, theme = self._prepared()
         if self._compose_active() and self._composed()[4].docx_source is not None:
             doc, theme = self._composed()[4].docx_source    # a plan made for the PDF only
@@ -1158,11 +1159,20 @@ class DocumentBuilder:
         finally:
             self._policy = kept
 
+    def _refuse_unprotected(self, what: str) -> None:
+        """Password protection was asked for, and only the PDF can carry it: nothing is written in the clear."""
+        if self._meta.encrypt:
+            from .utils.errors import EncryptionError
+            raise EncryptionError(
+                f"encrypt() protects the PDF only: this library cannot password-protect a {what}, and it will "
+                "not write one unprotected. Export the PDF, or build this file without encrypt().")
+
     def render_xlsx(self, output=None) -> Optional[bytes]:
         """Every table as a sheet of a workbook, its numbers as numbers and its formulas as
         spreadsheet formulas (needs openpyxl, the ``xlsx`` extra). Returns the bytes, or writes
         them to ``output`` (a path or a file object)."""
         from .renderers.xlsx_renderer import render_xlsx
+        self._refuse_unprotected("workbook")
         doc = self.build()
         data = render_xlsx(self._blocks, doc.blocks, doc.meta)
         if output is None:
@@ -1287,6 +1297,8 @@ class DocumentBuilder:
             builder.document_type(fm["document_type"])
         if fm.get("direction") in ("ltr", "rtl"):
             builder.direction(fm["direction"])
+        if str(fm.get("page_border", "")).lower() in ("thin", "double", "thick"):
+            builder._meta.page_border = str(fm["page_border"]).lower()
         header = fm.get("header") if isinstance(fm.get("header"), str) and fm["header"].strip() else None
         if header is None and isinstance(fm.get("logo"), str) and fm["logo"].strip():
             # a logo alone asks for a header to carry it: a letterhead on a letter or invoice, else modern

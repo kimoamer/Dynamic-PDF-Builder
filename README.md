@@ -1543,6 +1543,9 @@ SOURCE_DATE_EPOCH=1700000000 dynamic-pdf render report.md --format both
 Work since v0.3.0, in brief. Design records for each step are under `docs/`.
 
 **Changes that can affect existing users**
+- `encrypt()` with a Word file or a workbook is refused (`EncryptionError`): only the PDF can carry
+  the password, and those files used to be written unprotected without a word.
+- Every cover page is a designed, bare page (no page number, a larger title, a rule over it).
 - `render()`, `render_bytes()` and `render_from_json()` design the document, as `export()` always has.
   For the classic theme look of v0.3, call `design(None)` first. `theme()` now counts as choosing a
   theme, so the design starts from it, as `DocumentBuilder(theme=...)` does.
@@ -1554,6 +1557,8 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
   references and lists of figures and tables are Word fields.
 
 **New**
+- `page_border: thin | double | thick` (front matter, or `meta.page_border`) frames every page, in PDF
+  and Word. Check boxes in a Word checklist can be ticked.
 - Maps, location sketches and mind maps as chart types (`map` from your own GeoJSON with values and
   points, `sketch` with roads, blocks, places and a north arrow, `mindmap`), in PDF and Word, from the
   ```` ```chart ```` fence, with Arabic labels.

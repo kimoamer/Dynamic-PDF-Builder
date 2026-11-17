@@ -134,7 +134,7 @@ class ImageBlock(BaseBlock):
 
 class ChartBlock(BaseBlock):
     type: Literal["chart"] = "chart"
-    chart_type: str                                 # bar, vertical_bar, horizontal_bar, grouped_bar, stacked_bar, line, area, pie, donut, scatter, bubble, histogram, heatmap, waterfall, funnel, gauge, sparkline, treemap
+    chart_type: str                                 # bar, vertical_bar, horizontal_bar, grouped_bar, stacked_bar, line, area, pie, donut, scatter, bubble, histogram, heatmap, waterfall, funnel, gauge, sparkline, treemap, map, sketch, mindmap
     data: Any
     title: Optional[str] = None
     colors: Optional[List[str]] = None

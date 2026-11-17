@@ -21,6 +21,7 @@ class Meta(BaseModel):
     document_type: Optional[str] = None         # e.g. executive_report, proposal, academic_report
     audience: Optional[str] = None              # free text, e.g. "board", "engineers"
     exhibit_numbering: bool = False             # number captioned tables and figures (also on with {ref:id})
+    page_border: Optional[str] = None           # a frame round every page: "thin", "double" or "thick"
     reviewer: Optional[str] = None              # who suggested {++ ++} {-- --} edits and {>> <<} comments (default "Reviewer")
     encrypt: bool = False                       # Password-protect
     tagged: bool = False                        # Tagged PDF: structure tree for assistive technology

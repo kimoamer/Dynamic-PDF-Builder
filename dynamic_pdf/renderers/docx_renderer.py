@@ -133,6 +133,11 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                          sec.even_page_header, sec.even_page_footer):
                 if not part.is_linked_to_previous:
                     F.mirror_bidi_justification(part._element)
+        border = {"thin": ("single", 6), "thick": ("single", 18), "double": ("double", 6)}.get(
+            str(getattr(self.sem.meta, "page_border", None) or "").lower())
+        if border:                                  # a frame round every page, 18 points in from its edge
+            for sec in doc.sections:
+                F.set_page_border(sec, border[0], border[1], self.tokens.colors["primary"])
         buf = io.BytesIO()
         doc.save(buf)
         fonts = self.tokens.fonts
@@ -739,8 +744,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             if is_rtl_text(text):
                 self.lists.keep_label_inside(p, level, ordered)
             if checked is not None:
-                r = p.add_run("☑ " if checked else "☐ ")
-                F.set_run_fonts(r, "Segoe UI Symbol", "Segoe UI Symbol")
+                F.add_checkbox(p, checked)
             self._runs(p, text)
             children = [] if isinstance(it, str) else it.children
             if children:
@@ -780,8 +784,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
     def _b_checklist(self, c, b):
         for it in b.items:
             p = self._para(c, "List Paragraph", it.text)
-            r = p.add_run("☑  " if it.checked else "☐  ")
-            F.set_run_fonts(r, "Segoe UI Symbol", "Segoe UI Symbol")
+            F.add_checkbox(p, it.checked)
             self._runs(p, it.text)
         self._spacer_after(c, 2)
 

@@ -70,6 +70,7 @@ reviewer: Policy AI                # name on suggested edits and comments
 header: modern                     # header and footer: letterhead, modern, banner, report, minimal
 logo: logo.png                     # the logo; without header, a letterhead (letters, invoices) or modern
 company: Nile Co.                  # for the header: also address, website, email, phone, confidentiality ...
+page_border: double                # a frame round every page: thin, double or thick
 cover: split                       # a cover page: true, centered, left_aligned or split (from title, subject, author, date, logo)
 cover_color: "#1B365D"             # the cover's ground (a panel beside the text on split); cover_image: photo.jpg
 ---
@@ -350,5 +351,11 @@ Word draws them with its own. Tashkeel, Persian and Urdu letters and ligatures s
 - Emphasis inside a suggested edit should open and close inside it.
 - Word lays out its own pages, so its page count can differ from the PDF's.
 - A long unbreakable word (an e-mail address, a long URL) can leave the justified line before it widely spaced.
+- In Word the library writes: styles and an outline, real numbered and bulleted lists, tables with
+  repeating header rows, footnotes, a contents field, caption and reference fields, native equations and
+  charts, tracked changes and comments, headers and footers with live fields, sections (landscape pages,
+  columns), page borders, check boxes the reader can tick, watermarks, document properties and embedded
+  fonts. It does not write endnotes, an index, line numbers, text boxes in the text, SmartArt, drop
+  caps or a password: `encrypt()` protects the PDF only, and a Word file or workbook is refused then.
 - Emoji in the PDF are drawn in one colour, each on its own: a flag shows its two letters, a family its
   members, and skin tones are left out. Running headers and footers and chart labels draw text faces only.
