@@ -469,3 +469,15 @@ def test_a_front_matter_logo_alone_brings_a_header(tmp_path):
     assert b._meta.page_system is not None and b._meta.page_system.first_page == "custom"
     letter = DocumentBuilder.from_markdown(f"---\ntitle: T\nlogo: {logo}\ndocument_type: letter\n---\n\nDear Sir,\n")
     assert len(letter._meta.page_system.first_header.rows) == 3                # the letterhead
+
+
+def test_a_certificate_has_a_frame_and_stays_on_one_page(tmp_path):
+    import pypdfium2 as pdfium
+    ar = {**kit_example("certificate"), "language": "ar", "logo": _logo(tmp_path), "recipient": "ليلى منصور",
+          "organisation": "أكاديمية النيل للتدريب", "achievement": "النمذجة المالية للمديرين",
+          "signatures": [{"name": "عمر حسن", "title": "مدير البرنامج"}, {"name": "سارة أحمد", "title": "العميدة"}]}
+    for data in (kit_example("certificate"), ar):
+        b = kit("certificate", data)
+        assert b._blocks[0].type == "page_media" and b._blocks[0].src.startswith("data:image/png")
+        assert len(pdfium.PdfDocument(b.render())) == 1
+    assert kit("certificate", {**kit_example("certificate"), "frame": False})._blocks[0].type != "page_media"

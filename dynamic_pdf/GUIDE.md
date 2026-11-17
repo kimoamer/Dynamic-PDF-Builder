@@ -275,7 +275,8 @@ none, for applicant tracking systems. A missing or malformed field is refused wi
   the difference.
 - `certificate`: a landscape certificate. `organisation`, `title` (default "Certificate of Completion"),
   `recipient`, `gender` (`f` for the Arabic feminine), `achievement`, `details`, `date`, `number` and
-  `signatures` (one or two, each `name` and `title`).
+  `signatures` (one or two, each `name` and `title`), set in a frame (`"frame": false` leaves it out),
+  always on one page.
 
 ## Output
 
