@@ -93,6 +93,22 @@ def band_maker(document, theme, system, rtl: bool, assets, collector):
     return maker, sample
 
 
+def split_band_needs(maker, width: float, sample):
+    """Page one's room and the other pages', when page one has bands of its own (so a tall
+    letterhead does not push every later page's text down); None otherwise."""
+    import copy
+    from .page_system import margin_needs
+    system = maker.system
+    if system.first_page != "custom":
+        return None
+    first, rest = copy.copy(maker), copy.copy(maker)
+    first.system = system.model_copy(update={
+        "header": system.first_header, "footer": system.first_footer, "even_header": None, "even_footer": None,
+        "sections": {}, "first_page": "same", "first_header": None, "first_footer": None})
+    rest.system = system.model_copy(update={"first_page": "same", "first_header": None, "first_footer": None})
+    return margin_needs(first, width, sample), margin_needs(rest, width, sample)
+
+
 def reserve_bands(maker, width: float, sample, collector) -> Tuple[float, float]:
     """The room the bands need. In a lossless system, content that cannot be set whole
     is an error here, before any page is drawn."""
@@ -123,7 +139,7 @@ def resolve_page_envelope(doc, theme, policy=None, size: Optional[Tuple[float, f
     policy = policy or RenderPolicy(error_mode="permissive")
     collector = DiagnosticCollector(policy)
     sp = theme.spacing
-    width = w - sp.page_margin_left - sp.page_margin_right
+    width = w - sp.page_margin_left - sp.page_margin_right - 2 * FRAME_PADDING     # the text column's width
     maker, sample = band_maker(doc, theme, settled(system, doc.blocks), is_rtl_document(doc),
                                policy.assets, collector)
     with warnings.catch_warnings():

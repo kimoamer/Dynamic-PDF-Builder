@@ -404,7 +404,8 @@ def test_band_colours_follow_the_theme_by_name():
     from dynamic_pdf.themes import get_theme
     colors = get_theme("claude").colors
     system = themed(preset("modern", company="X"), colors)
-    assert system.header.accent_color == colors.accent and themed(preset("banner"), colors).header.rows[0].fill == colors.primary
+    assert system.header.rows[0].rule_color == colors.accent and system.footer.accent_color == colors.border
+    assert themed(preset("banner"), colors).header.rows[0].fill == colors.primary
 
 
 def test_an_arabic_band_keeps_its_title_whole_and_its_logo_first(tmp_path):
@@ -420,7 +421,30 @@ def test_an_arabic_band_keeps_its_title_whole_and_its_logo_first(tmp_path):
     P.BandMaker._cell = spy
     try:
         DocumentBuilder.from_markdown(f"---\ntitle: المراجعة الربعية\nlanguage: ar\nheader: modern\nlogo: {_logo(tmp_path)}\n"
-                                      "---\n\n# المراجعة الربعية\n\nنص.\n").render()
+                                      "---\n\n# المراجعة الربعية\n\n" + "نص طويل. " * 900).render()
     finally:
         P.BandMaker._cell = orig
-    assert seen and all(c.lines == ["المراجعة الربعية"] and c.rtl for c in seen)
+    assert seen and all(c.rtl for c in seen) and all(len(c.lines) <= 1 for c in seen)   # never broken in two
+
+
+def test_a_letterhead_gives_later_pages_back_their_room(tmp_path):
+    import pypdfium2 as pdfium
+    md = (f"---\ntitle: Review\nheader: letterhead\nlogo: {_logo(tmp_path)}\ncompany: Nile Co.\n"
+          "website: nile.example\n---\n\n# Review\n\n" + "Body text of the letter. " * 700)
+    pdf = pdfium.PdfDocument(DocumentBuilder.from_markdown(md).render())
+
+    def first_body_line(i):
+        tp = pdf[i].get_textpage()
+        return max(tp.get_charbox(k)[3] for k in range(tp.count_chars())
+                   if tp.get_text_range(k, 1).strip() and "Body" in tp.get_text_range(max(0, k - 3), 8))
+    assert len(pdf) >= 2 and first_body_line(1) > first_body_line(0) + 20     # a small header after page one
+
+
+def test_bands_share_the_text_columns_edges(tmp_path):
+    import pypdfium2 as pdfium
+    md = "---\ntitle: Review\nheader: report\ncompany: Nile Co.\n---\n\n# Review\n\n" + "Body text here. " * 400
+    pdf = pdfium.PdfDocument(DocumentBuilder.from_markdown(md).render())
+    tp = pdf[1].get_textpage()
+    title_x = tp.get_charbox(tp.search("Review").get_next()[0])[0]
+    body_x = min(tp.get_charbox(k)[0] for k in range(tp.count_chars()) if tp.get_text_range(k, 1).strip())
+    assert abs(title_x - body_x) < 1.5

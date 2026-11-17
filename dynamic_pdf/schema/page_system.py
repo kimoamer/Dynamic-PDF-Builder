@@ -113,36 +113,57 @@ def _page(language: str) -> str:
 def preset(name: str, logo: Optional[str] = None, language: str = "en", **values: str) -> PageSystem:
     """A ready-made header and footer, placed by reading edge so it mirrors in Arabic:
 
-    - ``letterhead``: the logo and the company at the head of page one, the contact details under a
-      rule; later pages carry a light running head.
-    - ``modern``: a strip of the accent colour along the page edge, the logo and title at the start,
-      the section at the end; the page number in the footer's end.
-    - ``banner``: the logo and title on a band of the primary colour.
-    - ``report``: the title and the running section over a rule; company, confidentiality and page below.
+    - ``letterhead``: a large logo and the company at the head of page one, the contact details over a
+      rule of the accent colour; later pages carry a small logo and the title.
+    - ``modern``: the logo over a rule of the accent colour, the title and running section at the end.
+    - ``banner``: the logo, on a light plate, and the title on a band of the primary colour.
+    - ``report``: the title and running section over a hairline; company, confidentiality and page below.
     - ``minimal``: the page number only.
 
+    Page one opens with the document's title, so its header carries the subtitle or company instead.
+    Footers sit under a hairline.
+
     ``values`` fill the fields: company, website, email, phone, department, confidentiality, code ..."""
-    mark = [Logo(src=logo, max_height=30, max_width=140)] if logo else []
+    def mark(height: float):
+        return [Logo(src=logo, max_height=height, max_width=height * 5)] if logo else []
     page = _page(language)
     contact = "{website} · {email} · {phone}"
+    # a hairline between the text and the footer
+    foot = dict(accent_color="border", accent_height=0.6, accent_edge="inner", row_gap=0)
+    muted = dict(size=7.5, color="text_muted")
+    # page one opens with the document's own title, so its header does not repeat it
     systems = {
         "letterhead": dict(
             first_page="custom",
-            first_header=Band(rows=[BandRow(start=mark, end=["{company}"], bold=True, size=11),
-                                    BandRow(end=[contact], size=8, rule_below=True, rule_color="primary", rule_width=1.2)]),
-            header=Band(rows=[BandRow(start=["{company}"], end=["{title}"], size=8, rule_below=True)]),
-            footer=Band(rows=[BandRow(start=["{department}"], end=[page], size=8)])),
+            first_header=Band(row_gap=1, rows=[
+                BandRow(start=mark(40), end=["{company}"], bold=True, size=11, color="primary"),
+                BandRow(end=[contact], rule_below=True, rule_color="accent", rule_width=1.6, **muted)]),
+            header=Band(rows=[BandRow(start=mark(16), end=["{title}"], rule_below=True, **muted)]),
+            first_footer=Band(**foot, rows=[BandRow(start=["{department}"], end=[page], **muted)]),
+            footer=Band(**foot, rows=[BandRow(start=["{company}"], end=[page], **muted)])),
         "modern": dict(
-            header=Band(accent_color="accent", accent_height=4, bleed=True,
-                        rows=[BandRow(start=mark + ["{title}"], end=["{section}"], size=8.5)]),
-            footer=Band(rows=[BandRow(start=["{confidentiality} · {company}"], end=["{page} / {pages}"], size=8)])),
+            first_page="custom",
+            first_header=Band(rows=[BandRow(start=mark(26), end=["{subtitle}"], rule_below=True, rule_color="accent",
+                                            rule_width=2, size=8, color="text_secondary")]),
+            header=Band(rows=[BandRow(start=mark(18), end=["{title} · {section}"], rule_below=True, rule_color="accent",
+                                      rule_width=2, size=8, color="text_secondary")]),
+            first_footer=Band(**foot, rows=[BandRow(start=["{confidentiality} · {company}"], end=["{page} / {pages}"], **muted)]),
+            footer=Band(**foot, rows=[BandRow(start=["{confidentiality} · {company}"], end=["{page} / {pages}"], **muted)])),
         "banner": dict(
-            header=Band(bleed=True, padding=7, rows=[BandRow(fill="primary", start=mark, end=["{title}"], bold=True, size=10)]),
-            footer=Band(rows=[BandRow(start=["{company}"], end=[page], size=8, color="text_muted")])),
+            first_page="custom",
+            first_header=Band(bleed=True, padding=9, rows=[
+                BandRow(fill="primary", start=mark(26), end=["{subtitle}"], bold=True, size=9.5)]),
+            header=Band(bleed=True, padding=7, rows=[
+                BandRow(fill="primary", start=mark(18), end=["{title}"], bold=True, size=9)]),
+            first_footer=Band(**foot, rows=[BandRow(start=["{company}"], end=[page], **muted)]),
+            footer=Band(**foot, rows=[BandRow(start=["{company}"], end=[page], **muted)])),
         "report": dict(
-            header=Band(rows=[BandRow(start=["{title}"], end=["{section}"], size=8, rule_below=True)]),
-            footer=Band(rows=[BandRow(start=["{company}"], center=["{confidentiality}"], end=[page], size=8)])),
-        "minimal": dict(footer=Band(rows=[BandRow(center=["{page}"], size=8)])),
+            first_page="custom",
+            first_header=Band(rows=[BandRow(start=mark(20), end=["{company}"], rule_below=True, **muted)]),
+            header=Band(rows=[BandRow(start=["{title}"], end=["{section}"], rule_below=True, **muted)]),
+            first_footer=Band(**foot, rows=[BandRow(start=["{confidentiality}"], end=[page], **muted)]),
+            footer=Band(**foot, rows=[BandRow(start=["{company}"], center=["{confidentiality}"], end=[page], **muted)])),
+        "minimal": dict(footer=Band(rows=[BandRow(center=["{page}"], **muted)])),
     }
     if name not in systems:
         raise ValueError(f"no header and footer preset {name!r}; presets: {', '.join(PRESETS)}")

@@ -229,6 +229,22 @@ def _column_widths(cells, width: float, needs=None):
     return [edges[i + 1] - edges[i] for i in range(len(cells))]
 
 
+def plated(asset: MediaAsset, height_pt: float) -> MediaAsset:
+    """The logo on a rounded white plate 4 points wide all round, as the PDF draws it on a band of colour."""
+    import hashlib
+    from PIL import ImageDraw
+    logo = Image.open(io.BytesIO(raster_bytes(asset, 1200))).convert("RGBA")
+    pad = max(2, round(logo.height * 4 / max(height_pt, 1)))
+    plate = Image.new("RGBA", (logo.width + 2 * pad, logo.height + 2 * pad), (0, 0, 0, 0))
+    ImageDraw.Draw(plate).rounded_rectangle((0, 0, plate.width - 1, plate.height - 1), radius=round(pad * 0.75),
+                                            fill=(255, 255, 255, 255))
+    plate.alpha_composite(logo, (pad, pad))
+    buf = io.BytesIO()
+    plate.save(buf, "PNG")
+    data = buf.getvalue()
+    return MediaAsset(hashlib.sha256(data).hexdigest(), data, "png", plate.width, plate.height, has_alpha=True)
+
+
 class BandWriter:
     def __init__(self, renderer, maker, sample):
         self.r, self.maker, self.sample = renderer, maker, sample
@@ -288,8 +304,10 @@ class BandWriter:
                     asset, w, h = logos[id(item)]
                     prepare(p)
                     p.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
-                    add_drawing(p.add_run(), asset, fit_image(asset, w, h), None,
-                                item.alt_text or "Logo", self.r.next_shape())
+                    if row.spec.fill:            # on a band of colour a logo keeps its own colours, on a light plate
+                        asset, w, h = plated(asset, h), w * (1 + 8 / h), h + 8
+                    add_drawing(p.add_run(), asset, fit_image(asset, w, h), None, item.alt_text or "Logo",
+                                self.r.next_shape())
                     p.add_run("  ")
                     started = True
         lines = [i for i in cell.items if isinstance(i, str)]

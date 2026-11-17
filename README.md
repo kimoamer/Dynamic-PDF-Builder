@@ -1612,6 +1612,9 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
 - Header styles: the banner and the centred logo no longer run into the body; logo_left and logo_right
   keep the title clear of the logo in Arabic. Footers mirror in Arabic as Word sets them; a footer logo
   sits level with the text; the company is not printed twice.
+- Bands line up with the text column (they sat 6 points outside it); a page one with bands of its own
+  takes its own margins, so a tall letterhead no longer pushes every later page's text down; a logo on
+  a band of colour sits on a light plate, in PDF and Word.
 - Bands: a slot sized to its text no longer wraps it on a rounding error; in Arabic the logo leads at the
   right; in Word the first text follows the logo on its line, a two-slot row gives each side room, and
   page numbers are sized as their text.

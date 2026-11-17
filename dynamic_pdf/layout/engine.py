@@ -1049,8 +1049,9 @@ class LayoutEngine:
         total = self._page_counter.total
         shown = page + (self.document.meta.page_number_start or 1) - 1
         values = {**running, "page": str(shown), "pages": str(total or shown)}
-        width = w - self._geometry.left - self._geometry.right
-        x = self._geometry.left
+        # the bands share the text column's edges: the frame sets its text in by FRAME_PADDING
+        width = w - self._geometry.left - self._geometry.right - 2 * FRAME_PADDING
+        x = self._geometry.left + FRAME_PADDING
         if head:
             layout = self.band_maker.layout(head, width, values)
             draw_band(canvas, layout, head, self.theme, x, h - sys.edge_distance, w, True)
@@ -1166,13 +1167,16 @@ class LayoutEngine:
         rtl = (is_rtl_document(self.document) if self.page_system is not None
                or _uses_media_model(self.document.blocks) else False)
         self.band_maker = None
-        band_needs = None
+        band_needs = first_needs = None
         if self.page_system is not None:
-            from .page_envelope import band_maker, reserve_bands
+            from .page_envelope import band_maker, reserve_bands, split_band_needs
             self.band_maker, sample = band_maker(self.document, theme, self.page_system, rtl,
                                                  self.policy.assets, self.diagnostics)
-            band_needs = reserve_bands(self.band_maker, w - sp.page_margin_left - sp.page_margin_right,
-                                       sample, self.diagnostics)
+            band_width = w - sp.page_margin_left - sp.page_margin_right - 2 * FRAME_PADDING
+            band_needs = reserve_bands(self.band_maker, band_width, sample, self.diagnostics)
+            split = split_band_needs(self.band_maker, band_width, sample)
+            if split:
+                first_needs, band_needs = split
         from .page_envelope import page_margins
         top_m, bot_m, left_m, right_m = page_margins(theme, band_needs)
 
@@ -1202,6 +1206,15 @@ class LayoutEngine:
             # running heads, feet and page layers are artifacts, not text
             hooks = {k: (lambda canv, doc, fn=fn: artifact(canv, lambda: fn(canv, doc))) for k, fn in hooks.items()}
         template = PageTemplate(id='AllPages', frames=[frame], pagesize=pagesize, **hooks)
+        # page one with bands of its own takes its own margins, then hands over to the other pages'
+        first_template = None
+        if first_needs is not None:
+            first_top, first_bottom, _, _ = page_margins(theme, first_needs)
+            if (first_top, first_bottom) != (top_m, bot_m):
+                first_frame = GeoFrame(left_m, first_bottom, frame_width, h - first_top - first_bottom, id='first')
+                first_frame.geometry = self.geometry
+                first_template = PageTemplate(id='First', frames=[first_frame], pagesize=pagesize,
+                                              autoNextPageTemplate='AllPages', **hooks)
         # Landscape pages for content the planner marks as too wide for portrait
         lw, lh = (h, w) if h > w else (w, h)
         land_frame = GeoFrame(left_m, bot_m, lw - left_m - right_m, lh - top_m - bot_m, id='land')
@@ -1245,7 +1258,7 @@ class LayoutEngine:
         )
         if hasattr(doc_template, 'lang'):
             doc_template.lang = meta.language
-        doc_template.addPageTemplates([template, land_template])
+        doc_template.addPageTemplates(([first_template] if first_template else []) + [template, land_template])
 
         # Create thread-safe render context
         # a frame sets its flowables inside its padding: what sizes itself to the column

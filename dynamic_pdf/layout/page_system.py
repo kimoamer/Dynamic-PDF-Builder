@@ -21,6 +21,7 @@ from ..schema.page_system import Band, BandRow, Logo, PageSystem
 from ..utils.errors import DynamicPDFError
 
 _FIELD = re.compile(r"\{(\w+)\}")
+_PLATE = 4.0                                     # the light margin round a logo on a band of colour
 _ARABIC = re.compile("[֐-ࣿיִ-﷿ﹰ-﻿]")
 _COLUMN_GAP = 12.0
 _LOGO_GAP = 7.0
@@ -419,17 +420,22 @@ def _draw_cell(canv, cell: Cell, row: Row, theme, x0, top, height, ink, draw_med
              "right": left + cell.width - used}[cell.align]
     # in reading order the logo leads: on the left, or on the right of the text in right-to-left documents
     text_right = start + text_w
-    cursor = text_right + (_LOGO_GAP if cell.lines else 0) if cell.rtl else start
+    logo_last = cell.rtl and bool(cell.logos)
+    cursor = text_right + (_LOGO_GAP if cell.lines else 0) if logo_last else start
     for asset, w, h, _ in cell.logos:
         f = fit_image(asset, w, h)
-        draw_media(canv, asset, f, cursor, top - (height + h) / 2)
+        y = top - (height + h) / 2
+        if row.spec.fill:                        # on a band of colour a logo keeps its own colours, on a light plate
+            canv.setFillColor(HexColor("#FFFFFF"))
+            canv.roundRect(cursor - _PLATE, y - _PLATE, w + 2 * _PLATE, h + 2 * _PLATE, 3, fill=1, stroke=0)
+        draw_media(canv, asset, f, cursor, y)
         cursor += w + _LOGO_GAP
     block_h = len(cell.lines) * row.leading
     baseline = top - (height - block_h) / 2 - row.size * (1.02 if row.leading > row.size * 1.3 else 0.96)
     canv.setFillColor(HexColor(ink))
     for line in cell.lines:
         canv.setFont(font_for(theme, line, row.spec.bold), row.size)
-        if cell.rtl and cell.logos:
+        if logo_last:
             canv.drawRightString(text_right, baseline, line)
         elif cell.align == "right":
             canv.drawRightString(left + cell.width, baseline, line)

@@ -197,18 +197,20 @@ Table: Invoice lines {#invoice}
 ## Headers, footers, logos and signatures
 
 A preset places the logo, title, section, company and page number by reading edge, so it mirrors in
-Arabic, and takes its colours from the design:
+Arabic, lines up with the text column, and takes its colours from the design. Page one opens with the
+document's own title, so its header shows the subtitle or company instead of repeating it. A logo is
+any PNG, JPEG or SVG; give it with transparent background:
 
 ```python
 b.page_system("modern", logo="logo.png", company="Nile Co.", confidentiality="Internal")
 ```
 
-- `letterhead`: the logo and the company at the head of page one, the website, email and phone under a
-  rule; later pages carry a light running head.
-- `modern`: a strip of the accent colour along the page edge, the logo and title at the start, the
-  running section at the end; confidentiality, company and "3 / 12" below.
-- `banner`: the logo and title on a band of the primary colour (a logo drawn for dark grounds reads best).
-- `report`: the title and running section over a rule; company, confidentiality and the page below.
+- `letterhead`: a large logo and the company at the head of page one, the website, email and phone over
+  a rule of the accent colour; later pages carry a small logo and the title, and get their room back.
+- `modern`: the logo over a rule of the accent colour, the title and running section at the end;
+  confidentiality, company and "3 / 12" under a hairline.
+- `banner`: the logo, on a light plate so its own colours show, and the title on a band of the primary colour.
+- `report`: the title and running section over a hairline; company, confidentiality and the page below.
 - `minimal`: the page number only.
 
 Any arrangement can be built with `b.page_system({...})`: each band has rows, and each row has `start`,
