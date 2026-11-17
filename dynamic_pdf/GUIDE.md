@@ -233,6 +233,9 @@ Every kit reads `language`: `en` or `ar`. A missing or malformed field is refuse
   period; costs are entered as positive amounts and shown in brackets, `other` keeps its sign. Gross,
   operating and net profit and every total are formulas. Statements that do not balance are refused with
   the difference.
+- `certificate`: a landscape certificate. `organisation`, `title` (default "Certificate of Completion"),
+  `recipient`, `gender` (`f` for the Arabic feminine), `achievement`, `details`, `date`, `number` and
+  `signatures` (one or two, each `name` and `title`).
 
 ## Output
 

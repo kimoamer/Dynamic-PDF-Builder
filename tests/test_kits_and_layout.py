@@ -295,3 +295,25 @@ def test_figures_and_years_do_not_decide_a_table_direction():
     from dynamic_pdf.core.normalize import is_rtl_table
     assert is_rtl_table(["البند", "2026", "2025"]) and not is_rtl_table(["Item", "2026", "2025"])
     assert not is_rtl_table(["Revenue", "الإيرادات", "Notes"]) and not is_rtl_table(["2026", "2025"])
+
+
+def test_the_certificate_kit():
+    import pypdfium2 as pdfium
+    b = kit("certificate", kit_example("certificate"))
+    pdf = pdfium.PdfDocument(b.render())
+    w, h = pdf[0].get_size()
+    assert len(pdf) == 1 and w > h                                   # one landscape page
+    text = pdf[0].get_textpage().get_text_range()
+    assert "Layla Mansour" in text and "Certificate of Completion" in text and "Page" not in text
+    lines = _lines(b.render())
+    name = next(x for x in lines if x[2] - x[1] > 0 and abs((x[1] + x[2]) / 2 - w / 2) < 3 and x[2] - x[1] > 150)
+    assert name                                                      # set in the middle of the page
+    ar = kit("certificate", {**kit_example("certificate"), "language": "ar", "recipient": "ليلى", "gender": "f"})
+    assert any(x.text == "قد أتمّت بنجاح" for x in ar._blocks if x.type == "rich_text")
+
+
+def test_large_rich_text_gets_room_for_its_lines():
+    lines = _lines(DocumentBuilder().rich_text("Big name", font_size=28, alignment="center")
+                   .rich_text("small line under it", alignment="center").design(None).render())
+    big, small = lines[0], lines[1]
+    assert big[0] - small[0] > 28 * 0.9                              # the lines do not overlap

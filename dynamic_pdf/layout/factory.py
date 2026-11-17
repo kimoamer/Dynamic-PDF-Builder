@@ -851,15 +851,17 @@ class ScoreDisplay(Flowable):
 
 
 class DividerFlowable(Flowable):
-    def __init__(self, color="#CBD5E0", thickness=1.0, style="solid", width=None):
+    def __init__(self, color="#CBD5E0", thickness=1.0, style="solid", width=None, align="left"):
         super().__init__()
         self.color_str = color
         self.thickness = thickness
         self.style = style
         self.fixed_width = width
+        self.align = align                   # where a line shorter than the space sits: it works in table cells too
 
     def wrap(self, availWidth, availHeight):
-        self.width = min(availWidth, self.fixed_width) if self.fixed_width else availWidth
+        self.width = availWidth
+        self.line_w = min(availWidth, self.fixed_width) if self.fixed_width else availWidth
         self.height = self.thickness + 16
         return (self.width, self.height)
 
@@ -872,7 +874,8 @@ class DividerFlowable(Flowable):
             c.setDash([6, 4])
         elif self.style == "dotted":
             c.setDash([1.5, 3])
-        c.line(0, 8, self.width, 8)
+        x0 = self.width - self.line_w if self.align == "right" else 0
+        c.line(x0, 8, x0 + self.line_w, 8)
         c.restoreState()
 
 
@@ -1351,9 +1354,10 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
 
     # ─── Rich Text ───
     if btype == "rich_text":
+        size = block.font_size or theme.typography.base_size
         sty = ParagraphStyle(
             'Rich', parent=bs_no_indent,
-            fontSize=block.font_size or theme.typography.base_size,
+            fontSize=size, leading=max(bs_no_indent.leading, size * 1.25),     # large type needs its own line height
             textColor=_safe_color(block.color or theme.colors.text_primary),
             alignment={'left': 0, 'center': 1, 'right': 2, 'justify': 4}.get(block.alignment, 0),
         )
@@ -2603,9 +2607,8 @@ def _render_signature(block, theme):
     font = (lambda bold=False: _arabic_font(theme, bold=bold)) if rtl else \
         (lambda bold=False: get_font_name(theme.typography.body_family, bold=bold))
     if block.show_line:
-        line = DividerFlowable(color=theme.colors.text_primary, thickness=1.0, width=block.line_width)
-        line.hAlign = "RIGHT" if rtl else "LEFT"            # the signature sits at the start edge
-        flowables.append(line)
+        flowables.append(DividerFlowable(color=theme.colors.text_primary, thickness=1.0, width=block.line_width,
+                                         align="right" if rtl else "left"))   # at the start edge, with the name
     # names are literal text: shaped, escaped, never read as markup
     size, lh = theme.typography.base_size, theme.typography.line_height
     name_sty = ParagraphStyle('SigName', fontName=font(True), fontSize=size, leading=size * lh,

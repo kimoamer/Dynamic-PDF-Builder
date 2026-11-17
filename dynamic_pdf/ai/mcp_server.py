@@ -39,8 +39,9 @@ captions with ids and {ref:id} references, [@key] citations with a BibTeX file, 
 Work in a loop: `render` the document, `review` it (each issue comes with its page and what to change, and
 page images are saved for you to look at), fix the Markdown, review again. `variants` tries several designs
 and recommends one; `explain` says why the design is as it is; `lint` checks the content (totals, shares,
-references). `kit` makes a ready-made document (invoice, quote, letter, cv, feasibility, statements) from data. Call `guide` for the full syntax with examples, or `guide` with a topic: markdown, charts,
-tables, academic, review-and-changes, design, output, arabic, limits."""
+references). `kit` makes a ready-made document from data: invoice, quote, letter, cv, feasibility,
+statements, certificate. Call `guide` for the full syntax with examples, or `guide` with a topic:
+markdown, charts, tables, academic, review-and-changes, design, kits, output, arabic, limits."""
 
 
 class InputError(ValueError):
@@ -107,8 +108,8 @@ def _inside(out_dir: str, name: str, field: str) -> str:
 
 def guide(topic: Optional[str] = None) -> str:
     """What the library does and how to write for it, with examples. Without a topic, the whole guide;
-    topics: overview, quickstart, markdown, charts, tables, academic, review-and-changes, design, output,
-    python-api, arabic, safety-and-settings, limits."""
+    topics: overview, quickstart, markdown, charts, tables, academic, review-and-changes, design, kits,
+    output, python-api, arabic, safety-and-settings, limits."""
     from ..guide import guide as text
     try:
         return text(topic)
@@ -173,10 +174,11 @@ def lint(document: Optional[dict] = None, markdown: Optional[str] = None) -> lis
 
 
 def kit(name: str, data: Optional[dict] = None, filename: str = "", out_dir: str = ".") -> dict:
-    """A ready-made document from data, with every part it needs, in English or Arabic: 'invoice' (seller,
-    buyer, dates, lines with computed totals, discount, VAT and the amount in words), 'quote' (the same as
-    a quotation), 'letter' (a formal letter with letterhead, recipient, subject, body and signature), 'cv' (set for applicant tracking systems) 'feasibility' (cash flows,
-    NPV, IRR, payback) or 'statements' (profit or loss and financial position, comparative years).
+    """A ready-made document from data, with every part it needs, in English or Arabic:
+    'invoice' (seller, buyer, dates, lines with computed totals, discount, VAT, the amount in words),
+    'quote' (the same as a quotation), 'letter' (letterhead, recipient, subject, body, signature),
+    'cv' (set for applicant tracking systems), 'feasibility' (cash flows, NPV, IRR, payback),
+    'statements' (profit or loss and financial position, comparative years) or 'certificate'.
     Without `data`, returns example data to fill in; with it, writes `filename` (.pdf, .docx or .xlsx)."""
     from ..kits import kit as make, kit_example
     try:

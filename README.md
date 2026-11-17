@@ -1560,7 +1560,8 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
   education, skills and languages, set for applicant tracking systems (no running header or footer,
   no hyphenation, standard sections, tagged PDF, plain Word structure). `feasibility`: cash flows by
   year, NPV, IRR and payback, with a chart. `statements`: profit or loss and financial position with a
-  comparative year, costs in brackets, every total a formula, refused if they do not balance.
+  comparative year, costs in brackets, every total a formula, refused if they do not balance. `certificate`: a landscape certificate with
+  one or two signatures.
 - Formulas: `NPV` and `IRR`, as a spreadsheet computes them; IRR is written as a percent.
 - The library explains itself to agents and people: a guide in the package (`guide()`, CLI `guide`,
   MCP `guide`), MCP instructions sent on connect, Markdown input for every MCP tool, field
@@ -1598,6 +1599,8 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
 - A negative bar's label no longer runs into the axis names.
 - An Arabic table whose other headers are years ("البند | 2026 | 2025") is set right to left, in PDF and
   Word: figures and years no longer vote on a table's direction.
+- `rich_text` with a large `font_size` ran into the next line; its line height now follows its size.
+- A signature line in a right-to-left column sits with the name, at the right.
 - Lint no longer reports a section of one line under its own total as a mismatch.
 - Word: `rich_text` with `alignment="left"` was set by its style (possibly justified); it is left-aligned.
 - Word: a phone number in Arabic text ("+966 11 000 0000") read with its groups reversed; it is now

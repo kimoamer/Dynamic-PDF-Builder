@@ -606,12 +606,75 @@ def _statements(data: dict):
     return DocumentBuilder.from_markdown("\n".join(md))
 
 
+_CERTIFICATE_LABELS = {
+    "en": {"title": "Certificate of Completion", "certify": "This is to certify that",
+           "completed": "has successfully completed", "date": "Date", "number": "Certificate no."},
+    "ar": {"title": "شهادة إتمام", "certify": "نشهد بأن",
+           "completed": "قد أتمّ بنجاح", "completed_f": "قد أتمّت بنجاح", "date": "التاريخ", "number": "رقم الشهادة"},
+}
+
+_CERTIFICATE_EXAMPLE = {
+    "language": "en",
+    "organisation": "Nile Training Academy",
+    "recipient": "Layla Mansour",
+    "achievement": "Financial Modelling for Managers",
+    "details": "24 hours of instruction, passed with distinction",
+    "date": "17 November 2026",
+    "number": "NTA-2026-0412",
+    "signatures": [{"name": "Omar Hassan", "title": "Programme Director"},
+                   {"name": "Sara Ahmed", "title": "Dean"}],
+}
+
+
+def _certificate(data: dict):
+    """A landscape page set in the middle: the organisation, the title, the person, what they did,
+    the date and number, and one or two signatures side by side."""
+    from .builder import DocumentBuilder
+    from .schema.blocks import RichTextBlock, SignatureBlock, SpacerBlock, TwoColumnBlock
+    from .schema.enums import Orientation
+    from .schema.page_system import PageSystem
+    lang = (data.get("language") or "en").lower()
+    if lang not in _CERTIFICATE_LABELS:
+        raise ValueError(f"language {lang!r} is not supported. Fix: use 'en' or 'ar'")
+    lab = _CERTIFICATE_LABELS[lang]
+    who, what = _need(data, "recipient"), _need(data, "achievement")
+    title = data.get("title") or lab["title"]
+    completed = lab.get("completed_f") if lang == "ar" and str(data.get("gender", "")).lower() in ("f", "female", "أنثى") \
+        else lab["completed"]
+
+    def line(text, size=None, bold=False, color=None):
+        return RichTextBlock(text=_esc(text), font_size=size, bold=bold, color=color, alignment="center")
+    b = DocumentBuilder().meta(title=f"{title}: {who}", language=lang)
+    b._meta.orientation, b._meta.page_system = Orientation.LANDSCAPE, PageSystem()
+    b.document_type("general")
+    blocks = [SpacerBlock(height=56)]
+    if data.get("organisation"):
+        blocks.append(line(data["organisation"], 13, True))
+    blocks += [SpacerBlock(height=14), line(title, 32, True, "#1F3A5F"), SpacerBlock(height=22),
+               line(lab["certify"], 12), SpacerBlock(height=6), line(who, 28, True), SpacerBlock(height=6),
+               line(completed, 12), SpacerBlock(height=4), line(what, 17, True)]
+    if data.get("details"):
+        blocks.append(line(data["details"], 11))
+    facts = [f"{lab['date']}: {data['date']}" if data.get("date") else "",
+             f"{lab['number']}: {data['number']}" if data.get("number") else ""]
+    if any(facts):
+        blocks += [SpacerBlock(height=10), line(" | ".join(x for x in facts if x), 10, color="#555555")]
+    signs = [SignatureBlock(name=x["name"], title=x.get("title"), line_width=220)
+             for x in (data.get("signatures") or []) if isinstance(x, dict) and x.get("name")]
+    if signs:
+        blocks.append(SpacerBlock(height=28))
+        blocks.append(TwoColumnBlock(left=[signs[0]], right=signs[1:2]) if len(signs) > 1 else signs[0])
+    b._blocks = blocks
+    return b
+
+
 KITS = {"invoice": (_invoice, _INVOICE_EXAMPLE),
         "quote": (lambda d: _invoice(d, "quote"), _QUOTE_EXAMPLE),
         "letter": (_letter, _LETTER_EXAMPLE),
         "cv": (_cv, _CV_EXAMPLE),
         "feasibility": (_feasibility, _FEASIBILITY_EXAMPLE),
-        "statements": (_statements, _STATEMENTS_EXAMPLE)}
+        "statements": (_statements, _STATEMENTS_EXAMPLE),
+        "certificate": (_certificate, _CERTIFICATE_EXAMPLE)}
 
 
 def kits() -> list:

@@ -16,7 +16,7 @@ The loop that works: write Markdown, `export("x.pdf")` (or `.docx`, `.xlsx`), `r
 
 ## Ready-made documents
 
-- `kit(name, data)` for `invoice`, `quote`, `letter`, `cv`, `feasibility` and `statements` (CLI `dynamic-pdf kit invoice data.json`, MCP `kit`): a whole document from data; `kit_example(name)` shows the fields.
+- `kit(name, data)` for `invoice`, `quote`, `letter`, `cv`, `feasibility`, `statements` and `certificate` (CLI `dynamic-pdf kit invoice data.json`, MCP `kit`): a whole document from data; `kit_example(name)` shows the fields.
 
 ## Agents
 
