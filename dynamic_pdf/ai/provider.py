@@ -23,7 +23,10 @@ CONTEXTS = ("brief", "text", "pages")
 
 
 def default_cache_dir() -> str:
-    return os.environ.get("DYNAMIC_PDF_AI_CACHE") or os.path.join(os.path.expanduser("~"), ".cache", "dynamic-pdf-builder", "ai")
+    """Where replies are kept; empty for none. A folder that cannot be written is simply not used."""
+    from ..settings import get
+    folder = get("AI_CACHE") or os.path.join(os.path.expanduser("~"), ".cache", "dynamic-pdf-builder", "ai")
+    return "" if folder.lower() == "off" else folder
 
 
 @dataclass
@@ -46,13 +49,14 @@ class AnthropicProvider:
     The reply is constrained with structured outputs and validated again here. The API key
     comes from the SDK's usual sources and is needed only when a request is made."""
 
-    def __init__(self, model: str = DEFAULT_MODEL, *, effort: str = "medium", max_tokens: int = 16000,
+    def __init__(self, model: Optional[str] = None, *, effort: str = "medium", max_tokens: int = 16000,
                  cache_dir: Optional[str] = None, client=None):
         try:
             import anthropic  # noqa: F401
         except ImportError as e:
             raise ImportError('the AI layer needs the anthropic SDK: pip install "dynamic-pdf-builder[ai]"') from e
-        self.model, self.effort, self.max_tokens = model, effort, max_tokens
+        from ..settings import get
+        self.model, self.effort, self.max_tokens = model or get("AI_MODEL", DEFAULT_MODEL), effort, max_tokens
         self.cache_dir = default_cache_dir() if cache_dir is None else cache_dir
         self._client = client
 

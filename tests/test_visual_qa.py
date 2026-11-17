@@ -221,18 +221,24 @@ def test_a_compound_word_keeps_its_hyphen_when_its_paragraph_runs_onto_the_next_
     def words(p):
         return " ".join(" ".join(getattr(w, "text", w) if not isinstance(w, str) else w for w in
                                  (ln.words if hasattr(ln, "words") else ln[1])) for ln in p.blPara.lines)
-    tried = 0
-    for width in range(120, 420, 6):
-        for kept in range(1, 6):
-            p = Paragraph(text, style)
-            p.wrap(width, 1000)
-            parts = p.split(width, 13 * kept + 1)
-            if len(parts) == 2:
-                parts[1].wrap(width, 1000)
-                whole = (words(parts[0]) + " " + words(parts[1])).replace("- ", "-")
-                tried += 1
-                assert "byproduct" not in whole and "stknown" not in whole and "bestknown" not in whole, (width, kept)
-    assert tried > 50
+    def broken(kind):
+        tried, lost = 0, 0
+        for width in range(120, 420, 6):
+            for kept in range(1, 6):
+                p = kind(text, style)
+                p.wrap(width, 1000)
+                parts = p.split(width, 13 * kept + 1)
+                if len(parts) == 2:
+                    parts[1].wrap(width, 1000)
+                    whole = (words(parts[0]) + " " + words(parts[1])).replace("- ", "-")
+                    tried += 1
+                    lost += "byproduct" in whole or "stknown" in whole or "bestknown" in whole
+        return tried, lost
+    tried, lost = broken(Paragraph)
+    assert tried > 50 and lost == 0
+    # the correction is this library's own: a host's ReportLab paragraphs behave as ReportLab made them
+    from reportlab.platypus import Paragraph as Theirs
+    assert broken(Theirs)[1] > 0
 
 
 def test_cells_set_side_by_side_do_not_merge_a_western_number_with_an_arabic_indic_one():

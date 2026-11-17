@@ -17,6 +17,8 @@ from typing import Optional
 
 from pydantic import ValidationError
 
+from ..settings import get
+
 OUT_ENV = "DYNAMIC_PDF_MCP_OUT"
 LIMITS = {"le": "at most", "lt": "below", "ge": "at least", "gt": "above"}
 
@@ -153,7 +155,7 @@ def _tool(fn, target, error):
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="python -m dynamic_pdf.ai.mcp_server", description=__doc__)
-    ap.add_argument("--out-dir", default=os.environ.get(OUT_ENV, "mcp-out"), help="the only folder tools write to")
+    ap.add_argument("--out-dir", default=get("MCP_OUT", "mcp-out"), help="the only folder tools write to")
     a = ap.parse_args(argv)
     build_server(os.path.abspath(a.out_dir)).run("stdio")
     return 0

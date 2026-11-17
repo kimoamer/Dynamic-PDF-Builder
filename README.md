@@ -53,6 +53,9 @@ pip install -e ".[dev]"        # Testing + linting tools
 
 ---
 
+Settings, environment variables and what the library does (and does not do) inside a host
+application are in [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
+
 ## Quick Start
 
 ```python

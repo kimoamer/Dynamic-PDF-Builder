@@ -10,6 +10,7 @@ Applies professional report typography standards:
 import re
 import unicodedata
 import html as html_mod
+import contextvars
 from functools import lru_cache
 from typing import Optional
 from reportlab.lib.enums import TA_JUSTIFY, TA_LEFT
@@ -145,20 +146,25 @@ def _keep_the_authors_hyphen() -> None:
     that ends the first half. That is right for a hyphen it added and wrong for the author's own:
     "by-" and "product" came back as "byproduct" when a paragraph with inline markup ran onto
     the next page. A hyphen ReportLab added is already taken off before the halves are joined,
-    so joining plain strings keeps what is there."""
+    so joining plain strings keeps what is there.
+
+    ReportLab has one such function for the whole process, so the correction is in force only
+    while one of this library's paragraphs is being laid out (``_laying_out``): a host
+    application's own ReportLab documents behave exactly as they did."""
     import reportlab.platypus.paragraph as rl
     original = getattr(rl, "_shyUnsplit", None)
     if original is None or getattr(original, "_dpb", False):
         return
 
     def unsplit(s, ss=None):
-        if ss and type(s) is str and not hasattr(ss, "_shyIndices"):
+        if _laying_out.get() and ss and type(s) is str and not hasattr(ss, "_shyIndices"):
             return s + ss
         return original(s, ss)
     unsplit._dpb = True
     rl._shyUnsplit = unsplit
 
 
+_laying_out: contextvars.ContextVar = contextvars.ContextVar("dynamic_pdf_laying_out", default=False)
 _keep_the_authors_hyphen()
 
 
@@ -199,9 +205,20 @@ class Paragraph(_RLParagraph):
             self._dpb_base = base
         return base
 
+    def wrap(self, availWidth, availHeight):
+        token = _laying_out.set(True)
+        try:
+            return super().wrap(availWidth, availHeight)
+        finally:
+            _laying_out.reset(token)
+
     def split(self, availWidth, availHeight):
         base = self._bidi_base()
-        parts = super().split(availWidth, availHeight)
+        token = _laying_out.set(True)
+        try:
+            parts = super().split(availWidth, availHeight)
+        finally:
+            _laying_out.reset(token)
         tagged = {k: v for k, v in self.__dict__.items() if k in _TAG_ATTRS}
         if "_dpb_role" in tagged:                # the pieces are one element of the structure tree
             from .tagging import _key

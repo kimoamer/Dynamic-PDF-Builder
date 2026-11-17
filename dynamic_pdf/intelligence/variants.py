@@ -129,13 +129,20 @@ class VariantSet:
                 "variants": [{"id": v.id, "name": v.name, "report": v.report.model_dump(),
                               "plan": v.plan.explain() if v.plan else None} for v in self.variants]}
 
-    def accept(self, variant_id: str, reviewer: str, *, note: str = "", root: str = "training/human_preferences",
+    def accept(self, variant_id: str, reviewer: str, *, note: str = "", root: Optional[str] = None,
                date: Optional[str] = None) -> dict:
         """Record that a person kept ``variant_id``: one row in ``<root>/accepted.jsonl``.
+        ``root`` is the caller's folder, or ``DYNAMIC_PDF_PREFERENCES_DIR``; the library never
+        picks a place to write by itself.
 
         This is human signal, so it goes only to a ``human_preferences`` folder, never to the AI
         rows. The row names the design kept, the valid designs passed over and the recommendation."""
         import datetime
+
+        from ..settings import get
+        root = root or get("PREFERENCES_DIR")
+        if not root:
+            raise ValueError("say where to record it: root=<a human_preferences folder>, or set DYNAMIC_PDF_PREFERENCES_DIR")
         if os.path.basename(os.path.normpath(root)) != "human_preferences":
             raise ValueError("accepted designs are written only to a human_preferences folder")
         if not reviewer or not reviewer.strip():
