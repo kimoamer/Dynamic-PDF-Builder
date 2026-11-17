@@ -1451,7 +1451,7 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
         if (block.hints or {}).get("statement"):
             from .art import statement
             return statement(block, theme, ctx)
-        return _render_quote(block, theme)
+        return _render_quote(block, theme, ctx)
 
     if btype in ("image_text_panel", "figure_matrix", "paired_row_columns"):
         from ..renderers.compositions import render_composition
@@ -2220,35 +2220,50 @@ def _render_callout(block, theme, bs):
     return [t]
 
 
-def _render_quote(block, theme):
+def _render_quote(block, theme, ctx=None):
+    """Three looks, chosen by ``style``: a blockquote with a bar of the accent colour along its start
+    edge; a pullquote set large under a short rule (the design's statement); an epigraph, small and
+    narrow toward the end edge. Each mirrors in right-to-left text; the attribution follows the quote."""
+    style = (block.style or "blockquote").lower()
+    if style == "pullquote":
+        from .art import statement
+        return statement(block.model_copy(update={"hints": {**(block.hints or {}), "statement": True}}), theme, ctx)
     is_rtl = _is_rtl(block.text)
     body_font = _arabic_font(theme) if is_rtl else get_font_name(theme.typography.body_family)
-    align = 2 if is_rtl else 0
+    base = theme.typography.base_size
+    width = getattr(ctx, "available_width", None) or 460
+    epigraph = style == "epigraph"
+    size = base * (0.95 if epigraph else 1.05)
+    indent = width * 0.42 if epigraph else 0
     q_sty = ParagraphStyle(
-        'Quote', fontName=body_font,
-        fontSize=theme.typography.base_size,
-        leading=theme.typography.base_size * theme.typography.line_height,
-        textColor=_safe_color(theme.colors.text_secondary),
-        leftIndent=0 if is_rtl else theme.spacing.quote_indent,
-        rightIndent=theme.spacing.quote_indent if is_rtl else 0,
-        borderPadding=8, spaceAfter=4, alignment=align,
+        'Quote', fontName=body_font, fontSize=size, leading=size * theme.typography.line_height,
+        textColor=_safe_color(theme.colors.text_secondary if epigraph else theme.colors.text_primary),
+        leftIndent=0 if is_rtl else indent, rightIndent=indent if is_rtl else 0,
+        spaceAfter=4, alignment=2 if is_rtl else 0,
     )
-    text_content = _md_inline(block.text)
-    # Avoid <i> wrapping for RTL — italic doesn't apply to Arabic
-    flowables = [Paragraph(text_content if is_rtl else f"<i>{text_content}</i>", q_sty)]
+    parts = [p for p in re.split(r"\n[ \t]*\n", block.text) if p.strip()] or [block.text]
+    # italic carries the voice in Latin text; Arabic has no italic
+    body = [Paragraph(_md_inline(p) if is_rtl else f"<i>{_md_inline(p)}</i>", q_sty) for p in parts]
     if block.attribution:
         attr_rtl = is_rtl or _is_rtl(block.attribution)
-        attr_font = _arabic_font(theme) if attr_rtl else body_font
-        attr = ParagraphStyle('Attr', parent=q_sty,
-                              fontSize=q_sty.fontSize * theme.typography.caption_size_ratio,
+        attr = ParagraphStyle('Attr', parent=q_sty, fontSize=base * theme.typography.caption_size_ratio,
+                              leading=base * theme.typography.caption_size_ratio * 1.5,
                               textColor=_safe_color(theme.colors.text_muted),
-                              fontName=attr_font, alignment=2 if attr_rtl else 0)
-        if attr_rtl:
-            flowables.append(Paragraph(_plain_markup(block.attribution), attr))
-        else:
-            flowables.append(Paragraph(f"\u2014 {block.attribution}", attr))
-    flowables.append(Spacer(1, theme.spacing.block_gap))
-    return flowables
+                              fontName=_arabic_font(theme) if attr_rtl else get_font_name(theme.typography.body_family),
+                              alignment=(0 if attr_rtl else 2) if epigraph else (2 if attr_rtl else 0), spaceBefore=2)
+        body.append(Paragraph(_plain_markup(("" if attr_rtl else "\u2014 ") + block.attribution), attr))
+    if epigraph:
+        return body + [Spacer(1, theme.spacing.block_gap * 1.5)]
+    # the bar is the cell's start border: left, or right in right-to-left text
+    bar = ('LINEAFTER', (0, 0), (0, 0), 2.5, _safe_color(theme.colors.accent)) if is_rtl else \
+        ('LINEBEFORE', (0, 0), (0, 0), 2.5, _safe_color(theme.colors.accent))
+    t = Table([[body]], colWidths=[width], style=TableStyle([
+        bar, ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4 if is_rtl else theme.spacing.quote_indent * 0.6),
+        ('RIGHTPADDING', (0, 0), (-1, -1), theme.spacing.quote_indent * 0.6 if is_rtl else 4),
+        ('TOPPADDING', (0, 0), (-1, -1), 2), ('BOTTOMPADDING', (0, 0), (-1, -1), 2)]))
+    t.hAlign = 'RIGHT' if is_rtl else 'LEFT'
+    return [t, Spacer(1, theme.spacing.block_gap)]
 
 
 def _render_metrics(block, theme, available_width=460):

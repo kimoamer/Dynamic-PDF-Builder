@@ -590,17 +590,20 @@ class LayoutEngine:
             dw, dh = _draw_image(c, hf.logo, x, h - bar_h + (bar_h - hf.logo_max_height) / 2,
                                  hf.logo_max_height * 3, hf.logo_max_height)
             x += dw + 14
-        self._header_content(c, w, h, bar_h, hf, x_start=x, logo=False)
+        # in right-to-left text the title starts at the right edge, away from the logo
+        self._header_content(c, w, h, bar_h, hf, x_start=30 if self._rtl() else x, logo=False)
 
     def _header_logo_right(self, c, w, h, bar_h, hf):
         """Logo right + title left on a bar."""
         c.setFillColor(_hc(self._hdr_bg()))
         c.rect(0, h - bar_h, w, bar_h, fill=1, stroke=0)
+        dw = 0
         if hf.logo:
-            _draw_image(c, hf.logo, w - 30 - hf.logo_max_height * 3,
-                        h - bar_h + (bar_h - hf.logo_max_height) / 2,
-                        hf.logo_max_height * 3, hf.logo_max_height, align="right")
-        self._header_content(c, w, h, bar_h, hf, logo=False)
+            dw, _ = _draw_image(c, hf.logo, w - 30 - hf.logo_max_height * 3,
+                                h - bar_h + (bar_h - hf.logo_max_height) / 2,
+                                hf.logo_max_height * 3, hf.logo_max_height, align="right")
+        # in right-to-left text the title ends where the logo begins
+        self._header_content(c, w, h, bar_h, hf, x_start=30 + (dw + 14 if dw and self._rtl() else 0), logo=False)
 
     def _header_minimal(self, c, w, h, bar_h, hf):
         """No background — just text."""
@@ -805,17 +808,15 @@ class LayoutEngine:
         left = self._resolve_slot(hf.footer_left, hf, doc) or ""
         if left or hf.show_date:
             txt = left or datetime.now().strftime(hf.date_format)
-            c.drawString(30, 16, txt)
+            self._start(c, w, 16, txt)
         # Centre
         centre = self._resolve_slot(hf.footer_center, hf, doc) or hf.copyright_text or ""
         if centre:
             c.drawCentredString(w / 2, 16, centre)
         # Right
         right = self._resolve_slot(hf.footer_right, hf, doc) or ""
-        if right:
-            c.drawRightString(w - 30, 16, right)
-        elif hf.show_page_number:
-            c.drawRightString(w - 30, 16, self._fmt_page(hf, doc))
+        if right or hf.show_page_number:
+            self._end(c, w, 16, right or self._fmt_page(hf, doc))
 
     def _footer_two_column(self, c, w, h, bar_h, hf, doc):
         """Left + Right only."""
@@ -824,9 +825,9 @@ class LayoutEngine:
         c.setFillColor(_hc(tc))
         c.setFont(self._body_font(), fs)
         left = hf.footer_text or hf.copyright_text or ""
-        c.drawString(30, 16, left)
+        self._start(c, w, 16, left)
         if hf.show_page_number:
-            c.drawRightString(w - 30, 16, self._fmt_page(hf, doc))
+            self._end(c, w, 16, self._fmt_page(hf, doc))
 
     def _footer_page_only(self, c, w, h, bar_h, hf, doc):
         """Just page number centred."""
@@ -836,19 +837,21 @@ class LayoutEngine:
 
     def _footer_logo_right(self, c, w, h, bar_h, hf, doc):
         """Logo right-aligned (like Averroes style)."""
-        self._footer_content(c, w, bar_h, hf, doc, text_color=self.theme.colors.text_secondary)
         logo = hf.footer_logo or hf.logo
+        self._footer_content(c, w, bar_h, hf, doc, text_color=self.theme.colors.text_secondary,
+                             page_at_start=bool(logo) and not self._rtl())
         if logo:
-            _draw_image(c, logo, w - 30 - hf.footer_logo_max_height * 5, 8,
-                        hf.footer_logo_max_height * 5, hf.footer_logo_max_height, align="right")
+            lh = hf.footer_logo_max_height
+            _draw_image(c, logo, w - 30 - lh * 5, bar_h - 12 - lh * 0.65, lh * 5, lh, align="right")
 
     def _footer_logo_left(self, c, w, h, bar_h, hf, doc):
         """Logo left-aligned."""
         logo = hf.footer_logo or hf.logo
         if logo:
-            _draw_image(c, logo, 30, 8,
-                        hf.footer_logo_max_height * 5, hf.footer_logo_max_height)
-        self._footer_content(c, w, bar_h, hf, doc, text_color=self.theme.colors.text_secondary)
+            lh = hf.footer_logo_max_height
+            _draw_image(c, logo, 30, bar_h - 12 - lh * 0.65, lh * 5, lh)
+        self._footer_content(c, w, bar_h, hf, doc, text_color=self.theme.colors.text_secondary,
+                             page_at_start=bool(logo) and self._rtl())
 
     def _footer_copyright_line(self, c, w, h, bar_h, hf, doc):
         """Thin line + copyright centred + page right."""
@@ -863,7 +866,7 @@ class LayoutEngine:
         if hf.copyright_text:
             c.drawCentredString(w / 2, 12, hf.copyright_text)
         if hf.show_page_number:
-            c.drawRightString(w - 30, 12, self._fmt_page(hf, doc))
+            self._end(c, w, 12, self._fmt_page(hf, doc))
 
     def _footer_academic(self, c, w, h, bar_h, hf, doc):
         """Centred italic text + page number — classic academic."""
@@ -872,18 +875,29 @@ class LayoutEngine:
         c.setFillColor(_hc(tc))
         c.setFont(self._body_font(italic=True), fs)
         text = hf.footer_text or hf.title or ""
-        c.drawString(30, 16, text)
+        self._start(c, w, 16, text)
         if hf.show_page_number:
-            c.drawRightString(w - 30, 16, str(doc.page))
+            self._end(c, w, 16, str(doc.page))
 
     def _footer_sidebar(self, c, w, h, bar_h, hf, doc):
         """Sidebar footer (same as header sidebar — drawn as full-page strip)."""
         # The sidebar is drawn in header; footer just adds text
         self._footer_content(c, w, bar_h, hf, doc, text_color=self.theme.colors.text_secondary)
 
+    def _rtl(self) -> bool:
+        return self._language() == "ar"
+
+    def _start(self, c, w, y, text):
+        """At the reading start: the left, or the right in right-to-left documents."""
+        (c.drawRightString(w - 30, y, text) if self._rtl() else c.drawString(30, y, text))
+
+    def _end(self, c, w, y, text):
+        """At the reading end: the right, or the left in right-to-left documents."""
+        (c.drawString(30, y, text) if self._rtl() else c.drawRightString(w - 30, y, text))
+
     # ─── Shared footer content helper ──────────────────────────────
 
-    def _footer_content(self, c, w, bar_h, hf, doc, text_color=None):
+    def _footer_content(self, c, w, bar_h, hf, doc, text_color=None, page_at_start=False):
         """Draw 3-row footer: copyright | company+address | contacts + page/date."""
         tc = text_color or self._ftr_text()
         fs = self.theme.typography.footer_text_size
@@ -899,9 +913,9 @@ class LayoutEngine:
             c.setFont(self._body_font(), fs)
             c.drawCentredString(center_x, row1_y, line1)
 
-        # Row 2: company + address
+        # Row 2: company + address (the company once, when the first row already says it)
         row2_y = row1_y - 11
-        parts2 = [p for p in [hf.company_name, hf.address] if p]
+        parts2 = [p for p in [hf.company_name, hf.address] if p and p != line1]
         if parts2:
             c.setFont(self._body_font(), ds)
             c.drawCentredString(center_x, row2_y, "  •  ".join(parts2))
@@ -913,15 +927,14 @@ class LayoutEngine:
             c.setFont(self._body_font(), ds)
             c.drawCentredString(center_x, row3_y, "    ".join(parts3))
 
-        # Page number (right)
+        # Page number at the end, date at the start; a logo style puts the page number away from its logo
+        put_page, put_date = (self._start, self._end) if page_at_start else (self._end, self._start)
         if hf.show_page_number:
             c.setFont(self._body_font(), fs)
-            c.drawRightString(w - 30, row1_y, self._fmt_page(hf, doc))
-
-        # Date (left)
+            put_page(c, w, row1_y, self._fmt_page(hf, doc))
         if hf.show_date:
             c.setFont(self._body_font(), fs)
-            c.drawString(30, row1_y, datetime.now().strftime(hf.date_format))
+            put_date(c, w, row1_y, datetime.now().strftime(hf.date_format))
 
     # ─── Helpers ──────────────────────────────────────────────────
 

@@ -51,6 +51,18 @@ class PageEnvelope:
         return (h, w) if h > w else (w, h)
 
 
+def header_extent(theme) -> float:
+    """How far down the page the header style draws: the banner is a tall band, and a centred
+    logo stands over a title at twice the header size."""
+    hf, ts = theme.header_footer, theme.typography.header_title_size
+    if hf.header_style == "banner":
+        return max(hf.height, 80.0)
+    if hf.header_style == "logo_centered":
+        logo = min(hf.logo_max_height, hf.height * 0.5) + 8 if hf.logo else 0
+        return max(hf.height, 12 + logo + ts * 2 + 6)
+    return hf.height
+
+
 def page_margins(theme, band_needs: Optional[Tuple[float, float]] = None) -> Tuple[float, float, float, float]:
     """Top, bottom, left and right margins. ``band_needs`` is what a page system asks
     for; without one, the theme's own header and footer styles set the clearance."""
@@ -59,7 +71,7 @@ def page_margins(theme, band_needs: Optional[Tuple[float, float]] = None) -> Tup
     if band_needs is not None:
         top, bottom = max(top, band_needs[0]), max(bottom, band_needs[1])
     elif hf.enabled:
-        top = max(top, hf.height + (16 if hf.header_style in _BAR_HEADERS else 4))
+        top = max(top, header_extent(theme) + (16 if hf.header_style in _BAR_HEADERS else 4))
         bottom = max(bottom, hf.footer_height + 12 if hf.footer_style in _BAR_FOOTERS else 40)
     left, right = sp.page_margin_left, sp.page_margin_right
     if hf.header_style == "sidebar" or hf.footer_style == "sidebar":

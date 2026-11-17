@@ -220,7 +220,7 @@ def _parse_body(md_text: str) -> list:
         elif t.type == "blockquote_open":
             parts, idx = _collect_blockquote(tokens, idx)
             # paragraphs of the quote are separated by a blank line; a single newline is a soft break
-            blocks.append(QuoteBlock(text="\n\n".join(parts)))
+            blocks.append(_quote_block(parts))
             continue
 
         # ─── Horizontal Rule ───
@@ -389,6 +389,26 @@ def _collect_table(tokens, start_idx):
                 current_row.append("")
         idx += 1
     return headers, rows, idx
+
+
+_QUOTE_STYLE = re.compile(r"^\s*\[!(pullquote|epigraph|blockquote)\]\s*", re.I)
+_ATTRIBUTION = re.compile(r"^\s*(?:—|―|--|–)\s*(\S.*)$")
+
+
+def _quote_block(parts: list) -> "QuoteBlock":
+    """``> [!pullquote]`` or ``> [!epigraph]`` on the first line picks the look; a last line that starts
+    with a dash (``> — Name``) is the attribution."""
+    parts = [p for p in parts]
+    style = "blockquote"
+    if parts and (m := _QUOTE_STYLE.match(parts[0])):
+        style, parts[0] = m.group(1).lower(), parts[0][m.end():]
+    attribution = None
+    if parts:
+        lines = parts[-1].rstrip().split("\n")
+        m = _ATTRIBUTION.match(lines[-1])
+        if m and (len(lines) > 1 or len(parts) > 1):
+            attribution, parts[-1] = m.group(1).strip(), "\n".join(lines[:-1])
+    return QuoteBlock(text="\n\n".join(p for p in parts if p.strip()), attribution=attribution, style=style)
 
 
 def _collect_blockquote(tokens, start_idx):

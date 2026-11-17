@@ -1011,15 +1011,35 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             self._page_break(c)
 
     def _b_quote(self, c, b):
-        if (b.hints or {}).get("statement"):
-            return self._statement(c, b, b.hints)
+        style = (b.style or "blockquote").lower()
+        if (b.hints or {}).get("statement") or style == "pullquote":
+            return self._statement(c, b, {**(b.hints or {}), "statement": True})
+        epigraph = style == "epigraph"
+        rtl = self.rtl_doc or is_rtl_text(b.text)
+        paras = []
         for part in re.split(r"\n[ \t]*\n", b.text):      # a blank line parts paragraphs; one newline is a space, as in the PDF
             if part.strip():
-                self._runs(self._para(c, "Quote", part), part)
+                p = self._para(c, "Quote", part)
+                self._runs(p, part)
+                if rtl:                                              # Arabic has no italic
+                    for run in p.runs:
+                        F.clear_style_slant_and_tracking(run)
+                paras.append(p)
         if b.attribution:
             p = self._para(c, "Quote", b.attribution)
-            p.alignment = WD_ALIGN_PARAGRAPH.LEFT if self.rtl_doc else WD_ALIGN_PARAGRAPH.RIGHT
-            self._runs(p, f"— {b.attribution}", italic=False)
+            end = WD_ALIGN_PARAGRAPH.LEFT if rtl else WD_ALIGN_PARAGRAPH.RIGHT
+            p.alignment = end if epigraph else None
+            self._runs(p, b.attribution if F.has_complex_script(b.attribution) else f"— {b.attribution}",
+                       italic=False, color=self.tokens.colors["text_secondary"])
+            if rtl:
+                for run in p.runs:
+                    F.clear_style_slant_and_tracking(run)
+            paras.append(p)
+        for p in paras:
+            if epigraph:                       # narrow, toward the end edge
+                p.paragraph_format.left_indent = Pt(self.content_width_pt * 0.42)
+            else:                              # a bar of the accent colour along the start edge
+                F.set_paragraph_border(p, "right" if rtl else "left", self.tokens.colors["accent"], 20, 10)
 
     def _b_callout(self, c, b):
         key = _VARIANT_COLORS.get((b.variant or "info").lower(), "info")

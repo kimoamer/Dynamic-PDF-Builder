@@ -317,3 +317,24 @@ def test_large_rich_text_gets_room_for_its_lines():
                    .rich_text("small line under it", alignment="center").design(None).render())
     big, small = lines[0], lines[1]
     assert big[0] - small[0] > 28 * 0.9                              # the lines do not overlap
+
+
+def test_markdown_quotes_carry_their_style_and_attribution():
+    q = DocumentBuilder.from_markdown("> [!pullquote]\n> Big statement.\n> — CEO")._blocks[0]
+    assert (q.style, q.text, q.attribution) == ("pullquote", "Big statement.", "CEO")
+    q = DocumentBuilder.from_markdown("> A dash - inside is text.")._blocks[0]
+    assert (q.style, q.attribution) == ("blockquote", None)
+    q = DocumentBuilder.from_markdown("> — only a dash line")._blocks[0]
+    assert q.attribution is None                                     # a one-line quote is all quote
+
+
+def test_each_quote_style_renders_and_mirrors_in_arabic():
+    import pypdfium2 as pdfium
+    from docx import Document
+    for style in ("blockquote", "pullquote", "epigraph"):
+        b = DocumentBuilder().paragraph("x").quote("A sentence worth quoting.", attribution="Ada", style=style)
+        assert "Ada" in pdfium.PdfDocument(b.render())[0].get_textpage().get_text_range()
+        assert b.render_docx()
+    docx = Document(io.BytesIO(DocumentBuilder().quote("نص الاقتباس هنا", attribution="كاتب").render_docx()))
+    xml = docx.element.xml
+    assert "<w:right " in xml and "<w:left w:val=\"single\"" not in xml       # the bar on the right
