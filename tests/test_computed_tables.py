@@ -125,3 +125,28 @@ def test_text_quotes_a_table_cell_and_follows_it():
     assert b.build().blocks[1].text == ("The total due is SAR 2,657.50, in words Two thousand six hundred fifty-seven "
                                         "riyals and fifty halalas only. Unknown {=nope!A1}.")
     assert [w.rule for w in b.lint()] == ["unresolved_ref"]
+
+
+def test_summary_rows_join_their_empty_cells_and_figures_never_wrap():
+    from dynamic_pdf.core.table_types import measured_rows, row_spans
+    t = TableBlock(headers=["Item", "Qty", "Price", "Amount"], rows=[
+        ["Paper", "3", "SAR 12.50", "SAR 37.50"], ["Toner", "", "SAR 1,310.00", "SAR 2,620.00"],
+        ["Total", "", "", "SAR 2,657.50"], ["In words", "", "", "Two thousand six hundred fifty-seven riyals only"],
+        ["Services", "", "", ""]])
+    assert row_spans(t) == {2: (0, 2, 0), 3: (1, 3, 3), 4: (0, 3, 0)}     # Toner's missing quantity is not joined
+    assert measured_rows(t)[3][3] == "" and measured_rows(t)[1] == t.rows[1]
+    from dynamic_pdf.design.measure import column_metrics
+    mins, nats = column_metrics(t.headers, t.rows, "Helvetica", 10)
+    assert mins[2] >= nats[2] - 3                                          # "SAR 1,310.00" is one piece
+
+
+def test_joined_cells_in_both_formats():
+    pymupdf = pytest.importorskip("pymupdf")
+    import docx
+    b = DocumentBuilder().table(["Item", "Qty", "Price", "Amount"], [
+        ["Paper", "3", "SAR 12.50", "=B2*C2"], ["Total", "", "", "=SUM(ABOVE)"], ["In words", "", "", "=WORDS(D3)"]])
+    b.design("auto")
+    text = pymupdf.open(stream=b.render(), filetype="pdf")[0].get_text()
+    assert "Thirty-seven riyals and fifty halalas only" in " ".join(text.split())
+    row = docx.Document(io.BytesIO(b.render_docx())).tables[0].rows[-1]
+    assert len({id(c._tc) for c in row.cells}) == 2                         # label, and the words over three columns

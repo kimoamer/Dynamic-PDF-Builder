@@ -915,6 +915,16 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                 t.columns[ci].width = Pt(wv)
                 for row in t.rows:
                     row.cells[ci].width = Pt(wv)
+        from ..core.table_types import row_spans
+        for ri, (first, last, content) in row_spans(b).items():
+            cells = t.rows[r0 + ri].cells
+            merged = cells[first].merge(cells[last])
+            for p in list(merged.paragraphs):        # the joined cells' empty paragraphs go; the content stays
+                if not p.text.strip() and len(merged.paragraphs) > 1:
+                    p._p.getparent().remove(p._p)
+            for p in merged.paragraphs:              # a text, not a figure: aligned as text reads
+                if p.text.strip():
+                    p.alignment = WD_ALIGN_PARAGRAPH.RIGHT if is_rtl_text(p.text) else WD_ALIGN_PARAGRAPH.LEFT
         if design:
             self._art_table(t, {**hints, "design": design}, has_header, bool(b.footer_row), {r0 + ri for ri in totals})
         self._spacer_after(c)

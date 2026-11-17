@@ -1671,6 +1671,17 @@ def _render_table(block, theme, bs, ctx=None):
         cmds = table_commands(design, theme, len(data), ncols, bool(block.headers), bool(block.footer_row),
                               pad, hints.get("current_col"), tbl_rtl)
     head = 1 if block.headers else 0
+    from ..core.table_types import row_spans
+    raw_rows = [list(r) for r in block.rows] + ([list(block.footer_row)] if block.footer_row else [])
+    for ri, (first, last, content) in row_spans(block).items():
+        r_vis = ri + head
+        a, b = (ncols - 1 - last, ncols - 1 - first) if tbl_rtl else (first, last)
+        sty = t_sty if (ri in totals or ri >= len(block.rows)) else c_sty
+        text = str(raw_rows[ri][content]) if content < len(raw_rows[ri]) else ""
+        for vc in range(a, b + 1):              # what the joined cells held moves to the one that shows it
+            data[r_vis][vc] = Paragraph("", sty)
+        data[r_vis][a] = Paragraph(_md_inline(text), sty)
+        cmds.append(('SPAN', (a, r_vis), (b, r_vis)))
     for ri in sorted(totals):
         if 0 <= ri < len(block.rows):
             cmds.append(('LINEABOVE', (0, ri + head), (-1, ri + head), 0.9, _safe_color(theme.colors.text_primary)))

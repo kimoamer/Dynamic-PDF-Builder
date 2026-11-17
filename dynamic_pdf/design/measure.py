@@ -40,10 +40,17 @@ def column_metrics(headers: List[str], rows: List[List[str]], family: str, size:
             w_nat = sum(_run_width(r.text, r.code, family, size, is_head) for r in runs) + padding
             longest_word = max((_run_width(wd, r.code, family, size, is_head) for r in runs for wd in r.text.split()),
                                default=0.0) + padding + 2.0   # slack: avoid splitting a word
+            if not is_head and ci < len(row) and _is_figure(str(row[ci])):
+                longest_word = w_nat + 2.0                    # "1,310.00 SAR" is one piece: a figure never wraps
 
             mins[ci] = max(mins[ci], longest_word)
             nats[ci] = max(nats[ci], w_nat)
     return mins, nats
+
+
+def _is_figure(text: str) -> bool:
+    from ..core.table_types import read_cell
+    return read_cell(text).kind in ("number", "currency", "percent")
 
 
 CODE_FONT, CODE_SIZE = "Courier", 9.0      # how the PDF sets inline code (layout.factory._md_inline)
