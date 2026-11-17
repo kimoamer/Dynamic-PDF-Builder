@@ -159,8 +159,10 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
         # dense tables get tighter cell padding (pt per side), shared by PDF and DOCX
         pad = 4.0 if ncols >= 7 else (6.0 if ncols >= 5 else 9.0)
         hints["cell_padding"] = pad
+        from ..core.table_types import measured_rows
+        measured = measured_rows(b)              # a cell that runs over empty ones takes their room, not its column's
         while size >= MIN_TABLE_SIZE:
-            mins, nats = column_metrics(b.headers or [], b.rows, ty.body_family, size, 2 * pad)
+            mins, nats = column_metrics(b.headers or [], measured, ty.body_family, size, 2 * pad)
             fracs, fits = fit_columns(mins, nats, avail)
             # "fits" also requires readable cells: on average ≤ 2.2 lines per cell
             fits = fits and wrap_ratio(nats, fracs, avail) <= 1.8 and sum(mins) <= 0.85 * avail
@@ -175,7 +177,7 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
         if not fits:
             land_w = _content_width(sem, theme) + (_PAGE[sem.meta.page_size][1] - _PAGE[sem.meta.page_size][0]) \
                 if sem.meta.orientation != Orientation.LANDSCAPE else avail
-            mins, nats = column_metrics(b.headers or [], b.rows, ty.body_family, MIN_TABLE_SIZE, 2 * pad)
+            mins, nats = column_metrics(b.headers or [], measured, ty.body_family, MIN_TABLE_SIZE, 2 * pad)
             fracs2, fits2 = fit_columns(mins, nats, land_w)
             fits2 = fits2 and wrap_ratio(nats, fracs2, land_w) <= 1.8
             # prose wraps; figures, codes and periods cannot, so only they justify turning the page
@@ -214,14 +216,37 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
     _keep_intros_with_exhibits(sem, lp)
     lp.estimated_pages = _estimate_pages(sem, theme, width)
 
+    # ── a paper does not number its abstract, references or acknowledgements ──
+    if plan.recipe.paper:
+        from ..core.keywords import pattern
+        plain = pattern("sections", "unnumbered")
+        for b in sem.blocks:
+            if b.type == "heading" and plain.fullmatch(" ".join(plain_text(b.text).split()).lower()):
+                b.hints = {**(b.hints or {}), "unnumbered": True}
+    from .art_direction import _opens_with_title
+    # ── the title is not a section: numbering starts at the heading after it ──
+    if plan.section_numbering and _opens_with_title(sem):
+        title = next(b for b in sem.blocks if b.type == "heading")
+        title.hints = {**(title.hints or {}), "unnumbered": True}
+    # ── a paper opens with its title and authors on page one, never on a cover ──
+    if plan.recipe.paper and not st.has_cover and sem.meta.title and not _opens_with_title(sem):
+        sem.blocks.insert(0, CoverPageBlock(title=sem.meta.title, subtitle=sem.meta.subject or sem.meta.description,
+                                            author=sem.meta.author, hints={"title_block": True}))
+        lp.log("title", "paper: title and authors set at the head of page one")
     # ── cover page from metadata (only for long, titled reports) ──
-    if (profile in _COVER_PROFILES and not st.has_cover and sem.meta.title
+    elif (profile in _COVER_PROFILES and not st.has_cover and sem.meta.title
             and lp.estimated_pages >= 3):
         cover = CoverPageBlock(title=sem.meta.title,
                                subtitle=sem.meta.subject or sem.meta.description,
                                author=sem.meta.author)
         sem.blocks.insert(0, cover)
         lp.log("cover", f"~{lp.estimated_pages:.1f} pages with a title: cover built from metadata")
+    # ── a short document whose design has no header band still shows its title (a letter does not) ──
+    elif (not plan.recipe.header_enabled and not st.has_cover and sem.meta.title and not _opens_with_title(sem)
+            and profile != Profile.LETTER):
+        sem.blocks.insert(0, CoverPageBlock(title=sem.meta.title, subtitle=sem.meta.subject or sem.meta.description,
+                                            author=sem.meta.author, hints={"title_block": True}))
+        lp.log("title", "no header band: the title set at the head of page one")
     return lp
 
 
@@ -302,12 +327,13 @@ def drop_short_contents(sem: SemanticDocument, plan: DesignPlan) -> None:
     if not plan.toc_inserted or lp is None or lp.measured_pages is None:
         return
     pages = lp.measured_pages - 1                 # the inserted contents page ends with a page break
-    if pages >= MIN_CONTENTS_PAGES:
+    floor = max(MIN_CONTENTS_PAGES, plan.recipe.toc_min_pages)
+    if pages >= floor:
         return
     sem.blocks = [b for b in sem.blocks if not (b.type == "table_of_contents" and b.kind == "contents")]
     plan.toc_inserted = False
     note = (f"{pages} page{'s' if pages != 1 else ''} of content measured: no contents page "
-            f"under {MIN_CONTENTS_PAGES} pages unless the author adds one")
+            f"under {floor} pages unless the author adds one")
     if not any(d.target == "contents" and d.decision == note for d in lp.decisions):
         lp.log("contents", note)
 

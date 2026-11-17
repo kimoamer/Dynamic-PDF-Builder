@@ -172,14 +172,14 @@ def test_detects_low_density_and_oversized_heading():
 
 # ── design by default for new APIs, legacy preserved ────────────────────
 
-def test_export_designs_by_default_and_legacy_render_does_not(tmp_path):
+def test_export_and_render_design_by_default(tmp_path):
     md = fixture_text("executive.md")
     b = DocumentBuilder.from_markdown(md)
     res = b.export(str(tmp_path / "x.pdf"))
     assert res.profile == "executive_report"
     legacy = DocumentBuilder.from_markdown(md)
     legacy.render()
-    assert legacy.last_design is None
+    assert legacy.last_design is not None
     off = DocumentBuilder.from_markdown(md).design(None)
     assert off.export(str(tmp_path / "y.pdf")).profile is None
 

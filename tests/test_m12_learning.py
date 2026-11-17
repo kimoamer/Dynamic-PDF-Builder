@@ -66,6 +66,30 @@ JUDGES = ["judge-one", "judge-two"]
 
 
 class TestAIReview:
+    def test_whole_pages_are_sent_one_image_a_page_and_recorded_at_their_size(self, tmp_path):
+        import pymupdf
+        d = write_batch(tmp_path)
+        (d / "renders" / "doc").mkdir(parents=True)
+        for name, pages in (("financial_data", 2), ("editorial_modern", 3)):
+            pdf = pymupdf.open()
+            for _ in range(pages):
+                pdf.new_page()
+            pdf.save(str(d / "renders" / "doc" / f"{name}.pdf"))
+        dataset = tmp_path / "ai-preferences.jsonl"
+        c = client({f"j{j}-cmp-00{n}": answer("A" if n == 1 else "B") for j in (0, 1) for n in (1, 2)})
+        ai_review.run(str(d), str(dataset), JUDGES, client=c, date="2026-11-16", sleep=lambda _: None, page_px=120)
+        first = c.messages.batches.created[0]["params"]
+        kinds = [(b["type"], b.get("text")) for b in first["messages"][0]["content"]]
+        assert first["system"] == ai_review.PAGES_RUBRIC != ai_review.RUBRIC
+        assert kinds[0] == ("text", "Design A:") and kinds[3] == ("text", "Design B:")
+        assert [k for k, _ in kinds].count("image") == 5                         # 2 pages, then 3
+        blob = json.dumps(c.messages.batches.created)
+        assert "financial_data" not in blob and "editorial_modern" not in blob
+        rows = [json.loads(x) for x in dataset.read_text(encoding="utf-8").splitlines()]
+        assert len(rows) == 4 and {r["shown_px"] for r in rows} == {120}
+        assert {r["prompt_sha256"] for r in rows} == {ai_review.prompt_sha256(120)} != {ai_review.prompt_sha256()}
+        assert all("every PDF page" in r["evaluation_method"] for r in rows)
+
     def test_two_judges_are_asked_blind_and_recorded_as_ai_with_their_prompt(self, tmp_path):
         d = write_batch(tmp_path)
         dataset = tmp_path / "ai-preferences.jsonl"
@@ -201,7 +225,7 @@ class TestWeights:
 
     def record(self, tmp_path, **change):
         m = W.fit(self.pairs())
-        rec = {"format": W.FORMAT, "model": m, "model_sha256": W.digest(m), "gate": {"passed": True}}
+        rec = {"format": W.FORMAT, "features": VR.FEATURES, "model": m, "model_sha256": W.digest(m), "gate": {"passed": True}}
         rec.update(change)
         path = tmp_path / "w.json"
         path.write_text(json.dumps(rec), encoding="utf-8")
@@ -212,7 +236,7 @@ class TestWeights:
         a, b = FakeVariant("a", fit=0.5), FakeVariant("b", fit=2.0)
         best, note = VR.choose([a, b], a, path)
         assert best is b and note["selector"] == "learned" and note["deterministic_choice"] == "a"
-        assert set(W.measured(a)) == set(W.FEATURES)
+        assert set(VR.variant_features(a)) == set(VR.FEATURES)
 
     @pytest.mark.parametrize("change,reason", [({"gate": {"passed": False}}, "gate"), ({"model_sha256": "0"}, "match"),
                                                ({"format": "x"}, "format")])
@@ -226,12 +250,12 @@ class TestWeights:
     def test_altered_or_unconstrained_weights_are_refused(self, tmp_path):
         path, m = self.record(tmp_path)
         broken = dict(m, weights=[-1.0] * len(W.FEATURES))
-        rec = {"format": W.FORMAT, "model": broken, "model_sha256": W.digest(broken), "gate": {"passed": True}}
+        rec = {"format": W.FORMAT, "features": VR.FEATURES, "model": broken, "model_sha256": W.digest(broken),
+               "gate": {"passed": True}}
         (tmp_path / "w.json").write_text(json.dumps(rec), encoding="utf-8")
         with pytest.raises(VR.RankerRefused, match="monotone"):
             W.WeightsRanker.load(path)
-        broken = dict(m, features=W.FEATURES[:-1])
-        rec.update(model=broken, model_sha256="x")
+        rec.update(features=VR.FEATURES[:-1])
         (tmp_path / "w.json").write_text(json.dumps(rec), encoding="utf-8")
         with pytest.raises(VR.RankerRefused, match="features"):
             W.WeightsRanker.load(path)
@@ -286,8 +310,10 @@ class TestWeightsTrainer:
         assert rec["agreement"]["learned"] == 1.0 and "held_out_brier" in rec["calibration"]
         assert rec["gate"]["checks"]["not_a_fixture"] is False and rec["gate"]["passed"] is False
         assert rec["model_sha256"] == W.digest(rec["model"])
-        with pytest.raises(VR.RankerRefused, match="gate"):
+        with pytest.raises(VR.RankerRefused, match="fixture"):      # a fixture is refused, whatever its gate says
             W.WeightsRanker.load(str(out))
+        monkeypatch.setattr(VR, "ALLOW_FIXTURES", True)              # tests may load one
+        assert W.WeightsRanker.load(str(out)).record["synthetic_fixture"] is True
 
     def test_a_weights_model_is_one_json_file(self, tmp_path, trainer):
         with pytest.raises(SystemExit, match="json"):

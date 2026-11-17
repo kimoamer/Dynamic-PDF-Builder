@@ -142,6 +142,11 @@ def _parse_body(md_text: str) -> list:
 
             # [TOC], [LOF], [LOT]: a contents page, a list of figures, a list of tables
             listing = {"[TOC]": "contents", "[LOF]": "figures", "[LOT]": "tables"}.get(content.strip())
+            if content.strip() in ("[REFERENCES]", "[BIBLIOGRAPHY]"):      # where the cited works are listed
+                from ..schema.blocks import BibliographyBlock
+                blocks.append(BibliographyBlock(entries=[]))
+                idx += 2
+                continue
             if listing:
                 blocks.append(TOCBlock(kind=listing))
                 idx += 2
@@ -169,12 +174,17 @@ def _parse_body(md_text: str) -> list:
 
         # ─── Code Fences ───
         elif t.type == "fence":
-            lang = (t.info or "").strip() or "text"
+            info, fence_id = _attr_id((t.info or "").strip())
+            lang = info.split()[0] if info.split() else "text"
             code = (t.content or "").rstrip("\n")
             if lang == "mermaid":
                 blocks.append(MermaidBlock(diagram=code))
+            elif lang == "chart":
+                blocks.append(_chart_block(code, fence_id))
+            elif lang in ("signature", "signatures"):
+                blocks.append(_signature_block(code))
             elif lang in ("math", "latex"):
-                blocks.append(MathBlock(latex=code))
+                blocks.append(MathBlock(latex=code, id=fence_id))
             else:
                 blocks.append(CodeBlock(language=lang, code=code))
 
@@ -212,7 +222,7 @@ def _parse_body(md_text: str) -> list:
         elif t.type == "blockquote_open":
             parts, idx = _collect_blockquote(tokens, idx)
             # paragraphs of the quote are separated by a blank line; a single newline is a soft break
-            blocks.append(QuoteBlock(text="\n\n".join(parts)))
+            blocks.append(_quote_block(parts))
             continue
 
         # ─── Horizontal Rule ───
@@ -226,6 +236,40 @@ def _parse_body(md_text: str) -> list:
 
 _TABLE_CAPTION = re.compile(r"^Table:\s+(\S.*)$", re.S)
 _ATTR_ID = re.compile(r"\s*\{#([A-Za-z][\w:.-]*)\}\s*$")
+
+
+def _chart_block(code: str, anchor):
+    """A ```chart fence: a JSON object with ``type`` and ``data`` (as ``DocumentBuilder.chart``
+    takes them) and optionally ``title``, ``x_label``, ``y_label``, ``colors``, ``legend``."""
+    import json
+    from ..schema.blocks import ChartBlock
+    try:
+        spec = json.loads(code)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"a ```chart block holds JSON, as {{\"type\": \"bar\", \"data\": {{\"A\": 1}}}}; "
+                         f"this one does not parse: {e}") from None
+    if not isinstance(spec, dict) or "data" not in spec or not (spec.get("type") or spec.get("chart_type")):
+        raise ValueError('a ```chart block needs "type" (bar, line, pie ...) and "data"')
+    spec = dict(spec)
+    spec["chart_type"] = spec.pop("type", None) or spec["chart_type"]
+    return ChartBlock(id=anchor, **spec)
+
+
+def _signature_block(code: str):
+    """A ```signature fence: a JSON object (one signature) or a list of them (side by side), each with
+    ``name`` and optionally ``title``, ``date``, ``image``, ``alignment``."""
+    import json
+    from ..schema.blocks import SignatureBlock, signature_row
+    try:
+        spec = json.loads(code)
+    except json.JSONDecodeError as e:
+        raise ValueError('a ```signature block holds JSON, as {"name": "Omar Hassan", "title": "Director"}; '
+                         f"this one does not parse: {e}") from None
+    if isinstance(spec, dict):
+        return SignatureBlock(**spec)
+    if isinstance(spec, list) and all(isinstance(x, dict) for x in spec):
+        return signature_row(spec)
+    raise ValueError('a ```signature block needs an object {"name": ...} or a list of them')
 
 
 def _attr_id(text: str):
@@ -364,6 +408,26 @@ def _collect_table(tokens, start_idx):
                 current_row.append("")
         idx += 1
     return headers, rows, idx
+
+
+_QUOTE_STYLE = re.compile(r"^\s*\[!(pullquote|epigraph|blockquote)\]\s*", re.I)
+_ATTRIBUTION = re.compile(r"^\s*(?:—|―|--|–)\s*(\S.*)$")
+
+
+def _quote_block(parts: list) -> "QuoteBlock":
+    """``> [!pullquote]`` or ``> [!epigraph]`` on the first line picks the look; a last line that starts
+    with a dash (``> — Name``) is the attribution."""
+    parts = [p for p in parts]
+    style = "blockquote"
+    if parts and (m := _QUOTE_STYLE.match(parts[0])):
+        style, parts[0] = m.group(1).lower(), parts[0][m.end():]
+    attribution = None
+    if parts:
+        lines = parts[-1].rstrip().split("\n")
+        m = _ATTRIBUTION.match(lines[-1])
+        if m and (len(lines) > 1 or len(parts) > 1):
+            attribution, parts[-1] = m.group(1).strip(), "\n".join(lines[:-1])
+    return QuoteBlock(text="\n\n".join(p for p in parts if p.strip()), attribution=attribution, style=style)
 
 
 def _collect_blockquote(tokens, start_idx):

@@ -262,14 +262,12 @@ def test_cli_compose_and_report(tmp_path):
 
 # ── optional ranker ──────────────────────────────────────────────────────
 
-def test_ranker_falls_back_without_lightgbm_or_model(tmp_path):
-    from dynamic_pdf.intelligence.ranker import load_optional, PreferenceRanker, RankerUnavailable
-    assert load_optional(None) is None
-    assert load_optional(str(tmp_path / "missing.txt")) is None
+def test_ranker_falls_back_without_a_usable_model(tmp_path):
+    from dynamic_pdf.intelligence.variant_ranker import RankerRefused, load_model
     bad = tmp_path / "model.pkl"
     bad.write_bytes(b"\x80\x04pickle")
-    with pytest.raises(RankerUnavailable):
-        PreferenceRanker.load(str(bad))
+    with pytest.raises(RankerRefused):                  # only a JSON training record loads, never a pickle
+        load_model(str(bad))
     b = _smart(DocumentBuilder.from_markdown(fixture_text("manual.md")), ranker_model=str(bad))
     b.render()
     assert any("ranker unavailable" in f for f in b.last_composition.fallbacks)

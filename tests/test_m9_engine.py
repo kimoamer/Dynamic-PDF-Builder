@@ -58,7 +58,7 @@ def test_page_facts_are_one_versioned_reading_of_the_pdf():
 
 
 def test_page_facts_measure_the_type_on_the_page():
-    b = report()
+    b = report().design(None)                  # the classic claude theme, measured on the page
     theme = get_theme("claude")
     facts = F.read_pdf(b.render())
     assert facts.document["body_size"] == pytest.approx(theme.typography.base_size, abs=0.1)
@@ -116,9 +116,9 @@ def test_ranker_reads_measured_type_not_the_plan_text(proposal_variants):
         assert f == before
         # the leading as measured, or the compiled theme's where no body line wraps to show it
         measured = v.facts.document["body_leading"] or v.theme.typography.line_height
-        assert (f["base_size"], f["line_height"]) == (v.facts.document["body_size"], measured)
+        assert (f["body_size"], f["body_leading"]) == (v.facts.document["body_size"], measured)
     plain = next(v for v in proposal_variants if v.id == "corporate_conservative")    # no lead paragraphs
-    assert variant_features(plain)["base_size"] == plain.theme.typography.base_size
+    assert variant_features(plain)["body_size"] == plain.theme.typography.base_size
 
 
 def test_leading_is_measured_where_lines_wrap_and_unknown_where_none_do():

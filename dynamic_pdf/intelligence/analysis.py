@@ -24,6 +24,13 @@ from .geometry import Geometry, PageInfo, Region
 
 _PAGE = {PageSize.A4: (595.28, 841.89), PageSize.LETTER: (612, 792), PageSize.LEGAL: (612, 1008)}
 FORCED_BREAK_AFTER = {"page_break", "cover_page", "table_of_contents", "introduction_page"}
+
+
+def forces_break(block) -> bool:
+    """Whether the next block starts a page. A cover set at the head of page one (a masthead, a
+    paper's title block) does not end its page."""
+    hints = getattr(block, "hints", None) or {}
+    return block.type in FORCED_BREAK_AFTER and not (hints.get("masthead") or hints.get("title_block"))
 NO_CONTENT = {"page_break", "spacer", "watermark", "divider"}
 
 
@@ -190,7 +197,9 @@ def measure_blocks(doc, theme, policy=None, cache=None) -> Tuple[List[BlockMeasu
             # flowable (a caption travels with its table/figure via keep-with-next)
             main_role = next((r for r in roles if r not in ("caption", "other", "structure", "space")),
                              next((r for r in roles if r != "space"), "space"))
-            out.append(BlockMeasure(i, b.type, main_role, total, piece, splittable,
+            # (a cover that does not end its page is measured as an ordinary block)
+            out.append(BlockMeasure(i, b.type if b.type != "cover_page" or forces_break(b) else "title_block",
+                                    main_role, total, piece, splittable,
                                     bool(keep), level, is_land,
                                     bool((b.hints or {}).get("break_before") or (b.hints or {}).get("page_start")),
                                     tail_h, ink, before, max(0.0, total - before - after), after, x0, x1,

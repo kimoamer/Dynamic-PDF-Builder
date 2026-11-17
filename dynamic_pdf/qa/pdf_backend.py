@@ -19,12 +19,13 @@ import unicodedata
 from typing import Iterator, List, Optional, Tuple
 
 Box = Tuple[float, float, float, float]
-_FORCE = "DYNAMIC_PDF_QA_BACKEND"        # "pymupdf" or "pdfium": pin one, e.g. to compare them
+_FORCE = "QA_BACKEND"        # DYNAMIC_PDF_QA_BACKEND: "pymupdf" or "pdfium" pins one, e.g. to compare them
 
 
 def backend_name() -> Optional[str]:
     """The backend ``open_pdf`` would use, or None when no PDF reader is installed."""
-    want = os.environ.get(_FORCE, "").lower()
+    from ..settings import get
+    want = (get(_FORCE) or "").lower()
     for name, module in (("pymupdf", "pymupdf"), ("pdfium", "pypdfium2")):
         if want and want != name:
             continue

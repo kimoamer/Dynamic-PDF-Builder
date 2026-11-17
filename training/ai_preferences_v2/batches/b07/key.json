@@ -1,0 +1,613 @@
+{
+ "note": "Do not open before the answers are written.",
+ "comparisons": [
+  {
+   "comparison": "cmp-001",
+   "document": "m7_letter",
+   "a": "editorial_modern",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    1,
+    1
+   ],
+   "pages_total": [
+    1,
+    1
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-002",
+   "document": "m7_letter",
+   "a": "financial_data",
+   "b": "corporate_conservative",
+   "reversed_repeat": true,
+   "pages_shown": [
+    1,
+    1
+   ],
+   "pages_total": [
+    1,
+    1
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-003",
+   "document": "m7_invoice",
+   "a": "corporate_conservative",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    1,
+    1
+   ],
+   "pages_total": [
+    1,
+    1
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-004",
+   "document": "m7_letter",
+   "a": "editorial_modern",
+   "b": "executive_premium",
+   "reversed_repeat": false,
+   "pages_shown": [
+    1,
+    1
+   ],
+   "pages_total": [
+    1,
+    1
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-005",
+   "document": "m7_invoice",
+   "a": "executive_premium",
+   "b": "financial_data",
+   "reversed_repeat": false,
+   "pages_shown": [
+    1,
+    1
+   ],
+   "pages_total": [
+    1,
+    1
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-006",
+   "document": "m7_invoice",
+   "a": "editorial_modern",
+   "b": "executive_premium",
+   "reversed_repeat": false,
+   "pages_shown": [
+    1,
+    1
+   ],
+   "pages_total": [
+    1,
+    1
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-007",
+   "document": "m7_financial_statements",
+   "a": "financial_data",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    5
+   ],
+   "pages_total": [
+    4,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-008",
+   "document": "m7_financial_statements",
+   "a": "editorial_modern",
+   "b": "executive_premium",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-009",
+   "document": "m7_financial_statements",
+   "a": "executive_premium",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-010",
+   "document": "m7_invoice",
+   "a": "corporate_conservative",
+   "b": "financial_data",
+   "reversed_repeat": false,
+   "pages_shown": [
+    1,
+    1
+   ],
+   "pages_total": [
+    1,
+    1
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-011",
+   "document": "m7_letter",
+   "a": "executive_premium",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    1,
+    1
+   ],
+   "pages_total": [
+    1,
+    1
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-012",
+   "document": "m7_letter",
+   "a": "corporate_conservative",
+   "b": "financial_data",
+   "reversed_repeat": false,
+   "pages_shown": [
+    1,
+    1
+   ],
+   "pages_total": [
+    1,
+    1
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-013",
+   "document": "m7_financial_statements",
+   "a": "corporate_conservative",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-014",
+   "document": "m7_financial_statements",
+   "a": "editorial_modern",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    5,
+    4
+   ],
+   "pages_total": [
+    5,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-015",
+   "document": "m7_letter",
+   "a": "editorial_modern",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    1,
+    1
+   ],
+   "pages_total": [
+    1,
+    1
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-016",
+   "document": "m7_letter",
+   "a": "executive_premium",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    1,
+    1
+   ],
+   "pages_total": [
+    1,
+    1
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-017",
+   "document": "m7_invoice",
+   "a": "executive_premium",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    1,
+    1
+   ],
+   "pages_total": [
+    1,
+    1
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-018",
+   "document": "m7_invoice",
+   "a": "executive_premium",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    1,
+    1
+   ],
+   "pages_total": [
+    1,
+    1
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-019",
+   "document": "m7_invoice",
+   "a": "financial_data",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    1,
+    1
+   ],
+   "pages_total": [
+    1,
+    1
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-020",
+   "document": "m7_financial_statements",
+   "a": "executive_premium",
+   "b": "financial_data",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    4
+   ],
+   "pages_total": [
+    5,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-021",
+   "document": "m7_letter",
+   "a": "corporate_conservative",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    1,
+    1
+   ],
+   "pages_total": [
+    1,
+    1
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-022",
+   "document": "m7_invoice",
+   "a": "financial_data",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    1,
+    1
+   ],
+   "pages_total": [
+    1,
+    1
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-023",
+   "document": "m7_en_executive_report",
+   "a": "editorial_modern",
+   "b": "executive_premium",
+   "reversed_repeat": false,
+   "pages_shown": [
+    3,
+    4
+   ],
+   "pages_total": [
+    3,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-024",
+   "document": "m7_letter",
+   "a": "executive_premium",
+   "b": "financial_data",
+   "reversed_repeat": false,
+   "pages_shown": [
+    1,
+    1
+   ],
+   "pages_total": [
+    1,
+    1
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-025",
+   "document": "m7_financial_statements",
+   "a": "executive_premium",
+   "b": "corporate_conservative",
+   "reversed_repeat": true,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-026",
+   "document": "m7_invoice",
+   "a": "editorial_modern",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    1,
+    1
+   ],
+   "pages_total": [
+    1,
+    1
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-027",
+   "document": "m7_financial_statements",
+   "a": "editorial_modern",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-028",
+   "document": "m7_financial_statements",
+   "a": "financial_data",
+   "b": "corporate_conservative",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    5
+   ],
+   "pages_total": [
+    4,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-029",
+   "document": "m7_letter",
+   "a": "financial_data",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    1,
+    1
+   ],
+   "pages_total": [
+    1,
+    1
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-030",
+   "document": "m7_en_executive_report",
+   "a": "executive_premium",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    3
+   ],
+   "pages_total": [
+    4,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-031",
+   "document": "m7_letter",
+   "a": "corporate_conservative",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    1,
+    1
+   ],
+   "pages_total": [
+    1,
+    1
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-032",
+   "document": "m7_invoice",
+   "a": "corporate_conservative",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    1,
+    1
+   ],
+   "pages_total": [
+    1,
+    1
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-033",
+   "document": "m7_financial_statements",
+   "a": "corporate_conservative",
+   "b": "executive_premium",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-034",
+   "document": "m7_financial_statements",
+   "a": "corporate_conservative",
+   "b": "financial_data",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    4
+   ],
+   "pages_total": [
+    5,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-035",
+   "document": "m7_financial_statements",
+   "a": "financial_data",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    5
+   ],
+   "pages_total": [
+    4,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-036",
+   "document": "m7_invoice",
+   "a": "editorial_modern",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    1,
+    1
+   ],
+   "pages_total": [
+    1,
+    1
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-037",
+   "document": "m7_letter",
+   "a": "financial_data",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    1,
+    1
+   ],
+   "pages_total": [
+    1,
+    1
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-038",
+   "document": "m7_invoice",
+   "a": "financial_data",
+   "b": "corporate_conservative",
+   "reversed_repeat": true,
+   "pages_shown": [
+    1,
+    1
+   ],
+   "pages_total": [
+    1,
+    1
+   ],
+   "shown_px": 240
+  }
+ ]
+}

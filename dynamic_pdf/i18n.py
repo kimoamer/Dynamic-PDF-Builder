@@ -4,17 +4,23 @@ LABELS = {
     "en": {"toc": "Table of Contents", "prepared_by": "Prepared by", "references": "References",
            "abstract": "Abstract", "keywords": "Keywords", "continued": "continued",
            "figure": "Figure", "source": "Source", "table": "Table", "section": "Section",
-           "lof": "List of Figures", "lot": "List of Tables"},
+           "lof": "List of Figures", "lot": "List of Tables", "equation": "Equation", "page": "Page", "of": "of"},
     "ar": {"toc": "جدول المحتويات", "prepared_by": "إعداد", "references": "المراجع",
            "abstract": "الملخص", "keywords": "الكلمات المفتاحية", "continued": "تابع",
            "figure": "شكل", "source": "المصدر", "table": "جدول", "section": "القسم",
-           "lof": "قائمة الأشكال", "lot": "قائمة الجداول"},
+           "lof": "قائمة الأشكال", "lot": "قائمة الجداول", "equation": "المعادلة", "page": "صفحة", "of": "من"},
 }
 
 
 def label(key: str, language: str = "en") -> str:
     lang = (language or "en").split("-")[0].lower()
     return LABELS.get(lang, LABELS["en"]).get(key, LABELS["en"][key])
+
+
+def page_format(fmt: str, language: str = "en") -> str:
+    """A page-number format ("Page {n} of {total}") in the document's language."""
+    page, of = label("page", language), label("of", language)
+    return fmt.replace("Page", page).replace(" of ", f" {of} ") if page != "Page" else fmt
 
 
 _INDIC = str.maketrans("0123456789", "٠١٢٣٤٥٦٧٨٩")

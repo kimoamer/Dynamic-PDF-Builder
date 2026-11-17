@@ -65,7 +65,7 @@ def test_arabic_paragraph_in_ltr_document_keeps_reading_order():
 
 
 def test_paragraph_split_across_pages_keeps_order_and_direction():
-    b = DocumentBuilder().meta(title="t", language="ar").direction("rtl")
+    b = DocumentBuilder().meta(title="t", language="ar").direction("rtl").design(None)
     filler = "نص تمهيدي قصير " * 12
     for _ in range(33):           # the paragraph starts 2 lines above the page end
         b.paragraph(filler)
@@ -212,7 +212,7 @@ def test_rtl_first_line_indent_sits_at_the_right_edge():
 
 
 def test_justified_ltr_paragraph_is_unchanged_by_the_rtl_fix():
-    lines = next(ls for ls in _paragraph_lines(DocumentBuilder().paragraph("Plain English text. " * 20).render())
+    lines = next(ls for ls in _paragraph_lines(DocumentBuilder().paragraph("Plain English text. " * 20).design(None).render())
                  if len(ls) >= 2)
     left = min(b[0] for b in lines)
     assert lines[0][0] > left + 20 and lines[-1][0] == pytest.approx(left, abs=2)

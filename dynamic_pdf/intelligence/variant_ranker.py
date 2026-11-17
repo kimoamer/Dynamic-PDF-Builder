@@ -1,57 +1,102 @@
 """
-Optional learned ordering of valid design variants (LightGBM, CPU, offline).
+The learned selector: one model slot for every place the engine chooses among valid results.
 
-The ranker is a student of AI preference comparisons, not of human judgment. It only
-reorders designs that already passed the hard gates and it is off unless a caller names a
-model. A model loads only with a training record whose gate passed; any problem leaves the
-deterministic selector in charge, and the result says which selector chose.
+A model is one JSON file, its training record with the model inside. Two kinds load here:
+calibrated monotone weights (``variant_weights``) and boosted trees, trained with LightGBM and
+walked here in plain Python, so run time needs nothing beyond the standard library. Both
+answer the same question about a pair: the chance that one design is preferred to another,
+from the difference of their measured facts and the document's context.
+
+The model is a student of AI preference comparisons, not of human judgment. It only orders
+results that already passed the hard gates. It is off unless a caller asks (``ranker="auto"``
+for the model packaged with a release, or a path). It replaces the fixed choice only when its
+win probability over that choice clears the threshold in its record; otherwise it abstains.
+The result says which selector chose and what moved it, and any problem with a model leaves
+the fixed selector in charge.
 """
 from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
-from typing import Dict, List, Optional, Sequence
+from typing import Callable, Dict, List, Optional, Sequence
 
+from ..design.profile import Profile
+
+# Measured facts only: what a page shows, never what a plan says about it. A design from a
+# direction added later is described by the same facts.
 FEATURES = [
-    "pages", "page_growth", "fit", "index", "sparse_share", "alike_share", "page_variety", "type_contrast", "image_share",
-    "last_page_ink", "cover_image", "cover_colour", "opener_pages", "figure_pages", "side_images", "bleed_images",
-    "base_size", "line_height", "band_fill", "band_rule", "grammar_rules", "refinements",
+    "fit", "index",                                             # the fixed selector's two inputs
+    # the page images
+    "sparse_share", "alike_share", "page_variety", "type_contrast", "image_share", "last_page_ink",
+    # the document, read from its PDF (PageFacts.document)
+    "pages", "page_growth", "cover_image_share", "cover_colour_share", "cover_title_to_body", "cover_words",
+    "opener_page_share", "page_kind_entropy", "page_kinds", "longest_same_kind_run", "image_share_mean",
+    "text_share_mean", "pages_without_image_share", "interior_gap_pages", "largest_interior_gap", "mean_page_bottom",
+    "short_pages_before_last", "last_page_fill", "last_page_words", "band_words_mean", "band_words_spread",
+    "body_size", "body_leading", "distinct_sizes", "largest_to_body", "font_faces", "arabic_line_share",
+    "arabic_right_edge_share", "both_scripts_side_by_side",
+    # the renderer's regions (PageFacts.layout)
+    "layout_utilization", "layout_balance", "layout_efficiency", "layout_readability", "layout_typography",
+    "layout_placement", "layout_tables", "layout_wasted", "layout_cpl", "layout_separated_figures",
 ]
+# The document itself, the same for every design of it: taste may depend on the kind of document.
+CONTEXT = ["arabic", "bilingual", "pages", "words", "tables", "figures", "photos"] + [f"type_{p.value}" for p in Profile]
+
+MODEL_FORMAT = "dynamic-pdf-builder/variant-ranker"       # boosted trees
+WEIGHTS_FORMAT = "dynamic-pdf-builder/variant-weights"    # calibrated monotone weights
 MAX_MODEL_BYTES = 2 * 1024 * 1024
-MODEL_FORMAT = "dynamic-pdf-builder/variant-ranker"
+OVERRIDE = 0.6                  # win probability over the fixed choice needed to replace it, unless the record sets one
+PACKAGED = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "models", "variant-ranker.json")
+ALLOW_FIXTURES = False          # tests only: a record marked synthetic_fixture is otherwise refused
 
 
 class RankerRefused(Exception):
     """This model may not be used. The reason says why."""
 
 
+# ── features ───────────────────────────────────────────────────────────────────────────
+
+def _numbers(seen: dict) -> Dict[str, float]:
+    return {k: float(seen[k]) if isinstance(seen.get(k), (int, float)) and not isinstance(seen.get(k), bool) else 0.0
+            for k in FEATURES}
+
+
 def variant_features(v) -> Dict[str, float]:
-    """Measurements of one finished design: page rhythm, cover, type, images, density, bands."""
-    r, plan = v.report, v.plan
-    h = r.heuristics or {}
-    cover = (plan.cover if plan else "") or ""
-    compositions = [s.composition for s in plan.sections] if plan else []
-    openers = [s.opener for s in plan.sections] if plan else []
-    bands = (plan.bands if plan else "") or ""
-    # type as measured on the page (PageFacts), never as a description says it should be. Where no
-    # body line wraps the page cannot show the leading; the compiled theme set it.
-    facts = r.facts or {}
-    ty = getattr(getattr(v, "theme", None), "typography", None)
-    size = float(facts.get("body_size") or 0.0)
-    leading = float(facts.get("body_leading") or (ty.line_height if ty and size else 0.0))
+    """The measured facts of one finished design, and the fixed selector's two inputs."""
+    r, plan = v.report, getattr(v, "plan", None)
     estimated = plan.brief.estimated_pages if plan else 0
-    out = {
-        "pages": float(r.pages), "page_growth": r.pages / estimated if estimated else 1.0, "fit": r.fit, "index": r.index,
-        "cover_image": float(cover in ("image_top", "split", "full")), "cover_colour": float(cover in ("masthead", "colour_panel", "full")),
-        "opener_pages": float(sum(o == "page" for o in openers)), "figure_pages": float(sum(o == "performance page" for o in openers)),
-        "side_images": float(sum("float" in c for c in compositions)), "bleed_images": float(sum("bleed" in c for c in compositions)),
-        "base_size": size, "line_height": leading, "band_fill": float("filled" in bands),
-        "band_rule": float(bands in ("line", "institutional")), "grammar_rules": float(len(r.grammar_rules)),
-        "refinements": float(len(r.refinements)),
-    }
-    for key in ("sparse_share", "alike_share", "page_variety", "type_contrast", "image_share", "last_page_ink"):
-        out[key] = float(h.get(key, 0.0))
+    out = _numbers({"fit": r.fit, "index": r.index, "pages": r.pages,
+                    "page_growth": r.pages / estimated if estimated else 1.0,
+                    **(r.heuristics or {}), **(r.facts or {})})
+    ty = getattr(getattr(v, "theme", None), "typography", None)
+    if not out["body_leading"] and out["body_size"] and ty:
+        out["body_leading"] = float(ty.line_height)     # no body line wraps: the page cannot show it, the theme set it
+    return out
+
+
+def from_candidate(c: dict) -> Dict[str, float]:
+    """The same facts from a row of a batch's candidates.jsonl."""
+    return _numbers({**(c.get("features") or {}), **(c.get("layout_facts") or {})})
+
+
+def layout_features(metrics: Dict[str, float]) -> Dict[str, float]:
+    """A layout candidate of one design: its layout facts. The rest is the same for every
+    candidate of that design, so it does not move a comparison."""
+    metrics = metrics or {}
+    return _numbers({"pages": metrics.get("pages", 0.0), **{f"layout_{k}": v for k, v in metrics.items()}})
+
+
+def context_features(brief) -> Dict[str, float]:
+    """The document's context from its brief. None: all zero."""
+    out = dict.fromkeys(CONTEXT, 0.0)
+    if brief is not None:
+        out.update(arabic=float(brief.language == "rtl"), bilingual=float(brief.language == "bilingual"),
+                   pages=float(brief.estimated_pages), words=float(brief.words), tables=float(brief.tables),
+                   figures=float(brief.charts), photos=float(brief.photos))
+        if f"type_{brief.profile}" in out:
+            out[f"type_{brief.profile}"] = 1.0
     return out
 
 
@@ -63,87 +108,174 @@ def pair_features(a: Dict[str, float], b: Dict[str, float]) -> List[float]:
     return [x - y for x, y in zip(vector(a), vector(b))]
 
 
-def read_record(model_path: str) -> dict:
-    side = os.path.splitext(model_path)[0] + ".json"
-    if not os.path.isfile(side):
-        raise RankerRefused(f"no training record beside {model_path}")
-    with open(side, encoding="utf-8") as f:
-        record = json.load(f)
-    if record.get("format") != MODEL_FORMAT:
-        raise RankerRefused("the training record has another format")
-    return record
+def context_vector(context: Optional[Dict[str, float]]) -> List[float]:
+    return [float((context or {}).get(k, 0.0)) for k in CONTEXT]
 
 
-class VariantRanker:
-    def __init__(self, booster, record: dict, digest: str):
-        self._booster, self.record, self.digest = booster, record, digest
+# ── models ─────────────────────────────────────────────────────────────────────────────
 
-    @classmethod
-    def load(cls, path: str) -> "VariantRanker":
-        if not os.path.isfile(path):
-            raise RankerRefused(f"model file not found: {path}")
-        if os.path.getsize(path) > MAX_MODEL_BYTES:
-            raise RankerRefused("model file exceeds 2 MB")
-        record = read_record(path)
-        with open(path, "rb") as f:
-            raw = f.read()
-        digest = hashlib.sha256(raw).hexdigest()
-        if record.get("model_sha256") != digest:
-            raise RankerRefused("the model does not match its training record")
-        if record.get("features") != FEATURES:
-            raise RankerRefused("the model was trained on other features")
-        if not (record.get("gate") or {}).get("passed"):
-            raise RankerRefused("the model did not pass its evaluation gate")
-        text = raw.decode("utf-8")
-        if not text.startswith("tree\n"):
-            raise RankerRefused("not a LightGBM text model")
-        try:
-            import lightgbm
-        except ImportError as e:
-            raise RankerRefused("lightgbm is not installed") from e
-        return cls(lightgbm.Booster(model_str=text), record, digest)
+def _sigmoid(z: float) -> float:
+    return 1 / (1 + math.exp(-z)) if z >= 0 else math.exp(z) / (1 + math.exp(z))
 
-    def scores(self, candidates: Sequence[Dict[str, float]]) -> List[float]:
+
+class Pairwise:
+    """What both model kinds share. A kind gives ``logit(d, c)``: how strongly the first of a
+    pair is preferred, from the difference ``d`` of their facts and the context ``c``."""
+
+    record: dict
+    digest: str
+
+    def logit(self, d: List[float], c: List[float]) -> float:
+        raise NotImplementedError
+
+    def prob(self, a: Dict[str, float], b: Dict[str, float], context=None) -> float:
+        """The chance that ``a`` is preferred to ``b``."""
+        return _sigmoid(self.logit(pair_features(a, b), context_vector(context)))
+
+    def scores(self, candidates: Sequence[Dict[str, float]], context=None) -> List[float]:
+        """One score a candidate: its mean chance of being preferred to each of the others."""
         n = len(candidates)
         if n < 2:
             return [0.0] * n
-        rows, owners = [], []
-        for i in range(n):
-            for j in range(n):
-                if i != j:
-                    rows.append(pair_features(candidates[i], candidates[j]))
-                    owners.append(i)
-        import numpy as np
-        out = [0.0] * n
-        for owner, p in zip(owners, self._booster.predict(np.array(rows, dtype=float))):
-            out[owner] += float(p) / (n - 1)
-        return out
+        return [sum(self.prob(a, b, context) for j, b in enumerate(candidates) if j != i) / (n - 1)
+                for i, a in enumerate(candidates)]
+
+    def reasons(self, a: Dict[str, float], b: Dict[str, float], context=None, top: int = 3) -> List[str]:
+        """The facts that moved the preference of ``a`` over ``b`` most: each is set equal in
+        turn, and the change in the preference is its share."""
+        d, c = pair_features(a, b), context_vector(context)
+        whole = self.logit(d, c)
+        moved = sorted(((whole - self.logit(d[:i] + [0.0] + d[i + 1:], c), k) for i, k in enumerate(FEATURES) if d[i]),
+                       key=lambda m: -abs(m[0]))
+        return [f"{k} {'for' if m > 0 else 'against'} it ({a.get(k, 0.0):g} against {b.get(k, 0.0):g})"
+                for m, k in moved[:top] if abs(m) > 1e-9]
 
 
-def load_model(path: str):
-    """A ``.json`` path is a calibrated weights model; anything else a LightGBM ranker."""
-    if path.lower().endswith(".json"):
+def _leaf(node, x: List[float]) -> float:
+    while isinstance(node, list):                # [feature, threshold, at or below, above]; a leaf is its value
+        node = node[2] if x[node[0]] <= node[1] else node[3]
+    return node
+
+
+def _check_tree(node, width: int, depth: int = 0) -> None:
+    if isinstance(node, (int, float)) and not isinstance(node, bool):
+        return
+    if (depth > 64 or not isinstance(node, list) or len(node) != 4 or not isinstance(node[0], int)
+            or not 0 <= node[0] < width or not isinstance(node[1], (int, float))):
+        raise RankerRefused("the model's trees are not in the expected form")
+    _check_tree(node[2], width, depth + 1)
+    _check_tree(node[3], width, depth + 1)
+
+
+class VariantRanker(Pairwise):
+    """Boosted trees over the fact differences and the context, walked in plain Python."""
+
+    def __init__(self, record: dict):
+        trees = (record.get("model") or {}).get("trees")
+        if not isinstance(trees, list) or not trees:
+            raise RankerRefused("the model's trees are not in the expected form")
+        for t in trees:
+            _check_tree(t, len(FEATURES) + len(CONTEXT))
+        self.record, self.trees, self.digest = record, trees, record["model_sha256"]
+
+    def raw(self, x: List[float]) -> float:
+        return sum(_leaf(t, x) for t in self.trees)
+
+    def logit(self, d, c):
+        # antisymmetric by construction: preferring a to b is exactly not preferring b to a
+        return (self.raw(d + c) - self.raw([-v for v in d] + c)) / 2
+
+    @classmethod
+    def load(cls, path: str) -> "VariantRanker":
+        record = read_record(path)
+        if record["format"] != MODEL_FORMAT:
+            raise RankerRefused("the training record has another format")
+        return cls(record)
+
+
+def model_digest(model) -> str:
+    return hashlib.sha256(json.dumps(model, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+def read_record(path: str) -> dict:
+    """A model file that may be used: its size, format, features, hash and gate all checked."""
+    if not os.path.isfile(path):
+        raise RankerRefused(f"model file not found: {path}")
+    if os.path.getsize(path) > MAX_MODEL_BYTES:
+        raise RankerRefused("model file exceeds 2 MB")
+    try:
+        with open(path, encoding="utf-8") as f:
+            record = json.load(f)
+    except (ValueError, UnicodeDecodeError) as e:
+        raise RankerRefused("the model file is not a JSON training record") from e
+    if not isinstance(record, dict) or record.get("format") not in (MODEL_FORMAT, WEIGHTS_FORMAT):
+        raise RankerRefused("the training record has another format")
+    if record.get("features") != FEATURES or record.get("context", CONTEXT) != CONTEXT:
+        raise RankerRefused("the model was trained on other features")
+    if record.get("model_sha256") != model_digest(record.get("model")):
+        raise RankerRefused("the model does not match its training record")
+    if record.get("synthetic_fixture"):
+        if not ALLOW_FIXTURES:
+            raise RankerRefused("this is a test fixture, not a model")
+    elif not (record.get("gate") or {}).get("passed"):
+        raise RankerRefused("the model did not pass its evaluation gate")
+    return record
+
+
+def load_model(path: str) -> Pairwise:
+    record = read_record(path)
+    if record["format"] == WEIGHTS_FORMAT:
         from .variant_weights import WeightsRanker
-        return WeightsRanker.load(path)
-    return VariantRanker.load(path)
+        return WeightsRanker(record)
+    return VariantRanker(record)
 
 
-def choose(valid: Sequence, deterministic, model_path: Optional[str], loader=load_model):
-    """The design to recommend, and a note of which selector chose it and why."""
+# ── choosing ───────────────────────────────────────────────────────────────────────────
+
+def resolve(ranker: Optional[str]) -> Optional[str]:
+    """``None`` or ``"off"``: no model. ``"auto"``: the model packaged with this release. Else a path."""
+    if not ranker or ranker == "off":
+        return None
+    return PACKAGED if ranker == "auto" else ranker
+
+
+def choose(valid: Sequence, deterministic, ranker: Optional[str], loader: Optional[Callable] = None, *, context=None,
+           features: Callable = variant_features, name: Callable = lambda v: v.id):
+    """The result to deliver, and a note of which selector chose it and why.
+
+    ``valid`` are results that passed the hard gates and ``deterministic`` is the fixed
+    selector's choice among them. The model's choice replaces it only when the model gives it
+    a win probability over the fixed choice of at least the record's ``override_threshold``."""
     note = {"selector": "deterministic", "model": None}
-    if not model_path:
+    path = resolve(ranker)
+    if not path:
         return deterministic, note
     try:
-        ranker = loader(model_path)
-        scores = ranker.scores([getattr(ranker, "features", variant_features)(v) for v in valid])
+        if ranker == "auto" and not os.path.isfile(path):
+            raise RankerRefused("no model is packaged with this release")
+        model = (loader or load_model)(path)        # an unusable model is reported even when there is no choice to make
+        if len(valid) < 2:
+            return deterministic, note
+        facts = [features(v) for v in valid]
+        scores = model.scores(facts, context)
+        best = max(range(len(valid)), key=lambda i: scores[i])
+        found = {"model": os.path.basename(path), "model_sha256": model.digest, "labels": model.record.get("labels"),
+                 "scores": {name(v): round(s, 4) for v, s in zip(valid, scores)},
+                 "deterministic_choice": name(deterministic) if deterministic is not None else None}
+        fixed = next((i for i, v in enumerate(valid) if v is deterministic), None)
+        if fixed is not None and fixed != best and hasattr(model, "prob"):
+            margin = model.prob(facts[best], facts[fixed], context)
+            threshold = float(model.record.get("override_threshold", OVERRIDE))
+            found.update(margin=round(margin, 4), threshold=threshold)
+            if margin < threshold:              # not sure enough to replace the fixed choice
+                note.update(found, abstained=True, learned_choice=name(valid[best]))
+                return deterministic, note
+            found["reasons"] = model.reasons(facts[best], facts[fixed], context)
     except RankerRefused as e:
         note["fallback_reason"] = str(e)
         return deterministic, note
     except Exception as e:  # noqa: BLE001 - a broken model must never stop a document
         note["fallback_reason"] = f"the model failed: {e}"
         return deterministic, note
-    best = max(range(len(valid)), key=lambda i: scores[i])
-    note.update(selector="learned", model=os.path.basename(model_path), model_sha256=ranker.digest,
-                labels=ranker.record.get("labels"), scores={v.id: round(s, 4) for v, s in zip(valid, scores)},
-                deterministic_choice=deterministic.id if deterministic else None)
+    note.update(found, selector="learned")
     return valid[best], note

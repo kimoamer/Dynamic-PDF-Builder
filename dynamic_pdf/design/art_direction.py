@@ -233,6 +233,11 @@ def select_directions(brief: DocumentBrief, n: int = 3) -> List[Tuple[Direction,
     for d in DIRECTIONS.values():
         score = _FIT.get(brief.purpose, _FIT["report"]).get(d.id, 0.3)
         why = [f"{brief.purpose.replace('_', ' ')} for {brief.audience}: base fit {score:g}"]
+        if d.id == "academic_paper":
+            if brief.profile != "academic_report":
+                continue                          # a paper's setting is for papers only
+            score += 4.5
+            why.append("an academic paper is set as one: title block, abstract, ruled tables, references")
         if d.id == "arabic_institutional":
             if brief.language == "ltr":
                 continue
@@ -287,8 +292,8 @@ def _cover(sem, d: Direction, brief: DocumentBrief, primary: str, accent: str, l
     if sem.blocks and sem.blocks[0].type == "cover_page":
         sem.blocks.pop(0)
     short = brief.estimated_pages < 3
-    kind = "masthead" if short else d.cover
-    if kind == "masthead" and _opens_with_title(sem):
+    kind = d.cover if d.cover == "title_block" else "masthead" if short else d.cover
+    if kind in ("masthead", "title_block") and _opens_with_title(sem):
         plan.cover = "none"
         plan.decisions.append("cover: the document opens with its own title, so no masthead repeats it")
         return
@@ -297,7 +302,9 @@ def _cover(sem, d: Direction, brief: DocumentBrief, primary: str, accent: str, l
         kind = "type_left" if kind == "image_top" else "colour_panel"
     c = CoverPageBlock(title=sem.meta.title, subtitle=sem.meta.subject or sem.meta.description,
                        author=sem.meta.author)
-    if kind == "masthead":
+    if kind == "title_block":                  # a paper: title and authors at the head of page one
+        c.hints = {"title_block": True}
+    elif kind == "masthead":
         c.background_color, c.layout = primary, "left_aligned"
         c.hints = {"masthead": True, "title_scale": 2.3 if d.base_size >= 10 else 2.7}
         if d.id == "editorial_modern":
@@ -336,7 +343,7 @@ def _cover(sem, d: Direction, brief: DocumentBrief, primary: str, accent: str, l
     plan.cover = kind
     plan.decisions.append(f"cover: {kind}" + (f", using the document's own photo {photo.src!r}"
                                               if c.background_image else ", type only"))
-    if short and d.cover != "masthead":
+    if short and d.cover not in ("masthead", "title_block"):
         plan.decisions.append(f"cover: about {brief.estimated_pages} pages is too short for a cover page, "
                               "so the title opens page one")
 
@@ -721,6 +728,9 @@ def direct(sem: SemanticDocument, direction: Direction, *, brand: Optional[Brand
     script = "bilingual" if sem.stats.bilingual else sem.direction
     notes += apply_reviewed_quality(theme, script=script,
                                     palette=DIRECTION_PALETTE[d.id], preserve_brand=bool(brand))
+    if recipe.paper:
+        from .reviewed_quality import apply_paper_style
+        notes += apply_paper_style(theme)
     primary, accent = theme.colors.primary, theme.colors.accent
     tokens = compile_tokens(theme)
     design = DesignPlan(decision=base.decision, recipe=recipe, theme=theme, tokens=tokens,

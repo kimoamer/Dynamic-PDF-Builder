@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 from .inline import plain_text
 from .keywords import pattern
@@ -213,6 +213,11 @@ def _role(header: str, cells: List[Cell], first: bool) -> Column:
     if ident_head and share("number", "identifier", "year") >= 0.8 and not money_head:
         return Column("identifier")
     figures = [c for c in filled if c.kind in ("percent", "currency", "number", "year")]
+    # "4 h", "6 h", "8 h" down the first column are the rows' names (the levels compared),
+    # not figures to line up: each cell carries its unit and no two are alike
+    if (first and n >= 2 and all(c.kind == "number" and c.unit for c in filled)
+            and len({(c.value, c.unit) for c in filled}) == n and not unit):
+        return Column("category")
     if len(figures) / n >= 0.8:
         decimals = max(c.decimals for c in figures)
         units = [c.unit for c in figures if c.unit]
@@ -246,11 +251,12 @@ def infer_table(headers: Sequence[str], rows: Sequence[Sequence[str]]) -> TableT
     cells = [[read_cell(r[ci]) if ci < len(r) else Cell("empty") for r in rows] for ci in range(ncols)]
     subtotal, total = pattern("tables", "subtotal"), pattern("tables", "total")
     labels = []
-    # a total row is not data of its column, so roles are read without it
+    # a total row, or an amount in words, is not data of its column, so roles are read without it
     for r in rows:
         first = next((plain_text(str(c)) for c in r if str(c).strip()), "")
         labels.append(first)
-    is_total = [bool(subtotal.search(x) or total.search(x)) for x in labels]
+    in_words = pattern("tables", "in_words")
+    is_total = [bool(subtotal.search(x) or total.search(x) or in_words.search(x)) for x in labels]
     body = [[c for c, t in zip(col, is_total) if not t] or col for col in cells]
     columns = [_role(headers[ci] if ci < len(headers) else "", body[ci], ci == 0) for ci in range(ncols)]
     roles = [c.role for c in columns]
@@ -286,5 +292,52 @@ def table_types(block) -> TableTypes:
     return infer_table(block.headers or [], block.rows)
 
 
-__all__ = ["Cell", "Column", "FIGURES", "TableTypes", "ascii_digits", "header_unit", "infer_table", "read_cell",
-           "table_types"]
+__all__ = ["Cell", "Column", "FIGURES", "TableTypes", "ascii_digits", "header_unit", "infer_table", "measured_rows",
+           "read_cell", "row_spans", "table_types"]
+
+
+def row_spans(block) -> Dict[int, Tuple[int, int, int]]:
+    """Cells a row joins, as ``{row: (first, last, content)}`` over the data rows and then the
+    footer row, in reading order. Only empty cells are joined, and only in these rows:
+
+    - a total or subtotal row with its label first and its figure last: the label runs over the
+      empty cells between them, as invoices and statements set it;
+    - a row with its label first and a text last (an amount in words): the text runs over them;
+    - a row with only its first cell (a group heading): that cell runs across the row.
+    """
+    rows = [list(r) for r in block.rows] + ([list(block.footer_row)] if block.footer_row else [])
+    ncols = max([len(block.headers or [])] + [len(r) for r in rows] + [1])
+    if ncols < 2:
+        return {}
+    totals = set(table_types(block).total_rows) | set(table_types(block).subtotal_rows)
+    if block.footer_row:
+        totals.add(len(rows) - 1)
+    out: Dict[int, Tuple[int, int, int]] = {}
+    for ri, row in enumerate(rows):
+        cells = [str(row[ci]).strip() if ci < len(row) else "" for ci in range(ncols)]
+        full = [ci for ci, c in enumerate(cells) if c]
+        if full == [0]:
+            out[ri] = (0, ncols - 1, 0)
+        elif len(full) == 2 and full[0] == 0 and full[1] >= 2:
+            last = full[1]
+            kind = read_cell(cells[last]).kind
+            if kind in ("number", "currency", "percent", "year"):
+                if ri in totals:
+                    out[ri] = (0, last - 1, 0)
+            elif kind == "label" and len(cells[last]) > 12:
+                out[ri] = (1, last, last)
+    return out
+
+
+def measured_rows(block) -> List[List[str]]:
+    """The data rows as column widths should see them: a cell that runs over others is left out,
+    since the cells it joins give it their room."""
+    spans = row_spans(block)
+    out = []
+    for ri, row in enumerate(block.rows):
+        row = [str(x) for x in row]
+        if ri in spans:
+            content = spans[ri][2]
+            row = [("" if ci == content else x) for ci, x in enumerate(row)]
+        out.append(row)
+    return out

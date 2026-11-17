@@ -38,6 +38,10 @@ RUBRIC = (
 )
 METHOD = ("blind whole-document sheets, labels A/B, PDF pages viewed as images; one request per sheet and judge "
           "through the Message Batches API, with a fixed rubric; reversed repeats are separate requests")
+PAGES = "shown as page images: first the pages of design A in reading order, then the pages of design B."
+PAGES_RUBRIC = RUBRIC.replace("shown as one image: row A holds the pages of one design, row B the pages of the other.", PAGES)
+PAGES_METHOD = ("blind whole pages, labels A/B, every PDF page sent as its own image; one request per comparison and "
+                "judge through the Message Batches API, with a fixed rubric; reversed repeats are separate requests")
 RUN_FILE = "ai-review.json"
 
 Criteria = create_model("Criteria", **{c: (Optional[int], Field(None, ge=-2, le=2)) for c in CRITERIA})
@@ -59,9 +63,9 @@ class Answer(BaseModel):
         return self
 
 
-def prompt_sha256() -> str:
+def prompt_sha256(page_px: Optional[int] = None) -> str:
     from dynamic_pdf.ai.provider import prompt_hash
-    return prompt_hash(RUBRIC, Answer)
+    return prompt_hash(PAGES_RUBRIC if page_px else RUBRIC, Answer)
 
 
 def _sheets(batch_dir: str, source: str) -> List[str]:
@@ -69,25 +73,51 @@ def _sheets(batch_dir: str, source: str) -> List[str]:
     return sorted(f[:-4] for f in os.listdir(folder) if f.endswith(".jpg")) if os.path.isdir(folder) else []
 
 
-def requests(batch_dir: str, judges: List[str], source: str = "pdf") -> List[dict]:
-    """One Message Batches request per sheet and judge. Nothing in it names a design."""
+def _picture(data: bytes) -> dict:
+    return {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg",
+                                        "data": base64.standard_b64encode(data).decode("ascii")}}
+
+
+def _pages(batch_dir: str, key: dict, page_px: int, limit: int = 8) -> List[dict]:
+    """Both designs of one comparison, a page an image, under the labels A and B only."""
+    import io
+
+    from .preferences import _page_images
+    content = []
+    for side in "ab":
+        content.append({"type": "text", "text": f"Design {side.upper()}:"})
+        for page in _page_images(os.path.join(batch_dir, "renders", key["document"], key[side] + ".pdf"), page_px, limit)[0]:
+            buf = io.BytesIO()
+            page.save(buf, "JPEG", quality=80)
+            content.append(_picture(buf.getvalue()))
+    return content
+
+
+def requests(batch_dir: str, judges: List[str], source: str = "pdf", page_px: Optional[int] = None) -> List[dict]:
+    """One Message Batches request per sheet and judge. Nothing in it names a design. With
+    ``page_px`` the judge is sent every page as its own image of that width, not the small sheet."""
     from dynamic_pdf.ai.provider import AnthropicProvider
+    if page_px and source != "pdf":
+        raise SystemExit("whole pages are sent from the PDF renders only")
     folder = os.path.join(batch_dir, "sheets-word" if source == "word" else "sheets")
+    key = {k["comparison"]: k for k in _load(os.path.join(batch_dir, "key.json"))["comparisons"]} if page_px else {}
+    ask = {"type": "text", "text": "Which design is better? Answer in the required format."}
     out = []
-    for j, judge in enumerate(judges):
-        provider = AnthropicProvider(model=judge, cache_dir="", client=object())
-        for cid in _sheets(batch_dir, source):
+    for cid in _sheets(batch_dir, source):
+        if page_px:
+            content = _pages(batch_dir, key[cid], page_px) + [ask]
+        else:
             with open(os.path.join(folder, cid + ".jpg"), "rb") as f:
-                image = base64.standard_b64encode(f.read()).decode("ascii")
-            content = [{"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": image}},
-                       {"type": "text", "text": "Which design is better? Answer in the required format."}]
-            out.append({"custom_id": f"j{j}-{cid}", "params": provider.params(RUBRIC, content, Answer)})
+                content = [_picture(f.read()), ask]
+        for j, judge in enumerate(judges):
+            provider = AnthropicProvider(model=judge, cache_dir="", client=object())
+            out.append({"custom_id": f"j{j}-{cid}", "params": provider.params(PAGES_RUBRIC if page_px else RUBRIC, content, Answer)})
     return out
 
 
 def run(batch_dir: str, dataset: str, judges: List[str], *, client=None, source: str = "pdf", date: Optional[str] = None,
         wait: bool = True, poll: float = 60.0, sleep: Callable[[float], None] = time.sleep,
-        human_audit: Optional[str] = None) -> dict:
+        human_audit: Optional[str] = None, page_px: Optional[int] = None) -> dict:
     """Submit the batch, or collect it if it was submitted before. ``human_audit`` is the people's
     judgments file; where they judged the same sheets, agreement with them is reported too."""
     if len(judges) < 2 or len(set(judges)) < len(judges):
@@ -100,12 +130,12 @@ def run(batch_dir: str, dataset: str, judges: List[str], *, client=None, source:
     if state and state.get("collected"):
         raise SystemExit("this batch was already reviewed; draw fresh sheets in a new batch to review again")
     if state is None:
-        reqs = requests(batch_dir, judges, source)
+        reqs = requests(batch_dir, judges, source, page_px)
         if not reqs:
             raise SystemExit("no sheets to review: run `preferences sheets` first")
         made = client.messages.batches.create(requests=reqs)
         state = {"message_batch": made.id, "judges": judges, "source": source, "requests": len(reqs),
-                 "prompt_sha256": prompt_sha256(), "review_date": date or datetime.date.today().isoformat(),
+                 "prompt_sha256": prompt_sha256(page_px), "page_px": page_px, "review_date": date or datetime.date.today().isoformat(),
                  "submitted": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")}
         _dump(path, state)
     elif state["judges"] != judges or state["source"] != source:
@@ -152,9 +182,11 @@ def collect(batch_dir: str, dataset: str, client, state: dict, humans: List[dict
         file = os.path.join(batch_dir, f"answers-ai-{j}.jsonl")
         with open(file, "w", encoding="utf-8", newline="\n") as f:
             f.writelines(json.dumps(r, ensure_ascii=False) + "\n" for r in rows)
-        recorded[judge] = record(batch_dir, file, dataset, model=judge, date=state["review_date"], method=METHOD,
-                                 source=state["source"], extra={"prompt_sha256": state["prompt_sha256"],
-                                                                "message_batch": state["message_batch"]})["recorded"]
+        px = state.get("page_px")
+        recorded[judge] = record(batch_dir, file, dataset, model=judge, date=state["review_date"],
+                                 method=PAGES_METHOD if px else METHOD, source=state["source"],
+                                 extra={"prompt_sha256": state["prompt_sha256"], "message_batch": state["message_batch"],
+                                        **({"shown_px": px} if px else {})})["recorded"]
     batch = os.path.basename(batch_dir.rstrip("/\\"))
     report = agreement([r for r in _jsonl(dataset) if r["batch"] == batch and r.get("message_batch") == state["message_batch"]],
                        [h for h in humans if h.get("batch") == batch])

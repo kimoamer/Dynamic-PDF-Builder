@@ -83,6 +83,31 @@ def cover_plan(block, geo: PageGeometry, rtl: bool, collector):
     return layout, split, layers, ink
 
 
+def title_block(block, theme) -> list:
+    """A paper's opening: title, authors and an optional line under them, centred at the head of
+    page one, with the text following on the same page."""
+    from .factory import Paragraph, _arabic_font, _is_rtl, _md_inline, _safe_color
+    ty = theme.typography
+    ink = _safe_color(theme.colors.text_primary)
+
+    def line(text, size, bold=False, italic=False, after=0.0):
+        font = (_arabic_font(theme, bold) if _is_rtl(text)
+                else get_font_name(ty.heading_family if bold else ty.body_family, bold=bold, italic=italic))
+        return Paragraph(_md_inline(text), ParagraphStyle(
+            "PaperTitle", fontName=font, fontSize=size, leading=size * (1.5 if _is_rtl(text) else 1.2),
+            textColor=ink, alignment=1, spaceAfter=after))
+
+    h1 = ty.heading_h1_size or ty.base_size * ty.heading_scale[0]
+    story = [Spacer(1, ty.base_size), line(block.title, h1 * 1.2, bold=True, after=h1 * 0.7)]
+    if block.author:
+        story.append(line(block.author, ty.base_size * 1.1, after=ty.base_size * 0.4))
+    for extra in (block.subtitle, block.date):
+        if extra:
+            story.append(line(extra, ty.base_size, italic=True, after=ty.base_size * 0.3))
+    story.append(Spacer(1, ty.base_size * 1.6))
+    return story
+
+
 def designed_cover(block, theme, ctx) -> list:
     from .factory import Paragraph, _is_rtl, _md_inline, _safe_color, _label
     geo = ctx.page_geometry

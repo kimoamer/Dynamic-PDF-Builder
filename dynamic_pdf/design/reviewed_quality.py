@@ -19,6 +19,7 @@ PALETTES = {
     "forest": ("#064E3B", "#115E59", "#1B365D"),
 }
 DIRECTION_PALETTE = {
+    "academic_paper": "charcoal",
     "corporate_conservative": "navy",
     "editorial_modern": "slate",
     "executive_premium": "charcoal",
@@ -82,6 +83,23 @@ def apply_reviewed_quality(theme: Theme, *, script: str = "ltr", palette: str = 
         c.drop_cap = c.primary
     return [f"human-reviewed formal standard: {script}, body {body:g}pt, H1 {h1:g}pt, "
             f"cover {title:g}pt; {'brand palette retained' if preserve_brand else palette + ' palette'}"]
+
+
+def apply_paper_style(theme: Theme) -> List[str]:
+    """A scholarly paper inside the reviewed sizes and margins: black text, no colour fills,
+    and paragraphs told apart by their indent alone, not by indent and a gap."""
+    c = theme.colors
+    c.text_primary = c.primary = c.secondary = "#111111"
+    c.text_secondary = "#222222"
+    c.text_muted = "#444444"
+    c.table_header_bg, c.table_header_text = "#FFFFFF", "#111111"
+    c.drop_cap = c.primary
+    if theme.spacing.first_line_indent:
+        theme.spacing.paragraph_spacing_after = 0.0
+    theme.decorations.table_row_alternating = False
+    ty = theme.typography
+    ty.footer_text_size = max(ty.footer_text_size, round(ty.base_size * 0.9, 1))     # a readable page number
+    return ["paper: black text, ruled tables without fills, paragraphs set apart by indent only"]
 
 
 def apply_evidence_typography(theme: Theme, recipe) -> List[str]:

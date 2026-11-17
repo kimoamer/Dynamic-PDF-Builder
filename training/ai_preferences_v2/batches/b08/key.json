@@ -1,0 +1,1093 @@
+{
+ "note": "Do not open before the answers are written.",
+ "comparisons": [
+  {
+   "comparison": "cmp-001",
+   "document": "m7_technical_manual",
+   "a": "corporate_conservative",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    3
+   ],
+   "pages_total": [
+    4,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-002",
+   "document": "policy_brief",
+   "a": "executive_premium",
+   "b": "corporate_conservative",
+   "reversed_repeat": true,
+   "pages_shown": [
+    2,
+    2
+   ],
+   "pages_total": [
+    2,
+    2
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-003",
+   "document": "research_paper",
+   "a": "editorial_modern",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    3,
+    4
+   ],
+   "pages_total": [
+    3,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-004",
+   "document": "policy_brief",
+   "a": "financial_data",
+   "b": "executive_premium",
+   "reversed_repeat": false,
+   "pages_shown": [
+    2,
+    2
+   ],
+   "pages_total": [
+    2,
+    2
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-005",
+   "document": "m7_proposal",
+   "a": "corporate_conservative",
+   "b": "executive_premium",
+   "reversed_repeat": false,
+   "pages_shown": [
+    3,
+    4
+   ],
+   "pages_total": [
+    3,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-006",
+   "document": "proposal",
+   "a": "financial_data",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    3,
+    4
+   ],
+   "pages_total": [
+    3,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-007",
+   "document": "policy_brief",
+   "a": "editorial_modern",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    2,
+    2
+   ],
+   "pages_total": [
+    2,
+    2
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-008",
+   "document": "m7_technical_manual",
+   "a": "executive_premium",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    5,
+    3
+   ],
+   "pages_total": [
+    5,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-009",
+   "document": "proposal",
+   "a": "executive_premium",
+   "b": "financial_data",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    3
+   ],
+   "pages_total": [
+    4,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-010",
+   "document": "proposal",
+   "a": "financial_data",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    3,
+    3
+   ],
+   "pages_total": [
+    3,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-011",
+   "document": "proposal",
+   "a": "editorial_modern",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    3,
+    4
+   ],
+   "pages_total": [
+    3,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-012",
+   "document": "m7_technical_manual",
+   "a": "financial_data",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    3,
+    4
+   ],
+   "pages_total": [
+    3,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-013",
+   "document": "m7_proposal",
+   "a": "executive_premium",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    4
+   ],
+   "pages_total": [
+    4,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-014",
+   "document": "proposal",
+   "a": "executive_premium",
+   "b": "corporate_conservative",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    4
+   ],
+   "pages_total": [
+    4,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-015",
+   "document": "proposal",
+   "a": "editorial_modern",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    3,
+    4
+   ],
+   "pages_total": [
+    3,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-016",
+   "document": "m7_technical_manual",
+   "a": "executive_premium",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-017",
+   "document": "m7_technical_manual",
+   "a": "corporate_conservative",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    5
+   ],
+   "pages_total": [
+    4,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-018",
+   "document": "m7_proposal",
+   "a": "corporate_conservative",
+   "b": "financial_data",
+   "reversed_repeat": false,
+   "pages_shown": [
+    3,
+    4
+   ],
+   "pages_total": [
+    3,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-019",
+   "document": "research_paper",
+   "a": "executive_premium",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    3
+   ],
+   "pages_total": [
+    4,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-020",
+   "document": "policy_brief",
+   "a": "corporate_conservative",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    2,
+    2
+   ],
+   "pages_total": [
+    2,
+    2
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-021",
+   "document": "research_paper",
+   "a": "executive_premium",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    3
+   ],
+   "pages_total": [
+    4,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-022",
+   "document": "m7_proposal",
+   "a": "editorial_modern",
+   "b": "executive_premium",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    4
+   ],
+   "pages_total": [
+    4,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-023",
+   "document": "research_paper",
+   "a": "academic_paper",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    3,
+    4
+   ],
+   "pages_total": [
+    3,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-024",
+   "document": "research_paper",
+   "a": "financial_data",
+   "b": "executive_premium",
+   "reversed_repeat": false,
+   "pages_shown": [
+    3,
+    4
+   ],
+   "pages_total": [
+    3,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-025",
+   "document": "research_paper",
+   "a": "corporate_conservative",
+   "b": "academic_paper",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    3
+   ],
+   "pages_total": [
+    4,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-026",
+   "document": "policy_brief",
+   "a": "executive_premium",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    2,
+    2
+   ],
+   "pages_total": [
+    2,
+    2
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-027",
+   "document": "proposal",
+   "a": "financial_data",
+   "b": "corporate_conservative",
+   "reversed_repeat": true,
+   "pages_shown": [
+    3,
+    4
+   ],
+   "pages_total": [
+    3,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-028",
+   "document": "m7_technical_manual",
+   "a": "financial_data",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    3,
+    5
+   ],
+   "pages_total": [
+    3,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-029",
+   "document": "m7_proposal",
+   "a": "financial_data",
+   "b": "corporate_conservative",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    3
+   ],
+   "pages_total": [
+    4,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-030",
+   "document": "proposal",
+   "a": "corporate_conservative",
+   "b": "financial_data",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    3
+   ],
+   "pages_total": [
+    4,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-031",
+   "document": "research_paper",
+   "a": "financial_data",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    3,
+    3
+   ],
+   "pages_total": [
+    3,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-032",
+   "document": "policy_brief",
+   "a": "financial_data",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    2,
+    2
+   ],
+   "pages_total": [
+    2,
+    2
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-033",
+   "document": "m7_technical_manual",
+   "a": "executive_premium",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    4
+   ],
+   "pages_total": [
+    5,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-034",
+   "document": "policy_brief",
+   "a": "corporate_conservative",
+   "b": "executive_premium",
+   "reversed_repeat": false,
+   "pages_shown": [
+    2,
+    2
+   ],
+   "pages_total": [
+    2,
+    2
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-035",
+   "document": "m7_technical_manual",
+   "a": "corporate_conservative",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    5
+   ],
+   "pages_total": [
+    4,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-036",
+   "document": "m7_proposal",
+   "a": "executive_premium",
+   "b": "corporate_conservative",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    3
+   ],
+   "pages_total": [
+    4,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-037",
+   "document": "m7_proposal",
+   "a": "executive_premium",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    4
+   ],
+   "pages_total": [
+    4,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-038",
+   "document": "m7_technical_manual",
+   "a": "editorial_modern",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    4
+   ],
+   "pages_total": [
+    5,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-039",
+   "document": "research_paper",
+   "a": "academic_paper",
+   "b": "executive_premium",
+   "reversed_repeat": false,
+   "pages_shown": [
+    3,
+    4
+   ],
+   "pages_total": [
+    3,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-040",
+   "document": "proposal",
+   "a": "executive_premium",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    3
+   ],
+   "pages_total": [
+    4,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-041",
+   "document": "m7_proposal",
+   "a": "editorial_modern",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    4
+   ],
+   "pages_total": [
+    4,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-042",
+   "document": "m7_proposal",
+   "a": "financial_data",
+   "b": "executive_premium",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    4
+   ],
+   "pages_total": [
+    4,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-043",
+   "document": "proposal",
+   "a": "corporate_conservative",
+   "b": "executive_premium",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    4
+   ],
+   "pages_total": [
+    4,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-044",
+   "document": "policy_brief",
+   "a": "editorial_modern",
+   "b": "corporate_conservative",
+   "reversed_repeat": true,
+   "pages_shown": [
+    2,
+    2
+   ],
+   "pages_total": [
+    2,
+    2
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-045",
+   "document": "research_paper",
+   "a": "executive_premium",
+   "b": "academic_paper",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    3
+   ],
+   "pages_total": [
+    4,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-046",
+   "document": "research_paper",
+   "a": "corporate_conservative",
+   "b": "executive_premium",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    4
+   ],
+   "pages_total": [
+    4,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-047",
+   "document": "research_paper",
+   "a": "academic_paper",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    3,
+    3
+   ],
+   "pages_total": [
+    3,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-048",
+   "document": "m7_proposal",
+   "a": "corporate_conservative",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    3,
+    4
+   ],
+   "pages_total": [
+    3,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-049",
+   "document": "policy_brief",
+   "a": "corporate_conservative",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    2,
+    2
+   ],
+   "pages_total": [
+    2,
+    2
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-050",
+   "document": "m7_proposal",
+   "a": "financial_data",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    4
+   ],
+   "pages_total": [
+    4,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-051",
+   "document": "policy_brief",
+   "a": "executive_premium",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    2,
+    2
+   ],
+   "pages_total": [
+    2,
+    2
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-052",
+   "document": "m7_proposal",
+   "a": "editorial_modern",
+   "b": "corporate_conservative",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    3
+   ],
+   "pages_total": [
+    4,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-053",
+   "document": "proposal",
+   "a": "corporate_conservative",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    3
+   ],
+   "pages_total": [
+    4,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-054",
+   "document": "research_paper",
+   "a": "editorial_modern",
+   "b": "academic_paper",
+   "reversed_repeat": false,
+   "pages_shown": [
+    3,
+    3
+   ],
+   "pages_total": [
+    3,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-055",
+   "document": "research_paper",
+   "a": "corporate_conservative",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    3
+   ],
+   "pages_total": [
+    4,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-056",
+   "document": "research_paper",
+   "a": "executive_premium",
+   "b": "corporate_conservative",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    4
+   ],
+   "pages_total": [
+    4,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-057",
+   "document": "policy_brief",
+   "a": "financial_data",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    2,
+    2
+   ],
+   "pages_total": [
+    2,
+    2
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-058",
+   "document": "proposal",
+   "a": "editorial_modern",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    3,
+    3
+   ],
+   "pages_total": [
+    3,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-059",
+   "document": "research_paper",
+   "a": "editorial_modern",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    3,
+    4
+   ],
+   "pages_total": [
+    3,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-060",
+   "document": "m7_technical_manual",
+   "a": "editorial_modern",
+   "b": "financial_data",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    3
+   ],
+   "pages_total": [
+    5,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-061",
+   "document": "research_paper",
+   "a": "financial_data",
+   "b": "corporate_conservative",
+   "reversed_repeat": true,
+   "pages_shown": [
+    3,
+    4
+   ],
+   "pages_total": [
+    3,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-062",
+   "document": "m7_technical_manual",
+   "a": "editorial_modern",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-063",
+   "document": "m7_technical_manual",
+   "a": "financial_data",
+   "b": "executive_premium",
+   "reversed_repeat": false,
+   "pages_shown": [
+    3,
+    5
+   ],
+   "pages_total": [
+    3,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-064",
+   "document": "research_paper",
+   "a": "academic_paper",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    3,
+    3
+   ],
+   "pages_total": [
+    3,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-065",
+   "document": "research_paper",
+   "a": "editorial_modern",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    3,
+    3
+   ],
+   "pages_total": [
+    3,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-066",
+   "document": "research_paper",
+   "a": "corporate_conservative",
+   "b": "financial_data",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    3
+   ],
+   "pages_total": [
+    4,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-067",
+   "document": "research_paper",
+   "a": "financial_data",
+   "b": "academic_paper",
+   "reversed_repeat": false,
+   "pages_shown": [
+    3,
+    3
+   ],
+   "pages_total": [
+    3,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-068",
+   "document": "policy_brief",
+   "a": "editorial_modern",
+   "b": "financial_data",
+   "reversed_repeat": false,
+   "pages_shown": [
+    2,
+    2
+   ],
+   "pages_total": [
+    2,
+    2
+   ],
+   "shown_px": 240
+  }
+ ]
+}

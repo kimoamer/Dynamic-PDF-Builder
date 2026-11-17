@@ -1,0 +1,328 @@
+{
+ "note": "Records of the two models trained on this dataset on 2026-11-16, without the models themselves (models are local and git-ignored). Neither passed its gate.",
+ "models": {
+  "weights": {
+   "format": "dynamic-pdf-builder/variant-weights",
+   "labels": "ai_preference_distillation",
+   "human_labels": 0,
+   "override_threshold": 0.95,
+   "model_sha256": "b5ca3d0c4a6c116fe39a012b07f518e440a8a798f610805aae670f842cf67e04",
+   "comparisons": {
+    "total": 1751,
+    "usable": 242,
+    "training": 180,
+    "evaluation": 62
+   },
+   "documents": {
+    "training": [
+     "annual_report",
+     "arabic_annual",
+     "arabic_city_feature",
+     "arabic_financial",
+     "arabic_health_data",
+     "bilingual_institutional",
+     "bilingual_ports_review",
+     "bilingual_water_compact",
+     "board_paper",
+     "financial_statements",
+     "fixture_academic",
+     "fixture_arabic_report",
+     "fixture_bilingual",
+     "fixture_executive",
+     "fixture_financial",
+     "fixture_invoice",
+     "fixture_letter",
+     "fixture_manual",
+     "fixture_memo",
+     "fixture_proposal",
+     "fixture_wide_data",
+     "harbour_feature",
+     "impact_report",
+     "policy_brief",
+     "proposal",
+     "research_paper",
+     "stress_academic_paper",
+     "stress_bilingual_corporate",
+     "stress_chart_report",
+     "stress_executive_proposal",
+     "stress_financial_complex",
+     "sustainability_report",
+     "transit_data_story",
+     "wiki_ar_01",
+     "wiki_ar_02",
+     "wiki_ar_04",
+     "wiki_ar_05",
+     "wiki_ar_06",
+     "wiki_ar_07"
+    ],
+    "evaluation": [
+     "m7_academic_paper",
+     "m7_ar_financial_statements",
+     "m7_ar_memo",
+     "m7_bilingual_board_report",
+     "m7_business_memo",
+     "m7_chart_analytics_report",
+     "m7_financial_statements",
+     "m7_invoice",
+     "m7_letter",
+     "m7_proposal",
+     "m7_technical_manual",
+     "wiki_en_03",
+     "wiki_en_04",
+     "wiki_en_05",
+     "wiki_en_06",
+     "wiki_en_09",
+     "wiki_en_10"
+    ]
+   },
+   "agreement": {
+    "learned": 0.7903225806451613,
+    "deterministic": 0.5645161290322581,
+    "gain_low": 0.0725,
+    "by_language": {
+     "arabic": {
+      "comparisons": 11,
+      "learned": 0.7273,
+      "deterministic": 0.9091
+     },
+     "bilingual": {
+      "comparisons": 4,
+      "learned": 1.0,
+      "deterministic": 1.0
+     },
+     "english": {
+      "comparisons": 47,
+      "learned": 0.7872,
+      "deterministic": 0.4468
+     }
+    }
+   },
+   "overrides": {
+    "documents": 17,
+    "overrode": 1,
+    "right": 0,
+    "wrong": 0,
+    "unjudged": 1,
+    "abstained": 8
+   },
+   "calibration": {
+    "held_out_brier": 0.1173,
+    "held_out_log_loss": 0.3681,
+    "cross_validated": {
+     "agreement": 0.6222222222222222,
+     "brier": 0.2724,
+     "log_loss": 0.9428
+    },
+    "override_threshold_from": {
+     "asserted": 0,
+     "precision": null
+    }
+   },
+   "preflight": {
+    "waivers": [
+     "PDF only: the 100 Word-verified comparisons were not required",
+     "owner-delegated AI audit in place of the 20 human audit decisions"
+    ],
+    "delegated_audit": 24,
+    "human_audit": 0
+   },
+   "synthetic_fixture": false,
+   "gate": {
+    "rules": {
+     "min_pairs": 200,
+     "min_training_documents": 8,
+     "min_evaluation_documents": 10,
+     "min_evaluation_pairs": 150,
+     "min_gain": 0.03,
+     "min_agreement": 0.6,
+     "bootstrap_draws": 2000,
+     "bootstrap_quantile": 0.05,
+     "override_precision": 0.7,
+     "override_win_rate": 0.6,
+     "slice_pairs": 10,
+     "slice_tolerance": 0.1
+    },
+    "checks": {
+     "enough_pairs": true,
+     "enough_training_documents": true,
+     "enough_evaluation_documents": true,
+     "enough_evaluation_pairs": false,
+     "no_leakage": true,
+     "better_than_deterministic": true,
+     "agreement_floor": true,
+     "gain_holds_when_resampled": true,
+     "overrides_help": false,
+     "no_language_worse": false,
+     "not_a_fixture": true
+    },
+    "passed": false
+   },
+   "note": "A pass allows the model to be loaded when a caller asks for it. It is never activated by itself."
+  },
+  "lightgbm": {
+   "format": "dynamic-pdf-builder/variant-ranker",
+   "labels": "ai_preference_distillation",
+   "human_labels": 0,
+   "override_threshold": 0.6,
+   "model_sha256": "e231ba9d5edf7c1550f6ef06d73c5f2c24ca79689f49da73542bcdcf560e8928",
+   "comparisons": {
+    "total": 1751,
+    "usable": 242,
+    "training": 180,
+    "evaluation": 62
+   },
+   "documents": {
+    "training": [
+     "annual_report",
+     "arabic_annual",
+     "arabic_city_feature",
+     "arabic_financial",
+     "arabic_health_data",
+     "bilingual_institutional",
+     "bilingual_ports_review",
+     "bilingual_water_compact",
+     "board_paper",
+     "financial_statements",
+     "fixture_academic",
+     "fixture_arabic_report",
+     "fixture_bilingual",
+     "fixture_executive",
+     "fixture_financial",
+     "fixture_invoice",
+     "fixture_letter",
+     "fixture_manual",
+     "fixture_memo",
+     "fixture_proposal",
+     "fixture_wide_data",
+     "harbour_feature",
+     "impact_report",
+     "policy_brief",
+     "proposal",
+     "research_paper",
+     "stress_academic_paper",
+     "stress_bilingual_corporate",
+     "stress_chart_report",
+     "stress_executive_proposal",
+     "stress_financial_complex",
+     "sustainability_report",
+     "transit_data_story",
+     "wiki_ar_01",
+     "wiki_ar_02",
+     "wiki_ar_04",
+     "wiki_ar_05",
+     "wiki_ar_06",
+     "wiki_ar_07"
+    ],
+    "evaluation": [
+     "m7_academic_paper",
+     "m7_ar_financial_statements",
+     "m7_ar_memo",
+     "m7_bilingual_board_report",
+     "m7_business_memo",
+     "m7_chart_analytics_report",
+     "m7_financial_statements",
+     "m7_invoice",
+     "m7_letter",
+     "m7_proposal",
+     "m7_technical_manual",
+     "wiki_en_03",
+     "wiki_en_04",
+     "wiki_en_05",
+     "wiki_en_06",
+     "wiki_en_09",
+     "wiki_en_10"
+    ]
+   },
+   "agreement": {
+    "learned": 0.8387096774193549,
+    "deterministic": 0.5645161290322581,
+    "gain_low": 0.1304,
+    "by_language": {
+     "arabic": {
+      "comparisons": 11,
+      "learned": 0.9091,
+      "deterministic": 0.9091
+     },
+     "bilingual": {
+      "comparisons": 4,
+      "learned": 1.0,
+      "deterministic": 1.0
+     },
+     "english": {
+      "comparisons": 47,
+      "learned": 0.8085,
+      "deterministic": 0.4468
+     }
+    }
+   },
+   "overrides": {
+    "documents": 17,
+    "overrode": 9,
+    "right": 4,
+    "wrong": 2,
+    "unjudged": 3,
+    "abstained": 2
+   },
+   "calibration": {
+    "held_out_brier": 0.1182,
+    "held_out_log_loss": 0.3891,
+    "cross_validated": {
+     "agreement": 0.7777777777777778,
+     "brier": 0.1583,
+     "log_loss": 0.4791
+    },
+    "override_threshold_from": {
+     "asserted": 160,
+     "precision": 0.8
+    },
+    "rounds": 80,
+    "cv_log_loss_by_rounds": {
+     "10": 0.5721,
+     "20": 0.5395,
+     "40": 0.4847,
+     "80": 0.4791
+    }
+   },
+   "preflight": {
+    "waivers": [
+     "PDF only: the 100 Word-verified comparisons were not required",
+     "owner-delegated AI audit in place of the 20 human audit decisions"
+    ],
+    "delegated_audit": 24,
+    "human_audit": 0
+   },
+   "synthetic_fixture": false,
+   "gate": {
+    "rules": {
+     "min_pairs": 200,
+     "min_training_documents": 8,
+     "min_evaluation_documents": 10,
+     "min_evaluation_pairs": 150,
+     "min_gain": 0.03,
+     "min_agreement": 0.6,
+     "bootstrap_draws": 2000,
+     "bootstrap_quantile": 0.05,
+     "override_precision": 0.7,
+     "override_win_rate": 0.6,
+     "slice_pairs": 10,
+     "slice_tolerance": 0.1
+    },
+    "checks": {
+     "enough_pairs": true,
+     "enough_training_documents": true,
+     "enough_evaluation_documents": true,
+     "enough_evaluation_pairs": false,
+     "no_leakage": true,
+     "better_than_deterministic": true,
+     "agreement_floor": true,
+     "gain_holds_when_resampled": true,
+     "overrides_help": true,
+     "no_language_worse": true,
+     "not_a_fixture": true
+    },
+    "passed": false
+   },
+   "note": "A pass allows the model to be loaded when a caller asks for it. It is never activated by itself."
+  }
+ }
+}

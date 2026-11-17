@@ -9,6 +9,9 @@ Usage:
     dynamic-pdf render invoice.md --data invoice.json --data lines=lines.csv
     dynamic-pdf batch letter.md --data people.csv -o out/ --name "letter-{{ id }}"
     dynamic-pdf lint input.md [--json] [--strict]
+    dynamic-pdf review input.md [-o pages/] [--json]
+    dynamic-pdf compare old.md new.md -o changes.docx
+    dynamic-pdf guide [topic]
     dynamic-pdf render input.md --direction auto --grammar --brand brand.json
     dynamic-pdf variants input.md -o designs/ -n 3
     dynamic-pdf themes
@@ -32,7 +35,7 @@ def main():
     render_p.add_argument("input", help="Input file (.md or .json)")
     render_p.add_argument("-o", "--output", default=None,
                           help="Output path; .pdf or .docx (default: <input>.<format>)")
-    render_p.add_argument("-f", "--format", choices=["pdf", "docx", "both"], default=None,
+    render_p.add_argument("-f", "--format", choices=["pdf", "docx", "xlsx", "both"], default=None,
                           help="Output format (default: from --output extension, else pdf)")
     render_p.add_argument("--design", default="auto", metavar="PROFILE",
                           help='"auto" (default), a profile (executive_report, proposal, ...) '
@@ -90,6 +93,34 @@ def main():
     lint_p.add_argument("--json", action="store_true", help="Print the warnings as JSON")
     lint_p.add_argument("--strict", action="store_true", help="Exit with code 1 when there are warnings")
 
+    # ─── review ───
+    rev_p = sub.add_parser("review", help="List what a reader would notice on the pages, each with what to change")
+    rev_p.add_argument("input", help="Input file (.md or .json)")
+    rev_p.add_argument("-o", "--output", default=None, metavar="DIR", help="Save one PNG a page here")
+    rev_p.add_argument("--dpi", type=int, default=60, help="Resolution of the page images (default 60)")
+    rev_p.add_argument("--json", action="store_true", help="Print the review as JSON")
+    rev_p.add_argument("-t", "--theme", default="claude", help="Theme name (default: claude)")
+    rev_p.add_argument("--design", default=None, metavar="PROFILE", help='Design profile, e.g. "auto"')
+
+    # ─── compare ───
+    cmp_p = sub.add_parser("compare", help="Mark what changed between two versions: tracked changes in Word, a review copy in PDF")
+    cmp_p.add_argument("old", help="Earlier version (.md or .json)")
+    cmp_p.add_argument("new", help="Later version (.md or .json)")
+    cmp_p.add_argument("-o", "--output", default="changes.docx", help="Output .docx or .pdf (default: changes.docx)")
+    cmp_p.add_argument("--reviewer", default=None, help='Name on each change (default "Changes")')
+    cmp_p.add_argument("-t", "--theme", default="claude", help="Theme name (default: claude)")
+
+    # ─── guide ───
+    guide_p = sub.add_parser("guide", help="What the library does and how to write for it (for people and AI agents)")
+    guide_p.add_argument("topic", nargs="?", default=None, help="One section: markdown, charts, tables, academic ...")
+
+    # ─── kit ───
+    kit_p = sub.add_parser("kit", help="A ready-made document (invoice, quote, letter, cv, feasibility, statements, certificate)")
+    kit_p.add_argument("name", help="The kit: invoice, quote, letter, cv, feasibility, statements or certificate")
+    kit_p.add_argument("data", nargs="?", default=None, help="The data, as a JSON file")
+    kit_p.add_argument("-o", "--output", default=None, help="Output .pdf, .docx or .xlsx")
+    kit_p.add_argument("--example", action="store_true", help="Print example data to start from")
+
     # ─── themes ───
     sub.add_parser("themes", help="List available themes")
 
@@ -120,6 +151,36 @@ def main():
             sys.exit(2)
     elif args.command == "lint":
         _cmd_lint(args)
+    elif args.command == "review":
+        _cmd_review(args)
+    elif args.command == "guide":
+        from .guide import guide, topics
+        try:
+            print(guide(args.topic))
+        except ValueError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            sys.exit(1)
+        if not args.topic:
+            print("Topics: " + ", ".join(topics()))
+    elif args.command == "compare":
+        import argparse as _ap
+        old = _load(_ap.Namespace(input=args.old, theme=args.theme, data=None), None)
+        new = _load(_ap.Namespace(input=args.new, theme=args.theme, data=None), None)
+        res = new.compared_with(old, reviewer=args.reviewer).export(args.output)
+        print(f"changes: {res.docx_path or res.pdf_path}")
+    elif args.command == "kit":
+        import json
+        from .kits import kit, kit_example
+        try:
+            if args.example or not args.data:
+                print(json.dumps(kit_example(args.name), ensure_ascii=False, indent=2))
+                return
+            with open(args.data, encoding="utf-8") as f:
+                res = kit(args.name, json.load(f)).export(args.output or f"{args.name}.pdf")
+        except (ValueError, OSError) as e:
+            print(f"Error: {e}", file=sys.stderr)
+            sys.exit(1)
+        print(f"{args.name}: {res.pdf_path or res.docx_path or res.xlsx_path}")
     elif args.command == "themes":
         _cmd_themes()
     elif args.command == "schema":
@@ -135,6 +196,8 @@ def _design_args(p):
                    help='Art direction: "auto" or a name (corporate_conservative, editorial_modern, ...)')
     p.add_argument("--grammar", action="store_true", help="Follow the packaged approved design grammar")
     p.add_argument("--brand", default=None, metavar="FILE", help="Brand kit as a JSON file (colours, fonts, logo)")
+    p.add_argument("--ranker", default=None, metavar="auto|FILE",
+                   help='Learned selector among the valid designs: "auto" (the packaged model) or a model file')
 
 
 def _brand(path):
@@ -195,7 +258,7 @@ def _cmd_variants(args):
         sys.exit(1)
     out = args.output or os.path.splitext(args.input)[0] + "-variants"
     made = builder.design_variants(n=args.n, families=families, brand=_brand(args.brand), office=args.office,
-                                   grammar=True if args.grammar else None)
+                                   grammar=True if args.grammar else None, ranker=args.ranker)
     paths = made.export(out)
     for v in made.variants:
         r = v.report
@@ -236,14 +299,14 @@ def _report(paths, diagnostics):
 def _cmd_render(args):
     input_path = args.input
     out_ext = os.path.splitext(args.output)[1].lower().lstrip(".") if args.output else ""
-    fmt = args.format or (out_ext if out_ext in ("pdf", "docx") else "pdf")
+    fmt = args.format or (out_ext if out_ext in ("pdf", "docx", "xlsx") else "pdf")
     stem = os.path.splitext(args.output)[0] if args.output else os.path.splitext(input_path)[0]
     policy = _policy_from_args(args)
     builder = _load(args, policy)
     if args.section_numbers:
         builder.section_numbering(True)
     builder.design(None if args.design == "none" else args.design, brand=_brand(args.brand),
-                   direction=args.direction, variants=args.variants, grammar=args.grammar)
+                   direction=args.direction, variants=args.variants, grammar=args.grammar, ranker=args.ranker)
     if args.compose != "off":
         builder.compose(args.compose)
 
@@ -299,6 +362,26 @@ def _cmd_batch(args):
     _report(paths, diagnostics)
 
 
+def _cmd_review(args):
+    builder = _load(args, None)
+    if args.design:
+        builder.design(args.design)
+    result = builder.review(args.output, dpi=args.dpi)
+    if args.json:
+        import json
+        print(json.dumps(result, ensure_ascii=False, indent=1))
+    else:
+        for i in result["issues"]:
+            where = f"page {i['page']}" if i["page"] else "document"
+            print(f"{i['severity']:7} {where:9} {i['code']}: {i['message']}")
+            if i["fix"]:
+                print(f"{'':17} fix: {i['fix']}")
+        print(f"{result['pages']} pages, {len(result['issues'])} issues; "
+              + ("passed" if result["passed"] else "has errors")
+              + (f"; page images in {args.output}" if args.output else ""))
+    sys.exit(0 if result["passed"] else 1)
+
+
 def _cmd_lint(args):
     from . import DocumentBuilder
     if not os.path.exists(args.input):
@@ -336,8 +419,8 @@ def _cmd_themes():
 
 def _cmd_schema(output):
     import json
-    from .schema.document import Document
-    text = json.dumps(Document.model_json_schema(), ensure_ascii=False, indent=1)
+    from .schema.describe import document_schema
+    text = json.dumps(document_schema(), ensure_ascii=False, indent=1)
     if output:
         with open(output, "w", encoding="utf-8") as f:
             f.write(text + "\n")

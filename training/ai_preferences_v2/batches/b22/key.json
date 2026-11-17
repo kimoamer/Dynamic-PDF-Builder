@@ -1,0 +1,165 @@
+{
+ "note": "Do not open before the answers are written.",
+ "comparisons": [
+  {
+   "comparison": "cmp-001",
+   "document": "wiki_en_46",
+   "a": "editorial_modern",
+   "b": "corporate_conservative",
+   "reversed_repeat": true,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-002",
+   "document": "wiki_en_46",
+   "a": "financial_data",
+   "b": "executive_premium",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-003",
+   "document": "wiki_en_46",
+   "a": "corporate_conservative",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-004",
+   "document": "wiki_en_46",
+   "a": "financial_data",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-005",
+   "document": "wiki_en_46",
+   "a": "executive_premium",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-006",
+   "document": "wiki_en_46",
+   "a": "financial_data",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-007",
+   "document": "wiki_en_46",
+   "a": "editorial_modern",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-008",
+   "document": "wiki_en_46",
+   "a": "executive_premium",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-009",
+   "document": "wiki_en_46",
+   "a": "editorial_modern",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-010",
+   "document": "wiki_en_46",
+   "a": "corporate_conservative",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  }
+ ]
+}

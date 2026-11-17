@@ -43,6 +43,37 @@ _FALLBACK_COLORS = [
 ]
 
 
+_GREYS = ["#6b6b6b", "#b3b3b3", "#333333", "#d6d6d6", "#8c8c8c", "#4d4d4d"]
+_ONE_TONE = {"bar", "vertical_bar", "horizontal_bar", "line", "area", "histogram", "scatter", "bubble",
+             "waterfall", "sparkline", "gauge"}
+
+
+def _paper(theme) -> bool:
+    return bool(getattr(getattr(theme, "decorations", None), "paper", False))
+
+
+def _paper_block(block, key: str):
+    """A paper's figure prints in greys: one tone where there is one series, a ramp otherwise.
+    Colours the author chose stay."""
+    update = {}
+    if (block.width, block.height) == (6.0, 4.0) and not (getattr(block, "hints", None) or {}).get("figure_size"):
+        update.update(width=4.6, height=2.9)       # the default size is a slide's; a paper's figure sits in the text
+    if not block.colors:
+        data = block.data
+        one = key in _ONE_TONE and not (isinstance(data, dict)
+                                        and any(isinstance(v, (dict, list)) for v in data.values()))
+        update["colors"] = _GREYS[:1] if one else _GREYS
+    return block.model_copy(update=update) if update else block
+
+
+def _paper_rc(theme):
+    """Figure text in a Times-like face (STIX ships with Matplotlib) to sit with a paper's serif text."""
+    import contextlib
+    if not _paper(theme):
+        return contextlib.nullcontext()
+    return plt.rc_context({"font.family": "STIXGeneral", "mathtext.fontset": "stix"})
+
+
 def _colors(block, n: int) -> list:
     """n colours: the author's, repeated as given, or the palette, which never repeats a
     colour: past its end come lighter, then darker, versions of each hue."""
@@ -194,8 +225,18 @@ def _arabic_face() -> str:
     return name
 
 
+def _shapes_itself() -> bool:
+    """Matplotlib built with libraqm (3.11 and later) joins Arabic letters and orders mixed text
+    itself; text shaped beforehand would be reversed a second time."""
+    from matplotlib import ft2font
+    return bool(getattr(ft2font, "__libraqm_version__", None))
+
+
 def _visual(text: str) -> str:
-    """Matplotlib has no shaping or bidi: give it joined letters in visual order, line by line."""
+    """Older Matplotlib has no shaping or bidi: give it joined letters in visual order, line by
+    line. A Matplotlib that shapes text itself is given the text as written."""
+    if _shapes_itself():
+        return text
     from ..layout.factory import _apply_rtl, _is_rtl
     return "\n".join(_apply_rtl(line, "R" if _is_rtl(line) else "L") if _ARABIC_TEXT.search(line) else line
                      for line in text.split("\n"))
@@ -309,6 +350,9 @@ def _bar(block, theme):
     bars = ax.bar(labels, values, color=c, width=0.6, zorder=3)
     dec = _decimals(values)
     ax.bar_label(bars, labels=[_num(v, dec) for v in values], padding=3, fontsize=8, color="#444444")
+    if min(values, default=0) < 0:          # room under a negative bar for its label, clear of the axis names
+        lo, hi = ax.get_ylim()
+        ax.set_ylim(lo - (hi - lo) * 0.08, hi)
     _style_ax(ax, theme)
     _value_axis(ax.yaxis)
     _label_axes(ax, block)
@@ -323,6 +367,9 @@ def _horizontal_bar(block, theme):
     c = _colors(block, len(labels))
     bars = ax.barh(labels, values, color=c, height=0.6, zorder=3)
     ax.bar_label(bars, labels=[_num(v, _decimals(values)) for v in values], padding=3, fontsize=8, color="#444444")
+    if min(values, default=0) < 0:          # room left of a negative bar for its label
+        lo, hi = ax.get_xlim()
+        ax.set_xlim(lo - (hi - lo) * 0.12, hi)
     _value_axis(ax.xaxis)
     ax.spines["left"].set_visible(False)
     ax.spines["top"].set_visible(False)
@@ -383,8 +430,9 @@ def _stacked_bar(block, theme):
 def _line(block, theme):
     data = block.data
     fig, ax = _fig(block)
-    # Multi-series or single
-    if isinstance(data, dict) and data and isinstance(next(iter(data.values())), dict):
+    # Multi-series ({"categories", "series"} or nested dicts) or single
+    if isinstance(data, dict) and data and ("series" in data and "categories" in data
+                                            or isinstance(next(iter(data.values())), dict)):
         cats, series = _multi_series(data)
         c = _colors(block, len(series))
         x = np.arange(len(cats))
@@ -411,7 +459,8 @@ def _line(block, theme):
 def _area(block, theme):
     data = block.data
     fig, ax = _fig(block)
-    if isinstance(data, dict) and data and isinstance(next(iter(data.values())), dict):
+    if isinstance(data, dict) and data and ("series" in data and "categories" in data
+                                            or isinstance(next(iter(data.values())), dict)):
         cats, series = _multi_series(data)
         c = _colors(block, len(series))
         x = np.arange(len(cats))
@@ -478,10 +527,27 @@ def _donut(block, theme):
     for t in texts:
         t.set_fontsize(9)
     if block.title:
-        ax.text(0, 0, block.title, ha="center", va="center",
-                fontsize=10, fontweight="bold", color="#222222")
+        _title_in_hole(fig, ax, block.title, hole=0.5)
     fig.tight_layout()
     return fig
+
+
+def _title_in_hole(fig, ax, title: str, hole: float) -> None:
+    """The title in the doughnut's hole when it fits there, on two lines at most; otherwise
+    above the chart, so it never runs over the ring."""
+    import textwrap
+    lines = textwrap.wrap(title, width=max(8, len(title) // 2 + 1)) if len(title) > 12 else [title]
+    if len(lines) <= 2:
+        t = ax.text(0, 0, "\n".join(lines), ha="center", va="center", fontsize=10, fontweight="bold",
+                    color="#222222", linespacing=1.15)
+        fig.canvas.draw()
+        box = t.get_window_extent(fig.canvas.get_renderer())
+        (x0, y0), (x1, y1) = ax.transData.transform([(-hole, -hole), (hole, hole)])
+        span = min(abs(x1 - x0), abs(y1 - y0)) * 0.86            # the widest line a circle of the hole holds, with air
+        if box.width <= span and box.height <= span:
+            return
+        t.remove()
+    ax.set_title(title, fontsize=11, fontweight="bold", color="#222222", pad=10)
 
 
 def _scatter(block, theme):
@@ -910,9 +976,12 @@ def render_chart(block, theme):
                 "chart", f'unsupported type "{block.chart_type}"; supported: {", ".join(_RENDERERS)}')
 
         _check_data(key, block.data)
-        fig = renderer(block, theme)
-        _shape_arabic(fig, block)
-        drawing = _fig_to_drawing(fig, block, theme)
+        if _paper(theme):
+            block = _paper_block(block, key)
+        with _paper_rc(theme):
+            fig = renderer(block, theme)
+            _shape_arabic(fig, block)
+            drawing = _fig_to_drawing(fig, block, theme)
 
         if drawing:
             from reportlab.platypus import Spacer
@@ -941,12 +1010,15 @@ def chart_png(block, theme, dpi: int = 200) -> bytes:
             "chart", f'unsupported type "{block.chart_type}"; supported: {", ".join(_RENDERERS)}')
     try:
         _check_data(key, block.data)
-        fig = renderer(block, theme)
-        _shape_arabic(fig, block)
-        buf = io.BytesIO()
-        fig.savefig(buf, format="png", bbox_inches="tight", dpi=dpi,
-                    facecolor=fig.get_facecolor())
-        plt.close(fig)
+        if _paper(theme):
+            block = _paper_block(block, key)
+        with _paper_rc(theme):
+            fig = renderer(block, theme)
+            _shape_arabic(fig, block)
+            buf = io.BytesIO()
+            fig.savefig(buf, format="png", bbox_inches="tight", dpi=dpi,
+                        facecolor=fig.get_facecolor())
+            plt.close(fig)
         return buf.getvalue()
     except BlockRenderError:
         raise

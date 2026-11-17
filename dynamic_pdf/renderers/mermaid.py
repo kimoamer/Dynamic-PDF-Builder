@@ -43,7 +43,8 @@ async (src) => {
 
 
 def _mermaid_script_path():
-    path = os.environ.get(MERMAID_JS_ENV)
+    from ..settings import get
+    path = get("MERMAID_JS")
     if path and os.path.isfile(path):
         return path
     return None

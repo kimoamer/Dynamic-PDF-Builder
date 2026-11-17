@@ -215,13 +215,34 @@ def add_layer(renderer, paragraph, block, geo: PageGeometry, asset: MediaAsset) 
 
 # ─────────────────────────── header and footer bands ───────────────────────────
 
-def _column_widths(cells, width: float):
-    """Table columns from the layout's cells, which sit left to right."""
+def _column_widths(cells, width: float, needs=None):
+    """Table columns from the layout's cells, which sit left to right. Without a centre cell, each
+    cell gets what it needs and an equal share of the rest: a cell sized to its text alone wraps as
+    soon as Word sets it in a wider substitute font."""
+    if needs and len(cells) == 2 and sum(needs) < width:
+        extra = (width - sum(needs)) / 2
+        return [n + extra for n in needs]
     edges = [0.0]
     for a, b in zip(cells, cells[1:]):
         edges.append(((a.x + a.width) + b.x) / 2)
     edges.append(width)
     return [edges[i + 1] - edges[i] for i in range(len(cells))]
+
+
+def plated(asset: MediaAsset, height_pt: float) -> MediaAsset:
+    """The logo on a rounded white plate 4 points wide all round, as the PDF draws it on a band of colour."""
+    import hashlib
+    from PIL import ImageDraw
+    logo = Image.open(io.BytesIO(raster_bytes(asset, 1200))).convert("RGBA")
+    pad = max(2, round(logo.height * 4 / max(height_pt, 1)))
+    plate = Image.new("RGBA", (logo.width + 2 * pad, logo.height + 2 * pad), (0, 0, 0, 0))
+    ImageDraw.Draw(plate).rounded_rectangle((0, 0, plate.width - 1, plate.height - 1), radius=round(pad * 0.75),
+                                            fill=(255, 255, 255, 255))
+    plate.alpha_composite(logo, (pad, pad))
+    buf = io.BytesIO()
+    plate.save(buf, "PNG")
+    data = buf.getvalue()
+    return MediaAsset(hashlib.sha256(data).hexdigest(), data, "png", plate.width, plate.height, has_alpha=True)
 
 
 class BandWriter:
@@ -237,6 +258,8 @@ class BandWriter:
             run.font.bold = row.spec.bold
             run.font.color.rgb = rgb(ink)
             F.set_run_fonts(run, font, None)
+            # a field's digits in a right-to-left paragraph are sized as complex script
+            F.set_complex_script_format(run, row.size, row.spec.bold)
             if F.has_complex_script(text):
                 F.set_run_fonts(run, None, word_font(self.theme.typography.arabic_family or "Amiri"), rtl=True)
                 F.set_complex_script_format(run, row.size, row.spec.bold)
@@ -259,7 +282,7 @@ class BandWriter:
                 style(p.add_run(part), part)
 
     def _cell(self, tc, cell, row, style) -> None:
-        """Logos and text in one cell; each text item starts its own line."""
+        """Logos and text in one cell; the first text item follows the logos, each further one starts its own line."""
         align = {"left": WD_ALIGN_PARAGRAPH.LEFT, "center": WD_ALIGN_PARAGRAPH.CENTER,
                  "right": WD_ALIGN_PARAGRAPH.RIGHT}[cell.align]
         p = tc.paragraphs[0]
@@ -281,19 +304,25 @@ class BandWriter:
                     asset, w, h = logos[id(item)]
                     prepare(p)
                     p.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
-                    add_drawing(p.add_run(), asset, fit_image(asset, w, h), None,
-                                item.alt_text or "Logo", self.r.next_shape())
+                    if row.spec.fill:            # on a band of colour a logo keeps its own colours, on a light plate
+                        asset, w, h = plated(asset, h), w * (1 + 8 / h), h + 8
+                    add_drawing(p.add_run(), asset, fit_image(asset, w, h), None, item.alt_text or "Logo",
+                                self.r.next_shape())
                     p.add_run("  ")
                     started = True
         lines = [i for i in cell.items if isinstance(i, str)]
+        text_started = False
         for k, template in enumerate(lines):
             from ..layout.page_system import fill_fields
             text = fill_fields(template, {**self.maker.values, **self.sample})
             if not text and not re.search(r"\{(page|pages|section|chapter)\}", template):
                 continue
-            par = p if not started else tc.add_paragraph()
-            started = True
+            # the first text stays on the logo's line, as in the PDF; each further item starts its own
+            par = tc.add_paragraph() if text_started else p
             prepare(par, text)
+            if par is p and started:            # the logo's line: an exact height would crop the logo
+                par.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
+            text_started = started = True
             self._text(par, template, style)
 
     def write(self, part, band: Band, geo: PageGeometry, is_header: bool, layers=()) -> None:
@@ -328,7 +357,10 @@ class BandWriter:
         if not cells:
             squeeze(part.add_paragraph(), row.height)
             return
-        widths = _column_widths(cells, width)
+        from ..layout.page_system import text_width
+        needs = [sum(w + 6 for _, w, _, _ in c.logos) +
+                 max((text_width(self.theme, ln, row.size, spec.bold) for ln in c.lines), default=0) for c in cells]
+        widths = _column_widths(cells, width, needs)
         if self.r.rtl_doc:
             # A right-to-left section reverses a plain table in LibreOffice but not in
             # Word. A table marked right-to-left reads the same in both.

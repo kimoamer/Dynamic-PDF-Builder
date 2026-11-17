@@ -1,0 +1,161 @@
+{
+ "note": "A family, an author group and a picture pool are never split between training and evaluation. The three repository groups were written for this repository and share that origin.",
+ "families": {
+  "m79_annual": [
+   "annual_report",
+   "arabic_annual",
+   "impact_report",
+   "sustainability_report"
+  ],
+  "m79_feature": [
+   "arabic_city_feature",
+   "harbour_feature"
+  ],
+  "m79_financial": [
+   "arabic_financial",
+   "financial_statements"
+  ],
+  "m79_data_story": [
+   "arabic_health_data",
+   "transit_data_story"
+  ],
+  "m79_governance": [
+   "bilingual_institutional",
+   "board_paper",
+   "policy_brief"
+  ],
+  "m79_bilingual_review": [
+   "bilingual_ports_review",
+   "bilingual_water_compact"
+  ],
+  "tests_fixtures": [
+   "fixture_academic",
+   "fixture_arabic_report",
+   "fixture_bilingual",
+   "fixture_executive",
+   "fixture_financial",
+   "fixture_invoice",
+   "fixture_letter",
+   "fixture_manual",
+   "fixture_memo",
+   "fixture_proposal",
+   "fixture_wide_data"
+  ],
+  "m7_academic": [
+   "m7_academic_paper"
+  ],
+  "m7_ar": [
+   "m7_ar_financial_statements",
+   "m7_ar_memo"
+  ],
+  "m7_bilingual": [
+   "m7_bilingual_board_report"
+  ],
+  "m7_business": [
+   "m7_business_memo"
+  ],
+  "m7_chart": [
+   "m7_chart_analytics_report"
+  ],
+  "m7_en": [
+   "m7_en_executive_report"
+  ],
+  "m7_financial": [
+   "m7_financial_statements"
+  ],
+  "m7_invoice": [
+   "m7_invoice"
+  ],
+  "m7_letter": [
+   "m7_letter"
+  ],
+  "m7_proposal": [
+   "m7_proposal"
+  ],
+  "m7_technical": [
+   "m7_technical_manual"
+  ],
+  "m79_technical": [
+   "proposal",
+   "research_paper",
+   "technical_manual"
+  ],
+  "tests_stress": [
+   "stress_academic_paper",
+   "stress_bilingual_corporate",
+   "stress_chart_report",
+   "stress_executive_proposal",
+   "stress_financial_complex",
+   "stress_technical_manual"
+  ],
+  "wiki_ar": [
+   "wiki_ar_01",
+   "wiki_ar_02",
+   "wiki_ar_04",
+   "wiki_ar_05",
+   "wiki_ar_06",
+   "wiki_ar_07"
+  ],
+  "wiki_en": [
+   "wiki_en_01",
+   "wiki_en_02",
+   "wiki_en_03",
+   "wiki_en_04",
+   "wiki_en_05",
+   "wiki_en_06",
+   "wiki_en_08",
+   "wiki_en_09",
+   "wiki_en_10",
+   "wiki_en_11",
+   "wiki_en_12",
+   "wiki_en_13",
+   "wiki_en_14",
+   "wiki_en_15",
+   "wiki_en_16",
+   "wiki_en_17",
+   "wiki_en_18",
+   "wiki_en_19",
+   "wiki_en_20",
+   "wiki_en_21",
+   "wiki_en_22",
+   "wiki_en_23",
+   "wiki_en_24",
+   "wiki_en_25",
+   "wiki_en_26",
+   "wiki_en_27",
+   "wiki_en_28",
+   "wiki_en_29",
+   "wiki_en_30",
+   "wiki_en_31",
+   "wiki_en_32",
+   "wiki_en_33",
+   "wiki_en_34",
+   "wiki_en_35",
+   "wiki_en_36",
+   "wiki_en_37",
+   "wiki_en_38",
+   "wiki_en_39",
+   "wiki_en_40",
+   "wiki_en_41",
+   "wiki_en_42",
+   "wiki_en_43",
+   "wiki_en_44",
+   "wiki_en_45",
+   "wiki_en_46"
+  ]
+ },
+ "evaluation_families": [
+  "m7_academic",
+  "m7_ar",
+  "m7_bilingual",
+  "m7_business",
+  "m7_chart",
+  "m7_en",
+  "m7_financial",
+  "m7_invoice",
+  "m7_letter",
+  "m7_proposal",
+  "m7_technical",
+  "wiki_en"
+ ]
+}

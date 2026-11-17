@@ -24,6 +24,7 @@ import warnings
 from dataclasses import dataclass, field, asdict
 from typing import List, Optional
 
+from . import settings
 from .assets import AssetPolicy
 from .utils.errors import DynamicPDFError, ResourceLimitError
 
@@ -39,14 +40,15 @@ class ResourceLimits:
     max_mermaid_chars: int = 50_000        # per diagram source
     renderer_timeout_s: float = 20.0       # external renderer (browser) timeout
     # per request, enforced by the worker (dynamic_pdf.service); None = no limit
-    render_timeout_s: Optional[float] = None
-    max_pages: Optional[int] = None
-    max_memory_mb: Optional[int] = None    # address space; POSIX only
+    # (each from DYNAMIC_PDF_* when the caller gives none)
+    render_timeout_s: Optional[float] = field(default_factory=lambda: settings.number("RENDER_TIMEOUT_S"))
+    max_pages: Optional[int] = field(default_factory=lambda: settings.number("MAX_PAGES", cast=int))
+    max_memory_mb: Optional[int] = field(default_factory=lambda: settings.number("MAX_MEMORY_MB", cast=int))  # address space; POSIX only
 
 
 @dataclass(frozen=True)
 class RenderPolicy:
-    error_mode: str = STRICT
+    error_mode: str = field(default_factory=lambda: settings.get("ERROR_MODE", STRICT))   # the operator's, never the document's
     assets: AssetPolicy = field(default_factory=AssetPolicy)
     limits: ResourceLimits = field(default_factory=ResourceLimits)
 

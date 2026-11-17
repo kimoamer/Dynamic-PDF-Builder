@@ -111,20 +111,22 @@ def test_spacers_are_not_content_density():
 # ── ranking safety & fallbacks ──────────────────────────────────────────
 
 class _FakeRanker:
+    record, digest = {}, "fake"
+
     def __init__(self, prefer):
         self.prefer = prefer
 
-    def rank(self, metrics):
-        return [1.0 if m.get("pages") == self.prefer else 0.0 for m in metrics]
+    def scores(self, facts, context=None):
+        return [1.0 if f.get("pages") == self.prefer else 0.0 for f in facts]
 
 
 def test_ranker_cannot_pick_a_candidate_below_the_baseline_policy(monkeypatch, tmp_path):
-    import dynamic_pdf.intelligence.ranker as R
+    import dynamic_pdf.intelligence.variant_ranker as R
     b0 = STRESS["financial_complex"](str(tmp_path)).design().compose("smart")
     b0.render()
     rendered = [c for c in b0.last_composition.candidates if c.rendered]
     # demand an impossible gain: no candidate is eligible, ranker must not override
-    monkeypatch.setattr(R, "load_optional", lambda p: _FakeRanker(prefer=rendered[-1].pages))
+    monkeypatch.setattr(R, "load_model", lambda p: _FakeRanker(prefer=rendered[-1].pages))
     b = STRESS["financial_complex"](str(tmp_path)).design().compose("smart", ranker_model="x.txt",
                                                                     min_gain=1000)
     b.render()
@@ -134,8 +136,8 @@ def test_ranker_cannot_pick_a_candidate_below_the_baseline_policy(monkeypatch, t
 
 
 def test_ranker_may_choose_among_eligible_layouts_only(monkeypatch, tmp_path):
-    import dynamic_pdf.intelligence.ranker as R
-    monkeypatch.setattr(R, "load_optional", lambda p: _FakeRanker(prefer=-1))   # prefers nobody
+    import dynamic_pdf.intelligence.variant_ranker as R
+    monkeypatch.setattr(R, "load_model", lambda p: _FakeRanker(prefer=-1))   # prefers nobody
     b = STRESS["chart_report"](str(tmp_path)).design().compose("smart", ranker_model="x.txt")
     b.render()
     r = b.last_composition

@@ -1,0 +1,1349 @@
+{
+ "note": "Do not open before the answers are written.",
+ "comparisons": [
+  {
+   "comparison": "cmp-001",
+   "document": "board_paper",
+   "a": "corporate_conservative",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    2,
+    2
+   ],
+   "pages_total": [
+    2,
+    2
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-002",
+   "document": "bilingual_water_compact",
+   "a": "financial_data",
+   "b": "arabic_institutional",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    4
+   ],
+   "pages_total": [
+    4,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-003",
+   "document": "financial_statements",
+   "a": "editorial_modern",
+   "b": "corporate_conservative",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    5
+   ],
+   "pages_total": [
+    4,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-004",
+   "document": "bilingual_institutional",
+   "a": "editorial_modern",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    3
+   ],
+   "pages_total": [
+    4,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-005",
+   "document": "financial_statements",
+   "a": "editorial_modern",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    4
+   ],
+   "pages_total": [
+    4,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-006",
+   "document": "bilingual_water_compact",
+   "a": "arabic_institutional",
+   "b": "financial_data",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    4
+   ],
+   "pages_total": [
+    4,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-007",
+   "document": "bilingual_institutional",
+   "a": "corporate_conservative",
+   "b": "arabic_institutional",
+   "reversed_repeat": false,
+   "pages_shown": [
+    3,
+    3
+   ],
+   "pages_total": [
+    3,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-008",
+   "document": "bilingual_water_compact",
+   "a": "financial_data",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    4
+   ],
+   "pages_total": [
+    4,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-009",
+   "document": "bilingual_water_compact",
+   "a": "executive_premium",
+   "b": "arabic_institutional",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    4
+   ],
+   "pages_total": [
+    4,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-010",
+   "document": "financial_statements",
+   "a": "financial_data",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    5
+   ],
+   "pages_total": [
+    4,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-011",
+   "document": "bilingual_ports_review",
+   "a": "editorial_modern",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    6,
+    7
+   ],
+   "pages_total": [
+    6,
+    7
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-012",
+   "document": "bilingual_institutional",
+   "a": "editorial_modern",
+   "b": "arabic_institutional",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    3
+   ],
+   "pages_total": [
+    4,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-013",
+   "document": "bilingual_ports_review",
+   "a": "arabic_institutional",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    7
+   ],
+   "pages_total": [
+    5,
+    7
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-014",
+   "document": "bilingual_water_compact",
+   "a": "financial_data",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    5
+   ],
+   "pages_total": [
+    4,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-015",
+   "document": "bilingual_institutional",
+   "a": "arabic_institutional",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    3,
+    3
+   ],
+   "pages_total": [
+    3,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-016",
+   "document": "bilingual_institutional",
+   "a": "corporate_conservative",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    3,
+    4
+   ],
+   "pages_total": [
+    3,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-017",
+   "document": "financial_statements",
+   "a": "corporate_conservative",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    5,
+    4
+   ],
+   "pages_total": [
+    5,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-018",
+   "document": "board_paper",
+   "a": "editorial_modern",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    2,
+    2
+   ],
+   "pages_total": [
+    2,
+    2
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-019",
+   "document": "bilingual_water_compact",
+   "a": "editorial_modern",
+   "b": "arabic_institutional",
+   "reversed_repeat": true,
+   "pages_shown": [
+    5,
+    4
+   ],
+   "pages_total": [
+    5,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-020",
+   "document": "board_paper",
+   "a": "financial_data",
+   "b": "executive_premium",
+   "reversed_repeat": false,
+   "pages_shown": [
+    2,
+    2
+   ],
+   "pages_total": [
+    2,
+    2
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-021",
+   "document": "bilingual_water_compact",
+   "a": "corporate_conservative",
+   "b": "arabic_institutional",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    4
+   ],
+   "pages_total": [
+    4,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-022",
+   "document": "bilingual_ports_review",
+   "a": "arabic_institutional",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    5,
+    6
+   ],
+   "pages_total": [
+    5,
+    6
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-023",
+   "document": "bilingual_institutional",
+   "a": "financial_data",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    3,
+    4
+   ],
+   "pages_total": [
+    3,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-024",
+   "document": "bilingual_ports_review",
+   "a": "editorial_modern",
+   "b": "executive_premium",
+   "reversed_repeat": false,
+   "pages_shown": [
+    6,
+    5
+   ],
+   "pages_total": [
+    6,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-025",
+   "document": "bilingual_institutional",
+   "a": "executive_premium",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    3,
+    4
+   ],
+   "pages_total": [
+    3,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-026",
+   "document": "board_paper",
+   "a": "executive_premium",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    2,
+    2
+   ],
+   "pages_total": [
+    2,
+    2
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-027",
+   "document": "bilingual_water_compact",
+   "a": "corporate_conservative",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    4
+   ],
+   "pages_total": [
+    4,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-028",
+   "document": "bilingual_ports_review",
+   "a": "executive_premium",
+   "b": "financial_data",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-029",
+   "document": "bilingual_ports_review",
+   "a": "financial_data",
+   "b": "arabic_institutional",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-030",
+   "document": "bilingual_water_compact",
+   "a": "arabic_institutional",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    5
+   ],
+   "pages_total": [
+    4,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-031",
+   "document": "bilingual_institutional",
+   "a": "editorial_modern",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    3
+   ],
+   "pages_total": [
+    4,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-032",
+   "document": "bilingual_institutional",
+   "a": "arabic_institutional",
+   "b": "financial_data",
+   "reversed_repeat": false,
+   "pages_shown": [
+    3,
+    3
+   ],
+   "pages_total": [
+    3,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-033",
+   "document": "bilingual_ports_review",
+   "a": "executive_premium",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    5,
+    6
+   ],
+   "pages_total": [
+    5,
+    6
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-034",
+   "document": "bilingual_ports_review",
+   "a": "financial_data",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    6
+   ],
+   "pages_total": [
+    5,
+    6
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-035",
+   "document": "financial_statements",
+   "a": "executive_premium",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-036",
+   "document": "bilingual_ports_review",
+   "a": "arabic_institutional",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-037",
+   "document": "financial_statements",
+   "a": "executive_premium",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    5,
+    4
+   ],
+   "pages_total": [
+    5,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-038",
+   "document": "board_paper",
+   "a": "corporate_conservative",
+   "b": "financial_data",
+   "reversed_repeat": false,
+   "pages_shown": [
+    2,
+    2
+   ],
+   "pages_total": [
+    2,
+    2
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-039",
+   "document": "bilingual_water_compact",
+   "a": "editorial_modern",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    5,
+    4
+   ],
+   "pages_total": [
+    5,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-040",
+   "document": "bilingual_institutional",
+   "a": "financial_data",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    3,
+    3
+   ],
+   "pages_total": [
+    3,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-041",
+   "document": "bilingual_ports_review",
+   "a": "arabic_institutional",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-042",
+   "document": "board_paper",
+   "a": "financial_data",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    2,
+    2
+   ],
+   "pages_total": [
+    2,
+    2
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-043",
+   "document": "bilingual_ports_review",
+   "a": "financial_data",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    7
+   ],
+   "pages_total": [
+    5,
+    7
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-044",
+   "document": "financial_statements",
+   "a": "executive_premium",
+   "b": "financial_data",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    4
+   ],
+   "pages_total": [
+    5,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-045",
+   "document": "bilingual_water_compact",
+   "a": "editorial_modern",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    5,
+    4
+   ],
+   "pages_total": [
+    5,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-046",
+   "document": "bilingual_institutional",
+   "a": "financial_data",
+   "b": "arabic_institutional",
+   "reversed_repeat": true,
+   "pages_shown": [
+    3,
+    3
+   ],
+   "pages_total": [
+    3,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-047",
+   "document": "bilingual_water_compact",
+   "a": "executive_premium",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    5
+   ],
+   "pages_total": [
+    4,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-048",
+   "document": "bilingual_water_compact",
+   "a": "corporate_conservative",
+   "b": "financial_data",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    4
+   ],
+   "pages_total": [
+    4,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-049",
+   "document": "bilingual_water_compact",
+   "a": "executive_premium",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    4
+   ],
+   "pages_total": [
+    4,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-050",
+   "document": "financial_statements",
+   "a": "financial_data",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    5
+   ],
+   "pages_total": [
+    4,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-051",
+   "document": "bilingual_water_compact",
+   "a": "arabic_institutional",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    4
+   ],
+   "pages_total": [
+    4,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-052",
+   "document": "board_paper",
+   "a": "financial_data",
+   "b": "corporate_conservative",
+   "reversed_repeat": true,
+   "pages_shown": [
+    2,
+    2
+   ],
+   "pages_total": [
+    2,
+    2
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-053",
+   "document": "bilingual_water_compact",
+   "a": "editorial_modern",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    4
+   ],
+   "pages_total": [
+    5,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-054",
+   "document": "bilingual_institutional",
+   "a": "executive_premium",
+   "b": "financial_data",
+   "reversed_repeat": false,
+   "pages_shown": [
+    3,
+    3
+   ],
+   "pages_total": [
+    3,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-055",
+   "document": "bilingual_water_compact",
+   "a": "arabic_institutional",
+   "b": "executive_premium",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    4
+   ],
+   "pages_total": [
+    4,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-056",
+   "document": "bilingual_institutional",
+   "a": "executive_premium",
+   "b": "arabic_institutional",
+   "reversed_repeat": false,
+   "pages_shown": [
+    3,
+    3
+   ],
+   "pages_total": [
+    3,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-057",
+   "document": "bilingual_ports_review",
+   "a": "editorial_modern",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    6,
+    5
+   ],
+   "pages_total": [
+    6,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-058",
+   "document": "board_paper",
+   "a": "editorial_modern",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    2,
+    2
+   ],
+   "pages_total": [
+    2,
+    2
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-059",
+   "document": "bilingual_ports_review",
+   "a": "financial_data",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-060",
+   "document": "bilingual_institutional",
+   "a": "editorial_modern",
+   "b": "financial_data",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    3
+   ],
+   "pages_total": [
+    4,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-061",
+   "document": "financial_statements",
+   "a": "corporate_conservative",
+   "b": "executive_premium",
+   "reversed_repeat": true,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-062",
+   "document": "bilingual_institutional",
+   "a": "arabic_institutional",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    3,
+    4
+   ],
+   "pages_total": [
+    3,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-063",
+   "document": "financial_statements",
+   "a": "corporate_conservative",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    4
+   ],
+   "pages_total": [
+    5,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-064",
+   "document": "board_paper",
+   "a": "editorial_modern",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    2,
+    2
+   ],
+   "pages_total": [
+    2,
+    2
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-065",
+   "document": "bilingual_ports_review",
+   "a": "executive_premium",
+   "b": "corporate_conservative",
+   "reversed_repeat": true,
+   "pages_shown": [
+    5,
+    7
+   ],
+   "pages_total": [
+    5,
+    7
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-066",
+   "document": "bilingual_ports_review",
+   "a": "executive_premium",
+   "b": "arabic_institutional",
+   "reversed_repeat": false,
+   "pages_shown": [
+    5,
+    5
+   ],
+   "pages_total": [
+    5,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-067",
+   "document": "bilingual_ports_review",
+   "a": "corporate_conservative",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    7,
+    5
+   ],
+   "pages_total": [
+    7,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-068",
+   "document": "bilingual_water_compact",
+   "a": "corporate_conservative",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    5
+   ],
+   "pages_total": [
+    4,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-069",
+   "document": "bilingual_ports_review",
+   "a": "corporate_conservative",
+   "b": "arabic_institutional",
+   "reversed_repeat": true,
+   "pages_shown": [
+    7,
+    5
+   ],
+   "pages_total": [
+    7,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-070",
+   "document": "bilingual_water_compact",
+   "a": "financial_data",
+   "b": "corporate_conservative",
+   "reversed_repeat": true,
+   "pages_shown": [
+    4,
+    4
+   ],
+   "pages_total": [
+    4,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-071",
+   "document": "bilingual_ports_review",
+   "a": "corporate_conservative",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    7,
+    6
+   ],
+   "pages_total": [
+    7,
+    6
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-072",
+   "document": "bilingual_institutional",
+   "a": "executive_premium",
+   "b": "corporate_conservative",
+   "reversed_repeat": true,
+   "pages_shown": [
+    3,
+    3
+   ],
+   "pages_total": [
+    3,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-073",
+   "document": "bilingual_institutional",
+   "a": "arabic_institutional",
+   "b": "corporate_conservative",
+   "reversed_repeat": true,
+   "pages_shown": [
+    3,
+    3
+   ],
+   "pages_total": [
+    3,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-074",
+   "document": "bilingual_ports_review",
+   "a": "editorial_modern",
+   "b": "arabic_institutional",
+   "reversed_repeat": false,
+   "pages_shown": [
+    6,
+    5
+   ],
+   "pages_total": [
+    6,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-075",
+   "document": "board_paper",
+   "a": "executive_premium",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    2,
+    2
+   ],
+   "pages_total": [
+    2,
+    2
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-076",
+   "document": "financial_statements",
+   "a": "financial_data",
+   "b": "editorial_modern",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    4
+   ],
+   "pages_total": [
+    4,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-077",
+   "document": "bilingual_ports_review",
+   "a": "corporate_conservative",
+   "b": "executive_premium",
+   "reversed_repeat": false,
+   "pages_shown": [
+    7,
+    5
+   ],
+   "pages_total": [
+    7,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-078",
+   "document": "bilingual_institutional",
+   "a": "financial_data",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    3,
+    3
+   ],
+   "pages_total": [
+    3,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-079",
+   "document": "financial_statements",
+   "a": "editorial_modern",
+   "b": "executive_premium",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    5
+   ],
+   "pages_total": [
+    4,
+    5
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-080",
+   "document": "board_paper",
+   "a": "executive_premium",
+   "b": "corporate_conservative",
+   "reversed_repeat": false,
+   "pages_shown": [
+    2,
+    2
+   ],
+   "pages_total": [
+    2,
+    2
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-081",
+   "document": "bilingual_institutional",
+   "a": "corporate_conservative",
+   "b": "financial_data",
+   "reversed_repeat": true,
+   "pages_shown": [
+    3,
+    3
+   ],
+   "pages_total": [
+    3,
+    3
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-082",
+   "document": "board_paper",
+   "a": "corporate_conservative",
+   "b": "editorial_modern",
+   "reversed_repeat": true,
+   "pages_shown": [
+    2,
+    2
+   ],
+   "pages_total": [
+    2,
+    2
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-083",
+   "document": "bilingual_water_compact",
+   "a": "executive_premium",
+   "b": "financial_data",
+   "reversed_repeat": false,
+   "pages_shown": [
+    4,
+    4
+   ],
+   "pages_total": [
+    4,
+    4
+   ],
+   "shown_px": 240
+  },
+  {
+   "comparison": "cmp-084",
+   "document": "bilingual_institutional",
+   "a": "corporate_conservative",
+   "b": "executive_premium",
+   "reversed_repeat": false,
+   "pages_shown": [
+    3,
+    3
+   ],
+   "pages_total": [
+    3,
+    3
+   ],
+   "shown_px": 240
+  }
+ ]
+}

@@ -111,7 +111,7 @@ def _distance(a: dict, b: dict) -> float:
     return round(sum(min(1.0, abs(a.get(k, 0) - b.get(k, 0)) / s) for k, s in keys.items()) / len(keys), 3)
 
 
-def run_doc(name, make, asset_dir, office: bool, quick: bool) -> dict:
+def run_doc(name, make, asset_dir, office: bool, quick: bool, ranker=None) -> dict:
     from dynamic_pdf.design.directions import DIRECTIONS
     row = {"doc": name}
     # stable designed export, the default of export()
@@ -135,10 +135,16 @@ def run_doc(name, make, asset_dir, office: bool, quick: bool) -> dict:
     # three variants, timed the way a caller runs them
     b = make(asset_dir)
     t = time.perf_counter()
-    vs = b.design_variants(n=3)
+    vs = b.design_variants(n=3, ranker=ranker)
+    sel = vs.stats.get("selection") or {}
     row["variants3"] = {"seconds": round(time.perf_counter() - t, 2), "renders": vs.stats.get("renders"),
                         "recommended": vs.recommended.id if vs.recommended else None,
-                        "statuses": [v.report.status for v in vs]}
+                        "statuses": [v.report.status for v in vs],
+                        # which selector chose, and whether a learned one replaced the fixed choice
+                        "selector": sel.get("selector"), "abstained": bool(sel.get("abstained")),
+                        "overrode": sel.get("selector") == "learned" and vs.recommended is not None
+                        and sel.get("deterministic_choice") != vs.recommended.id,
+                        "model": sel.get("model"), "fallback_reason": sel.get("fallback_reason")}
     if quick:
         return row
     # every applicable direction: gates, pages, Word parity through LibreOffice
@@ -210,6 +216,10 @@ def summarize(rows) -> dict:
                                          for f in fc),
         "variants3_median_s": round(statistics.median(times), 2),
         "variants3_max_s": max(times),
+        "selector": {"learned": sum(r["variants3"].get("selector") == "learned" for r in rows),
+                     "overrode": sum(bool(r["variants3"].get("overrode")) for r in rows),
+                     "abstained": sum(bool(r["variants3"].get("abstained")) for r in rows),
+                     "refused": sum(bool(r["variants3"].get("fallback_reason")) for r in rows)},
         "peak_mb_max": max(peaks) if peaks else None,
         "valid_variants_mean": round(len(valid) / len(rows), 2) if designs else None,
         "diversity_mean": round(statistics.mean(r["directions"]["diversity"] for r in rows), 3)
@@ -271,6 +281,7 @@ def main(argv=None) -> int:
     ap.add_argument("--quick", action="store_true", help="skip the every-direction pass")
     ap.add_argument("--no-office", action="store_true", help="skip LibreOffice page counts")
     ap.add_argument("--budgets", default=None, help="baseline JSON whose budgets this run must meet")
+    ap.add_argument("--ranker", default=None, help='learned selector for the three-variant pass: "auto" or a model file')
     ap.add_argument("--write-baseline", default=None, help="store this run as the baseline")
     a = ap.parse_args(argv)
     os.environ.setdefault("SOURCE_DATE_EPOCH", "1767225600")
@@ -285,7 +296,7 @@ def main(argv=None) -> int:
         docs[names[0]](assets).render()                  # warm imports and fonts outside the timings
         for name in names:
             t = time.perf_counter()
-            rows.append(run_doc(name, docs[name], assets, office, a.quick))
+            rows.append(run_doc(name, docs[name], assets, office, a.quick, a.ranker))
             print(f"{name}: {time.perf_counter() - t:.1f}s", flush=True)
     summary = summarize(rows)
     summary["office"] = office

@@ -91,7 +91,8 @@ def _separate_lines(a, b) -> bool:
 
 def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Optional[List[str]] = None,
               tolerance: float = 2.0, fmt: str = "pdf", captions: Optional[List[str]] = None,
-              major_headings: Optional[List[str]] = None, body_size: Optional[float] = None) -> QAReport:
+              major_headings: Optional[List[str]] = None, body_size: Optional[float] = None,
+              openers: Optional[List[str]] = None) -> QAReport:
     doc = _open(data)
     rep = QAReport(format=fmt, pages=doc.page_count, sha256=sha256(data))
     caps = [_key(c) for c in (captions or []) if c.strip()]
@@ -100,6 +101,7 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
     head_ends = [(_key(h), bool(_SENTENCE_END.search(h))) for h in (heading_texts or []) if _key(h)]
     page_firsts = []          # first body line text of each page
     contents_keys = _contents_keys()
+    opener_keys = [_key(h) for h in (openers or []) if _key(h)]
     page_texts = []
     image_bottoms = {}
     margins = margins or {}
@@ -211,7 +213,10 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
             lk = _key(last[1])
             # a contents page or an opening page's chapter strip lists headings; it does not strand one
             listed = sum(_key(ln[1]) in head_keys for ln in body) >= 3
-            contents_page = listed or any(_matches(page_firsts[-1], k) for k in contents_keys)
+            # a chapter's opening page carries its strip of chapter names, however few they are
+            # (its title may run over two lines: one of them then holds part of it)
+            opening = any(k <= ok and len(k) >= min(2, len(ok)) for ln in body for k in [_key(ln[1])] for ok in opener_keys)
+            contents_page = listed or opening or any(_matches(page_firsts[-1], k) for k in contents_keys)
             # a line that ends a sentence is the end of a paragraph, unless the heading itself
             # ends that way (extracted right-to-left lines may carry the stop at either end)
             sentence = bool(_SENTENCE_END.search(last[1]))

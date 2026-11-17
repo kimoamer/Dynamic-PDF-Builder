@@ -108,7 +108,30 @@ def test_arabic_document_figures_use_arabic_indic_digits():
 
 def test_arabic_chart_text_is_shaped_like_body_text_and_keeps_diacritics():
     from dynamic_pdf.layout.factory import _apply_rtl
+    from dynamic_pdf.renderers.chart import _shapes_itself
     fig = figure("bar", {"الإيراداتُ": 3, "المصروفات": 2}, title="الأداءُ المالي")
     shown = [t.get_text() for t in texts(fig)]
-    assert _apply_rtl("الأداءُ المالي", "R") in shown          # the body's reshaper, harakat kept
+    # a Matplotlib that shapes Arabic itself gets the text as written; an older one, the body's reshaping
+    assert ("الأداءُ المالي" if _shapes_itself() else _apply_rtl("الأداءُ المالي", "R")) in shown
     assert any("ُ" in s for s in shown)
+
+
+def test_arabic_is_shaped_once_whichever_matplotlib_draws_it(monkeypatch):
+    """Shaping twice reverses the letters: text goes to Matplotlib as written when it shapes itself."""
+    from matplotlib import ft2font
+
+    from dynamic_pdf.layout.factory import _apply_rtl
+    from dynamic_pdf.renderers import chart
+    text = "الحصص حسب المدينة"
+    monkeypatch.setattr(ft2font, "__libraqm_version__", "0.10", raising=False)
+    assert chart._visual(text) == text
+    monkeypatch.setattr(ft2font, "__libraqm_version__", None, raising=False)
+    assert chart._visual(text) == _apply_rtl(text, "R") != text
+
+
+@pytest.mark.parametrize("title, inside", [("Share", True), ("Revenue by customer segment and region, fiscal 2025", False)])
+def test_a_doughnut_title_sits_in_the_hole_only_when_it_fits(title, inside):
+    fig = figure("donut", {"A": 55, "B": 30, "C": 15}, title=title)
+    ax = fig.axes[0]
+    in_hole = [t.get_text().replace("\n", " ") for t in ax.texts if t.get_position() == (0, 0)]
+    assert (in_hole == [title]) is inside and (ax.get_title() == title) is (not inside)

@@ -4,45 +4,21 @@ Calibrated, monotone weights over measured facts: the model to beat before any L
 A pairwise logistic model (Bradley-Terry): the chance that design a is preferred to design b
 is ``sigmoid(w . (x_a - x_b) / scale)``, so a score difference reads as a win probability.
 Weights whose direction is known are held to it (``MONOTONE``): more fit never counts against
-a design, more sparse pages never for it. It replaces ``fit * 6 + index`` only when a caller
-names a model whose training record passed the same gate as the LightGBM ranker.
-
-The features are measurements, never description strings. ``measured`` and
-``from_candidate`` are the only two places that read them.
+a design, more sparse pages never for it. It is one of the two kinds the learned selector
+loads (``variant_ranker``), reads the same facts and passes the same gate.
 """
 from __future__ import annotations
 
-import hashlib
-import json
 import math
-import os
 from typing import Dict, List, Sequence, Tuple
 
-FORMAT = "dynamic-pdf-builder/variant-weights"
-FEATURES = ["fit", "index", "pages", "page_growth", "sparse_share", "alike_share", "page_variety", "type_contrast",
-            "image_share", "last_page_ink"]
+from .variant_ranker import FEATURES, WEIGHTS_FORMAT, Pairwise, RankerRefused, model_digest, read_record
+
+FORMAT = WEIGHTS_FORMAT
 MONOTONE = {"fit": 1, "index": 1, "page_growth": -1, "sparse_share": -1, "alike_share": -1, "page_variety": 1,
-            "last_page_ink": 1}                     # +1 never hurts, -1 never helps; absent means free
-MAX_BYTES = 64 * 1024
-HEURISTICS = ("sparse_share", "alike_share", "page_variety", "type_contrast", "image_share", "last_page_ink")
-
-
-def measured(v) -> Dict[str, float]:
-    """A finished design's measured facts.
-    shortcut: reads the variant report's page heuristics; switch to PageFacts when M9 lands."""
-    r = v.report
-    estimated = v.plan.brief.estimated_pages if getattr(v, "plan", None) else 0
-    out = {"fit": float(r.fit), "index": float(r.index), "pages": float(r.pages),
-           "page_growth": r.pages / estimated if estimated else 1.0}
-    out.update({k: float((r.heuristics or {}).get(k, 0.0)) for k in HEURISTICS})
-    return out
-
-
-def from_candidate(c: dict) -> Dict[str, float]:
-    """The same facts from a row of a batch's candidates.jsonl.
-    shortcut: reads the recorded ``features``; switch to the recorded PageFacts when M9 lands."""
-    f = c.get("features") or {}
-    return {k: float(f.get(k, 0.0)) for k in FEATURES}
+            "last_page_ink": 1, "last_page_fill": 1, "short_pages_before_last": -1, "interior_gap_pages": -1,
+            "largest_interior_gap": -1, "layout_wasted": -1, "layout_separated_figures": -1}
+#           +1 never hurts, -1 never helps; absent means free
 
 
 def _vec(f: Dict[str, float]) -> List[float]:
@@ -69,7 +45,7 @@ def fit(pairs: Sequence[Tuple[dict, dict]], *, l2: float = 0.05, steps: int = 30
         grad = -(x * (1 / (1 + np.exp(z)))[:, None]).mean(axis=0) + l2 * w
         w -= rate * grad
         w = np.where(sign > 0, np.maximum(w, 0), np.where(sign < 0, np.minimum(w, 0), w))
-    return {"features": FEATURES, "monotone": MONOTONE, "weights": [round(float(v), 6) for v in w],
+    return {"monotone": MONOTONE, "weights": [round(float(v), 6) for v in w],
             "scale": [round(float(v), 6) for v in scale], "l2": l2}
 
 
@@ -86,39 +62,24 @@ def evaluate(model: dict, pairs: Sequence[Tuple[dict, dict]]) -> dict:
             "log_loss": round(-sum(math.log(max(x, 1e-12)) for x in p) / len(p), 4)}
 
 
-def digest(model: dict) -> str:
-    return hashlib.sha256(json.dumps({k: model[k] for k in ("features", "monotone", "weights", "scale")},
-                                     sort_keys=True).encode("utf-8")).hexdigest()
+digest = model_digest
 
 
-class WeightsRanker:
-    features = staticmethod(measured)
-
+class WeightsRanker(Pairwise):
     def __init__(self, record: dict):
-        self.record, self.model, self.digest = record, record["model"], record["model_sha256"]
-
-    @classmethod
-    def load(cls, path: str) -> "WeightsRanker":
-        from .variant_ranker import RankerRefused
-        if not os.path.isfile(path):
-            raise RankerRefused(f"model file not found: {path}")
-        if os.path.getsize(path) > MAX_BYTES:
-            raise RankerRefused("weights file exceeds 64 KB")
-        with open(path, encoding="utf-8") as f:
-            record = json.load(f)
-        if record.get("format") != FORMAT:
-            raise RankerRefused("the training record has another format")
         model = record.get("model") or {}
-        if model.get("features") != FEATURES or len(model.get("weights", [])) != len(FEATURES) \
-                or len(model.get("scale", [])) != len(FEATURES):
+        if len(model.get("weights", [])) != len(FEATURES) or len(model.get("scale", [])) != len(FEATURES):
             raise RankerRefused("the model was trained on other features")
         if model.get("monotone") != MONOTONE or any(MONOTONE.get(k, 0) * w < 0 for k, w in zip(FEATURES, model["weights"])):
             raise RankerRefused("the weights break their monotone constraints")
-        if record.get("model_sha256") != digest(model):
-            raise RankerRefused("the model does not match its training record")
-        if not (record.get("gate") or {}).get("passed"):
-            raise RankerRefused("the model did not pass its evaluation gate")
-        return cls(record)
+        self.record, self.model, self.digest = record, model, record["model_sha256"]
 
-    def scores(self, candidates: Sequence[Dict[str, float]]) -> List[float]:
-        return [score(self.model, c) for c in candidates]
+    def logit(self, d, c):
+        return sum(w * x / s for w, x, s in zip(self.model["weights"], d, self.model["scale"]))
+
+    @classmethod
+    def load(cls, path: str) -> "WeightsRanker":
+        record = read_record(path)
+        if record["format"] != FORMAT:
+            raise RankerRefused("the training record has another format")
+        return cls(record)

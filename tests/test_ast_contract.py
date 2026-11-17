@@ -80,7 +80,7 @@ def test_block_text_reaches_nested_content():
 
 
 def test_v03_calls_unchanged_without_design():
-    b = DocumentBuilder(theme="academic").heading("A").paragraph("B")
+    b = DocumentBuilder(theme="academic").heading("A").paragraph("B").design(None)
     assert b.design_explain()["profile"] is None
     b.render()
     assert b.last_render.theme.name == "academic"

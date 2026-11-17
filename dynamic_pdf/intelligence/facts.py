@@ -96,7 +96,8 @@ def _signals(number: int, page, cells, blocks) -> PageSignals:
                 if not span["text"].strip():
                     continue
                 largest = max(largest, span["size"])
-                words += len(span["text"].split())
+                # a word has a letter or a digit: the dots that lead a contents line to its page are not words
+                words += sum(any(c.isalnum() for c in w) for w in span["text"].split())
                 if not first and top <= span["bbox"][1] <= bottom:
                     first = span["text"].strip()
     return PageSignals(page=number, ink=round(sum(map(sum, cells)) / (GRID_W * h), 3),

@@ -59,6 +59,7 @@ def main(argv=None) -> int:
     x.add_argument("--date", help="review date recorded on every row (default today)")
     x.add_argument("--no-wait", action="store_true", help="submit or check, and return without waiting")
     x.add_argument("--poll", type=float, default=60.0, help="seconds between status checks")
+    x.add_argument("--page-px", type=int, help="send every page as its own image of this width, not the small sheet")
     x = gs.add_parser("judge", help="a local page where a person judges the blind sheets")
     x.add_argument("batch")
     x.add_argument("--reviewer", required=True, help="the person's full name")
@@ -71,9 +72,11 @@ def main(argv=None) -> int:
     t.add_argument("--name", required=True, help="model name under training/models")
     t.add_argument("--min-pairs", type=int, default=200)
     t.add_argument("--kind", choices=("lightgbm", "weights"), default="lightgbm",
-                   help="weights: calibrated monotone weights, no LightGBM needed (written as <name>.json)")
+                   help="weights: calibrated monotone weights, no LightGBM needed. Either is written as <name>.json")
     t.add_argument("--human-audit", help="separate verified human-review JSONL, never AI training labels")
     t.add_argument("--provenance", help="local source author/asset group manifest JSON")
+    t.add_argument("--delegated-audit", help="owner's waiver: an AI reviewer's blind audit in place of the human one")
+    t.add_argument("--pdf-only", action="store_true", help="owner's waiver: no Word-verified comparisons")
     e = sub.add_parser("evaluate", help="read a model's training record and gate")
     e.add_argument("--name", required=True)
     c = sub.add_parser("trace", help="generate one fictional document and show the rules and selector that ran")
@@ -121,7 +124,8 @@ def main(argv=None) -> int:
             from .ai_review import run as review
             humans = os.path.join(p["human_preferences"], "human-audit.jsonl")
             P.report(review(work(args.batch), dataset, args.judge, source=args.source, date=args.date,
-                            wait=not args.no_wait, poll=args.poll, human_audit=humans if os.path.isfile(humans) else None))
+                            wait=not args.no_wait, poll=args.poll, human_audit=humans if os.path.isfile(humans) else None,
+                            page_px=args.page_px))
         elif args.step == "judge":
             from .ab_page import Judging, serve
             j = Judging(work(args.batch), os.path.join(p["human_preferences"], "human-audit.jsonl"), args.reviewer, args.source)
@@ -138,13 +142,17 @@ def main(argv=None) -> int:
             P.report(A.check(dataset))
     elif args.cmd == "train":
         script = os.path.join(P.ROOT, "scripts", "train_variant_ranker.py")
-        out = os.path.join(p["models"], args.name + (".json" if args.kind == "weights" else ".txt"))
+        out = os.path.join(p["models"], args.name + ".json")
         argv_train = [sys.executable, script, "--dataset", dataset, "--batches", os.path.join(p["ai_preferences"], "batches"),
                       "--split", p["document_split"], "--out", out, "--min-pairs", str(args.min_pairs), "--kind", args.kind]
         if args.human_audit:
             argv_train += ["--human-audit", args.human_audit]
         if args.provenance:
             argv_train += ["--provenance", args.provenance]
+        if args.delegated_audit:
+            argv_train += ["--delegated-audit", args.delegated_audit]
+        if args.pdf_only:
+            argv_train += ["--pdf-only"]
         return subprocess.call(argv_train)
     elif args.cmd == "trace":
         P.report(A.trace(args.document, not args.no_grammar, args.model))

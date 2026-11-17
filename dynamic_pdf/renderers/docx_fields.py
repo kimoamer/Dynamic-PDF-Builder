@@ -297,8 +297,9 @@ def set_style_fonts(style, ascii_font: Optional[str], cs_font: Optional[str],
 
 # ─────────────────────────── fields ───────────────────────────
 
-def add_field(paragraph, instr: str, placeholder: str = "", run_props=None):
-    """Append a complex field (e.g. ``PAGE``, ``NUMPAGES``) to ``paragraph``."""
+def add_field(paragraph, instr: str, placeholder: str = "", run_props=None, dirty: bool = True):
+    """Append a complex field (e.g. ``PAGE``, ``NUMPAGES``) to ``paragraph``. ``dirty`` asks Word to
+    update it on opening; a field whose ``placeholder`` is already right needs no update."""
     def _run():
         r = paragraph.add_run()
         if run_props:
@@ -307,7 +308,8 @@ def add_field(paragraph, instr: str, placeholder: str = "", run_props=None):
     r1 = _run()
     fc = OxmlElement("w:fldChar")
     fc.set(qn("w:fldCharType"), "begin")
-    fc.set(qn("w:dirty"), "true")
+    if dirty:
+        fc.set(qn("w:dirty"), "true")
     r1._r.append(fc)
     r2 = _run()
     it = OxmlElement("w:instrText")

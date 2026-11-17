@@ -39,6 +39,8 @@ class DesignRecipe(BaseModel):
     page_number_format: str = "Page {n} of {total}"
     heading_ramp_locked: bool = False          # the planner leaves the ramp alone
     body_columns: int = 1                      # columns for runs of prose (planner decides where)
+    paper: bool = False                        # a scholarly paper: see DecorationConfig.paper
+    toc_min_pages: int = 0                     # no inserted contents page under this many pages
     notes: List[str] = Field(default_factory=list)
 
     @property
@@ -75,9 +77,10 @@ RECIPES = {
         heading_family=_SERIF, base_size=11, line_height=1.5,
         heading_scale=[1.55, 1.3, 1.12, 1.0, 1.0, 0.95], density=1.0,
         margins=(72, 72, 72, 72), first_line_indent=18, section_numbering=True,
-        toc_min_headings=5, header_style="minimal", footer_style="centered",
-        page_number_format="{n}",
-        notes=["serif text face, indented paragraphs, stable numbering"]),
+        toc_min_headings=5, toc_min_pages=12, header_enabled=False, footer_style="centered",
+        page_number_format="{n}", paper=True,
+        notes=["a paper: title block on page one, plain abstract, indented paragraphs, ruled "
+               "tables, numbered sections and references; no cover, no running header"]),
     Profile.TECHNICAL_MANUAL: DesignRecipe(
         profile=Profile.TECHNICAL_MANUAL, base_theme="claude", base_size=10, line_height=1.45,
         heading_scale=[1.8, 1.4, 1.18, 1.05, 1.0, 0.95], density=0.95,
@@ -245,6 +248,7 @@ def apply_recipe(recipe: DesignRecipe, base: Optional[Theme] = None) -> Theme:
     sp.first_line_indent = recipe.first_line_indent
     dec.drop_cap_enabled = recipe.drop_cap
     dec.heading_accent_bar = recipe.heading_accent_bar
+    dec.paper = recipe.paper
     hf.enabled = True
     if recipe.header_enabled:
         hf.header_style = recipe.header_style
@@ -256,4 +260,8 @@ def apply_recipe(recipe: DesignRecipe, base: Optional[Theme] = None) -> Theme:
     hf.show_page_number = True
     hf.page_number_format = recipe.page_number_format
     hf.skip_first_page_header = recipe.skip_first_page_header
+    if base is not None and hf.logo:          # the chosen theme's logo is a letterhead: it stays, from page one
+        hf.header_style = hf.header_style if "logo" in hf.header_style else "logo_right"
+        hf.height = max(hf.height, 40.0)
+        hf.skip_first_page_header = False
     return t

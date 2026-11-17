@@ -590,17 +590,20 @@ class LayoutEngine:
             dw, dh = _draw_image(c, hf.logo, x, h - bar_h + (bar_h - hf.logo_max_height) / 2,
                                  hf.logo_max_height * 3, hf.logo_max_height)
             x += dw + 14
-        self._header_content(c, w, h, bar_h, hf, x_start=x)
+        # in right-to-left text the title starts at the right edge, away from the logo
+        self._header_content(c, w, h, bar_h, hf, x_start=30 if self._rtl() else x, logo=False)
 
     def _header_logo_right(self, c, w, h, bar_h, hf):
         """Logo right + title left on a bar."""
         c.setFillColor(_hc(self._hdr_bg()))
         c.rect(0, h - bar_h, w, bar_h, fill=1, stroke=0)
+        dw = 0
         if hf.logo:
-            _draw_image(c, hf.logo, w - 30 - hf.logo_max_height * 3,
-                        h - bar_h + (bar_h - hf.logo_max_height) / 2,
-                        hf.logo_max_height * 3, hf.logo_max_height, align="right")
-        self._header_content(c, w, h, bar_h, hf)
+            dw, _ = _draw_image(c, hf.logo, w - 30 - hf.logo_max_height * 3,
+                                h - bar_h + (bar_h - hf.logo_max_height) / 2,
+                                hf.logo_max_height * 3, hf.logo_max_height, align="right")
+        # in right-to-left text the title ends where the logo begins
+        self._header_content(c, w, h, bar_h, hf, x_start=30 + (dw + 14 if dw and self._rtl() else 0), logo=False)
 
     def _header_minimal(self, c, w, h, bar_h, hf):
         """No background — just text."""
@@ -696,15 +699,16 @@ class LayoutEngine:
 
     # ─── Shared header content helper ──────────────────────────────
 
-    def _header_content(self, c, w, h, bar_h, hf, text_color=None, x_start=30, y_offset=0):
-        """Draw logo + title + subtitle (shared across bar-based styles)."""
+    def _header_content(self, c, w, h, bar_h, hf, text_color=None, x_start=30, y_offset=0, logo=True):
+        """Draw logo + title + subtitle (shared across bar-based styles); ``logo=False`` when the
+        style has placed the logo itself."""
         tc = text_color or self._hdr_text()
         ts = self.theme.typography.header_title_size
         sts = self.theme.typography.header_subtitle_size
         x = x_start
 
         # Logo
-        if hf.logo:
+        if hf.logo and logo:
             max_lh = min(hf.logo_max_height, bar_h - 16)
             dw, dh = _draw_image(c, hf.logo, x,
                                  h - bar_h + (bar_h - max_lh) / 2 - y_offset,
@@ -804,17 +808,15 @@ class LayoutEngine:
         left = self._resolve_slot(hf.footer_left, hf, doc) or ""
         if left or hf.show_date:
             txt = left or datetime.now().strftime(hf.date_format)
-            c.drawString(30, 16, txt)
+            self._start(c, w, 16, txt)
         # Centre
         centre = self._resolve_slot(hf.footer_center, hf, doc) or hf.copyright_text or ""
         if centre:
             c.drawCentredString(w / 2, 16, centre)
         # Right
         right = self._resolve_slot(hf.footer_right, hf, doc) or ""
-        if right:
-            c.drawRightString(w - 30, 16, right)
-        elif hf.show_page_number:
-            c.drawRightString(w - 30, 16, self._fmt_page(hf, doc))
+        if right or hf.show_page_number:
+            self._end(c, w, 16, right or self._fmt_page(hf, doc))
 
     def _footer_two_column(self, c, w, h, bar_h, hf, doc):
         """Left + Right only."""
@@ -823,9 +825,9 @@ class LayoutEngine:
         c.setFillColor(_hc(tc))
         c.setFont(self._body_font(), fs)
         left = hf.footer_text or hf.copyright_text or ""
-        c.drawString(30, 16, left)
+        self._start(c, w, 16, left)
         if hf.show_page_number:
-            c.drawRightString(w - 30, 16, self._fmt_page(hf, doc))
+            self._end(c, w, 16, self._fmt_page(hf, doc))
 
     def _footer_page_only(self, c, w, h, bar_h, hf, doc):
         """Just page number centred."""
@@ -835,19 +837,21 @@ class LayoutEngine:
 
     def _footer_logo_right(self, c, w, h, bar_h, hf, doc):
         """Logo right-aligned (like Averroes style)."""
-        self._footer_content(c, w, bar_h, hf, doc, text_color=self.theme.colors.text_secondary)
         logo = hf.footer_logo or hf.logo
+        self._footer_content(c, w, bar_h, hf, doc, text_color=self.theme.colors.text_secondary,
+                             page_at_start=bool(logo) and not self._rtl())
         if logo:
-            _draw_image(c, logo, w - 30 - hf.footer_logo_max_height * 5, 8,
-                        hf.footer_logo_max_height * 5, hf.footer_logo_max_height, align="right")
+            lh = hf.footer_logo_max_height
+            _draw_image(c, logo, w - 30 - lh * 5, bar_h - 12 - lh * 0.65, lh * 5, lh, align="right")
 
     def _footer_logo_left(self, c, w, h, bar_h, hf, doc):
         """Logo left-aligned."""
         logo = hf.footer_logo or hf.logo
         if logo:
-            _draw_image(c, logo, 30, 8,
-                        hf.footer_logo_max_height * 5, hf.footer_logo_max_height)
-        self._footer_content(c, w, bar_h, hf, doc, text_color=self.theme.colors.text_secondary)
+            lh = hf.footer_logo_max_height
+            _draw_image(c, logo, 30, bar_h - 12 - lh * 0.65, lh * 5, lh)
+        self._footer_content(c, w, bar_h, hf, doc, text_color=self.theme.colors.text_secondary,
+                             page_at_start=bool(logo) and self._rtl())
 
     def _footer_copyright_line(self, c, w, h, bar_h, hf, doc):
         """Thin line + copyright centred + page right."""
@@ -862,7 +866,7 @@ class LayoutEngine:
         if hf.copyright_text:
             c.drawCentredString(w / 2, 12, hf.copyright_text)
         if hf.show_page_number:
-            c.drawRightString(w - 30, 12, self._fmt_page(hf, doc))
+            self._end(c, w, 12, self._fmt_page(hf, doc))
 
     def _footer_academic(self, c, w, h, bar_h, hf, doc):
         """Centred italic text + page number — classic academic."""
@@ -871,18 +875,29 @@ class LayoutEngine:
         c.setFillColor(_hc(tc))
         c.setFont(self._body_font(italic=True), fs)
         text = hf.footer_text or hf.title or ""
-        c.drawString(30, 16, text)
+        self._start(c, w, 16, text)
         if hf.show_page_number:
-            c.drawRightString(w - 30, 16, str(doc.page))
+            self._end(c, w, 16, str(doc.page))
 
     def _footer_sidebar(self, c, w, h, bar_h, hf, doc):
         """Sidebar footer (same as header sidebar — drawn as full-page strip)."""
         # The sidebar is drawn in header; footer just adds text
         self._footer_content(c, w, bar_h, hf, doc, text_color=self.theme.colors.text_secondary)
 
+    def _rtl(self) -> bool:
+        return self._language() == "ar"
+
+    def _start(self, c, w, y, text):
+        """At the reading start: the left, or the right in right-to-left documents."""
+        (c.drawRightString(w - 30, y, text) if self._rtl() else c.drawString(30, y, text))
+
+    def _end(self, c, w, y, text):
+        """At the reading end: the right, or the left in right-to-left documents."""
+        (c.drawString(30, y, text) if self._rtl() else c.drawRightString(w - 30, y, text))
+
     # ─── Shared footer content helper ──────────────────────────────
 
-    def _footer_content(self, c, w, bar_h, hf, doc, text_color=None):
+    def _footer_content(self, c, w, bar_h, hf, doc, text_color=None, page_at_start=False):
         """Draw 3-row footer: copyright | company+address | contacts + page/date."""
         tc = text_color or self._ftr_text()
         fs = self.theme.typography.footer_text_size
@@ -898,9 +913,9 @@ class LayoutEngine:
             c.setFont(self._body_font(), fs)
             c.drawCentredString(center_x, row1_y, line1)
 
-        # Row 2: company + address
+        # Row 2: company + address (the company once, when the first row already says it)
         row2_y = row1_y - 11
-        parts2 = [p for p in [hf.company_name, hf.address] if p]
+        parts2 = [p for p in [hf.company_name, hf.address] if p and p != line1]
         if parts2:
             c.setFont(self._body_font(), ds)
             c.drawCentredString(center_x, row2_y, "  •  ".join(parts2))
@@ -912,20 +927,20 @@ class LayoutEngine:
             c.setFont(self._body_font(), ds)
             c.drawCentredString(center_x, row3_y, "    ".join(parts3))
 
-        # Page number (right)
+        # Page number at the end, date at the start; a logo style puts the page number away from its logo
+        put_page, put_date = (self._start, self._end) if page_at_start else (self._end, self._start)
         if hf.show_page_number:
             c.setFont(self._body_font(), fs)
-            c.drawRightString(w - 30, row1_y, self._fmt_page(hf, doc))
-
-        # Date (left)
+            put_page(c, w, row1_y, self._fmt_page(hf, doc))
         if hf.show_date:
             c.setFont(self._body_font(), fs)
-            c.drawString(30, row1_y, datetime.now().strftime(hf.date_format))
+            put_date(c, w, row1_y, datetime.now().strftime(hf.date_format))
 
     # ─── Helpers ──────────────────────────────────────────────────
 
     def _fmt_page(self, hf, doc):
-        fmt = hf.page_number_format
+        from ..i18n import page_format
+        fmt = page_format(hf.page_number_format, self._language())
         counter = self._page_counter
         # During the first multiBuild pass the total is unknown; that pass is
         # always re-run (see _PageCounter), so a provisional value never ships.
@@ -1034,8 +1049,9 @@ class LayoutEngine:
         total = self._page_counter.total
         shown = page + (self.document.meta.page_number_start or 1) - 1
         values = {**running, "page": str(shown), "pages": str(total or shown)}
-        width = w - self._geometry.left - self._geometry.right
-        x = self._geometry.left
+        # the bands share the text column's edges: the frame sets its text in by FRAME_PADDING
+        width = w - self._geometry.left - self._geometry.right - 2 * FRAME_PADDING
+        x = self._geometry.left + FRAME_PADDING
         if head:
             layout = self.band_maker.layout(head, width, values)
             draw_band(canvas, layout, head, self.theme, x, h - sys.edge_distance, w, True)
@@ -1146,18 +1162,21 @@ class LayoutEngine:
 
         self.page_system = self.document.meta.page_system
         if self.page_system is not None:
-            from ..schema.page_system import settled
-            self.page_system = settled(self.page_system, self.document.blocks)
+            from ..schema.page_system import settled, themed
+            self.page_system = themed(settled(self.page_system, self.document.blocks), self.theme.colors)
         rtl = (is_rtl_document(self.document) if self.page_system is not None
                or _uses_media_model(self.document.blocks) else False)
         self.band_maker = None
-        band_needs = None
+        band_needs = first_needs = None
         if self.page_system is not None:
-            from .page_envelope import band_maker, reserve_bands
+            from .page_envelope import band_maker, reserve_bands, split_band_needs
             self.band_maker, sample = band_maker(self.document, theme, self.page_system, rtl,
                                                  self.policy.assets, self.diagnostics)
-            band_needs = reserve_bands(self.band_maker, w - sp.page_margin_left - sp.page_margin_right,
-                                       sample, self.diagnostics)
+            band_width = w - sp.page_margin_left - sp.page_margin_right - 2 * FRAME_PADDING
+            band_needs = reserve_bands(self.band_maker, band_width, sample, self.diagnostics)
+            split = split_band_needs(self.band_maker, band_width, sample)
+            if split:
+                first_needs, band_needs = split
         from .page_envelope import page_margins
         top_m, bot_m, left_m, right_m = page_margins(theme, band_needs)
 
@@ -1187,6 +1206,15 @@ class LayoutEngine:
             # running heads, feet and page layers are artifacts, not text
             hooks = {k: (lambda canv, doc, fn=fn: artifact(canv, lambda: fn(canv, doc))) for k, fn in hooks.items()}
         template = PageTemplate(id='AllPages', frames=[frame], pagesize=pagesize, **hooks)
+        # page one with bands of its own takes its own margins, then hands over to the other pages'
+        first_template = None
+        if first_needs is not None:
+            first_top, first_bottom, _, _ = page_margins(theme, first_needs)
+            if (first_top, first_bottom) != (top_m, bot_m):
+                first_frame = GeoFrame(left_m, first_bottom, frame_width, h - first_top - first_bottom, id='first')
+                first_frame.geometry = self.geometry
+                first_template = PageTemplate(id='First', frames=[first_frame], pagesize=pagesize,
+                                              autoNextPageTemplate='AllPages', **hooks)
         # Landscape pages for content the planner marks as too wide for portrait
         lw, lh = (h, w) if h > w else (w, h)
         land_frame = GeoFrame(left_m, bot_m, lw - left_m - right_m, lh - top_m - bot_m, id='land')
@@ -1230,7 +1258,7 @@ class LayoutEngine:
         )
         if hasattr(doc_template, 'lang'):
             doc_template.lang = meta.language
-        doc_template.addPageTemplates([template, land_template])
+        doc_template.addPageTemplates(([first_template] if first_template else []) + [template, land_template])
 
         # Create thread-safe render context
         # a frame sets its flowables inside its padding: what sizes itself to the column
@@ -1292,6 +1320,9 @@ class LayoutEngine:
                     flowables.append(region[0])
                     skip_to = i + region[1]
                     continue
+                from ..core.normalize import titled_by
+                if titled_by(self.document.blocks, i):
+                    block = block.model_copy(update={"hints": {**(block.hints or {}), "titled": True}})
                 result = create_flowables(block, theme, ctx)
                 if result:
                     if self.geometry is not None or tagged:

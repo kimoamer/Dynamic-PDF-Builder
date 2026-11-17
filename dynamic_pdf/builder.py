@@ -21,14 +21,14 @@ from .schema.blocks import (
     ChecklistBlock, ChecklistItem, DefinitionListBlock, DefinitionItem,
     FootnoteBlock, AbstractBlock, AbstractField,
     BibliographyBlock, BibliographyEntry, CitationBlock,
-    SignatureBlock, TimelineBlock, TimelineEvent,
+    SignatureBlock, TimelineBlock, TimelineEvent, signature_row,
     ShapeBlock, QRCodeBlock, WatermarkBlock, TOCBlock,
     IntroductionPageBlock, DiagramBlock,
     TwoColumnBlock, ThreeColumnBlock, SidebarBlock,
     SectionOpenerBlock, PerformancePageBlock, ParallelLedgerBlock,
 )
 from .layout.engine import LayoutEngine
-from .policy import RenderPolicy, ResourceLimits, STRICT
+from .policy import PERMISSIVE, RenderPolicy, ResourceLimits, STRICT
 from .assets import AssetPolicy
 from .utils.errors import ResourceLimitError
 
@@ -40,6 +40,7 @@ class ExportResult:
                  diagnostics=None):
         self.pdf_path = pdf_path
         self.docx_path = docx_path
+        self.xlsx_path = None    # export("x.xlsx"): the tables as a workbook
         self.page_count = page_count
         self.profile = profile
         self.diagnostics = diagnostics or []
@@ -113,10 +114,12 @@ class DocumentBuilder:
         self._fonts: dict = {}
         self._meta = Meta()
         self._blocks: list = []
+        self._library: Dict[str, Dict[str, str]] = {}   # BibTeX entries that [@key] citations read
+        self._citation_style = "apa"
         self._policy = policy or RenderPolicy()
         self.last_render = None   # LayoutEngine of the most recent render (diagnostics, page_count)
-        self._design_mode: Optional[str] = None   # None = classic theme rendering (v0.3)
-        self._design_explicit = False             # export()/CLI default to design("auto")
+        self._design_mode: Optional[str] = "auto"   # designed by default; design(None) = the classic v0.3 look
+        self._design_explicit = False
         self._brand = None
         self._source_kind = "api"
         self._source_text: Optional[str] = None
@@ -155,7 +158,7 @@ class DocumentBuilder:
     def design(self, mode: str = "auto", brand=None, recipe: Optional[str] = None,
                recipe_gate: str = "evidence", *, direction: Optional[str] = None,
                variants: Optional[int] = None, grammar=False, ai=None, critic=None,
-               brief: Optional[str] = None) -> 'DocumentBuilder':
+               brief: Optional[str] = None, ranker: Optional[str] = None) -> 'DocumentBuilder':
         """Enable intelligent design: ``"auto"`` selects a profile from the
         content; a profile name forces it. ``brand`` is a ``BrandKit`` or dict.
         Content is never altered — only typography, layout and navigation.
@@ -176,7 +179,9 @@ class DocumentBuilder:
         ``design_variants``) makes ``export()``/``render()`` deliver the recommended design that
         passed the hard gates; ``ExportResult.design`` says which and why. When none passes,
         the stable designed output is delivered and the result's status is ``"fallback"``.
-        Without them nothing changes."""
+        ``ranker`` asks for the learned selector among those designs: ``"auto"`` for the model
+        packaged with this release, or a model's path (see ``design_variants``). Without them
+        nothing changes."""
         from .design import BrandKit, EVIDENCE_RECIPES, resolve_profile_name
         from .design.directions import DIRECTIONS
         from .design.evidence_gate import GATES
@@ -192,9 +197,9 @@ class DocumentBuilder:
         if variants is not None and not 1 <= variants <= len(DIRECTIONS):
             raise ValueError(f"variants must be between 1 and {len(DIRECTIONS)}")
         self._variant_request = None
-        if direction is not None or variants is not None or grammar:
+        if direction is not None or variants is not None or grammar or ranker not in (None, "off"):
             self._variant_request = {"families": None if direction in (None, "auto") else [direction],
-                                     "n": variants or 3, "grammar": grammar or None}
+                                     "n": variants or 3, "grammar": grammar or None, "ranker": ranker}
         self._evidence_recipe, self._recipe_gate = recipe, recipe_gate
         self._ai, self._critic, self._ai_brief = ai, critic, brief
         self._design_explicit = True
@@ -339,7 +344,8 @@ class DocumentBuilder:
                               + repr(self._policy)).encode()).hexdigest()
         if self._variant_result is None or self._variant_result[0] != key:
             r = self._variant_request
-            self._variant_result = (key, self.design_variants(n=r["n"], families=r["families"], grammar=r["grammar"]))
+            self._variant_result = (key, self.design_variants(n=r["n"], families=r["families"], grammar=r["grammar"],
+                                                              ranker=r.get("ranker")))
         self.last_variants = self._variant_result[1]
         return self.last_variants
 
@@ -407,7 +413,7 @@ class DocumentBuilder:
 
     def design_variants(self, n: int = 3, families=None, brand=None, budget=None, office: bool = False,
                         grammar=None, grammar_rules=None, ranker_model=None, ai=None, critic=None,
-                        brief: Optional[str] = None):
+                        brief: Optional[str] = None, ranker: Optional[str] = None):
         """Several complete designs of this document, each a different art direction, and
         a recommendation among those that pass the hard gates.
 
@@ -420,7 +426,8 @@ class DocumentBuilder:
         another approved file; ``grammar_rules`` limits it to named rules. Each report lists
         the rules a design used in ``grammar_rules``. Without it nothing changes.
 
-        ``ranker_model`` names a trained variant ranker whose gate passed. It only reorders
+        ``ranker`` is ``"auto"`` (the model packaged with this release) or the path of a trained
+        model whose gate passed; ``ranker_model`` is the older name for a path. It only reorders
         designs that passed the hard gates, and ``stats["selection"]`` says which selector
         chose. A missing or refused model leaves the fixed selection in place.
 
@@ -432,7 +439,7 @@ class DocumentBuilder:
         return generate_variants(self.build(), policy=self._policy, brand=kit or self._brand,
                                  base_theme=_gt(self._theme) if self._theme_explicit else None, n=n,
                                  families=families, budget=budget, office=office, grammar=grammar,
-                                 grammar_rules=grammar_rules, ranker_model=ranker_model,
+                                 grammar_rules=grammar_rules, ranker_model=ranker_model, ranker=ranker,
                                  ai=ai or getattr(self, "_ai", None), critic=critic or getattr(self, "_critic", None),
                                  request=brief or getattr(self, "_ai_brief", None))
 
@@ -453,8 +460,12 @@ class DocumentBuilder:
         repeated headings, unresolved references, mixed digits, inconsistent number and
         date formats, images without alt text, empty sections. Never edits anything.
         Returns ``dynamic_pdf.qa.lint.LintWarning`` items; ``rules`` limits the rules run."""
+        from .core.normalize import normalize
         from .qa.lint import lint
-        return lint(self.semantic(), rules)
+        # a formula that cannot be computed is a warning here, whatever the error mode
+        sem = normalize(self.build(strict=False), source_kind=self._source_kind,
+                        source_text=self._source_text, front_matter=self.front_matter)
+        return lint(sem, rules)
 
     # ─── Render policy (caller-owned; never taken from document payloads) ───
 
@@ -492,9 +503,11 @@ class DocumentBuilder:
              language: str = "en", subject: Optional[str] = None,
              keywords: Optional[List[str]] = None,
              description: Optional[str] = None, audience: Optional[str] = None,
-             tagged: bool = False) -> 'DocumentBuilder':
+             tagged: bool = False, reviewer: Optional[str] = None) -> 'DocumentBuilder':
         """Document metadata. ``audience`` names the readers in free text ("board",
         "engineers", "investors"); the design reads it and ``design_explain()`` says how.
+        ``reviewer`` names who suggested the CriticMarkup edits and comments in the text
+        (``{++added++}``, ``{--removed--}``, ``{>>comment<<}``); Word shows it on each change.
         ``tagged=True``: a tagged PDF (structure tree, alt text, artifacts; needs pikepdf)."""
         if audience:
             self._meta.audience = audience
@@ -510,11 +523,13 @@ class DocumentBuilder:
             self._meta.keywords = keywords
         if description:
             self._meta.description = description
+        if reviewer:
+            self._meta.reviewer = reviewer
         self._meta.language = language
         return self
 
     def theme(self, name: str) -> 'DocumentBuilder':
-        self._theme = name
+        self._theme, self._theme_explicit = name, True      # the design starts from this theme
         return self
 
     def fonts(self, heading: Optional[str] = None, body: Optional[str] = None,
@@ -701,7 +716,13 @@ class DocumentBuilder:
         return self
 
     def page_system(self, system: Any = None, **fields) -> 'DocumentBuilder':
-        """Slot-based running headers and footers, in place of the theme's."""
+        """Slot-based running headers and footers, in place of the theme's. ``system`` is a
+        ``PageSystem``, its fields as a dict, or a preset's name (letterhead, modern, banner, report,
+        minimal) with ``logo=`` and the field values: ``page_system("modern", logo="logo.png",
+        company="Nile Co.", confidentiality="Internal")``."""
+        if isinstance(system, str):
+            from .schema.page_system import preset
+            system = preset(system, language=self._meta.language or "en", **fields)
         self._meta.page_system = (system if isinstance(system, PageSystem)
                                   else PageSystem.model_validate(system or fields))
         return self
@@ -830,13 +851,51 @@ class DocumentBuilder:
         self._blocks.append(BibliographyBlock(entries=be, style=style))
         return self
 
+    def compared_with(self, old: Union['DocumentBuilder', str], reviewer: Optional[str] = None) -> 'DocumentBuilder':
+        """A new document: this one, with every difference from ``old`` (a builder, or Markdown)
+        marked as a suggested edit. Export it to DOCX for tracked changes to accept or reject, or
+        to PDF for a review copy. Formulas and citations are compared by what they show. The
+        changes are signed by ``reviewer`` (default: this document's reviewer, else "Changes")."""
+        from .core.compare import compare_blocks
+        if isinstance(old, str):
+            old = DocumentBuilder.from_markdown(old, policy=self._policy)
+        out = DocumentBuilder(theme=self._theme, policy=self._policy)
+        out._theme_explicit = self._theme_explicit
+        out._meta = self._meta.model_copy(update={"reviewer": reviewer or self._meta.reviewer or "Changes"})
+        out._blocks = compare_blocks(old.build().blocks, self.build().blocks)
+        return out
+
+    def bibtex(self, source: str, style: Optional[str] = None) -> 'DocumentBuilder':
+        """A BibTeX library for ``[@key]`` citations in the text: BibTeX text, or the path of a
+        ``.bib`` file (read under the asset policy, as images are). ``style``: ``"apa"``
+        (author and year, the default) or ``"ieee"`` (numbers). The reference list holds the works
+        cited; it fills a reference list without entries (Markdown ``[REFERENCES]``) or is added
+        at the end."""
+        from .core.citations import parse_bibtex
+        text = source
+        if "\n" not in source and source.strip().lower().endswith(".bib"):
+            from .assets import load_asset_bytes
+            text = load_asset_bytes(source, self._policy.assets).decode("utf-8-sig")
+        self._library.update(parse_bibtex(text))
+        if style:
+            self._citation_style = style.lower()
+        return self
+
     def citation(self, key: str, style: str = "numeric") -> 'DocumentBuilder':
         self._blocks.append(CitationBlock(key=key, style=style))
         return self
 
     def signature(self, name: str, title: Optional[str] = None,
-                  date: Optional[str] = None, show_line: bool = True) -> 'DocumentBuilder':
-        self._blocks.append(SignatureBlock(name=name, title=title, date=date, show_line=show_line))
+                  date: Optional[str] = None, show_line: bool = True, image: Optional[str] = None,
+                  alignment: str = "start") -> 'DocumentBuilder':
+        """A signature: ``image`` is a picture of it drawn over the line; ``alignment`` is start, center or end."""
+        self._blocks.append(SignatureBlock(name=name, title=title, date=date, show_line=show_line,
+                                           image=image, alignment=alignment))
+        return self
+
+    def signatures(self, signers: List[Dict[str, Any]]) -> 'DocumentBuilder':
+        """Several signatures side by side, one column each (each as ``signature`` takes it)."""
+        self._blocks.append(signature_row(signers))
         return self
 
     def timeline(self, events: List[Dict[str, str]],
@@ -973,8 +1032,23 @@ class DocumentBuilder:
         self._blocks.extend(blocks)
         return self
 
-    def build(self) -> Document:
-        return Document(meta=self._meta, theme=self._theme, blocks=self._blocks)
+    def build(self, strict: Optional[bool] = None) -> Document:
+        """The document as it will be rendered: table formulas (cells that start with ``=``)
+        replaced by their results, computed afresh each time; ``_blocks`` keeps the formulas.
+        A formula that cannot be computed raises in strict mode and reads ``#ERROR`` otherwise."""
+        from .core.formulas import compute_blocks
+        meta = self._meta
+        arabic = (meta.language or "").lower().startswith("ar") or meta.rtl or meta.direction == "rtl"
+        from .core.formulas import link_values
+        from .core.numbering import number_equations
+        blocks = compute_blocks(self._blocks, "ar" if arabic else "en",
+                                strict=self._policy.strict if strict is None else strict)
+        blocks = link_values(blocks)
+        blocks = number_equations(blocks)
+        if self._library:
+            from .core.citations import apply_citations
+            blocks = apply_citations(blocks, self._library, self._citation_style)
+        return Document(meta=self._meta, theme=self._theme, blocks=blocks)
 
     def _engine(self) -> LayoutEngine:
         doc, theme = self._prepared()
@@ -1050,23 +1124,55 @@ class DocumentBuilder:
                 f.message for f in report.errors[:5]), report)
         return data, report
 
+    def review(self, folder: Optional[str] = None, *, dpi: int = 60) -> dict:
+        """Render the PDF once and say what a reader would notice, for you or an agent to fix in
+        the document and review again. Nothing is changed and nothing is auto-fixed.
+
+        Returns ``{"pages", "passed", "issues", "images"}``. Each issue has ``page`` (None for the
+        whole document), ``severity`` (``error`` or ``warning``), ``code``, ``message`` and ``fix``,
+        what to change, in words. The issues come from the page checks, the page critique (empty
+        and repeated pages), render diagnostics and ``lint()``. ``folder`` saves one PNG a page
+        there (``page-001.png`` ...) and lists the paths in ``images``; ``passed`` is False when an
+        issue is an error."""
+        import dataclasses
+
+        from .qa.loop import render_with_qa
+        from .qa.review import collect
+        kept = self._policy
+        self._policy = dataclasses.replace(kept, error_mode=PERMISSIVE)   # a failing block is an issue to report, not an exception
+        try:
+            data, report = render_with_qa(self, "pdf", max_attempts=1)
+            return collect(self, data, report, folder, dpi)
+        finally:
+            self._policy = kept
+
+    def render_xlsx(self, output=None) -> Optional[bytes]:
+        """Every table as a sheet of a workbook, its numbers as numbers and its formulas as
+        spreadsheet formulas (needs openpyxl, the ``xlsx`` extra). Returns the bytes, or writes
+        them to ``output`` (a path or a file object)."""
+        from .renderers.xlsx_renderer import render_xlsx
+        doc = self.build()
+        data = render_xlsx(self._blocks, doc.blocks, doc.meta)
+        if output is None:
+            return data
+        from .layout.engine import _write_output
+        _write_output(output, data)
+        return None
+
     def export(self, path: str, format: Optional[str] = None, qa: bool = False) -> 'ExportResult':
-        """Export to ``path``; format inferred from the extension (``.pdf``/``.docx``)
-        unless given as ``"pdf"`` or ``"docx"``. ``qa=True`` inspects the rendered
-        pages, auto-fixes measurable layout defects (bounded retries) and attaches
-        the QA report."""
+        """Export to ``path``; format inferred from the extension (``.pdf``/``.docx``/``.xlsx``)
+        unless given as ``"pdf"``, ``"docx"`` or ``"xlsx"`` (the tables only, as a workbook).
+        ``qa=True`` inspects the rendered pages, auto-fixes measurable layout defects (bounded
+        retries) and attaches the QA report."""
         import os
         fmt = (format or os.path.splitext(path)[1].lstrip(".") or "pdf").lower()
+        if fmt == "xlsx":
+            self.render_xlsx(path)
+            result = ExportResult()
+            result.xlsx_path = path
+            return result
         if fmt not in ("pdf", "docx"):
-            raise ValueError(f"Unsupported export format {fmt!r}; use 'pdf' or 'docx'")
-        if not self._design_explicit and self._design_mode is None:
-            # export() is a new-style API: intelligent design unless opted out
-            # with design(None). Legacy render()/render_bytes() are unchanged.
-            self._design_mode = "auto"
-            try:
-                return self.export(path, format=fmt, qa=qa)
-            finally:
-                self._design_mode = None
+            raise ValueError(f"Unsupported export format {fmt!r}; use 'pdf', 'docx' or 'xlsx'")
         result = ExportResult()
         if qa:
             from .layout.engine import _write_output
@@ -1144,7 +1250,8 @@ class DocumentBuilder:
         """Create a DocumentBuilder pre-populated from a Markdown string.
 
         Front matter keys ``title``, ``author``, ``subject``, ``description``, ``audience``,
-        ``keywords`` and ``language``/``lang`` populate document metadata.
+        ``reviewer`` (who suggested the CriticMarkup edits and comments), ``keywords`` and
+        ``language``/``lang`` populate document metadata.
         """
         from .markdown.preprocessors import preprocess_markdown
         from .markdown.parser import parse_markdown
@@ -1154,7 +1261,7 @@ class DocumentBuilder:
             raise ResourceLimitError(
                 f"Markdown input length ({len(markdown)}) exceeds limit ({max_chars})")
         fm, blocks = parse_markdown(preprocess_markdown(markdown))
-        kw = {k: fm[k] for k in ("title", "author", "subject", "description", "audience") if isinstance(fm.get(k), str)}
+        kw = {k: fm[k] for k in ("title", "author", "subject", "description", "audience", "reviewer") if isinstance(fm.get(k), str)}
         if isinstance(fm.get("keywords"), list):
             kw["keywords"] = fm["keywords"]
         elif isinstance(fm.get("keywords"), str) and fm["keywords"]:
@@ -1168,8 +1275,17 @@ class DocumentBuilder:
             builder.document_type(fm["document_type"])
         if fm.get("direction") in ("ltr", "rtl"):
             builder.direction(fm["direction"])
+        if isinstance(fm.get("header"), str) and fm["header"].strip():
+            from .schema.page_system import FIELDS
+            builder.page_system(fm["header"].strip(), logo=fm.get("logo") or None,
+                                **{k: fm[k] for k in FIELDS if isinstance(fm.get(k), str) and k not in ("title", "page", "pages")})
         if str(fm.get("numbering", "")).lower() in ("true", "yes", "1"):
             builder._meta.exhibit_numbering = True
+        style = fm.get("citation-style") or fm.get("citation_style")
+        for source in ([fm["bibliography"]] if isinstance(fm.get("bibliography"), str) else fm.get("bibliography") or []):
+            builder.bibtex(str(source), style if isinstance(style, str) else None)
+        if isinstance(style, str) and style:
+            builder._citation_style = style.lower()
         builder.front_matter = fm
         builder._source_kind = "markdown"
         builder._source_text = markdown

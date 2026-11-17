@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -9,17 +9,19 @@ description = "Generate beautifully designed PDF and fully editable DOCX documen
 authors = [
     { name = "Dynamic PDF Builder Contributors" }
 ]
-license = { file = "LICENSE" }
+license = "MIT AND OFL-1.1"           # the code is MIT; the bundled fonts are under the SIL Open Font License
+license-files = ["LICENSE", "dynamic_pdf/fonts/bundled/LICENSES/*.txt"]
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Typing :: Typed",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Text Processing :: Markup",
 ]
@@ -36,6 +38,7 @@ dependencies = [
     "arabic-reshaper>=3.0",
     "python-bidi>=0.6",
     "python-docx>=1.1",
+    "pypdfium2>=5.0",         # reads the rendered pages: design variants and QA check them (BSD-3/Apache-2.0)
 ]
 
 [project.optional-dependencies]
@@ -45,15 +48,15 @@ diagrams = ["playwright>=1.40"]
 plotly   = ["plotly>=5.0", "kaleido>=0.2"]
 pdf      = ["pikepdf>=8.0"]
 qa       = ["pymupdf>=1.23"]          # visual QA (AGPL; optional)
-qa-permissive = ["pypdfium2>=5.0"]    # visual QA without AGPL: PDFium (BSD-3/Apache-2.0); PyMuPDF wins when both
-ranker   = ["lightgbm>=4.0"]          # optional learned candidate ranker (MIT); not in "all"
+qa-permissive = ["pypdfium2>=5.0"]    # now a core dependency; kept so existing installs still resolve. PyMuPDF wins when both
+ranker   = ["lightgbm>=4.0"]          # to TRAIN the learned selector (MIT); using a model needs nothing; not in "all"
 ai       = ["anthropic>=2.8"]         # optional AI layer, network and API key only when a caller asks; not in "all"
 mcp      = ["mcp>=1.2"]               # optional MCP server for agents (dynamic_pdf.ai.mcp_server); not in "all"
 analyzer = ["pymupdf>=1.23"]          # tools/reference_analyzer only (AGPL; local dev tool, not in "all")
 qrcode   = ["qrcode[pil]>=7.4"]
 rtl      = ["arabic-reshaper>=3.0", "python-bidi>=0.6"]  # already in core; kept for compatibility
-all      = ["dynamic-pdf-builder[charts,diagrams,plotly,pdf,qrcode,rtl,qa,xlsx]"]
-dev      = ["pytest>=8.0", "pymupdf>=1.23", "pikepdf>=8.0", "ruff>=0.3", "mypy>=1.8"]
+all      = ["dynamic-pdf-builder[charts,diagrams,plotly,pdf,qrcode,rtl,xlsx]"]   # no AGPL: qa (PyMuPDF) is asked for by name
+dev      = ["pytest>=8.0", "pymupdf>=1.23", "pikepdf>=8.0", "ruff>=0.3", "mypy>=1.8", "lightgbm>=4.0"]
 
 [tool.setuptools.dynamic]
 version = {attr = "dynamic_pdf.__version__"}
@@ -62,7 +65,7 @@ version = {attr = "dynamic_pdf.__version__"}
 include = ["dynamic_pdf*"]
 
 [tool.setuptools.package-data]
-dynamic_pdf = ["fonts/bundled/*.ttf", "fonts/bundled/catalog.json", "fonts/bundled/LICENSES/*.txt", "design/approved_grammar.json", "data/*.json"]
+dynamic_pdf = ["py.typed", "GUIDE.md", "fonts/bundled/*.ttf", "fonts/bundled/catalog.json", "fonts/bundled/LICENSES/*.txt", "design/approved_grammar.json", "models/*.json", "data/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

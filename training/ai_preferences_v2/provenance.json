@@ -1,0 +1,789 @@
+{
+ "note": "Where each rendered document came from. Wikipedia text and pictures are not kept in the repository.",
+ "documents": [
+  {
+   "document": "annual_report",
+   "document_hash": "9640e3a72cecc4c98494ec90cba3e2e69148e1adf8b7a9f31dc1f91e525bfab1",
+   "author_group": "repository-m79-fictional",
+   "asset_pool": "m79-generated-pictures",
+   "source": "benchmarks/m79/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "arabic_annual",
+   "document_hash": "b34ade53c506c880216e58b37b99899efbe9558600cf27fa4a4d4747f4a905c1",
+   "author_group": "repository-m79-fictional",
+   "asset_pool": "m79-generated-pictures",
+   "source": "benchmarks/m79/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "arabic_city_feature",
+   "document_hash": "511847d0d028a2235800d4de8b4793749528f52aee7abe38ad5ec75af856a53a",
+   "author_group": "repository-m79-fictional",
+   "asset_pool": "m79-generated-pictures",
+   "source": "benchmarks/m79/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "arabic_financial",
+   "document_hash": "25edbcbe0ad88ff0ecd8c5d1882e74ac3f31bff93db1dfcc59228527c67c4d2b",
+   "author_group": "repository-m79-fictional",
+   "asset_pool": "m79-generated-pictures",
+   "source": "benchmarks/m79/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "arabic_health_data",
+   "document_hash": "0943a30e08d9c8a995065cf1f909cd5744a7aa7d03a20a2832ebd37eb1e7afaf",
+   "author_group": "repository-m79-fictional",
+   "asset_pool": "m79-generated-pictures",
+   "source": "benchmarks/m79/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "bilingual_institutional",
+   "document_hash": "20b51f1caf2d848b8bd1d6a36c573b9d2302beeca4ba7aaf8c33bfe7edc1bff5",
+   "author_group": "repository-m79-fictional",
+   "asset_pool": "m79-generated-pictures",
+   "source": "benchmarks/m79/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "bilingual_ports_review",
+   "document_hash": "54cbe0f40001b21bfa7273ce5c0a9b3919557afe0b97b60e6946991285dc918a",
+   "author_group": "repository-m79-fictional",
+   "asset_pool": "m79-generated-pictures",
+   "source": "benchmarks/m79/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "bilingual_water_compact",
+   "document_hash": "797f9b429a8849b3e1942880a1d63447341d5b0391709b06f03c6f8fb208dc69",
+   "author_group": "repository-m79-fictional",
+   "asset_pool": "m79-generated-pictures",
+   "source": "benchmarks/m79/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "board_paper",
+   "document_hash": "bc1050757bf2d83a5c4f4d77bad0fb764be733ba821401f9b0513e43453c1c93",
+   "author_group": "repository-m79-fictional",
+   "asset_pool": "m79-generated-pictures",
+   "source": "benchmarks/m79/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "financial_statements",
+   "document_hash": "f1b1dbad7fe25a4b9cfb2f3a1ae2fbd7b60d37584ad204c6961c0409a0f8082c",
+   "author_group": "repository-m79-fictional",
+   "asset_pool": "m79-generated-pictures",
+   "source": "benchmarks/m79/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "fixture_academic",
+   "document_hash": "fb1673f270867ff92b9da34d95f522adf3eb16bfd34c7b058777b751cc943ff2",
+   "author_group": "repository-tests-fictional",
+   "asset_pool": null,
+   "source": "tests/fixtures/academic.md",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "fixture_arabic_report",
+   "document_hash": "dab46f5da205065453544ec9dafd76e8698fb718fdb596d82e51c421a0c1107f",
+   "author_group": "repository-tests-fictional",
+   "asset_pool": null,
+   "source": "tests/fixtures/arabic_report.md",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "fixture_bilingual",
+   "document_hash": "beefcb8add843b67b55fbfc47656aa52b553e7e0950cb3e90ca6d1f59a17d44d",
+   "author_group": "repository-tests-fictional",
+   "asset_pool": null,
+   "source": "tests/fixtures/bilingual.md",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "fixture_executive",
+   "document_hash": "432f2df9c0006e16b28fdf5ef3967aadabef7d96730998aa146d08de9ac8eca5",
+   "author_group": "repository-tests-fictional",
+   "asset_pool": null,
+   "source": "tests/fixtures/executive.md",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "fixture_financial",
+   "document_hash": "a4d4fd252f590c98a494ad7002aea01b874405641b6735e860b05dba30e4afe7",
+   "author_group": "repository-tests-fictional",
+   "asset_pool": null,
+   "source": "tests/fixtures/financial.md",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "fixture_invoice",
+   "document_hash": "6b6afc8e035b5e49a3864a4cbc21469a1f84b920a9bd2f95ad3c7e2101d87879",
+   "author_group": "repository-tests-fictional",
+   "asset_pool": null,
+   "source": "tests/fixtures/invoice.md",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "fixture_letter",
+   "document_hash": "94fd0ea0c0be3cd6fc9a7bdf5a01121db7bc12ea2481260465963dcdd6758990",
+   "author_group": "repository-tests-fictional",
+   "asset_pool": null,
+   "source": "tests/fixtures/letter.md",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "fixture_manual",
+   "document_hash": "ac4aefc0663f561ee148c3622edea9ea777d19d98960fab37aff14adf485e8cf",
+   "author_group": "repository-tests-fictional",
+   "asset_pool": null,
+   "source": "tests/fixtures/manual.md",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "fixture_memo",
+   "document_hash": "725661ddb0a179f89329a9140668ae1ebd4cb2771d7dab3d85d1f2790ba3da7d",
+   "author_group": "repository-tests-fictional",
+   "asset_pool": null,
+   "source": "tests/fixtures/memo.md",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "fixture_proposal",
+   "document_hash": "382801d8716f317e1c67d9df0348cc395c64f3b531a321fb6c220855703c2428",
+   "author_group": "repository-tests-fictional",
+   "asset_pool": null,
+   "source": "tests/fixtures/proposal.md",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "fixture_wide_data",
+   "document_hash": "2283e63f1050eb6ab2544cc44e912a1ec003a44d206413e1ec49bbf0973ae1d6",
+   "author_group": "repository-tests-fictional",
+   "asset_pool": null,
+   "source": "tests/fixtures/wide_data.md",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "harbour_feature",
+   "document_hash": "030787bccce929da7fd973f0da1755e8aebe54d26076bc0977bed992431f8cd9",
+   "author_group": "repository-m79-fictional",
+   "asset_pool": "m79-generated-pictures",
+   "source": "benchmarks/m79/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "impact_report",
+   "document_hash": "7dbd6c6a6d4788c4053366dd3db936bcbc7f7c01f2e3278b8613feed807ffeaf",
+   "author_group": "repository-m79-fictional",
+   "asset_pool": "m79-generated-pictures",
+   "source": "benchmarks/m79/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "m7_academic_paper",
+   "document_hash": "122d21b3dc955e4fda6a3a10c0be875477c23cdc6fbc347707a58d75095a8f45",
+   "author_group": "repository-m7-fictional",
+   "asset_pool": "m7-generated-figures",
+   "source": "benchmarks/m7/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "m7_ar_financial_statements",
+   "document_hash": "d45a6751c331f3694a279a7255df258e65bb8e6eb9057661582ac742cc3d6aa9",
+   "author_group": "repository-m7-fictional",
+   "asset_pool": "m7-generated-figures",
+   "source": "benchmarks/m7/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "m7_ar_memo",
+   "document_hash": "ba542eeef77d4cc165402310fa505eef6f8823471e14eb0956edea49d28eaad7",
+   "author_group": "repository-m7-fictional",
+   "asset_pool": "m7-generated-figures",
+   "source": "benchmarks/m7/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "m7_bilingual_board_report",
+   "document_hash": "a2c814f5f4db84769e5b1b28f66d639172ae90ec0cba0ddb69dace33d40335bf",
+   "author_group": "repository-m7-fictional",
+   "asset_pool": "m7-generated-figures",
+   "source": "benchmarks/m7/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "m7_business_memo",
+   "document_hash": "848adfd516d7ad781da2bcca8d2d640e295aae0131d07072ac951b7928ca336f",
+   "author_group": "repository-m7-fictional",
+   "asset_pool": "m7-generated-figures",
+   "source": "benchmarks/m7/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "m7_chart_analytics_report",
+   "document_hash": "9af46a25c76fc6a2dbd93560f303fd60842869ce5f91bcf1dfc1f89a23335871",
+   "author_group": "repository-m7-fictional",
+   "asset_pool": "m7-generated-figures",
+   "source": "benchmarks/m7/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "m7_en_executive_report",
+   "document_hash": "156e781b7fe2432d41a4416320f0129fa3bd2f83adff60fac56c72f442d81d0e",
+   "author_group": "repository-m7-fictional",
+   "asset_pool": "m7-generated-figures",
+   "source": "benchmarks/m7/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "m7_financial_statements",
+   "document_hash": "c7e616f783ad744d1cdfa5968fed4bb21850717d3d10ba66b50fbc7724c05302",
+   "author_group": "repository-m7-fictional",
+   "asset_pool": "m7-generated-figures",
+   "source": "benchmarks/m7/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "m7_invoice",
+   "document_hash": "d695a7cfa5ddaebd730a4546278478f9db7a16bb5f38323df443a00da85557c5",
+   "author_group": "repository-m7-fictional",
+   "asset_pool": "m7-generated-figures",
+   "source": "benchmarks/m7/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "m7_letter",
+   "document_hash": "9f1c28950f988e59acc723b6475a137231a239d52d3e71c95e1e5aa179c853ca",
+   "author_group": "repository-m7-fictional",
+   "asset_pool": "m7-generated-figures",
+   "source": "benchmarks/m7/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "m7_proposal",
+   "document_hash": "e69b36fbe5d50411bc39116781492233814b72f5290686bc7386cd3c6d371fe1",
+   "author_group": "repository-m7-fictional",
+   "asset_pool": "m7-generated-figures",
+   "source": "benchmarks/m7/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "m7_technical_manual",
+   "document_hash": "b0ee7cb1e7f3eb4c075d57b69deb3719aff6c01ccbd9ddf890f6f76071fe8763",
+   "author_group": "repository-m7-fictional",
+   "asset_pool": "m7-generated-figures",
+   "source": "benchmarks/m7/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "policy_brief",
+   "document_hash": "ba77c28e3af1f320fed7c10e7b5fc771afa7623c742d534f0759076905eb5f23",
+   "author_group": "repository-m79-fictional",
+   "asset_pool": "m79-generated-pictures",
+   "source": "benchmarks/m79/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "proposal",
+   "document_hash": "71ea6ab1c450ff17abded9d6684d96ee91f9dbf039dbfe5935f2dfd0f028225c",
+   "author_group": "repository-m79-fictional",
+   "asset_pool": "m79-generated-pictures",
+   "source": "benchmarks/m79/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "research_paper",
+   "document_hash": "ce65fae3eca9d97ce3bcd38ba80ded7e263e1273a7da6901a0784beee27b1032",
+   "author_group": "repository-m79-fictional",
+   "asset_pool": "m79-generated-pictures",
+   "source": "benchmarks/m79/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "stress_academic_paper",
+   "document_hash": "9f9cb2d82aebd784b6821dc4a0124d91bb21f10816d162eb3adcbeadca8cb8e7",
+   "author_group": "repository-tests-fictional",
+   "asset_pool": "tests-generated-figures",
+   "source": "tests/stress_docs.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "stress_bilingual_corporate",
+   "document_hash": "a2ec42b6b364236d99860c098be00e1072c8cda00a8ab109afad8690daabf415",
+   "author_group": "repository-tests-fictional",
+   "asset_pool": "tests-generated-figures",
+   "source": "tests/stress_docs.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "stress_chart_report",
+   "document_hash": "064078f5594091e7c349fc842c962c077815ea8cd5ea9303d8c52ced1cc663ca",
+   "author_group": "repository-tests-fictional",
+   "asset_pool": "tests-generated-figures",
+   "source": "tests/stress_docs.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "stress_executive_proposal",
+   "document_hash": "6d92eab10d6ffb12dd1d3ed53d8570c58de27c90838e2c4315aebcb5a640424d",
+   "author_group": "repository-tests-fictional",
+   "asset_pool": "tests-generated-figures",
+   "source": "tests/stress_docs.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "stress_financial_complex",
+   "document_hash": "52930c634d21f0c27fcc37470b73e94e6aef67b45bd9f9060ec5eac03d1eb958",
+   "author_group": "repository-tests-fictional",
+   "asset_pool": "tests-generated-figures",
+   "source": "tests/stress_docs.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "stress_technical_manual",
+   "document_hash": "d69bb5293ac2b6785571f54ea78c74cbdda3863fdc7e2c055e43ece05c521880",
+   "author_group": "repository-tests-fictional",
+   "asset_pool": "tests-generated-figures",
+   "source": "tests/stress_docs.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "sustainability_report",
+   "document_hash": "314e6ab2986a7d20acfb2b513246ff3761375ce946acf0a91ebbf0ed887f289a",
+   "author_group": "repository-m79-fictional",
+   "asset_pool": "m79-generated-pictures",
+   "source": "benchmarks/m79/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "technical_manual",
+   "document_hash": "efa2615bce37160958d2f929ae5c7e9bee24c6acc8ba206841dea18e282a014d",
+   "author_group": "repository-m79-fictional",
+   "asset_pool": "m79-generated-pictures",
+   "source": "benchmarks/m79/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "transit_data_story",
+   "document_hash": "c44958c6bdbb51e860abdd960182a2f633dbfd000d9a92e39bbae3bc04d05381",
+   "author_group": "repository-m79-fictional",
+   "asset_pool": "m79-generated-pictures",
+   "source": "benchmarks/m79/corpus.py",
+   "licence": "MIT (this repository)"
+  },
+  {
+   "document": "wiki_ar_01",
+   "document_hash": "916866380f1b003b123dc1f0a51f55183d33393df422b625f94c230442b71ec8",
+   "author_group": "wikipedia-ar-contributors",
+   "asset_pool": null,
+   "source": "https://ar.wikipedia.org/wiki/%D9%85%D8%AF_%D9%88%D8%AC%D8%B2%D8%B1",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_ar_02",
+   "document_hash": "6707e5ecad5b84915e8b07301934c2052df21eeed4dc3877dbc3b6db011ca5b1",
+   "author_group": "wikipedia-ar-contributors",
+   "asset_pool": "wikimedia-commons-ar",
+   "source": "https://ar.wikipedia.org/wiki/%D9%86%D9%87%D8%B1_%D8%A7%D9%84%D9%86%D9%8A%D9%84",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_ar_04",
+   "document_hash": "82858c9ed7867791d61c238b53d9bdf56dd071bcfff4b46d6797d405ef631a82",
+   "author_group": "wikipedia-ar-contributors",
+   "asset_pool": "wikimedia-commons-ar",
+   "source": "https://ar.wikipedia.org/wiki/%D8%B7%D8%A7%D9%82%D8%A9_%D8%B4%D9%85%D8%B3%D9%8A%D8%A9",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_ar_05",
+   "document_hash": "1be40aee4467a7333e395a3910b622e28b83a76a6dbbf15cf237aece2504e2a0",
+   "author_group": "wikipedia-ar-contributors",
+   "asset_pool": "wikimedia-commons-ar",
+   "source": "https://ar.wikipedia.org/wiki/%D8%A7%D8%A8%D9%86_%D8%AE%D9%84%D8%AF%D9%88%D9%86",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_ar_06",
+   "document_hash": "bf8e89631e14a2a030d510a13c6cfa6bbc88739b0c7adf3e6b9dc9e8532da2ae",
+   "author_group": "wikipedia-ar-contributors",
+   "asset_pool": "wikimedia-commons-ar",
+   "source": "https://ar.wikipedia.org/wiki/%D9%85%D8%AD%D9%85%D8%AF_%D8%A8%D9%86_%D9%85%D9%88%D8%B3%D9%89_%D8%A7%D9%84%D8%AE%D9%88%D8%A7%D8%B1%D8%B2%D9%85%D9%8A",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_ar_07",
+   "document_hash": "9d0591f8d2d041014211f0157feaede0e0d4632fe000e1dff8f15e672550b48f",
+   "author_group": "wikipedia-ar-contributors",
+   "asset_pool": "wikimedia-commons-ar",
+   "source": "https://ar.wikipedia.org/wiki/%D8%A7%D9%84%D8%A8%D8%AD%D8%B1_%D8%A7%D9%84%D8%A3%D8%AD%D9%85%D8%B1",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_01",
+   "document_hash": "965dc3c54fafddd46edb09ed4eb60b746cee5f5546636ff042686224c5c6203d",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Tide",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_02",
+   "document_hash": "25d3213f5623b2d943b8f478aa61e31004140c49f94942141829ad066598c5e4",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Photosynthesis",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_03",
+   "document_hash": "8d7154f81df8ce76ceaa3dd9f5ac201a4c6af85219bef5cae6cedc25f8a3fab2",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Suez_Canal",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_04",
+   "document_hash": "0f8e6d4ed4a356f18d52732535d8d5a74eb56316ae4715247be1026573d9257c",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Honey_bee",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_05",
+   "document_hash": "137275912125331b75df10729f33d8c802d29255489c871dbf53b466f40c509e",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Volcano",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_06",
+   "document_hash": "0adf1891e51c0c1b10f2b3e9fea99a03fd4712ab0a6b21b342fb607274799965",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Printing_press",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_08",
+   "document_hash": "4f0aecf1b272b35e330e2f8554556b89f40cb111eb14a6ca94868ccc073a3bf0",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Bridge",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_09",
+   "document_hash": "dd7893e10531130d407390c05098f36abf0ff2276d0e304b808242a051cfe6f7",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Solar_energy",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_10",
+   "document_hash": "832576c2922a926980232978323af162a1a35513150da95103537aedf3f7d2e3",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Library",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_11",
+   "document_hash": "b4baf0a23339ec69b1646578251ae099bd3c52ff637562e9e73d4a7d7f546d0e",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Lighthouse",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_12",
+   "document_hash": "a26a3d3c7e18f4f6dc2a59d53a86381e197be7243d434f476685077f1e4d22d8",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Glacier",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_13",
+   "document_hash": "4fe6d62e6edba5cb0545df63d3c5c787ba06a61635922cba675e457556379379",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Paper",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_14",
+   "document_hash": "5e5bf2c2e29a53b22d7e94bd485a89246914241697f08318873f23f28100ca6e",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Silk_Road",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_15",
+   "document_hash": "c4790aa8cd670417952b172b524ff4856f1c4e6e1670215d6520fe75ab4bb8f5",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Olive",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_16",
+   "document_hash": "26f566ea39a0510a878253ad21ae72a63882d703abe95bf717fbf7b99c57ee94",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Camel",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_17",
+   "document_hash": "1927b66a602c796a901515b3c888f9611db0ee581dc6cefec3fbdbf991271857",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Telescope",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_18",
+   "document_hash": "4a548ab5e656da0c154a3a5db58b0ed7cd361b2d270526bf6be6d2e94b1ebb5a",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Compass",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_19",
+   "document_hash": "fd1640b6318dee0126b9ba98b7c417269efc862379fa87cfebadbb8f4f37bc46",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Bread",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_20",
+   "document_hash": "87c348f8524722654360e4950ff016f9846e0611570852a8a929438185850749",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Rice",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_21",
+   "document_hash": "593485c7f8dfbd8487deaae529c42a6d59fe02041b31e5d9a585f47b7c6ed6d0",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Tea",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_22",
+   "document_hash": "0a4f7e8d2d0d938d8565b877c1225390b3c1e24f7f8cc3f09a19f0b12e26a1e8",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Salt",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_23",
+   "document_hash": "cf5a40178976ffc7a03b1e5a734575f41e1ef9298e5637e36365e5008bd5acac",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Glass",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_24",
+   "document_hash": "bc27728bc837b3d436a296a44ed882ad161facb1ff07459bcf6eb0f10931dfe1",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Cement",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_25",
+   "document_hash": "c3e0f2d25430e2c7650874dff06830d265734b20f120defba0130d2ee67570a1",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Wind_power",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_26",
+   "document_hash": "20e0a3b0331f1e3625bbfe045507bf93de4619b023d35b5447df4c8ccd36c657",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Irrigation",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_27",
+   "document_hash": "f1334e5684f9d126bec259d50bfdae4639c5440ecc0b995fa9a6f1a57bc165f4",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Desalination",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_28",
+   "document_hash": "b35b5db3a13a525e076fa04e7ec335f2c7201b4cc3c7c96c903b1ff1c3e10ebf",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Rail_transport",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_29",
+   "document_hash": "0ddcb6974fd9d0a74bff9a6b20b6bf41d311a74d40ed1fd807eb42a092d961d8",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Bicycle",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_30",
+   "document_hash": "a660e0acc862bd9591286f0124f3ba18d266e5c6bce0dd58388efb98f4ec5f59",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Clock",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_31",
+   "document_hash": "50d5cb1d0bb59f4e25b56326254b24307fe9c12de9d979a941548669fad65728",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Calendar",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_32",
+   "document_hash": "db6e3279fcc1a0198f83065e19f1ef069d185af832dead006b93d345b645581a",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Map",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_33",
+   "document_hash": "6cf123bd603108e05e11d4ba348fd0b7cfc0d34642f1eadd17dc937ee6d22f8a",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Museum",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_34",
+   "document_hash": "cc046cb92b7eef7552e26a27850a05bfcca399d9fb3ce13e17e765a27b45e1eb",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Earthquake",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_35",
+   "document_hash": "ebb8dad243eaadaa6959ba44af845aea18ee0b3ec49072cca6e9c4705ee35ceb",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Coral_reef",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_36",
+   "document_hash": "3fc71410a94f703bde5e55b5c54171c0b73372b6915f845ebe2fd4a0882ce9f3",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Mangrove",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_37",
+   "document_hash": "316d8ed46fee9670126b4e6a4bd952a05046bbb2bebddef7b36974f08fcf0100",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Date_palm",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_38",
+   "document_hash": "c737b0717bb72f1c47de63c6ca312f580958fa6afcafe0ae4b7fdc3ac8490ff8",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Cotton",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_39",
+   "document_hash": "cbad8d2710f8fb64695f78648e33e8a3031f2cfb3421af161fe973c9aac48705",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Pyramid",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_40",
+   "document_hash": "f0cfe154cce0cc09be1722c2d96f57b5f4652af1dce0b6a49efdc76b695fb932",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Lunar_eclipse",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_41",
+   "document_hash": "dcf62a0f68f247c2e48affe9ec917dcad77692b1abc16ba53d568766b012acef",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Monsoon",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_42",
+   "document_hash": "b353dbf57bad9828b46557609159467ba63809c2f95cd38c60ee3b7976c915ef",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Oasis",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_43",
+   "document_hash": "026e84f065588d0e84b059da57e575b5b2ca4221ecbfd5c8b6fd9dc9b181dd9e",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Dam",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_44",
+   "document_hash": "c07598728b2d02f9b6b01583ef8caabaeeb404cea4e641c437bfad18d1ccb556",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Aqueduct_%28water_supply%29",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_45",
+   "document_hash": "975842e1ae4e933530e19591b32ef46283a6c19b881b57a9b549c3f7fc60c76d",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Windmill",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  },
+  {
+   "document": "wiki_en_46",
+   "document_hash": "5b7bbd780c6ed711035e3b42778ce8b64bf2eb8aff9baa6cb23d57c7837f28eb",
+   "author_group": "wikipedia-en-contributors",
+   "asset_pool": "wikimedia-commons-en",
+   "source": "https://en.wikipedia.org/wiki/Pottery",
+   "licence": "CC BY-SA 4.0 (text, Wikipedia contributors); pictures under the free licence on each Wikimedia Commons file page"
+  }
+ ]
+}

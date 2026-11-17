@@ -45,7 +45,8 @@ class ComposeOptions(BaseModel):
     memory_budget_mb: float = 1024.0
     measure_memory: bool = False        # tracemalloc peak (process-global: benchmarks only)
     qa: bool = True                     # inspect the selected PDF (needs PyMuPDF or pypdfium2)
-    ranker_model: Optional[str] = None  # optional LightGBM text model (valid candidates only)
+    ranker: Optional[str] = None        # learned selector among valid layouts: "auto" or a model's path
+    ranker_model: Optional[str] = None  # the older name for a path
     media: Optional[AutoMediaOptions] = None    # automatic image placement; off unless given
 
 
@@ -459,27 +460,28 @@ class Composer:
         return final.doc, final.theme
 
     def _apply_ranker(self, best, eligible, base_entry):
-        """Optional learned re-ranking among the baseline and *eligible* candidates."""
-        if not self.o.ranker_model:
+        """Optional learned choice among the baseline and *eligible* candidates: the same model
+        slot as the design variants (``variant_ranker``), reading the layout facts."""
+        asked = self.o.ranker or self.o.ranker_model
+        if not asked or asked == "off":
             return best
-        from .ranker import load_optional
-        ranker = load_optional(self.o.ranker_model)
-        if ranker is None:
-            self.report.fallbacks.append("ranker unavailable (lightgbm or model missing); "
-                                         "deterministic selection used")
-            return best
+        from .variant_ranker import choose, layout_features
         pool = ([base_entry] if base_entry[5].valid else []) + list(eligible)
-        if len(pool) < 2:
+        fixed = next((e for e in pool if e is best), None)
+        picked, note = choose(pool, fixed, asked, name=lambda e: e[0].name,
+                              features=lambda e: layout_features(e[5].metrics))
+        if note.get("fallback_reason"):
+            self.report.fallbacks.append(f"ranker unavailable ({note['fallback_reason']}); deterministic selection used")
             return best
-        try:
-            scores = ranker.rank([e[5].metrics for e in pool])
-        except Exception as e:
-            self.report.fallbacks.append(f"ranker failed ({type(e).__name__}); deterministic selection used")
+        if note.get("abstained"):
+            self.report.reasons.append(f"learned ranker preferred {note['learned_choice']} but was not sure enough "
+                                       f"({note['margin']:g} < {note['threshold']:g}): the deterministic choice stands")
             return best
-        top = max(range(len(pool)), key=lambda k: scores[k])
+        if note["selector"] != "learned":         # one layout only: nothing to choose
+            return best
         self.report.reasons.append("learned ranker among eligible layouts: " + ", ".join(
-            f"{e[0].name}={sc:.2f}" for e, sc in zip(pool, scores)))
-        return pool[top]
+            f"{k}={v:.2f}" for k, v in note["scores"].items()))
+        return picked if picked is not None else best
 
     def _fill(self, res: CandidateResult, s: LayoutScore, pages: int):
         res.rendered = True

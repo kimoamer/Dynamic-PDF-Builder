@@ -10,9 +10,11 @@ Applies professional report typography standards:
 import re
 import unicodedata
 import html as html_mod
+import contextvars
+import copy
 from functools import lru_cache
 from typing import Optional
-from reportlab.lib.enums import TA_JUSTIFY, TA_LEFT
+from reportlab.lib.enums import TA_JUSTIFY, TA_LEFT, TA_RIGHT
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.platypus import (
     Paragraph as _RLParagraph, ListFlowable, ListItem, Spacer, PageBreak,
@@ -140,6 +142,33 @@ def _visual_line(line, kind: int, base: str):
 _TAG_ATTRS = ("_dpb_role", "_dpb_level", "_dpb_key", "_dpb_cell", "_dpb_alt", "_dpb_block")
 
 
+def _keep_the_authors_hyphen() -> None:
+    """ReportLab joins the halves of a word it broke with ``_shyUnsplit``, which drops any hyphen
+    that ends the first half. That is right for a hyphen it added and wrong for the author's own:
+    "by-" and "product" came back as "byproduct" when a paragraph with inline markup ran onto
+    the next page. A hyphen ReportLab added is already taken off before the halves are joined,
+    so joining plain strings keeps what is there.
+
+    ReportLab has one such function for the whole process, so the correction is in force only
+    while one of this library's paragraphs is being laid out (``_laying_out``): a host
+    application's own ReportLab documents behave exactly as they did."""
+    import reportlab.platypus.paragraph as rl
+    original = getattr(rl, "_shyUnsplit", None)
+    if original is None or getattr(original, "_dpb", False):
+        return
+
+    def unsplit(s, ss=None):
+        if _laying_out.get() and ss and type(s) is str and not hasattr(ss, "_shyIndices"):
+            return s + ss
+        return original(s, ss)
+    unsplit._dpb = True
+    rl._shyUnsplit = unsplit
+
+
+_laying_out: contextvars.ContextVar = contextvars.ContextVar("dynamic_pdf_laying_out", default=False)
+_keep_the_authors_hyphen()
+
+
 class Paragraph(_RLParagraph):
     """ReportLab ``Paragraph`` with bidirectional text drawn correctly.
 
@@ -177,9 +206,20 @@ class Paragraph(_RLParagraph):
             self._dpb_base = base
         return base
 
+    def wrap(self, availWidth, availHeight):
+        token = _laying_out.set(True)
+        try:
+            return super().wrap(availWidth, availHeight)
+        finally:
+            _laying_out.reset(token)
+
     def split(self, availWidth, availHeight):
         base = self._bidi_base()
-        parts = super().split(availWidth, availHeight)
+        token = _laying_out.set(True)
+        try:
+            parts = super().split(availWidth, availHeight)
+        finally:
+            _laying_out.reset(token)
         tagged = {k: v for k, v in self.__dict__.items() if k in _TAG_ATTRS}
         if "_dpb_role" in tagged:                # the pieces are one element of the structure tree
             from .tagging import _key
@@ -194,18 +234,56 @@ class Paragraph(_RLParagraph):
         from .tagging import draw_tagged
         return draw_tagged(self, canvas, lambda: super(Paragraph, self).drawOn(canvas, x, y, _sW))
 
+    # a justified line is left at its natural spacing when each gap would grow by more than this (in ems)
+    LOOSE_EM = 0.5
+
+    def _loose_lines(self, bl) -> dict:
+        """Lines justification would tear apart (the line before a long e-mail address or URL that
+        cannot break): {index: extra space}. They are set at natural spacing from the start edge,
+        as a last line is; the long word itself is left whole, so it copies intact."""
+        if bl is None or self.style.alignment != TA_JUSTIFY:
+            return {}
+        out = {}
+        for i, ln in enumerate(bl.lines[:-1]):
+            if bl.kind == 0:
+                extra, gaps = ln[0], len(ln[1]) - 1
+            else:
+                extra, gaps = getattr(ln, "extraSpace", 0), getattr(ln, "wordCount", 0) - 1
+                if getattr(ln, "lineBreak", False):
+                    continue
+            if gaps > 0 and extra / gaps > self.LOOSE_EM * self.style.fontSize:
+                out[i] = extra
+        return out
+
+    @staticmethod
+    def _natural(ln, kind):
+        if kind == 0:
+            return (0,) + tuple(ln[1:])
+        ln = copy.copy(ln)
+        ln.lineBreak = True                      # ReportLab sets such a line without stretching
+        return ln
+
     def drawPara(self, debug=0):
         base = self._bidi_base()
         bl = getattr(self, "blPara", None)
-        if base is None or bl is None:
+        loose = self._loose_lines(bl)
+        if (base is None or bl is None) and not loose:
             return super().drawPara(debug)
         logical = bl.lines
         had = "_offsets" in self.__dict__
         saved = self.__dict__.get("_offsets")
         try:
-            bl.lines = [_visual_line(ln, bl.kind, base) for ln in logical]
+            lines = [self._natural(ln, bl.kind) if i in loose else ln for i, ln in enumerate(logical)]
+            bl.lines = [_visual_line(ln, bl.kind, base) for ln in lines] if base else lines
             if base == "R" and self.style.alignment == TA_JUSTIFY and logical:
                 self._offsets = self._rtl_justify_offsets(bl, saved)
+                # ReportLab sets a line it does not stretch (one ending in a line break, or a loose
+                # one) flush left; in right-to-left text it belongs at the right
+                for i, ln in enumerate(lines[:-1]):
+                    if i in loose:
+                        self._offsets[i] += loose[i]
+                    elif bl.kind == 1 and getattr(ln, "lineBreak", False):
+                        self._offsets[i] += max(0.0, getattr(ln, "extraSpace", 0))
             return super().drawPara(debug)
         finally:
             bl.lines = logical
@@ -340,6 +418,7 @@ def _md_inline(text: str) -> str:
         return f"\x00{len(codes) - 1}\x00"
     text = re.sub(r'`([^`]+?)`|\\(&lt;|&gt;|&amp;|[!-/:-@\[-`{-~])', _stash, text)
     text = _restore_safe_tags(text)
+    text = _review_marks(text)
     # Markdown line breaks, as in the DOCX (core.inline): a blank line inside the block or a
     # hard break ("  " or "\" before the newline) starts a new line; a soft break is a space
     text = re.sub(r"\n[ \t]*\n\s*", "<br/>", text)
@@ -371,7 +450,68 @@ def _md_inline(text: str) -> str:
     text = re.sub(r'\x00(\d+)\x00',
                   lambda m: f'<font face="Courier" size="9" backColor="#E8E8E8">{codes[int(m.group(1))]}</font>',
                   text)
-    return re.sub(r'\x01(\d+)\x01', lambda m: escapes[int(m.group(1))], text)
+    return _nest(re.sub(r'\x01(\d+)\x01', lambda m: escapes[int(m.group(1))], text))
+
+
+# CriticMarkup on escaped text, before "--" becomes a dash and "~~" a strike (core.inline parses the same)
+_CRITIC = re.compile(r"\{\+\+(?P<ins>.*?)\+\+\}|\{--(?P<del>.*?)--\}|\{~~(?P<old>.*?)~&gt;(?P<new>.*?)~~\}"
+                     r"|\{==(?P<mark>.*?)==\}\{&gt;&gt;(?P<on>.*?)&lt;&lt;\}|\{&gt;&gt;(?P<note>.*?)&lt;&lt;\}", re.S)
+_ADDED, _REMOVED, _NOTE = "#1A7F37", "#CF222E", "#8A6D00"
+
+
+def _review_marks(text: str) -> str:
+    """Suggested edits as a review copy shows them: additions underlined in green, removals
+    struck through in red, commented text highlighted with the comment after it, small."""
+    if "{" not in text:
+        return text
+
+    def note(c):
+        return f'<font size="7" color="{_NOTE}"> [{c.strip()}]</font>'
+
+    def sub(m):
+        g = m.groupdict()
+        if g["ins"] is not None:
+            return f'<u><font color="{_ADDED}">{g["ins"]}</font></u>'
+        if g["del"] is not None:
+            return f'<strike><font color="{_REMOVED}">{g["del"]}</font></strike>'
+        if g["old"] is not None:
+            return (f'<strike><font color="{_REMOVED}">{g["old"]}</font></strike>'
+                    f'<u><font color="{_ADDED}">{g["new"]}</font></u>')
+        if g["mark"] is not None:
+            return f'<font backColor="#FFF2A8">{g["mark"]}</font>{note(g["on"])}'
+        return note(g["note"])
+    return _CRITIC.sub(sub, text)
+
+
+_TAG = re.compile(r"<(/?)([a-zA-Z]+)[^<>]*?(/?)>")
+
+
+def _nest(markup: str) -> str:
+    """Tags that cross are closed and opened again so that they nest: ``**a *b** c*`` gives
+    ``<b>a <i>b</b> c</i>``, which ReportLab refuses, and one such paragraph stopped the whole
+    document. Every tag here is ours (author text is escaped), so a stack is enough."""
+    out, stack, pos = [], [], 0
+    for m in _TAG.finditer(markup):
+        out.append(markup[pos:m.start()])
+        pos = m.end()
+        closing, name, empty = m.groups()
+        if empty:
+            out.append(m.group(0))
+        elif not closing:
+            stack.append((name, m.group(0)))
+            out.append(m.group(0))
+        elif any(n == name for n, _ in stack):
+            again = []
+            while stack[-1][0] != name:
+                again.append(stack.pop())
+                out.append(f"</{again[-1][0]}>")
+            stack.pop()
+            out.append(m.group(0))
+            for item in reversed(again):
+                stack.append(item)
+                out.append(item[1])
+        # a closing tag with nothing open is dropped
+    return "".join(out + [markup[pos:]] + [f"</{n}>" for n, _ in reversed(stack)])
 
 
 def _safe_color(h: str, fallback: str = "#000000") -> HexColor:
@@ -711,14 +851,17 @@ class ScoreDisplay(Flowable):
 
 
 class DividerFlowable(Flowable):
-    def __init__(self, color="#CBD5E0", thickness=1.0, style="solid"):
+    def __init__(self, color="#CBD5E0", thickness=1.0, style="solid", width=None, align="left"):
         super().__init__()
         self.color_str = color
         self.thickness = thickness
         self.style = style
+        self.fixed_width = width
+        self.align = align                   # where a line shorter than the space sits: it works in table cells too
 
     def wrap(self, availWidth, availHeight):
         self.width = availWidth
+        self.line_w = min(availWidth, self.fixed_width) if self.fixed_width else availWidth
         self.height = self.thickness + 16
         return (self.width, self.height)
 
@@ -731,7 +874,8 @@ class DividerFlowable(Flowable):
             c.setDash([6, 4])
         elif self.style == "dotted":
             c.setDash([1.5, 3])
-        c.line(0, 8, self.width, 8)
+        x0 = {"right": self.width - self.line_w, "center": (self.width - self.line_w) / 2}.get(self.align, 0)
+        c.line(x0, 8, x0 + self.line_w, 8)
         c.restoreState()
 
 
@@ -1073,6 +1217,10 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
     sp = theme.spacing
     btype = block.type
 
+    # a paper sets the paragraph under a heading flush left: the heading already marks its start
+    flush = btype == "paragraph" and getattr(ctx, "after_heading", False) and theme.decorations.paper
+    ctx.after_heading = btype == "heading"
+
     # ─── Reset drop cap flag for any non-paragraph block ───
     if btype not in ("heading", "paragraph") and ctx.apply_drop_cap_next:
         ctx.apply_drop_cap_next = False
@@ -1093,7 +1241,7 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
 
         # Section numbering
         display_text = block.text
-        if ctx.section_numbering or block.numbered:
+        if (ctx.section_numbering or block.numbered) and not (block.hints or {}).get("unnumbered"):
             from ..i18n import written_number
             number = written_number(ctx.next_heading_number(block.level), block.text)
             display_text = f"{number}  {block.text}"
@@ -1202,13 +1350,14 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
             # no first-line indent in Arabic, as the DOCX renderer and the RTL recipes already do
             rtl_style = ParagraphStyle('RTL', parent=bs, alignment=4, fontName=body_font, firstLineIndent=0)
             return [Paragraph(text, rtl_style)]
-        return [Paragraph(text, _hyphenated(bs))]
+        return [Paragraph(text, _hyphenated(bs_no_indent if flush else bs))]
 
     # ─── Rich Text ───
     if btype == "rich_text":
+        size = block.font_size or theme.typography.base_size
         sty = ParagraphStyle(
             'Rich', parent=bs_no_indent,
-            fontSize=block.font_size or theme.typography.base_size,
+            fontSize=size, leading=max(bs_no_indent.leading, size * 1.25),     # large type needs its own line height
             textColor=_safe_color(block.color or theme.colors.text_primary),
             alignment={'left': 0, 'center': 1, 'right': 2, 'justify': 4}.get(block.alignment, 0),
         )
@@ -1273,7 +1422,14 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
 
     # ─── Chart ───
     if btype == "chart":
-        return _fit_figure(_cached_figure(ctx, block, theme, lambda: _render_chart(block, theme)), block)
+        from ..core.numbering import exhibit_label
+        number, anchor = exhibit_label(block)
+        # a numbered chart carries its title as a caption under it, as a numbered image does
+        drawn = block.model_copy(update={"title": None}) if number and block.title else block
+        figure = _cached_figure(ctx, drawn, theme, lambda: _render_chart(drawn, theme))
+        if number:
+            figure = _chart_caption(figure, block, number, anchor, theme, bs_no_indent)
+        return _fit_figure(figure, block)
 
     # ─── Diagram ───
     if btype == "diagram":
@@ -1281,7 +1437,10 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
 
     # ─── Math ───
     if btype == "math":
-        return _cached_figure(ctx, block, theme, lambda: _render_math(block, theme))
+        drawn = _cached_figure(ctx, block, theme, lambda: _render_math(block, theme))
+        if block.equation_number and drawn and not isinstance(drawn[0], Paragraph):
+            return _numbered_equation(drawn, block.equation_number, theme, ctx.available_width)
+        return drawn
 
     # ─── Callout ───
     if btype == "callout":
@@ -1292,7 +1451,7 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
         if (block.hints or {}).get("statement"):
             from .art import statement
             return statement(block, theme, ctx)
-        return _render_quote(block, theme)
+        return _render_quote(block, theme, ctx)
 
     if btype in ("image_text_panel", "figure_matrix", "paired_row_columns"):
         from ..renderers.compositions import render_composition
@@ -1390,7 +1549,7 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
 
     # ─── Signature ───
     if btype == "signature":
-        return _render_signature(block, theme)
+        return _render_signature(block, theme, ctx.available_width if ctx else None)
 
     # ─── Timeline ───
     if btype == "timeline":
@@ -1494,13 +1653,16 @@ def _render_table(block, theme, bs, ctx=None):
     # Column order follows the table's own language (majority of header cells),
     # so bilingual tables led by English are not mirrored.
     sample = [str(x) for x in (block.headers or (block.rows[0] if block.rows else [])) if str(x).strip()]
-    tbl_rtl = bool(sample) and sum(_is_rtl(x) for x in sample) * 2 > len(sample)
+    from ..core.normalize import is_rtl_table
+    tbl_rtl = is_rtl_table([re.sub(r"\]\([^)]*\)", "]", x) for x in sample])     # link targets do not vote
     if hints.get("font_size"):
         bs = ParagraphStyle('TBase', parent=bs, fontSize=hints["font_size"],
                             leading=hints["font_size"] * 1.3)
     ncols = max([len(block.headers or [])] + [len(r) for r in block.rows] + [1])
     numeric = set(hints.get("numeric_cols") or [])
     pad = float(hints.get("cell_padding", 10))
+    # a paper rules its tables (top, under the header, bottom) and fills nothing
+    design = hints.get("design") or ("booktabs" if theme.decorations.paper and not block.header_bg else None)
     body_font = _arabic_font(theme, bold=True) if tbl_rtl else get_font_name(theme.typography.body_family, bold=True)
     cell_font = _arabic_font(theme) if tbl_rtl else get_font_name(theme.typography.body_family)
     tbl_align = 2 if tbl_rtl else 0
@@ -1508,7 +1670,7 @@ def _render_table(block, theme, bs, ctx=None):
     h_sty = ParagraphStyle('TH', parent=bs, firstLineIndent=0,
                            fontName=body_font,
                            textColor=_safe_color(block.header_text_color or (
-                               theme.colors.text_primary if hints.get("design") else theme.colors.text_on_primary)),
+                               theme.colors.text_primary if design else theme.colors.text_on_primary)),
                            alignment=tbl_align)
     c_sty = ParagraphStyle('TD', parent=bs, firstLineIndent=0, fontName=cell_font, alignment=tbl_align)
     h_num = ParagraphStyle('THn', parent=h_sty, alignment=2)
@@ -1549,11 +1711,22 @@ def _render_table(block, theme, bs, ctx=None):
     if block.footer_row:
         cmds.append(('BACKGROUND', (0, -1), (-1, -1), _safe_color(theme.colors.surface)))
         cmds.append(('LINEABOVE', (0, -1), (-1, -1), 1.5, _safe_color(theme.colors.text_primary)))
-    if hints.get("design"):
+    if design:
         from .art import table_commands
-        cmds = table_commands(hints["design"], theme, len(data), ncols, bool(block.headers), bool(block.footer_row),
+        cmds = table_commands(design, theme, len(data), ncols, bool(block.headers), bool(block.footer_row),
                               pad, hints.get("current_col"), tbl_rtl)
     head = 1 if block.headers else 0
+    from ..core.table_types import row_spans
+    raw_rows = [list(r) for r in block.rows] + ([list(block.footer_row)] if block.footer_row else [])
+    for ri, (first, last, content) in row_spans(block).items():
+        r_vis = ri + head
+        a, b = (ncols - 1 - last, ncols - 1 - first) if tbl_rtl else (first, last)
+        sty = t_sty if (ri in totals or ri >= len(block.rows)) else c_sty
+        text = str(raw_rows[ri][content]) if content < len(raw_rows[ri]) else ""
+        for vc in range(a, b + 1):              # what the joined cells held moves to the one that shows it
+            data[r_vis][vc] = Paragraph("", sty)
+        data[r_vis][a] = Paragraph(_md_inline(text), sty)
+        cmds.append(('SPAN', (a, r_vis), (b, r_vis)))
     for ri in sorted(totals):
         if 0 <= ri < len(block.rows):
             cmds.append(('LINEABOVE', (0, ri + head), (-1, ri + head), 0.9, _safe_color(theme.colors.text_primary)))
@@ -1565,6 +1738,15 @@ def _render_table(block, theme, bs, ctx=None):
         col_widths = [f / total * (avail - 1.0) for f in fr]     # exact fit, never overflow
     elif col_widths and avail and sum(col_widths) > avail:
         col_widths = [w * avail / sum(col_widths) for w in col_widths]   # never overflow the frame
+    centred = False
+    if design == "booktabs" and not block.column_widths and avail:
+        # a small table in a paper is as wide as its content and centred, not stretched to the measure
+        from ..design.measure import column_metrics
+        size = float(hints.get("font_size") or theme.typography.base_size)
+        _, nats = column_metrics([str(h) for h in block.headers or []], [[str(c) for c in r] for r in block.rows],
+                                 theme.typography.body_family, size, padding=pad * 1.2 + 22)
+        if len(nats) == ncols and sum(nats) <= avail * 0.8:
+            col_widths, centred = list(nats), True
     if col_widths and tbl_rtl:
         col_widths = list(reversed(col_widths))
     from .tagging import new_key
@@ -1574,8 +1756,8 @@ def _render_table(block, theme, bs, ctx=None):
             cell._dpb_cell = (tkey, ri, len(row) - 1 - ci if tbl_rtl else ci, ri == 0 and bool(block.headers))
     t = Table(data, colWidths=col_widths, style=TableStyle(cmds),
               repeatRows=1 if block.headers else 0)
-    t.hAlign = 'RIGHT' if tbl_rtl else 'LEFT'
-    t.spaceAfter = theme.spacing.block_gap
+    t.hAlign = 'CENTER' if centred else 'RIGHT' if tbl_rtl else 'LEFT'
+    t.spaceAfter = theme.spacing.block_gap * (1.6 if theme.decorations.paper else 1.0)
     flowables = []
     from ..core.numbering import exhibit_label
     number, anchor = exhibit_label(block)
@@ -1589,6 +1771,10 @@ def _render_table(block, theme, bs, ctx=None):
                                  fontSize=theme.typography.base_size * theme.typography.caption_size_ratio,
                                  textColor=_safe_color(theme.colors.text_muted), spaceAfter=4,
                                  fontName=cap_font, alignment=cap_align)
+        if theme.decorations.paper:
+            cap_sty = _paper_caption(theme, bs, label, after=6)
+            if number and block.caption:           # "Table 1:" in bold, then the caption
+                label = f"**{number}:** {block.caption}"
         cap = Paragraph(_md_inline(label), cap_sty)
         cap.keepWithNext = 1          # caption never separated from its table
         if anchor:
@@ -1713,7 +1899,12 @@ def _figure_text(block, theme, width=None):
                              else "Helvetica",
                              textColor=_safe_color(theme.colors.text_muted),
                              alignment=2 if rtl and width else 1, spaceAfter=theme.spacing.block_gap)
-        out.append(Paragraph(_md_inline(text) if rtl else f"<i>{_md_inline(text)}</i>", sty))
+        if theme.decorations.paper:              # as the paper's table and chart captions
+            shown = f"**{number}:** {block.caption}" if number and block.caption else text
+            out.append(Paragraph(_md_inline(shown), _paper_caption(theme, _body_style(theme, indent=False), text,
+                                                                   before=2, after=theme.spacing.block_gap)))
+        else:
+            out.append(Paragraph(_md_inline(text) if rtl else f"<i>{_md_inline(text)}</i>", sty))
         if anchor:
             from ..core.inline import plain_text
             out[-1]._exhibit_entry = ("figure", plain_text(text), anchor)
@@ -1879,6 +2070,23 @@ def _two_column_list(items, bullet_type, theme, bs, sp, ctx, start=1):
     return [t]
 
 
+def _chart_caption(figure: list, block, number: str, anchor, theme, bs) -> list:
+    """The figure with "Figure N: title" set under it in place of its trailing gap, kept on one page."""
+    text = f"{number}: {block.title}" if block.title else number
+    if theme.decorations.paper:
+        style = _paper_caption(theme, bs, text, before=2, after=theme.spacing.block_gap * 1.4)
+        text = f"**{number}:** {block.title}" if block.title else f"**{number}**"
+    else:
+        size = theme.typography.base_size * theme.typography.caption_size_ratio
+        style = ParagraphStyle('ChartCap', parent=bs, fontSize=size, leading=size * 1.3, alignment=1,
+                               textColor=_safe_color(theme.colors.text_muted), spaceAfter=theme.spacing.block_gap)
+    cap = Paragraph(_md_inline(text), style)
+    if anchor:
+        from ..core.inline import plain_text
+        cap._exhibit_entry = ("figure", plain_text(text), anchor)
+    return [KeepTogether([f for f in figure if not isinstance(f, Spacer)] + [cap])]     # as a captioned image
+
+
 def _cached_figure(ctx, block, theme, build):
     """Reuse expensive figure flowables (matplotlib → drawing) across the
     candidate renders of one composition (request-local cache)."""
@@ -1886,7 +2094,7 @@ def _cached_figure(ctx, block, theme, build):
     if cache is None:
         return build()
     key = ("fig", block.model_dump_json(exclude={"hints"}), theme.colors.model_dump_json(),
-           theme.spacing.block_gap, (block.hints or {}).get("figure_scale"),
+           theme.spacing.block_gap, theme.decorations.paper, (block.hints or {}).get("figure_scale"),
            str((block.hints or {}).get("figure_size")))
     if key not in cache:
         cache[key] = build()
@@ -1906,6 +2114,20 @@ def _render_diagram(block, theme):
     return render_diagram(block, theme)
 
 
+def _numbered_equation(drawn: list, number: int, theme, width: float) -> list:
+    """A displayed equation centred, its number at the far edge, as papers set it."""
+    side = 40.0
+    style = ParagraphStyle("EqNo", fontName=get_font_name(theme.typography.body_family),
+                           fontSize=theme.typography.base_size, alignment=TA_RIGHT,
+                           textColor=_safe_color(theme.colors.text_primary))
+    rtl = getattr(_diag.current(), "language", "en") == "ar"
+    cells = [Paragraph(f"({number})", style), drawn[0], ""] if rtl else ["", drawn[0], Paragraph(f"({number})", style)]
+    t = Table([cells], colWidths=[side, max(width - 2 * side, 10), side])
+    t.setStyle(TableStyle([("ALIGN", (1, 0), (1, 0), "CENTER"), ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                           ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0)]))
+    return [t] + drawn[1:]
+
+
 def _render_math(block, theme):
     try:
         from ..utils.optional import require_matplotlib
@@ -1916,17 +2138,19 @@ def _render_math(block, theme):
         from svglib.svglib import svg2rlg
 
         # Use a dedicated figure sized to fit the math expression
-        fig = plt.figure(figsize=(7, 1.2))
-        fig.patch.set_alpha(0)
-        fig.text(0.5, 0.5, f"${block.latex}$", fontsize=13,
-                 ha='center', va='center',
-                 usetex=False)          # matplotlib mathtext — no LaTeX install needed
+        from ..renderers.chart import _paper_rc
+        with _paper_rc(theme):          # a paper's equations in a Times-like face, as its text
+            fig = plt.figure(figsize=(7, 1.2))
+            fig.patch.set_alpha(0)
+            fig.text(0.5, 0.5, f"${block.latex}$", fontsize=13,
+                     ha='center', va='center',
+                     usetex=False)          # matplotlib mathtext — no LaTeX install needed
 
-        with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as tf:
-            fig.savefig(tf.name, format="svg", bbox_inches="tight",
-                        transparent=True, dpi=150)
-            tf_name = tf.name
-        plt.close(fig)
+            with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as tf:
+                fig.savefig(tf.name, format="svg", bbox_inches="tight",
+                            transparent=True, dpi=150)
+                tf_name = tf.name
+            plt.close(fig)
 
         drawing = svg2rlg(tf_name)
         os.unlink(tf_name)
@@ -1996,35 +2220,50 @@ def _render_callout(block, theme, bs):
     return [t]
 
 
-def _render_quote(block, theme):
+def _render_quote(block, theme, ctx=None):
+    """Three looks, chosen by ``style``: a blockquote with a bar of the accent colour along its start
+    edge; a pullquote set large under a short rule (the design's statement); an epigraph, small and
+    narrow toward the end edge. Each mirrors in right-to-left text; the attribution follows the quote."""
+    style = (block.style or "blockquote").lower()
+    if style == "pullquote":
+        from .art import statement
+        return statement(block.model_copy(update={"hints": {**(block.hints or {}), "statement": True}}), theme, ctx)
     is_rtl = _is_rtl(block.text)
     body_font = _arabic_font(theme) if is_rtl else get_font_name(theme.typography.body_family)
-    align = 2 if is_rtl else 0
+    base = theme.typography.base_size
+    width = getattr(ctx, "available_width", None) or 460
+    epigraph = style == "epigraph"
+    size = base * (0.95 if epigraph else 1.05)
+    indent = width * 0.42 if epigraph else 0
     q_sty = ParagraphStyle(
-        'Quote', fontName=body_font,
-        fontSize=theme.typography.base_size,
-        leading=theme.typography.base_size * theme.typography.line_height,
-        textColor=_safe_color(theme.colors.text_secondary),
-        leftIndent=0 if is_rtl else theme.spacing.quote_indent,
-        rightIndent=theme.spacing.quote_indent if is_rtl else 0,
-        borderPadding=8, spaceAfter=4, alignment=align,
+        'Quote', fontName=body_font, fontSize=size, leading=size * theme.typography.line_height,
+        textColor=_safe_color(theme.colors.text_secondary if epigraph else theme.colors.text_primary),
+        leftIndent=0 if is_rtl else indent, rightIndent=indent if is_rtl else 0,
+        spaceAfter=4, alignment=2 if is_rtl else 0,
     )
-    text_content = _md_inline(block.text)
-    # Avoid <i> wrapping for RTL — italic doesn't apply to Arabic
-    flowables = [Paragraph(text_content if is_rtl else f"<i>{text_content}</i>", q_sty)]
+    parts = [p for p in re.split(r"\n[ \t]*\n", block.text) if p.strip()] or [block.text]
+    # italic carries the voice in Latin text; Arabic has no italic
+    body = [Paragraph(_md_inline(p) if is_rtl else f"<i>{_md_inline(p)}</i>", q_sty) for p in parts]
     if block.attribution:
         attr_rtl = is_rtl or _is_rtl(block.attribution)
-        attr_font = _arabic_font(theme) if attr_rtl else body_font
-        attr = ParagraphStyle('Attr', parent=q_sty,
-                              fontSize=q_sty.fontSize * theme.typography.caption_size_ratio,
+        attr = ParagraphStyle('Attr', parent=q_sty, fontSize=base * theme.typography.caption_size_ratio,
+                              leading=base * theme.typography.caption_size_ratio * 1.5,
                               textColor=_safe_color(theme.colors.text_muted),
-                              fontName=attr_font, alignment=2 if attr_rtl else 0)
-        if attr_rtl:
-            flowables.append(Paragraph(_plain_markup(block.attribution), attr))
-        else:
-            flowables.append(Paragraph(f"\u2014 {block.attribution}", attr))
-    flowables.append(Spacer(1, theme.spacing.block_gap))
-    return flowables
+                              fontName=_arabic_font(theme) if attr_rtl else get_font_name(theme.typography.body_family),
+                              alignment=(0 if attr_rtl else 2) if epigraph else (2 if attr_rtl else 0), spaceBefore=2)
+        body.append(Paragraph(_plain_markup(("" if attr_rtl else "\u2014 ") + block.attribution), attr))
+    if epigraph:
+        return body + [Spacer(1, theme.spacing.block_gap * 1.5)]
+    # the bar is the cell's start border: left, or right in right-to-left text
+    bar = ('LINEAFTER', (0, 0), (0, 0), 2.5, _safe_color(theme.colors.accent)) if is_rtl else \
+        ('LINEBEFORE', (0, 0), (0, 0), 2.5, _safe_color(theme.colors.accent))
+    t = Table([[body]], colWidths=[width], style=TableStyle([
+        bar, ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4 if is_rtl else theme.spacing.quote_indent * 0.6),
+        ('RIGHTPADDING', (0, 0), (-1, -1), theme.spacing.quote_indent * 0.6 if is_rtl else 4),
+        ('TOPPADDING', (0, 0), (-1, -1), 2), ('BOTTOMPADDING', (0, 0), (-1, -1), 2)]))
+    t.hAlign = 'RIGHT' if is_rtl else 'LEFT'
+    return [t, Spacer(1, theme.spacing.block_gap)]
 
 
 def _render_metrics(block, theme, available_width=460):
@@ -2109,6 +2348,9 @@ def _render_score(block, theme):
 
 
 def _render_cover(block, theme, ctx=None):
+    if (block.hints or {}).get("title_block"):
+        from .cover import title_block
+        return title_block(block, theme)
     if (block.background_image or block.background_color or block.layout) and ctx is not None \
             and getattr(ctx, "page_geometry", None) is not None:
         from .cover import designed_cover
@@ -2173,18 +2415,28 @@ def _coerce_child(b):
 def _render_columns(block, theme, count, ctx=None):
     col_lists = [block.left, block.right] if count == 2 else (block.columns or [])
     ratios = [block.ratio, 1 - block.ratio] if count == 2 else [1.0 / max(len(col_lists), 1)] * len(col_lists)
+    col_lists = [[_coerce_child(b) for b in col] for col in col_lists]
+    sample = " ".join(str(getattr(b, "text", None) or getattr(b, "title", None) or "") for col in col_lists for b in col)
+    rtl = _is_rtl(sample)
+    if rtl:                       # right-to-left text reads its first column on the right, as Word sets it
+        col_lists, ratios = col_lists[::-1], ratios[::-1]
     total_w = ctx.available_width if ctx else 460
     col_widths = [total_w * r for r in ratios]
     rendered = []
-    for col in col_lists:
+    for col, cw in zip(col_lists, col_widths):
+        inner = copy.copy(ctx) if ctx else None
+        if inner is not None:
+            inner.available_width = cw - 8                  # what a block in this column may use
         cf = []
         for b in col:
-            cf.extend(create_flowables(_coerce_child(b), theme, ctx))
+            cf.extend(create_flowables(b, theme, inner))
         rendered.append(cf)
+    # signatures side by side stand on one line, whether or not each has a picture over it
+    signing = all(getattr(b, "type", None) == "signature" for col in col_lists for b in col)
     t = Table([rendered], colWidths=col_widths, style=TableStyle([
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 0),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+        ('VALIGN', (0, 0), (-1, -1), 'BOTTOM' if signing else 'TOP'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 8 if rtl else 0),       # the gap sits between the columns
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0 if rtl else 8),
         ('TOPPADDING', (0, 0), (-1, -1), 0),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
     ]))
@@ -2248,8 +2500,44 @@ def _render_footnote(block, theme, bs):
     return [Paragraph(f"<super>{marker}</super> {_md_inline(block.text)}", sty)]
 
 
+def _paper_caption(theme, bs, text: str, before: float = 0.0, after: float = 0.0) -> ParagraphStyle:
+    """A paper's caption: centred, in the text colour, a size under the body."""
+    size = theme.typography.base_size * 0.9
+    return ParagraphStyle('PaperCap', parent=bs, firstLineIndent=0, fontSize=size, leading=size * 1.35,
+                          fontName=_arabic_font(theme) if _is_rtl(text) else get_font_name(theme.typography.body_family),
+                          textColor=_safe_color(theme.colors.text_primary), alignment=1,
+                          spaceBefore=before, spaceAfter=after)
+
+
+def _paper_abstract(block, theme, bs):
+    """A paper's abstract: a centred label, then the text set narrower and a little smaller
+    than the body, with each part's label run into its first line."""
+    ty = theme.typography
+    inset = 28.0
+    size = ty.base_size * 0.92
+    label = ParagraphStyle('AbsHead', fontName=get_font_name(ty.heading_family, bold=True), fontSize=ty.base_size,
+                           leading=ty.base_size * 1.3, alignment=1, spaceAfter=ty.base_size * 0.5,
+                           textColor=bs.textColor)
+    text = ParagraphStyle('AbsBody', parent=bs, firstLineIndent=0, leftIndent=inset, rightIndent=inset,
+                          fontSize=size, leading=size * ty.line_height, spaceBefore=0, spaceAfter=size * 0.25)
+    out = [Paragraph(_md_inline(_label("abstract")), label)]
+    for field in block.fields:
+        run_in = f"<b>{_md_inline(field.label)}:</b> " if (field.label or "").strip() else ""
+        out.append(Paragraph(run_in + _md_inline(field.text), _hyphenated(text)))
+    if block.keywords:
+        words = ", ".join(block.keywords)
+        out.append(Paragraph(f"<b>{_md_inline(_label('keywords'))}:</b> {_md_inline(words)}",
+                             ParagraphStyle('AbsKW', parent=text, alignment=2 if _is_rtl(words) else 0,
+                                            spaceBefore=size * 0.4)))
+    out[-1].style = ParagraphStyle('AbsLast', parent=out[-1].style, spaceAfter=theme.spacing.block_gap * 1.6)
+    out[0].keepWithNext = 1
+    return out
+
+
 def _render_abstract(block, theme, bs):
     """IMRAD structured abstract in a bordered box."""
+    if theme.decorations.paper:
+        return _paper_abstract(block, theme, bs)
     flowables = []
     title_sty = ParagraphStyle('AbsTitle',
                                fontName=get_font_name(theme.typography.heading_family, bold=True),
@@ -2296,13 +2584,29 @@ def _render_bibliography(block, theme, bs):
                                fontName=get_font_name(theme.typography.heading_family, bold=True),
                                fontSize=theme.typography.base_size * 1.3,
                                spaceBefore=12, spaceAfter=8)
-    flowables.append(Paragraph(_md_inline(_label("references")), title_sty))
+    paper = theme.decorations.paper
+    if paper:                       # set as the paper's sections are, without a number
+        from ..design.tokens import heading_size
+        size = heading_size(theme, 1)
+        title_sty = ParagraphStyle('BibTitleP', parent=title_sty, fontSize=size, leading=size * 1.2,
+                                   textColor=_safe_color(theme.colors.text_primary),
+                                   spaceBefore=theme.spacing.heading_spacing_before[0],
+                                   spaceAfter=theme.spacing.heading_spacing_after[0])
+    if not (block.hints or {}).get("titled"):
+        flowables.append(Paragraph(_md_inline(_label("references")), title_sty))
+        flowables[-1].keepWithNext = 1
     ref_sty = ParagraphStyle('BibEntry', parent=bs, firstLineIndent=-24,
                              leftIndent=24,
                              fontSize=theme.typography.base_size * 0.9,
                              spaceBefore=2, spaceAfter=4)
+    # the text cites [1], [2]: entries keyed by number carry that number, whatever the style
+    keyed = paper and block.style != "ieee" and all((e.key or "").strip().isdigit() for e in block.entries)
+    if paper:
+        ref_sty = ParagraphStyle('BibEntryP', parent=ref_sty, alignment=0, spaceBefore=0, spaceAfter=3)
     for i, entry in enumerate(block.entries, 1):
-        if block.style == "ieee":
+        if keyed:
+            text = f"[{entry.key.strip()}] {entry.authors} ({entry.year}). {entry.title}. <i>{entry.source}</i>."
+        elif block.style == "ieee":
             text = f"[{i}] {entry.authors}, \"{entry.title},\" <i>{entry.source}</i>, {entry.year}."
         elif block.style == "chicago":
             text = f"{entry.authors}. {entry.title}. <i>{entry.source}</i>, {entry.year}."
@@ -2315,33 +2619,46 @@ def _render_bibliography(block, theme, bs):
     return flowables
 
 
-def _render_signature(block, theme):
-    """Signature: line + name + title + date."""
-    flowables = []
-    flowables.append(Spacer(1, 30))
+def _side(alignment: str, rtl: bool) -> str:
+    """A physical side for start, center or end (left and right stay as they are)."""
+    a = (alignment or "start").lower()
+    return {"start": "right" if rtl else "left", "end": "left" if rtl else "right"}.get(a, a if a in ("left", "right", "center") else "left")
+
+
+def _render_signature(block, theme, width=None):
+    """A signature: its picture over the line when there is one, then the name, title and date, all
+    set to one side (the start edge by default) of the space it is given: the page, or a column."""
+    rtl = _is_rtl(" ".join(x for x in (block.name, block.title, block.date) if x))
+    side = _side(block.alignment, rtl)
+    align = {"left": 0, "center": 1, "right": 2}[side]
+    font = (lambda bold=False: _arabic_font(theme, bold=bold)) if rtl else \
+        (lambda bold=False: get_font_name(theme.typography.body_family, bold=bold))
+    flows = []
+    if block.image:
+        try:
+            buf, (iw, ih) = _load_image(block.image, _diag.current().policy.assets)
+            scale = min(block.line_width / iw, 46 / ih, 1.0 if iw <= block.line_width else 1e9)
+            flows.append(Image(buf, width=iw * scale, height=ih * scale))
+        except DynamicPDFError as e:
+            _diag.current().fail("asset_failed", f"Signature image: {e}", e)
     if block.show_line:
-        flowables.append(DividerFlowable(color=theme.colors.text_primary, thickness=1.0))
-    name_sty = ParagraphStyle('SigName',
-                              fontName=get_font_name(theme.typography.body_family, bold=True),
-                              fontSize=theme.typography.base_size,
-                              spaceBefore=4, spaceAfter=2)
-    flowables.append(Paragraph(block.name, name_sty))
-    if block.title:
-        title_sty = ParagraphStyle('SigTitle',
-                                   fontName=get_font_name(theme.typography.body_family),
-                                   fontSize=theme.typography.base_size * 0.9,
-                                   textColor=_safe_color(theme.colors.text_secondary),
-                                   spaceAfter=2)
-        flowables.append(Paragraph(block.title, title_sty))
-    if block.date:
-        date_sty = ParagraphStyle('SigDate',
-                                  fontName=get_font_name(theme.typography.body_family),
-                                  fontSize=theme.typography.base_size * 0.85,
-                                  textColor=_safe_color(theme.colors.text_muted),
-                                  spaceAfter=2)
-        flowables.append(Paragraph(block.date, date_sty))
-    flowables.append(Spacer(1, theme.spacing.block_gap))
-    return flowables
+        flows.append(DividerFlowable(color=theme.colors.text_primary, thickness=0.8, width=block.line_width, align=side))
+    # names are literal text: shaped, escaped, never read as markup
+    size, lh = theme.typography.base_size, theme.typography.line_height
+    for text, sz, color, bold in ((block.name, size, theme.colors.text_primary, True),
+                                  (block.title, size * 0.9, theme.colors.text_secondary, False),
+                                  (block.date, size * 0.85, theme.colors.text_muted, False)):
+        if text:
+            flows.append(Paragraph(_plain_markup(text), ParagraphStyle(
+                'Sig', fontName=font(bold), fontSize=sz, leading=sz * lh, textColor=_safe_color(color),
+                spaceBefore=4 if bold else 0, spaceAfter=2, alignment=align)))
+    # one cell: its alignment places the picture and the line, here and inside a column alike
+    t = Table([[flows]], colWidths=[width] if width else None, style=TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), side.upper()), ('VALIGN', (0, 0), (-1, -1), 'BOTTOM'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0)]))
+    t.hAlign = side.upper()
+    return [Spacer(1, 12 if block.image else 30), t, Spacer(1, theme.spacing.block_gap)]
 
 
 class TimelineDot(Flowable):

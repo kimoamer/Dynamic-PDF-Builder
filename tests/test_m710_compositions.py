@@ -114,7 +114,7 @@ def test_paired_rows_put_arabic_on_the_right_whichever_comes_first():
 def test_paired_rows_keep_both_languages_and_repeat_the_header_in_word():
     rows = [{"first": EN, "second": AR}] * 3
     b = DocumentBuilder().paired_row_columns(rows, header_first="English", header_second="العربية")
-    assert "flood gates" in pdf_text(b.render())
+    assert "flood gates" in " ".join(pdf_text(b.render()).split())
     data = b.render_docx()
     table = Document(io.BytesIO(data)).tables[0]
     assert len(table.rows) == 4

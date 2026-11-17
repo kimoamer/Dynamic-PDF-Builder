@@ -34,7 +34,7 @@ class Direction:
     margins: Tuple[float, float, float, float]      # top, bottom, start, end
     primary: str
     accent: str
-    cover: str                 # type_centered | image_top | full | split | masthead
+    cover: str                 # type_centered | image_top | full | split | masthead | title_block
     opener: str                # none | rule | hang | slab | page
     kpi: str                   # tiles | ruled | band | hero_page
     table: str                 # open | ledger | default
@@ -42,13 +42,14 @@ class Direction:
     side_image: float          # width share of a side image; 0 keeps images in the column
     side_alternates: bool
     statement: str             # plain | inline | page
-    bands: str                 # line | folio | quiet | filled | institutional
+    bands: str                 # line | folio | quiet | filled | institutional | page_number
     numbered: bool = False
     drop_cap: bool = False
     lead: bool = False
     toc_min: int = 5
     hang: float = 0.0          # how far headings hang into the start margin
     break_major: bool = False  # large sections open a page
+    paper: bool = False        # a scholarly paper's conventions (DecorationConfig.paper)
     extras: Dict[str, float] = field(default_factory=dict)
 
     def margins_for(self, rtl: bool) -> Tuple[float, float, float, float]:
@@ -66,10 +67,20 @@ class Direction:
             heading_scale=list(self.heading_scale), density=self.density * density,
             margins=self.margins_for(rtl), drop_cap=self.drop_cap and not rtl,
             section_numbering=self.numbered, toc="auto", toc_min_headings=self.toc_min,
-            heading_ramp_locked=True, notes=[f"art direction: {self.name}"])
+            heading_ramp_locked=True, paper=self.paper, first_line_indent=18 if self.paper and not rtl else 0,
+            notes=[f"art direction: {self.name}"])
 
 
 DIRECTIONS: Dict[str, Direction] = {d.id: d for d in (
+    Direction(
+        id="academic_paper", name="Academic Paper", arabic_family="Noto Naskh Arabic",
+        summary="A paper: title and authors on page one, plain abstract, serif text, ruled tables, "
+                "numbered sections, figures and references; no cover, no colour.",
+        base_theme="academic", heading_family="Times-Roman", body_family="Times-Roman", base_size=11, line_height=1.5,
+        heading_scale=(1.55, 1.3, 1.12, 1.0, 1.0, 0.95), density=1.0, margins=(72, 72, 72, 72),
+        primary="#111111", accent="#1F3A5F", cover="title_block", opener="none", kpi="tiles", table="default",
+        hero_image="inline", side_image=0.0, side_alternates=False, statement="plain", bands="page_number",
+        numbered=True, toc_min=99, paper=True),
     Direction(
         id="corporate_conservative", name="Corporate Conservative", arabic_family="IBM Plex Sans Arabic",
         summary="Formal and restrained: centred type cover, numbered sections, serif text, quiet rules.",
@@ -133,6 +144,8 @@ def page_system(direction: Direction, *, company: Optional[str], logo: Optional[
     values = {"company": company} if company else {}
     kind = direction.bands
     mark = [Logo(src=logo, max_height=20, max_width=90, alt_text=company)] if logo else []
+    if kind == "page_number":                    # a paper: the page number, centred, and nothing else
+        return PageSystem(footer=Band(rows=[BandRow(center=["{page}"], size=10, color=muted)]), values=values)
     if kind == "line":
         return PageSystem(header=Band(rows=[BandRow(start=[title], end=["{section}"], size=8, color=muted,
                                                     rule_below=True, rule_color=primary, rule_width=0.5)]),

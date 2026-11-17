@@ -15,6 +15,7 @@
 - [Quick Start](#quick-start)
 - [Input Modes](#input-modes)
 - [CLI Usage](#cli-usage)
+- [Using with AI agents](#using-with-ai-agents)
 - [Themes](#themes)
 - [Header & Footer Styles](#header--footer-styles)
 - [Block Reference](#block-reference)
@@ -36,22 +37,35 @@
 ## Installation
 
 ```bash
-pip install -e .
+pip install dynamic-pdf-builder        # from PyPI, once a release is published
+pip install -e .                        # from a clone of this repository
 ```
 
-Core dependencies install automatically. Optional feature sets:
+Python 3.10 or newer. Core dependencies install automatically, including the fonts (45 families
+under the SIL Open Font License) and a PDF reader (PDFium) that design variants and QA use to
+check the rendered pages. No system fonts, browser or LibreOffice are needed for PDF and DOCX.
+Optional feature sets:
 
 ```bash
-pip install -e ".[diagrams]"   # Mermaid diagrams via Playwright
-pip install -e ".[plotly]"     # Plotly charts
-pip install -e ".[pdf]"        # PDF merge / encrypt via pikepdf
-pip install -e ".[qrcode]"     # QR code blocks
-pip install -e ".[rtl]"        # Arabic & Hebrew RTL support
-pip install -e ".[all]"        # Everything
-pip install -e ".[dev]"        # Testing + linting tools
+pip install "dynamic-pdf-builder[diagrams]"   # Mermaid diagrams via Playwright
+pip install "dynamic-pdf-builder[plotly]"     # Plotly charts
+pip install "dynamic-pdf-builder[pdf]"        # PDF merge / encrypt via pikepdf
+pip install "dynamic-pdf-builder[qrcode]"     # QR code blocks
+pip install "dynamic-pdf-builder[xlsx]"       # XLSX data sources, workbook export, editable Word chart data
+pip install "dynamic-pdf-builder[qa]"         # PyMuPDF for QA (AGPL): faster and used when installed
+pip install "dynamic-pdf-builder[ai]"         # optional AI layer (needs an API key, only when asked)
+pip install "dynamic-pdf-builder[mcp]"        # MCP server for agents
+pip install "dynamic-pdf-builder[all]"        # every extra above except qa (AGPL), ai and mcp
+pip install -e ".[dev]"                       # from a clone: testing and linting tools
 ```
 
+The code is MIT; the bundled fonts are OFL-1.1 (`License-Expression: MIT AND OFL-1.1`), with each
+font's licence shipped in the package.
+
 ---
+
+Settings, environment variables and what the library does (and does not do) inside a host
+application are in [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
 
 ## Quick Start
 
@@ -185,6 +199,9 @@ dynamic-pdf render report.md --section-numbers
 # Render a JSON document
 dynamic-pdf render payload.json -o output.pdf
 
+# What a reader would notice, each with what to change; page images in pages/
+dynamic-pdf review report.md -o pages/
+
 # List all available themes
 dynamic-pdf themes
 
@@ -194,7 +211,35 @@ dynamic-pdf version
 
 ---
 
+## Using with AI agents
+
+The library explains itself, so an agent needs no outside notes:
+
+- **The guide ships with the package**: `dynamic_pdf.guide()` returns it, `dynamic_pdf.guide("tables")`
+  one topic, and `dynamic-pdf guide [topic]` prints it. It covers the Markdown the library reads, with
+  an example for every feature, the output formats, the Python API, Arabic, and what it cannot do.
+- **MCP server** (`pip install "dynamic-pdf-builder[mcp]"`):
+
+  ```bash
+  python -m dynamic_pdf.ai.mcp_server --out-dir ./out
+  ```
+
+  It tells the agent what the library is and how to work with it when it connects. Tools: `guide`,
+  `render` (.pdf, .docx or .xlsx), `review`, `variants`, `explain`, `lint` and `schema`. Each document
+  tool takes the document as `markdown` (a string, the easiest) or as `document` (JSON); files are
+  written only inside the output folder, remote images stay off, and an invalid document is refused
+  with each failing field and how to fix it.
+- **The JSON Schema describes its fields** (`dynamic-pdf schema`, or the `schema` tool), for agents
+  that send JSON.
+- **`llms.txt`** at the repository root points to all of the above.
+
+The loop that works: write Markdown, `render`, `review` (each issue with its page and the fix, and
+one image a page), fix, `review` again.
+
 ## Themes
+
+Every document is designed by default and the design starts from the theme you choose. For a theme's
+classic look exactly as below, call `design(None)` before rendering.
 
 | Theme | Style | Drop Cap | Best For |
 |-------|-------|----------|----------|
@@ -562,7 +607,9 @@ builder.math(r"E = mc^2")
 builder.math(r"\sum_{i=0}^{n} i^2 = \frac{(n^2+n)(2n+1)}{6}")
 ```
 
-Rendered via `matplotlib.mathtext` — **no LaTeX installation required**.
+In the PDF the formula is drawn with `matplotlib.mathtext` — **no LaTeX installation required**.
+In the DOCX it is a native Word equation (Office Math), so it can be edited in Word and is read
+by screen readers; a formula Office Math cannot hold falls back to the picture.
 
 ### Mermaid Diagrams
 
@@ -663,6 +710,41 @@ builder.bibliography(
          "source": "Journal of AI Research", "doi": "10.1234/jair.2024"},
     ],
 )
+```
+
+#### Citations from BibTeX
+
+Cite works in the text as Pandoc does and give the library as BibTeX; the reference list is built
+from what is cited:
+
+```markdown
+---
+bibliography: refs.bib        # or several: [refs.bib, more.bib]
+citation-style: ieee          # apa (author and year, the default) or ieee (numbers)
+---
+Relocation works when communities move together [@abara2023, p. 50].
+Markets respond to floods [@kim2021; @lund2022].
+
+# References
+
+[REFERENCES]
+```
+
+APA writes "(Abara & Halvorsen, 2023, p. 50)" and "(Kim et al., 2021; Lund, 2022)" and lists by
+author; IEEE writes "[1, p. 50]" and "[2], [3]" and lists in order of first citation. Only works cited
+are listed, where `[REFERENCES]` stands or else at the end. In Python: `builder.bibtex("refs.bib",
+style="apa")` (a path, read under the asset policy as images are, or BibTeX text). A key the library
+does not have stays as written and `lint()` reports it (`unresolved_citation`).
+
+#### Numbered equations
+
+A displayed equation with an id is numbered, as captioned tables and figures are, and `{ref:id}`
+reads "Equation (2)" (المعادلة (2) in Arabic). The number sits at the far edge in the PDF and in Word.
+
+```markdown
+The energy follows {ref:eq-energy}.
+
+$$ E = mc^2 $$ {#eq-energy}
 ```
 
 ### Signature
@@ -1147,7 +1229,7 @@ tests/                      #  pytest suite run by GitHub Actions (see Testing)
 | `matplotlib ≥ 3.8` | Charts (17 types) + LaTeX math rendering |
 | `Pillow ≥ 10.0` | Image processing |
 | `svglib ≥ 1.5` | SVG → ReportLab Drawing conversion |
-| `latex2mathml ≥ 3.76` | LaTeX → MathML conversion |
+| `latex2mathml ≥ 3.76` | LaTeX → MathML, for native Word equations |
 | `pyphen ≥ 0.14` | Text hyphenation |
 
 ### Optional
@@ -1222,14 +1304,21 @@ Caption, Quote, Code, TOC n), multi-level list numbering that restarts per list,
 repeating header rows and right-aligned numeric columns, hyperlinks and bookmarks, a TOC
 field (refreshed when Word opens the file), header/footer with `PAGE`/`NUMPAGES` fields,
 core properties, Arabic bidi paragraphs/runs with complex-script fonts, and per-table
-column order for bilingual documents. Charts, diagrams, math and QR codes are embedded as
-images with alt text (Word has no native equivalent). Known differences: page breaks are
-computed by Word, so page counts can differ from the PDF; footnotes are rendered as notes
-paragraphs; text watermarks use VML (shown by Word, not by every viewer).
+column order for bilingual documents. Equations are native Word equations (Office Math).
+Numbered captions ("Table 2", "Figure 3") hold their number in a `SEQ` field, references to them
+(`{ref:id}`) are `REF` fields, and lists of tables and figures are `TOC \c` fields, so inserting a
+table in Word and updating fields (F9) renumbers captions, references and lists together.
+Bar, column, grouped and stacked bar, line, area, pie and doughnut charts are native Word
+charts in the library's colours: their data and formatting can be edited in Word, and with the
+`xlsx` extra (openpyxl) a workbook is embedded so Word's "Edit Data" opens it. Other chart types,
+diagrams and QR codes are embedded as images with alt text. Known differences: page breaks are
+computed by Word, so page counts can differ from the PDF; text watermarks use VML (shown by
+Word, not by every viewer); LibreOffice shows equations only with its Math module installed.
+Footnotes are real Word footnotes.
 
-`export()`, `export_both()` and the CLI apply intelligent design by default (opt out with
-`design(None)` or `--design none`); an explicitly chosen theme becomes the design's base. The
-legacy `render()`, `render_bytes()` and `render_from_json()` calls keep classic theme rendering.
+Every output applies intelligent design by default: `export()`, `export_both()`, `render()`,
+`render_bytes()`, `render_from_json()` and the CLI (opt out with `design(None)` or `--design none`
+for the classic theme look); an explicitly chosen theme becomes the design's base.
 
 `design("auto")` selects a profile deterministically from metadata and content signals
 (`executive_report`, `proposal`, `corporate_memo`, `academic_report`, `technical_manual`,
@@ -1243,6 +1332,82 @@ columns, landscape pages/sections for tables that cannot be read in portrait, sh
 and captions kept on one page, comfortable line length for prose, heading ramps tuned to
 outline depth, a lead paragraph for reports and proposals, and a metadata-only cover for long
 titled reports. Headings are kept with their content and widows/orphans are suppressed.
+
+### Computed tables, amounts in words and workbooks
+
+A table cell that starts with `=` is a formula, written as in a spreadsheet. Cells are named as a
+spreadsheet names them (columns A, B, C ... and rows from 1, the header row), so a formula means
+the same in the document, in Word and in an exported workbook:
+
+```markdown
+| Item  | Qty | Price        | Amount             |
+|-------|-----|--------------|--------------------|
+| Paper | 3   | SAR 12.50    | =B2*C2             |
+| Toner | 2   | SAR 1,310.00 | =B3*C3             |
+| VAT   |     | 15%          | =SUM(D2:D3)*C4     |
+| Total |     |              | =SUM(ABOVE)        |
+| In words |  |              | =WORDS(D5)         |
+```
+
+Functions: `SUM`, `AVERAGE`, `MIN`, `MAX`, `COUNT`, `ROUND`, `ABS`, and Word's `ABOVE` and `LEFT`
+(the numbers above in the column, or to the left in the row). `15%` is 0.15. Arithmetic is decimal,
+so 0.1 + 0.2 is 0.3, and `ROUND` rounds half away from zero. A result is written as its column
+writes numbers: decimals, thousands separators, currency, percent sign, negatives in parentheses
+and Arabic-Indic digits. The document keeps the formulas; the PDF and the DOCX show the results.
+A formula that cannot be computed raises a `FormulaError` naming the table, the cell and why (in
+permissive mode the cell reads `#ERROR`), and `lint()` reports it in either mode.
+
+`WORDS(D5)` writes the amount in words, in the document's language: "فقط ثلاثة آلاف وستة وخمسون
+ريالاً وثلاث عشرة هللةً لا غير", or "Three thousand fifty-six riyals and thirteen halalas only". It
+takes the currency of the cells it reads, or a code: `=WORDS(D5, "EGP")`, `=WORDS(D5, "en", "USD")`.
+Arabic counts the noun as invoices do (ريالان، ثلاثة ريالات، أحد عشر ريالاً، مئتا ريال، ألفا ريال).
+Currencies: SAR, EGP, AED, KWD, QAR, OMR, BHD, JOD, USD, EUR, GBP (English). The same words are
+`dynamic_pdf.core.words.amount_in_words(1250.5, "ar", "SAR")` and the template filter
+`{{ total | words("SAR") }}`.
+
+Text can quote a cell of a table that has an id, so a figure in the prose cannot drift from its
+table: "The total due is `{=invoice!D5}`" shows what D5 shows (Markdown gives the id with
+`Table: Invoice lines {#invoice}` under the table). An unknown table or cell stays as written and
+`lint()` reports it.
+
+`export("tables.xlsx")` (or `render_xlsx()`, CLI `render -o tables.xlsx`) writes every table as a
+sheet of a workbook, with the `xlsx` extra: numbers as numbers in the formats the document uses,
+and formulas as working spreadsheet formulas (`ABOVE` becomes the range it covers; `WORDS`, which
+no spreadsheet has, its text). Sheets read right to left in an Arabic document.
+
+### Comparing two versions
+
+`new.compared_with(old)` returns this document with every difference from the earlier one marked
+as a suggested edit; export it to DOCX for tracked changes to accept or reject, or to PDF for a
+review copy. Changed words in paragraphs, headings, quotes and list items, changed table cells and
+added or removed rows, and added or removed blocks are marked; formulas are compared by what they
+show. CLI: `dynamic-pdf compare old.md new.md -o changes.docx [--reviewer Finance]`.
+
+### Suggested edits and comments
+
+Text can carry suggested edits and comments in [CriticMarkup](https://github.com/CriticMarkup/CriticMarkup-toolkit),
+the plain-text form people and language models use for suggestions:
+
+```markdown
+---
+reviewer: Policy AI
+---
+Revenue {~~fell~>rose~~} by 12%{>>source: Q3 ledger<<}. The board {--may--} {++will++} approve
+the {==capital budget==}{>>confirm with finance<<} in December.
+```
+
+| Markup | Word | PDF (a review copy) |
+| --- | --- | --- |
+| `{++added++}` | tracked insertion | underlined in green |
+| `{--removed--}` | tracked deletion | struck through in red |
+| `{~~old~>new~~}` | deletion then insertion | both |
+| `{==text==}{>>comment<<}` | comment on the text | text highlighted, comment after it in small type |
+| `{>>comment<<}` | comment on the word before it | comment after the word |
+
+In Word each change can be accepted or rejected, and changes and comments carry the
+`reviewer` (front matter, or `meta(reviewer=...)`; "Reviewer" when none is named). Text
+without markup is written as before. A suggestion is parsed on its own, so emphasis should
+open and close inside it.
 
 ## Intelligent page composition (CPU-only)
 
@@ -1283,11 +1448,12 @@ reasons, per-page occupancy, renders, wall/CPU time, memory, corrections, PDF/DO
 fallbacks and unverified checks. DOCX uses the same decisions and is checked on its own
 LibreOffice rendering when available (`unverified` otherwise).
 
-An optional learned ranker (`pip install "dynamic-pdf-builder[ranker]"`, LightGBM, CPU)
-can re-order *valid* candidates. No model ships: collect real preferences with
-`scripts/collect_preferences.py`, train with `scripts/train_ranker.py` (refuses < 40
-labelled pairs, reports document-grouped CV accuracy, saves LightGBM's text format —
-never pickle), then pass `compose("smart", ranker_model="model.txt")`.
+A learned selector can choose among *valid* results: `ranker="auto"` (the model packaged
+with a release) or `ranker="model.json"` on `design_variants()`, `design(variants=...)`,
+`compose("smart", ...)` and the CLI (`--ranker`). It is one small JSON file read in plain
+Python, so using it needs no LightGBM; it replaces the fixed choice only when it is sure
+enough, and the result says which selector chose and why. No model ships yet: the data does
+not pass the training gate (`docs/LEARNED_RANKER_PLAN.md`), so `"auto"` keeps the fixed rule.
 
 ## Visual quality assurance
 
@@ -1310,8 +1476,27 @@ for real errors; permissive mode returns the report. Additional page checks flag
 before continuing content, detached captions, oversized headings and low page density.
 `python -m dynamic_pdf.qa.golden tests/fixtures tests/golden [--update] [--sheets]` verifies
 structural fingerprints of the fixture corpus and writes page contact sheets for review; CI
-uploads them as the `page-contact-sheets` artifact. QA needs `pip install "dynamic-pdf-builder[qa]"`
-(PyMuPDF, AGPL) and LibreOffice for DOCX visual checks.
+uploads them as the `page-contact-sheets` artifact. QA reads pages with PDFium, a core
+dependency; PyMuPDF (`[qa]`, AGPL) is used instead when installed. DOCX visual checks need
+LibreOffice.
+
+### Review: render, look, fix
+
+`review()` renders once and lists what a reader would notice, without changing anything, so you
+or an agent can fix the document and review again:
+
+```python
+r = DocumentBuilder.from_markdown(text).review("pages/")      # one PNG a page in pages/
+for issue in r["issues"]:
+    print(issue["page"], issue["severity"], issue["code"], issue["message"])
+    print("   fix:", issue["fix"])                              # what to change, in words
+r["passed"]                                                    # False when any issue is an error
+```
+
+Issues come from the page checks above, the page critique (mostly empty or repeated pages; a
+cover or an opening page is not reported), render diagnostics (a missing image, a formula shown
+as source) and `lint()`. A failing block is reported, not raised. The same review is the CLI's
+`dynamic-pdf review report.md -o pages/` (exit code 1 on errors) and the MCP server's `review` tool.
 
 ## Error handling, security & limits
 
@@ -1355,6 +1540,106 @@ SOURCE_DATE_EPOCH=1700000000 dynamic-pdf render report.md --format both
 ### Unreleased
 
 Work since v0.3.0, in brief. Design records for each step are under `docs/`.
+
+**Changes that can affect existing users**
+- `render()`, `render_bytes()` and `render_from_json()` design the document, as `export()` always has.
+  For the classic theme look of v0.3, call `design(None)` first. `theme()` now counts as choosing a
+  theme, so the design starts from it, as `DocumentBuilder(theme=...)` does.
+- `pypdfium2` (BSD-3/Apache-2.0) is a core dependency: design variants and QA read the rendered
+  pages, and a plain install could not. `[qa-permissive]` stays, empty in effect.
+- `[all]` no longer installs PyMuPDF (AGPL); ask for it with `[qa]`.
+- `VariantSet.accept()` writes only where it is told: `root=` or `DYNAMIC_PDF_PREFERENCES_DIR`.
+- DOCX: equations are Office Math and common charts are Word charts, not pictures; caption numbers,
+  references and lists of figures and tables are Word fields.
+
+**New**
+- Headers and footers: presets (`letterhead`, `modern`, `banner`, `report`, `minimal`) placed by reading
+  edge with the logo, title, running section, company and page number, in PDF and Word, from
+  `page_system("modern", logo=..., company=...)` or the front matter (`header:`, `logo:`, `company:` ...);
+  band colours may name a theme colour.
+- Signatures: a picture of the signature over the line, start/center/end alignment, up to four side by
+  side (`signatures([...])`, a ```` ```signature ```` fence in Markdown).
+- Quotes in three looks: blockquote with a bar along its start edge, pullquote, epigraph; in Markdown
+  `> [!pullquote]`, `> [!epigraph]`, and `> — Name` for the attribution.
+- Ready-made documents: `kit(name, data)` (CLI `kit`, MCP `kit`) in English or Arabic. `invoice` and
+  `quote`: seller and buyer, dates, the lines with computed amounts, discount, VAT, total and the amount
+  in words, each figure rounded where computed so the printed figures add up. `letter`: a formal letter
+  with letterhead, reference, recipient, subject, body and signature. `cv`: a CV with experience,
+  education, skills and languages, set for applicant tracking systems (no running header or footer,
+  no hyphenation, standard sections, tagged PDF, plain Word structure). `feasibility`: cash flows by
+  year, NPV, IRR and payback, with a chart. `statements`: profit or loss and financial position with a
+  comparative year, costs in brackets, every total a formula, refused if they do not balance. `certificate`: a landscape certificate with
+  one or two signatures.
+- Formulas: `NPV` and `IRR`, as a spreadsheet computes them; IRR is written as a percent.
+- The library explains itself to agents and people: a guide in the package (`guide()`, CLI `guide`,
+  MCP `guide`), MCP instructions sent on connect, Markdown input for every MCP tool, field
+  descriptions in the JSON Schema, ```` ```chart ```` blocks holding JSON in Markdown, and `llms.txt`.
+- Linked values (`{=table-id!D5}` in text shows the cell) and version comparison
+  (`compared_with()`, CLI `compare`) as tracked changes in Word and a review copy in PDF.
+- Citations from BibTeX (`[@key]`, `bibliography: refs.bib`, `builder.bibtex()`), written in APA or
+  IEEE with the list of works cited; numbered equations with `{ref:id}` references, in PDF and Word.
+- Computed tables: spreadsheet formulas in cells (`=B2*C2`, `=SUM(ABOVE)`), computed in decimals and
+  written as their column writes numbers; amounts in words in Arabic and English (`=WORDS(D5)`,
+  `amount_in_words`, the template filter `words`); every table as a workbook with working formulas
+  (`export("x.xlsx")`, `render_xlsx()`).
+- Word: native equations (Office Math), native bar/line/area/pie/doughnut charts with an embedded
+  workbook when openpyxl is installed, `SEQ`/`REF`/`TOC \c` fields that renumber in Word, and
+  suggested edits and comments in CriticMarkup as tracked changes and Word comments (a review copy
+  in the PDF), signed by `meta(reviewer=...)`.
+- `review()`, CLI `review` and an MCP `review` tool: every issue with its page and what to change,
+  and one PNG a page.
+- `dynamic_pdf.settings`: every `DYNAMIC_PDF_*` variable in one place, read when needed; what the
+  caller passes wins. `docs/CONFIGURATION.md` lists them and what the library does to its host.
+- An academic document is set as a paper (title block, abstract, booktabs tables, numbered
+  references, greys for figures), in PDF and DOCX.
+- A learned selector slot (`ranker=`): a model file whose training gate passed may reorder the valid
+  designs; none is packaged. Training data and tools for it are under `training/` and `tools/`.
+- License expression `MIT AND OFL-1.1` with every font licence in the package; `py.typed`.
+
+**Fixed**
+- A justified line before a long e-mail address or URL no longer stretches its words far apart: such a
+  line keeps its natural spacing, and the address stays whole, so it copies intact.
+- Right-to-left text: lines ending in a line break (an address, Label: value lines) sat on the left in
+  justified paragraphs; two columns now read from the right, as in Word.
+- A column of amounts with an "in words" row under it was read as text and lost its right alignment.
+- A report whose sections are numbered no longer numbers its title ("1 Annual review", "1.1 Results").
+- The page number reads in the document's language ("صفحة 2 من 3"), in PDF and Word.
+- A negative bar's label no longer runs into the axis names.
+- An Arabic table whose other headers are years ("البند | 2026 | 2025") is set right to left, in PDF and
+  Word: figures and years no longer vote on a table's direction.
+- `rich_text` with a large `font_size` ran into the next line; its line height now follows its size.
+- A signature line in a right-to-left column sits with the name, at the right.
+- Header styles: the banner and the centred logo no longer run into the body; logo_left and logo_right
+  keep the title clear of the logo in Arabic. Footers mirror in Arabic as Word sets them; a footer logo
+  sits level with the text; the company is not printed twice.
+- Bands line up with the text column (they sat 6 points outside it); a page one with bands of its own
+  takes its own margins, so a tall letterhead no longer pushes every later page's text down; a logo on
+  a band of colour sits on a light plate, in PDF and Word.
+- Bands: a slot sized to its text no longer wraps it on a rounding error; in Arabic the logo leads at the
+  right; in Word the first text follows the logo on its line, a two-slot row gives each side room, and
+  page numbers are sized as their text.
+- Columns give the blocks inside them their own width.
+- Lint no longer reports a section of one line under its own total as a mismatch.
+- Word: `rich_text` with `alignment="left"` was set by its style (possibly justified); it is left-aligned.
+- Word: a phone number in Arabic text ("+966 11 000 0000") read with its groups reversed; it is now
+  embedded left to right. Numbers that are not phone-shaped ("2024 2025") are left as written.
+- Signatures: Arabic names are shaped and set from the right; a name is literal text (`&` or `<` no
+  longer break the PDF), and `line_width` is honoured. A letter no longer gets a title block above it.
+- Line and area charts in the PDF read `{"categories": [...], "series": {...}}` as the bar charts do.
+- The `logo_left` and `logo_right` headers drew the logo twice. A logo in the chosen theme stays in the
+  designed header, from page one, as a letterhead.
+- Arabic in charts read backwards with Matplotlib 3.11, which shapes Arabic itself.
+- A compound word lost its hyphen when its paragraph ran onto the next page.
+- Crossed emphasis (`**a *b** c*`) stopped the whole PDF; a JPEG without a JFIF or Exif header
+  stopped the DOCX; a quote wrapped over source lines split into several Word paragraphs.
+- A reference list under the author's own "References" heading printed a second title; a long
+  doughnut title ran over the ring.
+- False alarms that rejected good designs: a chapter's opening page read as a stranded heading,
+  contents leader dots counted as words, a Western and an Arabic-Indic number in one table read
+  as one number.
+- ReportLab's hyphen correction and Matplotlib's backend no longer change the host process.
+
+**Earlier in this cycle**
 
 - Editable DOCX from the same semantic document as the PDF; `export()`, `export_both()`, CLI `--format`.
 - Intelligent design: `design("auto")` profiles, recipes, a layout planner, `design_explain()`.

@@ -89,9 +89,9 @@ def test_visual_blocks_embed_images_with_alt_text(png_path):
     data = (DocumentBuilder().chart("bar", data={"Q1": 1, "Q2": 2}, title="Sales")
             .math("E = mc^2").image(png_path, caption="Cap", alt_text="red box").render_docx())
     xml = _xml(data)
-    assert xml.count("<pic:pic") == 3
-    assert 'descr="bar chart: Sales. Data: Q1: 1; Q2: 2"' in xml
-    assert 'descr="Equation: E = mc^2"' in xml
+    assert xml.count("<pic:pic") == 1                           # chart and equation are native Word objects, not pictures
+    assert 'descr="bar chart: Sales. Data: Q1: 1; Q2: 2"' in xml and "<c:chart " in xml
+    assert "<m:oMathPara>" in xml and "<m:t>E</m:t>" in xml
     assert 'descr="red box"' in xml
 
 
@@ -133,3 +133,47 @@ def test_cli_docx_and_both(tmp_path):
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
     assert (tmp_path / "in.pdf").exists() and (tmp_path / "in.docx").exists()
+
+
+def test_a_jpeg_without_a_jfif_or_exif_header_is_still_embedded(tmp_path):
+    """python-docx refuses such a file, though it is a valid JPEG that cameras and web thumbnails write."""
+    import io
+
+    import docx
+    from docx.image.exceptions import UnrecognizedImageError
+    from docx.image.image import Image as DocxImage
+    from PIL import Image
+
+    from dynamic_pdf import DocumentBuilder
+    buf = io.BytesIO()
+    Image.new("RGB", (120, 80), "#336699").save(buf, "JPEG")
+    raw = buf.getvalue()
+    assert raw[2:4] == b"\xff\xe0" and raw[6:10] == b"JFIF"
+    bare = raw[:2] + raw[4 + int.from_bytes(raw[4:6], "big"):]              # the same picture without its JFIF segment
+    with pytest.raises(UnrecognizedImageError):
+        DocxImage.from_blob(bare)
+    picture = tmp_path / "bare.jpg"
+    picture.write_bytes(bare)
+    out = tmp_path / "out.docx"
+    DocumentBuilder.from_markdown(f"# Report\n\nText before.\n\n![A blue card]({picture})\n").export(str(out))
+    assert len(docx.Document(str(out)).inline_shapes) == 1
+
+
+def test_crossed_emphasis_does_not_stop_the_document():
+    """``**a *b** c*`` used to give crossed tags, which ReportLab refuses for the whole paragraph."""
+    import pymupdf
+
+    from dynamic_pdf.layout.factory import _md_inline, _nest
+    assert _md_inline("x **a *b** c* y") == "x <b>a <i>b</i></b><i> c</i> y"
+    assert _nest("<b>ok <i>fine</i></b> <br/>") == "<b>ok <i>fine</i></b> <br/>"        # nested markup is left alone
+    assert _nest("stray</b> and <i>open") == "stray and <i>open</i>"
+    pdf = DocumentBuilder().paragraph("Latin **first *second** third* last, and **bold** as usual.").render()
+    text = pymupdf.open(stream=pdf, filetype="pdf")[0].get_text()
+    assert "first second third last" in " ".join(text.split())
+
+
+def test_a_quote_wrapped_over_source_lines_is_one_paragraph_as_in_the_pdf():
+    """Every source newline used to start a new Word paragraph, so the sentence was not found whole."""
+    b = DocumentBuilder().quote("**Risk to watch:** two customers renew in the first quarter\nand may move to one vendor.\n\nA second paragraph.")
+    quotes = [p.text for p in open_docx(b.render_docx()).paragraphs if p.style.name == "Quote"]
+    assert quotes == ["Risk to watch: two customers renew in the first quarter and may move to one vendor.", "A second paragraph."]

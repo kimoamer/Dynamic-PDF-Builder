@@ -20,7 +20,7 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
-from .analysis import FORCED_BREAK_AFTER, NO_CONTENT
+from .analysis import FORCED_BREAK_AFTER, NO_CONTENT, forces_break
 from .geometry import Geometry
 from .objective import WEIGHTS as OBJECTIVE_WEIGHTS, layout_score
 
@@ -85,7 +85,7 @@ def forced_starts(doc) -> set:
     out = set()
     prev_land = False
     for i, b in enumerate(doc.blocks):
-        if i > 0 and doc.blocks[i - 1].type in FORCED_BREAK_AFTER:
+        if i > 0 and forces_break(doc.blocks[i - 1]):
             out.add(i)
         land = bool((b.hints or {}).get("landscape"))
         if land != prev_land:
@@ -154,7 +154,8 @@ def score_layout(geo: Geometry, doc, theme, *, typography_errors: Optional[List[
         elif is_last:
             role = "final"
         elif (first_next is None or first_next.block in forced
-              or any(types.get(r.block) in FORCED_BREAK_AFTER for r in rs)
+              or any(r.block is not None and 0 <= r.block < len(doc.blocks) and forces_break(doc.blocks[r.block])
+                     for r in rs)
               or geo.pages[pages[idx + 1]].landscape != info.landscape):
             role = "section_end"      # the author's structure ends this page early
         else:

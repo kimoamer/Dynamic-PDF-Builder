@@ -23,7 +23,7 @@ from typing import List, Optional
 from docx import Document as new_docx
 from docx.enum.section import WD_ORIENT
 from docx.enum.table import WD_TABLE_ALIGNMENT
-from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK, WD_COLOR_INDEX
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK, WD_COLOR_INDEX, WD_TAB_ALIGNMENT
 from docx.oxml.ns import qn
 from docx.shared import Emu, Pt
 from docx.table import _Cell
@@ -63,6 +63,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         self.theme = theme
         self.render_time = render_time()       # SOURCE_DATE_EPOCH when set, as for the PDF
         self.tokens = compile_tokens(theme)
+        self.paper = bool(theme.decorations.paper)     # a scholarly paper's conventions, as in the PDF
+        self._after_heading = self._flush = False
         self.col = collector or _policy.current()
         self.rtl_doc = sem.direction == "rtl"
         self.shape_seq = 4000
@@ -71,6 +73,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         self.page_sys = None
         self.doc = new_docx()
         self.bm = F.BookmarkCounter()
+        self._seq: dict = {}                   # SEQ fields written so far, by sequence
+        self._revisions = 0                    # ids of tracked changes
         self.lists = None
         self.heading_counters = [0] * 6
         self.figure_no = 0
@@ -182,8 +186,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         self.content_width_pt = w - m["left"] - m["right"]
         system = meta.page_system
         if system is not None:
-            from ..schema.page_system import settled
-            system = self.page_sys = settled(system, self.sem.blocks)
+            from ..schema.page_system import settled, themed
+            system = self.page_sys = themed(settled(system, self.sem.blocks), self.theme.colors)
             from ..fonts import register_fonts
             from ..layout.page_envelope import band_maker, reserve_bands
             register_fonts()
@@ -328,7 +332,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             self._runs(fp, left_text, base=style_run)
             fp.add_run("    ")
         if hf.show_page_number:
-            fmt = hf.page_number_format or "Page {n}"
+            from ..i18n import page_format
+            fmt = page_format(hf.page_number_format or "Page {n}", "ar" if self.rtl_doc else self.sem.language)
             for part in re.split(r"(\{n\}|\{total\})", fmt):
                 if part == "{n}":
                     F.add_field(fp, "PAGE", "1", style_run)
@@ -371,7 +376,12 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         """Add inline Markdown as real Word runs (links, emphasis, code, sup/sub…)."""
         arabic = self.tokens.fonts.arabic
         mono = word_font(self.tokens.fonts.mono)
+        rtl_para = is_rtl_text(md_text or "")
+        commented: List = []                   # runs of the comment being written, and its text
         for tr in parse_inline(md_text or ""):
+            if commented and commented[-1] != tr.comment:
+                self._comment(commented)
+                commented = []
             if tr.line_break:
                 paragraph.add_run().add_break(WD_BREAK.LINE)
                 continue
@@ -413,14 +423,48 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
 
             if tr.footnote_ref and self.notes and self.notes.reference(paragraph, tr.footnote_ref, self._note_text):
                 continue
-            if tr.link:
+            if tr.link and tr.link.startswith("#") and tr.link[1:] in self._exhibit_refs():
+                # a reference to a table or figure: a REF field to its caption's label, which updates with it
+                F.add_field(paragraph, f"REF {F.bookmark_name(tr.link[1:])} \\h", tr.text, run_props=fmt, dirty=False)
+            elif tr.link:
                 F.add_hyperlink(paragraph, tr.link, tr.text, fmt)
             else:
-                fmt(paragraph.add_run(tr.text))
+                run = paragraph.add_run(_ltr_numbers(tr.text) if rtl_para else tr.text)
+                fmt(run)
+                if tr.inserted or tr.deleted:
+                    self._revise(run, tr.deleted)
+                if tr.comment:
+                    commented = (commented[:-1] if commented else []) + [run, tr.comment]
+        if commented:
+            self._comment(commented)
         return paragraph
+
+    def _reviewer(self) -> str:
+        return (getattr(self.sem.meta, "reviewer", None) or "Reviewer").strip() or "Reviewer"
+
+    def _revise(self, run, deleted: bool) -> None:
+        """A suggested addition or removal as a Word tracked change, to accept or reject."""
+        self._revisions += 1
+        mark = F.OxmlElement("w:del" if deleted else "w:ins")
+        mark.set(F.qn("w:id"), str(900000 + self._revisions))
+        mark.set(F.qn("w:author"), self._reviewer())
+        if self.render_time is not None:
+            mark.set(F.qn("w:date"), self.render_time.strftime("%Y-%m-%dT%H:%M:%SZ"))
+        run._r.addprevious(mark)
+        mark.append(run._r)
+        if deleted:                              # removed text is held as w:delText
+            for t in run._r.findall(F.qn("w:t")):
+                t.tag = F.qn("w:delText")
+
+    def _comment(self, commented) -> None:
+        """A reviewer's comment, anchored on the runs it remarks on."""
+        *runs, text = commented
+        who = self._reviewer()
+        self.doc.add_comment(runs, text=text, author=who, initials="".join(w[0] for w in who.split())[:3].upper())
 
     def _picture(self, container, data: bytes, alt: str, max_width_pt: Optional[float] = None,
                  width_pt: Optional[float] = None, align: str = "center"):
+        from docx.image.exceptions import UnrecognizedImageError
         from PIL import Image as PILImage
         with PILImage.open(io.BytesIO(data)) as im:
             wpx, hpx = im.size
@@ -436,19 +480,94 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         p = self._para(container)
         p.alignment = {"left": WD_ALIGN_PARAGRAPH.LEFT, "right": WD_ALIGN_PARAGRAPH.RIGHT}.get(
             align, WD_ALIGN_PARAGRAPH.CENTER)
-        shape = p.add_run().add_picture(io.BytesIO(data), width=Pt(target))
+        run = p.add_run()
+        try:
+            shape = run.add_picture(io.BytesIO(data), width=Pt(target))
+        except UnrecognizedImageError:
+            # python-docx reads a JPEG's size from a JFIF or Exif header and refuses one with neither,
+            # as many cameras and web thumbnails write; the same picture is written again with one
+            with PILImage.open(io.BytesIO(data)) as im:
+                buf, jpeg = io.BytesIO(), im.format == "JPEG"
+                (im.convert("RGB") if jpeg else im).save(buf, "JPEG" if jpeg else "PNG", **({"quality": 92} if jpeg else {}))
+            shape = run.add_picture(io.BytesIO(buf.getvalue()), width=Pt(target))
         F.set_alt_text(shape, alt or "image")
         p.paragraph_format.keep_with_next = True
         return p
 
-    def _caption(self, container, label: str, text: Optional[str]):
+    def _caption(self, container, label: str, text: Optional[str], anchor: Optional[str] = None):
         full = f"{label}: {text}" if text and label else (text or label)
         if not full:
             return
         p = self._para(container, "Caption", full)
         if not (self.rtl_doc or is_rtl_text(full)):
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        self._runs(p, full)
+        return self._caption_runs(p, label, text, anchor)
+
+    def _caption_runs(self, p, label: Optional[str], text: Optional[str], anchor: Optional[str] = None):
+        """A caption's words: its label, numbered by a field when the document numbers it, then its text."""
+        if self.paper:
+            return self._paper_caption(p, label or None, text, anchor)
+        if anchor and label:
+            self._exhibit_label(p, label, anchor)
+            if text:
+                self._runs(p, f": {text}")
+        else:
+            self._runs(p, f"{label}: {text}" if text and label else (text or label))
+        return p
+
+    def _exhibit_label(self, p, label: str, anchor: str, *, bold=None, size=None, color=None) -> None:
+        """"Table 2" as Word writes a caption: the word, then a SEQ field that holds the number,
+        inside the bookmark references point at. Inserting a table in Word and updating fields
+        renumbers the captions and every reference to them."""
+        from ..core.numbering import current
+        num = current()
+        ex = next((e for e in num.exhibits.values() if e.anchor == anchor), None) if num else None
+        word, _, number = label.rpartition(" ")
+        if ex is None or not word:
+            self._runs(p, label, bold=bold, size=size, color=color)
+            F.add_bookmark(p, F.bookmark_name(anchor), self.bm)
+            return
+        seq = "Table" if ex.kind == "table" else "Figure"
+        self._seq[seq] = self._seq.get(seq, 0) + 1
+        restart = "" if self._seq[seq] == ex.number else f" \\r {ex.number}"     # an author's own number holds
+        self._seq[seq] = ex.number
+        bid = str(self.bm.next())
+        start, end = F.OxmlElement("w:bookmarkStart"), F.OxmlElement("w:bookmarkEnd")
+        start.set(F.qn("w:id"), bid)
+        start.set(F.qn("w:name"), F.bookmark_name(anchor))
+        end.set(F.qn("w:id"), bid)
+        p._p.append(start)
+        self._runs(p, f"{word} ", bold=bold, size=size, color=color)
+
+        def look(r):
+            if bold is not None:
+                r.font.bold = bold
+            if size:
+                r.font.size = Pt(size)
+            if color:
+                r.font.color.rgb = rgb(color)
+        F.add_field(p, f"SEQ {seq} \\* ARABIC{restart}", number, run_props=look, dirty=False)
+        p._p.append(end)
+
+    @staticmethod
+    def _exhibit_refs() -> set:
+        """Anchors of the numbered tables and figures; a reference may come before its caption."""
+        from ..core.numbering import current
+        num = current()
+        return {e.anchor for e in num.exhibits.values()} if num else set()
+
+    def _paper_caption(self, p, label: Optional[str], text: Optional[str], anchor: Optional[str] = None):
+        """A paper's caption: "Table 1:" in bold, then the caption, in the text colour, centred."""
+        size, ink = self.tokens.body_size * 0.9, self.tokens.colors["text_primary"]
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        if label and anchor:
+            self._exhibit_label(p, label, anchor, bold=True, size=size, color=ink)
+            if text:
+                self._runs(p, ":", bold=True, size=size, color=ink)
+        elif label:
+            self._runs(p, f"{label}:" if text else label, bold=True, size=size, color=ink)
+        if text:
+            self._runs(p, f" {text}" if label else text, size=size, color=ink, italic=False)
         return p
 
     def _boxed(self, container, fill: str, bar: Optional[str] = None):
@@ -482,6 +601,9 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         handler = getattr(self, f"_b_{t}", None)
         if handler is None:
             raise BlockRenderError(t, "no DOCX renderer for this block type")
+        # a paper sets the paragraph under a heading flush left
+        self._flush = self.paper and t == "paragraph" and self._after_heading
+        self._after_heading = t == "heading"
         handler(c, b)
 
     # ─── text ───
@@ -489,7 +611,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
     def _b_heading(self, c, b):
         lvl = max(1, min(6, b.level))
         text = b.text
-        if self.sem.meta.section_numbering or b.numbered:
+        if (self.sem.meta.section_numbering or b.numbered) and not (b.hints or {}).get("unnumbered"):
             idx = lvl - 1
             self.heading_counters[idx] += 1
             for i in range(idx + 1, 6):
@@ -574,12 +696,14 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             p.paragraph_format.keep_with_next = True
         if is_rtl_text(b.text) or self.rtl_doc:
             p.paragraph_format.first_line_indent = None
+        elif self._flush:
+            p.paragraph_format.first_line_indent = Pt(0)
         self._runs(p, b.text)
 
     def _b_rich_text(self, c, b):
         p = self._para(c, "Normal", b.text)
-        p.alignment = {"center": WD_ALIGN_PARAGRAPH.CENTER, "right": WD_ALIGN_PARAGRAPH.RIGHT,
-                       "justify": WD_ALIGN_PARAGRAPH.JUSTIFY}.get(b.alignment, p.alignment)
+        p.alignment = {"left": WD_ALIGN_PARAGRAPH.LEFT, "center": WD_ALIGN_PARAGRAPH.CENTER,
+                       "right": WD_ALIGN_PARAGRAPH.RIGHT, "justify": WD_ALIGN_PARAGRAPH.JUSTIFY}.get(b.alignment, p.alignment)
         self._runs(p, b.text, bold=b.bold or None, italic=b.italic or None,
                    size=b.font_size, color=b.color)
 
@@ -707,12 +831,12 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             label = label or ""
             full = f"{label}: {b.caption}" if (label and b.caption) else (b.caption or label)
             p = self._para(c, "Caption", full)
-            if anchor:
-                F.add_bookmark(p, F.bookmark_name(anchor), self.bm)
             p.alignment = None if (self.rtl_doc or is_rtl_text(full)) else WD_ALIGN_PARAGRAPH.LEFT
             p.paragraph_format.keep_with_next = True
             p.paragraph_format.space_after = Pt(3)
-            self._runs(p, full)
+            self._caption_runs(p, label, b.caption, anchor)
+        # a paper rules its tables (top, under the header, bottom) and fills nothing
+        design = hints.get("design") or ("booktabs" if self.paper and not b.header_bg else None)
         headers = list(b.headers or [])
         rows = [list(r) for r in b.rows]
         ncols = max([len(headers)] + [len(r) for r in rows] + [1])
@@ -727,7 +851,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         F.set_table_cell_margins(t, 50, 50, int(hints.get("cell_padding", 6) * 20), int(hints.get("cell_padding", 6) * 20))
         # Column order follows the table's own language, not the document's
         sample = [plain_text(str(x)) for x in (headers or (rows[0] if rows else [])) if str(x).strip()]
-        if sample and sum(is_rtl_text(x) for x in sample) * 2 > len(sample):
+        from ..core.normalize import is_rtl_table
+        if is_rtl_table(sample):
             F.set_table_bidi(t)
         # columns of figures are right-aligned (decimal-friendly); a column of years or codes is not
         numeric_cols = set(hints["numeric_cols"] if "numeric_cols" in hints else table_types(b).numeric_cols)
@@ -741,14 +866,14 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             F.set_cant_split(row)
             for ci, h in enumerate(headers):
                 cell = row.cells[ci]
-                if not hints.get("design"):
+                if not design:
                     F.set_cell_shading(cell, hdr_bg)
                 p = self._para(cell, "Table Text", str(h))
                 if ci in numeric_cols:
                     p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
                 p.paragraph_format.keep_with_next = True
                 self._runs(p, str(h), bold=True, size=size,
-                           color=self.tokens.colors["text_primary"] if hints.get("design") else hdr_fg)
+                           color=self.tokens.colors["text_primary"] if design else hdr_fg)
             r0 = 1
         alt = self.tokens.colors.get("table_row_alt", "#F7F9FC")
         all_rows = rows + ([list(b.footer_row)] if b.footer_row else [])
@@ -759,7 +884,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             for ci in range(ncols):
                 val = str(data[ci]) if ci < len(data) else ""
                 cell = row.cells[ci]
-                if b.style == "striped" and ri % 2 == 1 and not is_footer and not hints.get("design"):
+                if b.style == "striped" and ri % 2 == 1 and not is_footer and not design:
                     F.set_cell_shading(cell, alt)
                 p = self._para(cell, "Table Text", val)
                 if ci in numeric_cols:
@@ -776,14 +901,35 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             widths = [w * scale for w in b.column_widths]
         elif hints.get("col_fractions") and len(hints["col_fractions"]) == ncols:
             widths = [f * self.content_width_pt for f in hints["col_fractions"]]
+        if design == "booktabs" and not b.column_widths:
+            # a small table in a paper is as wide as its content and centred (as in the PDF)
+            from ..design.measure import column_metrics
+            _, nats = column_metrics([str(h) for h in headers], [[str(x) for x in r] for r in rows],
+                                     self.theme.typography.body_family, float(size or self.tokens.body_size),
+                                     padding=float(hints.get("cell_padding", 10)) * 1.2 + 22)
+            if len(nats) == ncols and sum(nats) <= self.content_width_pt * 0.8:
+                widths = list(nats)
+                tblW = F._get_or_add(t._tbl.tblPr, "w:tblW")
+                tblW.set(F.qn("w:type"), "dxa")
+                tblW.set(F.qn("w:w"), str(int(sum(nats) * 20)))
         if widths:
             F.set_table_layout_fixed(t)
             for ci, wv in enumerate(widths):
                 t.columns[ci].width = Pt(wv)
                 for row in t.rows:
                     row.cells[ci].width = Pt(wv)
-        if hints.get("design"):
-            self._art_table(t, hints, has_header, bool(b.footer_row), {r0 + ri for ri in totals})
+        from ..core.table_types import row_spans
+        for ri, (first, last, content) in row_spans(b).items():
+            cells = t.rows[r0 + ri].cells
+            merged = cells[first].merge(cells[last])
+            for p in list(merged.paragraphs):        # the joined cells' empty paragraphs go; the content stays
+                if not p.text.strip() and len(merged.paragraphs) > 1:
+                    p._p.getparent().remove(p._p)
+            for p in merged.paragraphs:              # a text, not a figure: aligned as text reads
+                if p.text.strip():
+                    p.alignment = WD_ALIGN_PARAGRAPH.RIGHT if is_rtl_text(p.text) else WD_ALIGN_PARAGRAPH.LEFT
+        if design:
+            self._art_table(t, {**hints, "design": design}, has_header, bool(b.footer_row), {r0 + ri for ri in totals})
         self._spacer_after(c)
 
     def _art_table(self, t, hints, has_header, has_footer, total_rows=()):
@@ -791,17 +937,22 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         dark = _ink(self.theme) if self.theme is not None else self.tokens.colors["primary"]
         hair = self.tokens.colors["border"]
         ledger = hints["design"] == "ledger"
+        ruled = hints["design"] == "booktabs"      # a paper: three rules, no lines between rows
         F.set_table_borders(t, size=0)
         last = len(t.rows) - 1
         current = hints.get("current_col")
         for ri, row in enumerate(t.rows):
             head = has_header and ri == 0
             for ci, cell in enumerate(row.cells):
-                sides = {"bottom": ("single", 3, hair), "left": None, "right": None}
+                sides = {"bottom": None if ruled else ("single", 3, hair), "left": None, "right": None}
+                if ruled and ri == 0:
+                    sides["top"] = ("single", 8, dark)
                 if head:
-                    sides["bottom"] = ("single", 8, dark)
+                    sides["bottom"] = ("single", 5 if ruled else 8, dark)
                     if ledger:
                         sides["top"] = ("single", 12, dark)
+                if ruled and ri == last:
+                    sides["bottom"] = ("single", 8, dark)
                 if ledger and ri == last:
                     sides["bottom"] = ("single", 12, dark)
                 if (has_footer and ri == last) or ri in total_rows:
@@ -860,15 +1011,35 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             self._page_break(c)
 
     def _b_quote(self, c, b):
-        if (b.hints or {}).get("statement"):
-            return self._statement(c, b, b.hints)
-        for part in b.text.split("\n"):
+        style = (b.style or "blockquote").lower()
+        if (b.hints or {}).get("statement") or style == "pullquote":
+            return self._statement(c, b, {**(b.hints or {}), "statement": True})
+        epigraph = style == "epigraph"
+        rtl = self.rtl_doc or is_rtl_text(b.text)
+        paras = []
+        for part in re.split(r"\n[ \t]*\n", b.text):      # a blank line parts paragraphs; one newline is a space, as in the PDF
             if part.strip():
-                self._runs(self._para(c, "Quote", part), part)
+                p = self._para(c, "Quote", part)
+                self._runs(p, part)
+                if rtl:                                              # Arabic has no italic
+                    for run in p.runs:
+                        F.clear_style_slant_and_tracking(run)
+                paras.append(p)
         if b.attribution:
             p = self._para(c, "Quote", b.attribution)
-            p.alignment = WD_ALIGN_PARAGRAPH.LEFT if self.rtl_doc else WD_ALIGN_PARAGRAPH.RIGHT
-            self._runs(p, f"— {b.attribution}", italic=False)
+            end = WD_ALIGN_PARAGRAPH.LEFT if rtl else WD_ALIGN_PARAGRAPH.RIGHT
+            p.alignment = end if epigraph else None
+            self._runs(p, b.attribution if F.has_complex_script(b.attribution) else f"— {b.attribution}",
+                       italic=False, color=self.tokens.colors["text_secondary"])
+            if rtl:
+                for run in p.runs:
+                    F.clear_style_slant_and_tracking(run)
+            paras.append(p)
+        for p in paras:
+            if epigraph:                       # narrow, toward the end edge
+                p.paragraph_format.left_indent = Pt(self.content_width_pt * 0.42)
+            else:                              # a bar of the accent colour along the start edge
+                F.set_paragraph_border(p, "right" if rtl else "left", self.tokens.colors["accent"], 20, 10)
 
     def _b_callout(self, c, b):
         key = _VARIANT_COLORS.get((b.variant or "info").lower(), "info")
@@ -932,9 +1103,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         from ..core.numbering import exhibit_label
         label, anchor = exhibit_label(b)
         if b.caption or label:
-            p = self._caption(c, label or "", b.caption)
-            if anchor and p is not None:
-                F.add_bookmark(p, F.bookmark_name(anchor), self.bm)
+            self._caption(c, label or "", b.caption, anchor)
         if b.source:
             self._caption(c, "", f"{_i18n('source', lang)}: {b.source}")
 
@@ -1022,13 +1191,47 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             self._page_parts(sec, b.name)
 
     def _b_chart(self, c, b):
+        from ..core.numbering import exhibit_label
         from .chart import chart_png
-        png = chart_png(b, self.theme)
+        label, anchor = exhibit_label(b)
         alt = f"{b.chart_type} chart" + (f": {b.title}" if b.title else "")
         data_txt = _short_data(b.data)
-        self._picture(c, png, f"{alt}. Data: {data_txt}" if data_txt else alt,
-                      max_width_pt=min(self.content_width_pt, 6.3 * 72))
+        alt = f"{alt}. Data: {data_txt}" if data_txt else alt
+        # a numbered chart carries its title as a caption under it, as a numbered image does
+        if not self._native_chart(c, b, alt, title=None if label else b.title):
+            png = chart_png(b.model_copy(update={"title": None}) if label and b.title else b, self.theme)
+            self._picture(c, png, alt, max_width_pt=min(self.content_width_pt, 6.3 * 72))
+        if label:
+            self._caption(c, label, b.title, anchor)
         self._spacer_after(c)
+
+    def _native_chart(self, c, b, alt: str, title: Optional[str]) -> bool:
+        """The chart as a Word chart, when Word has one like it; False leaves it to the picture,
+        which also reports data the chart cannot draw."""
+        from . import docx_chart as WC
+        from .chart import _colors, _paper, _paper_block, _sized
+        key = b.chart_type.lower().replace("-", "_").replace(" ", "_")
+        if key not in WC.NATIVE:
+            return False
+        try:
+            cats, series = WC.series_of(key, b.data)
+        except Exception:  # noqa: BLE001 - the picture path raises it under the caller's policy
+            return False
+        sized = _sized(b)
+        look = _paper_block(sized, key) if _paper(self.theme) else sized
+        n = len(cats) if (key in WC.ONE_SERIES) else len(series)
+        colours = _colors(look, max(n, 1))
+        width = min(self.content_width_pt, 6.3 * 72, look.width * 72)
+        p = self._para(c, "Normal")
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p.paragraph_format.keep_with_next = True
+        WC.add_chart(p.add_run(), self.doc.part,
+                     lambda book: WC.chart_xml(key, cats, series, colours, title=title, x_label=b.x_label,
+                                               y_label=b.y_label, legend=b.legend, font=word_font(self.tokens.fonts.body),
+                                               arabic_font=self.tokens.fonts.arabic, workbook=book),
+                     cats, series, width_pt=width, height_pt=width * look.height / look.width,
+                     shape_id=self.next_shape(), alt=alt)
+        return True
 
     def _b_diagram(self, c, b):
         from .diagram import diagram_png
@@ -1051,9 +1254,28 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         self._picture(c, png, f"Mermaid diagram: {b.diagram[:500]}")
 
     def _b_math(self, c, b):
+        from .omml import latex_to_omml
+        try:
+            numbered = bool(b.equation_number)
+            eq = latex_to_omml(b.latex, display=not (numbered or b.inline))
+        except Exception:  # noqa: BLE001 - what OMML cannot hold is drawn as a picture, as before
+            eq = None
+        if eq is not None:
+            p = self._para(c, "Normal")
+            p.alignment = WD_ALIGN_PARAGRAPH.LEFT if b.inline else WD_ALIGN_PARAGRAPH.CENTER
+            if numbered:                         # the equation centred, its number at the far edge
+                stops = p.paragraph_format.tab_stops
+                stops.add_tab_stop(Pt(self.content_width_pt / 2), WD_TAB_ALIGNMENT.CENTER)
+                stops.add_tab_stop(Pt(self.content_width_pt), WD_TAB_ALIGNMENT.RIGHT)
+                p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                p.add_run("\t")
+            p._p.append(eq)
+            if numbered:
+                p.add_run(f"\t({b.equation_number})")
+            return
         from .math import math_png
         try:
-            png = math_png(b.latex)
+            png = math_png(b.latex, paper=self.paper)
         except Exception as e:
             self.col.warn("math_fallback", f"Math rendered as source text ({type(e).__name__}: {e})")
             p = self._para(c, "Code")
@@ -1277,7 +1499,31 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         p.add_run(" ")
         self._runs(p, b.text)
 
+    def _paper_abstract(self, c, b):
+        """A paper's abstract: a centred label, then the text set narrower and a little smaller."""
+        size, inset = self.tokens.body_size * 0.92, Pt(28)
+        head = self._para(c, "Normal", self._label("abstract"))
+        head.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        head.paragraph_format.keep_with_next = True
+        head.paragraph_format.space_after = Pt(self.tokens.body_size * 0.5)
+        self._runs(head, self._label("abstract"), bold=True)
+        parts = [(f.label, f.text, False) for f in b.fields]
+        if b.keywords:
+            parts.append((self._label("keywords"), ", ".join(b.keywords), True))
+        for label, text, last in parts:
+            p = self._para(c, "Normal", text)
+            pf = p.paragraph_format
+            pf.left_indent = pf.right_indent = inset
+            pf.space_after = Pt(size * 0.25)
+            p.alignment = WD_ALIGN_PARAGRAPH.LEFT if last else WD_ALIGN_PARAGRAPH.JUSTIFY
+            if (label or "").strip():
+                self._runs(p, f"{label}: ", bold=True, size=size)
+            self._runs(p, text, size=size)
+        self._spacer_after(c, self.tokens.block_gap)
+
     def _b_abstract(self, c, b):
+        if self.paper:
+            return self._paper_abstract(c, b)
         cell = self._boxed(c, self.tokens.colors["surface"], self.tokens.colors["accent"])
         self._runs(self._para(cell, "Heading 4", self._label("abstract")), self._label("abstract"))
         for f in b.fields:
@@ -1290,13 +1536,20 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             self._runs(p, ", ".join(b.keywords), italic=True)
 
     def _b_bibliography(self, c, b):
-        self._runs(self._para(c, "Heading 2", self._label("references")), self._label("references"))
+        # a paper sets "References" as it sets its sections; entries keyed by number carry it,
+        # because the text cites [1], [2]
+        if not (b.hints or {}).get("titled"):
+            self._runs(self._para(c, "Heading 1" if self.paper else "Heading 2", self._label("references")),
+                       self._label("references"))
+        keyed = self.paper and b.style != "ieee" and all((e.key or "").strip().isdigit() for e in b.entries)
         for i, e in enumerate(b.entries, 1):
             p = self._para(c, "Normal", e.title)
             pf = p.paragraph_format
             pf.left_indent = Pt(24)
             pf.first_line_indent = Pt(-24)
-            if b.style == "ieee":
+            if keyed:
+                self._runs(p, f"[{e.key.strip()}] {e.authors} ({e.year}). {e.title}. *{e.source}*.")
+            elif b.style == "ieee":
                 self._runs(p, f"[{i}] {e.authors}, “{e.title},” *{e.source}*, {e.year}.")
             else:
                 self._runs(p, f"{e.authors} ({e.year}). {e.title}. *{e.source}*.")
@@ -1308,17 +1561,37 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         self._runs(self._para(c, "Normal"), f"[{b.key}]")
 
     def _b_signature(self, c, b):
+        from ..layout.factory import _side
+        rtl = self.rtl_doc or is_rtl_text(" ".join(x for x in (b.name, b.title, b.date) if x))
+        align = {"left": WD_ALIGN_PARAGRAPH.LEFT, "center": WD_ALIGN_PARAGRAPH.CENTER,
+                 "right": WD_ALIGN_PARAGRAPH.RIGHT}[_side(b.alignment, rtl)]
         sp = self._para(c, "Normal")
-        sp.paragraph_format.space_before = Pt(28)
+        sp.paragraph_format.space_before = Pt(10 if b.image else 28)
         sp.paragraph_format.keep_with_next = True
-        if b.show_line:
-            sp.add_run("_" * 34)
+        if b.image:                                         # the signature itself, over the line
+            try:
+                buf, (iw, ih) = load_image(b.image, self.col.policy.assets)
+                # as tall as fits the line's width, at most 46 points, never enlarged
+                sp.add_run().add_picture(buf, height=Pt(min(46.0, ih, ih * b.line_width / max(iw, 1))))
+                sp = self._para(c, "Normal")
+                sp.paragraph_format.keep_with_next = True
+            except DynamicPDFError as e:
+                self.col.fail("asset_failed", f"Signature image: {e}", e)
+        if b.show_line:                                     # no wider than the column it stands in
+            room = c.width.pt - 12 if getattr(c, "width", None) else self.content_width_pt
+            sp.add_run("_" * max(8, int(min(b.line_width, room) / 5.6)))
+        sp.alignment = align
         for txt, bold in ((b.name, True), (b.title, False), (b.date, False)):
             if txt:
                 p = self._para(c, "Normal", txt)
                 p.paragraph_format.space_after = Pt(0)
                 p.paragraph_format.keep_with_next = True
+                p.alignment = align
                 self._runs(p, txt, bold=bold or None)
+                last = p
+        if b.name:
+            last.paragraph_format.space_after = Pt(self.tokens.paragraph_after * 1.5)
+            last.paragraph_format.keep_with_next = False
 
     # ─── structure ───
 
@@ -1411,7 +1684,29 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
     def tokens_h1_ratio(self) -> float:
         return self.tokens.heading_sizes[0] / self.tokens.body_size
 
+    def _title_block(self, c, b):
+        """A paper's opening: title, authors and an optional line, centred at the head of page
+        one, the text following on the same page."""
+        ink = self.tokens.colors["text_primary"]
+        lines = [(b.title, self.tokens.heading_sizes[0] * 1.2, True, False, self.tokens.heading_sizes[0] * 0.7),
+                 (b.author, self.tokens.body_size * 1.1, False, False, self.tokens.body_size * 0.4),
+                 (b.subtitle, self.tokens.body_size, False, True, self.tokens.body_size * 0.3),
+                 (b.date, self.tokens.body_size, False, True, self.tokens.body_size * 0.3)]
+        first = True
+        for text, size, bold, italic, after in lines:
+            if not text:
+                continue
+            p = self._para(c, "Title" if bold else "Normal", text)
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p.paragraph_format.space_before = Pt(self.tokens.body_size if first else 0)
+            p.paragraph_format.space_after = Pt(after)
+            self._runs(p, text, bold=bold or None, italic=italic or None, size=size, color=ink)
+            first = False
+        self._spacer_after(c, self.tokens.body_size * 1.6)
+
     def _b_cover_page(self, c, b):
+        if (b.hints or {}).get("title_block"):
+            return self._title_block(c, b)
         if b.background_image or b.background_color or b.layout:
             return self._designed_cover(c, b)
         sp = self._para(c, "Normal")
@@ -1449,7 +1744,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         counters = [0] * 6
         for i, o in enumerate(entries):
             text = o.text
-            if self.sem.meta.section_numbering:
+            if self.sem.meta.section_numbering and not (self.sem.blocks[o.block_index].hints or {}).get("unnumbered"):
                 counters[o.level - 1] += 1
                 for j in range(o.level, 6):
                     counters[j] = 0
@@ -1462,8 +1757,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         self._page_break(c)
 
     def _exhibit_list(self, c, b):
-        """A list of figures or tables: each caption, linked to it. Word cannot rebuild it
-        from these captions, so it is written out rather than as a field."""
+        """A list of figures or tables: each caption, linked to it, inside a ``TOC \\c`` field
+        that Word rebuilds from the captions' SEQ fields, with page numbers, when it updates."""
         from ..core.numbering import current
         from ..i18n import label as _i18n
         kind = "figure" if b.kind == "figures" else "table"
@@ -1471,10 +1766,15 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         p = self._para(c, "TOC Heading", title)
         self._runs(p, title)
         num = current()
-        for ex in (num.listed(kind) if num else []):
+        entries = num.listed(kind) if num else []
+        for i, ex in enumerate(entries):
             text = f"{_i18n(kind, num.language)} {ex.number}" + (f": {ex.caption}" if ex.caption else "")
             p = self._para(c, "Normal", text)
+            if i == 0:
+                F.begin_field(p, f'TOC \\h \\z \\c "{"Figure" if kind == "figure" else "Table"}"')
             F.add_hyperlink(p, f"#{ex.anchor}", text)
+        if entries:
+            F.end_field(p)
         self._page_break(c)
 
     def _b_page_break(self, c, b):
@@ -1511,11 +1811,17 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         F.set_table_cell_margins(t, 0, 0, 0, 160)
         if self.rtl_doc:
             F.set_table_bidi(t)
-        for i, (blocks, ratio) in enumerate(zip(cols, ratios)):
+        kids = [[coerce_child(x) for x in blocks] for blocks in cols]
+        # signatures side by side stand on one line, whether or not each has a picture over it
+        signing = all(getattr(x, "type", None) == "signature" for col in kids for x in col)
+        for i, (blocks, ratio) in enumerate(zip(kids, ratios)):
             cell = t.rows[0].cells[i]
             cell.width = Pt(self.content_width_pt * ratio)
+            if signing:
+                from docx.enum.table import WD_ALIGN_VERTICAL
+                cell.vertical_alignment = WD_ALIGN_VERTICAL.BOTTOM
             for child in blocks:
-                self._block_safe(cell, coerce_child(child))
+                self._block_safe(cell, child)
         self._spacer_after(c)
 
     def _b_two_column(self, c, b):
@@ -1531,6 +1837,18 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             self._columns(c, [b.sidebar_content, b.main_content], [r, 1 - r])
         else:
             self._columns(c, [b.main_content, b.sidebar_content], [1 - r, r])
+
+
+# a phone number in groups ("+966 11 000 0000", "(02) 2345 6789", "0100 123 4567") inside right-to-left
+# text: the bidi algorithm would set its groups in reverse order, so it is embedded left to right
+# (LRE ... PDF, which Word and LibreOffice honour). Only phone-shaped runs: "2024 2025" in an Arabic
+# sentence is two numbers in reading order and is left alone, as is a number after a Latin word
+# ("SA00 0000 ...": the letters already set it left to right).
+_PHONE = re.compile(r"(?<![\w])(?<![A-Za-z0-9] )[+(0][0-9()]*[0-9)](?:[ \u00a0\-][0-9()]+)+")
+
+
+def _ltr_numbers(text: str) -> str:
+    return _PHONE.sub(lambda m: "\u202a" + m.group() + "\u202c", text)
 
 
 def _tint(hex_color: str, amount: float) -> str:

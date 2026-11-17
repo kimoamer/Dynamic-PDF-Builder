@@ -94,7 +94,7 @@ def _builder_pdf(path: str, kind: str):
             b.paragraph(LOREM * 2)
             b.paragraph(ar)
     with open(path, "wb") as f:
-        f.write(b.render())
+        f.write(b.design(None).render())    # fixed fixtures: the classic look they were measured in
 
 
 def _spread(path: str):

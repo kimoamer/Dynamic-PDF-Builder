@@ -25,6 +25,7 @@ import sys
 import tempfile
 from typing import Optional
 
+from . import settings
 from .policy import RenderPolicy, ResourceLimits
 
 REQUEST_KEYS = {"id", "markdown", "document", "data", "format", "design", "theme"}
@@ -107,10 +108,12 @@ def _worker(config: dict, request: dict) -> dict:
 
 def main(argv=None) -> None:
     p = argparse.ArgumentParser(prog="python -m dynamic_pdf.service", description=__doc__.split("\n\n")[0])
-    p.add_argument("--timeout", type=float, default=60.0, help="seconds per request (default 60)")
-    p.add_argument("--max-pages", type=int, default=500)
-    p.add_argument("--max-memory-mb", type=int, default=2048, help="0 = no limit; POSIX only")
-    p.add_argument("--permissive", action="store_true")
+    p.add_argument("--timeout", type=float, default=settings.number("RENDER_TIMEOUT_S", 60.0),
+                   help="seconds per request (default DYNAMIC_PDF_RENDER_TIMEOUT_S, or 60)")
+    p.add_argument("--max-pages", type=int, default=settings.number("MAX_PAGES", 500, int))
+    p.add_argument("--max-memory-mb", type=int, default=settings.number("MAX_MEMORY_MB", 2048, int),
+                   help="0 = no limit; POSIX only")
+    p.add_argument("--permissive", action="store_true", default=settings.get("ERROR_MODE") == "permissive")
     p.add_argument("--allow-remote-assets", action="store_true")
     p.add_argument("--worker", help=argparse.SUPPRESS)
     args = p.parse_args(argv)

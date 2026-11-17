@@ -207,6 +207,15 @@ def table_commands(design: str, theme, rows: int, columns: int, has_header: bool
             ("TOPPADDING", (0, 0), (-1, -1), v), ("BOTTOMPADDING", (0, 0), (-1, -1), v),
             ("LEFTPADDING", (0, 0), (-1, -1), pad * 0.6), ("RIGHTPADDING", (0, 0), (-1, -1), pad * 0.6)]
     first_body = 1 if has_header else 0
+    if design == "booktabs":                 # a paper's table: three rules and no lines between rows
+        cmds += [("TOPPADDING", (0, 0), (-1, -1), 3.5), ("BOTTOMPADDING", (0, 0), (-1, -1), 3.5)]
+        cmds.append(("LINEABOVE", (0, 0), (-1, 0), 1.0, dark))
+        if has_header:
+            cmds.append(("LINEBELOW", (0, 0), (-1, 0), 0.6, dark))
+        cmds.append(("LINEBELOW", (0, last), (-1, last), 1.0, dark))
+        if has_footer:
+            cmds.append(("LINEABOVE", (0, last), (-1, last), 0.6, dark))
+        return cmds
     cmds.append(("LINEBELOW", (0, first_body), (-1, last), 0.3, hair))
     if design == "ledger":
         cmds.append(("LINEABOVE", (0, 0), (-1, 0), 1.6, dark))

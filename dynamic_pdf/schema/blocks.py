@@ -122,8 +122,8 @@ class ImageBlock(BaseBlock):
     caption: Optional[str] = None
     alt_text: Optional[str] = None                  # WCAG 1.1.1
     alignment: str = "center"
-    width: Optional[float] = None
-    height: Optional[float] = None
+    width: Optional[float] = None                   # points; the picture keeps its proportions
+    height: Optional[float] = None                  # points
     figure_number: Optional[int] = None             # "Figure 1"
     border: bool = False
     shadow: bool = False
@@ -134,15 +134,15 @@ class ImageBlock(BaseBlock):
 
 class ChartBlock(BaseBlock):
     type: Literal["chart"] = "chart"
-    chart_type: str                                 # bar, line, pie, scatter, horizontal_bar, area, stacked_bar, grouped_bar, histogram, heatmap, waterfall, funnel, gauge
+    chart_type: str                                 # bar, vertical_bar, horizontal_bar, grouped_bar, stacked_bar, line, area, pie, donut, scatter, bubble, histogram, heatmap, waterfall, funnel, gauge, sparkline, treemap
     data: Any
     title: Optional[str] = None
     colors: Optional[List[str]] = None
     x_label: Optional[str] = None
     y_label: Optional[str] = None
     legend: bool = True
-    width: float = 6.0
-    height: float = 4.0
+    width: float = 6.0                              # inches
+    height: float = 4.0                             # inches
 
 # ─────────────────────── Math & Diagrams ───────────────────────
 
@@ -283,7 +283,20 @@ class SignatureBlock(BaseBlock):
     title: Optional[str] = None
     date: Optional[str] = None
     show_line: bool = True
-    line_width: float = 200.0
+    line_width: float = 200.0                       # points
+    image: Optional[str] = None                     # the signature itself, drawn over the line: a path or data: URI
+    alignment: str = "start"                        # start, center or end (left and right also work)
+
+def signature_row(signers):
+    """Signatures side by side: one column each, read from the start edge."""
+    sigs = [s if isinstance(s, SignatureBlock) else SignatureBlock(**{"line_width": 170.0, **s}) for s in signers]
+    if not 1 <= len(sigs) <= 4:
+        raise ValueError(f"a row holds 1 to 4 signatures, not {len(sigs)}")
+    if len(sigs) == 1:
+        return sigs[0]
+    if len(sigs) == 2:
+        return TwoColumnBlock(left=[sigs[0]], right=[sigs[1]])
+    return ThreeColumnBlock(columns=[[x] for x in sigs])
 
 # ─────────────────────── Timeline ───────────────────────
 

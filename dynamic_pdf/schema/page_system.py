@@ -91,6 +91,88 @@ class PageSystem(BaseModel):
         return [b for b in out if b], [b for b in foot if b]
 
 
+_COLOUR_KEYS = ("fill", "color", "rule_color", "accent_color")
+
+
+def themed(system: PageSystem, colors) -> PageSystem:
+    """The system with colours given by name ("primary", "accent", "text_muted" ...) taken from the
+    theme, so a band follows the design it is used with."""
+    def walk(x):
+        if isinstance(x, dict):
+            return {k: (getattr(colors, v, v) if k in _COLOUR_KEYS and isinstance(v, str) and not v.startswith("#")
+                        else walk(v)) for k, v in x.items()}
+        return [walk(v) for v in x] if isinstance(x, list) else x
+    return PageSystem.model_validate(walk(system.model_dump()))
+
+
+def _page(language: str) -> str:
+    from ..i18n import page_format
+    return page_format("Page {n} of {total}", language).replace("{n}", "{page}").replace("{total}", "{pages}")
+
+
+def preset(name: str, logo: Optional[str] = None, language: str = "en", **values: str) -> PageSystem:
+    """A ready-made header and footer, placed by reading edge so it mirrors in Arabic:
+
+    - ``letterhead``: a large logo and the company at the head of page one, the contact details over a
+      rule of the accent colour; later pages carry a small logo and the title.
+    - ``modern``: the logo over a rule of the accent colour, the title and running section at the end.
+    - ``banner``: the logo, on a light plate, and the title on a band of the primary colour.
+    - ``report``: the title and running section over a hairline; company, confidentiality and page below.
+    - ``minimal``: the page number only.
+
+    Page one opens with the document's title, so its header carries the subtitle or company instead.
+    Footers sit under a hairline.
+
+    ``values`` fill the fields: company, website, email, phone, department, confidentiality, code ..."""
+    def mark(height: float):
+        return [Logo(src=logo, max_height=height, max_width=height * 5)] if logo else []
+    page = _page(language)
+    contact = "{website} · {email} · {phone}"
+    # a hairline between the text and the footer
+    foot = dict(accent_color="border", accent_height=0.6, accent_edge="inner", row_gap=0)
+    muted = dict(size=7.5, color="text_muted")
+    # page one opens with the document's own title, so its header does not repeat it
+    systems = {
+        "letterhead": dict(
+            first_page="custom",
+            first_header=Band(row_gap=1, rows=[
+                BandRow(start=mark(40), end=["{company}"], bold=True, size=11, color="primary"),
+                BandRow(end=[contact], rule_below=True, rule_color="accent", rule_width=1.6, **muted)]),
+            header=Band(rows=[BandRow(start=mark(16), end=["{title}"], rule_below=True, **muted)]),
+            first_footer=Band(**foot, rows=[BandRow(start=["{department}"], end=[page], **muted)]),
+            footer=Band(**foot, rows=[BandRow(start=["{company}"], end=[page], **muted)])),
+        "modern": dict(
+            first_page="custom",
+            first_header=Band(rows=[BandRow(start=mark(26), end=["{subtitle}"], rule_below=True, rule_color="accent",
+                                            rule_width=2, size=8, color="text_secondary")]),
+            header=Band(rows=[BandRow(start=mark(18), end=["{title} · {section}"], rule_below=True, rule_color="accent",
+                                      rule_width=2, size=8, color="text_secondary")]),
+            first_footer=Band(**foot, rows=[BandRow(start=["{confidentiality} · {company}"], end=["{page} / {pages}"], **muted)]),
+            footer=Band(**foot, rows=[BandRow(start=["{confidentiality} · {company}"], end=["{page} / {pages}"], **muted)])),
+        "banner": dict(
+            first_page="custom",
+            first_header=Band(bleed=True, padding=9, rows=[
+                BandRow(fill="primary", start=mark(26), end=["{subtitle}"], bold=True, size=9.5)]),
+            header=Band(bleed=True, padding=7, rows=[
+                BandRow(fill="primary", start=mark(18), end=["{title}"], bold=True, size=9)]),
+            first_footer=Band(**foot, rows=[BandRow(start=["{company}"], end=[page], **muted)]),
+            footer=Band(**foot, rows=[BandRow(start=["{company}"], end=[page], **muted)])),
+        "report": dict(
+            first_page="custom",
+            first_header=Band(rows=[BandRow(start=mark(20), end=["{company}"], rule_below=True, **muted)]),
+            header=Band(rows=[BandRow(start=["{title}"], end=["{section}"], rule_below=True, **muted)]),
+            first_footer=Band(**foot, rows=[BandRow(start=["{confidentiality}"], end=[page], **muted)]),
+            footer=Band(**foot, rows=[BandRow(start=["{company}"], center=["{confidentiality}"], end=[page], **muted)])),
+        "minimal": dict(footer=Band(rows=[BandRow(center=["{page}"], **muted)])),
+    }
+    if name not in systems:
+        raise ValueError(f"no header and footer preset {name!r}; presets: {', '.join(PRESETS)}")
+    return PageSystem(values={k: str(v) for k, v in values.items() if v not in (None, "")}, **systems[name])
+
+
+PRESETS = ("letterhead", "modern", "banner", "report", "minimal")
+
+
 def settled(system: PageSystem, blocks) -> PageSystem:
     """``auto`` leaves a cover clean and treats any other first page like the rest."""
     if system.first_page != "auto":

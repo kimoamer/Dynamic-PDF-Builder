@@ -51,6 +51,18 @@ class PageEnvelope:
         return (h, w) if h > w else (w, h)
 
 
+def header_extent(theme) -> float:
+    """How far down the page the header style draws: the banner is a tall band, and a centred
+    logo stands over a title at twice the header size."""
+    hf, ts = theme.header_footer, theme.typography.header_title_size
+    if hf.header_style == "banner":
+        return max(hf.height, 80.0)
+    if hf.header_style == "logo_centered":
+        logo = min(hf.logo_max_height, hf.height * 0.5) + 8 if hf.logo else 0
+        return max(hf.height, 12 + logo + ts * 2 + 6)
+    return hf.height
+
+
 def page_margins(theme, band_needs: Optional[Tuple[float, float]] = None) -> Tuple[float, float, float, float]:
     """Top, bottom, left and right margins. ``band_needs`` is what a page system asks
     for; without one, the theme's own header and footer styles set the clearance."""
@@ -59,7 +71,7 @@ def page_margins(theme, band_needs: Optional[Tuple[float, float]] = None) -> Tup
     if band_needs is not None:
         top, bottom = max(top, band_needs[0]), max(bottom, band_needs[1])
     elif hf.enabled:
-        top = max(top, hf.height + (16 if hf.header_style in _BAR_HEADERS else 4))
+        top = max(top, header_extent(theme) + (16 if hf.header_style in _BAR_HEADERS else 4))
         bottom = max(bottom, hf.footer_height + 12 if hf.footer_style in _BAR_FOOTERS else 40)
     left, right = sp.page_margin_left, sp.page_margin_right
     if hf.header_style == "sidebar" or hf.footer_style == "sidebar":
@@ -79,6 +91,22 @@ def band_maker(document, theme, system, rtl: bool, assets, collector):
     if system.lossless:
         maker.section_samples = section_texts(document)
     return maker, sample
+
+
+def split_band_needs(maker, width: float, sample):
+    """Page one's room and the other pages', when page one has bands of its own (so a tall
+    letterhead does not push every later page's text down); None otherwise."""
+    import copy
+    from .page_system import margin_needs
+    system = maker.system
+    if system.first_page != "custom":
+        return None
+    first, rest = copy.copy(maker), copy.copy(maker)
+    first.system = system.model_copy(update={
+        "header": system.first_header, "footer": system.first_footer, "even_header": None, "even_footer": None,
+        "sections": {}, "first_page": "same", "first_header": None, "first_footer": None})
+    rest.system = system.model_copy(update={"first_page": "same", "first_header": None, "first_footer": None})
+    return margin_needs(first, width, sample), margin_needs(rest, width, sample)
 
 
 def reserve_bands(maker, width: float, sample, collector) -> Tuple[float, float]:
@@ -111,7 +139,7 @@ def resolve_page_envelope(doc, theme, policy=None, size: Optional[Tuple[float, f
     policy = policy or RenderPolicy(error_mode="permissive")
     collector = DiagnosticCollector(policy)
     sp = theme.spacing
-    width = w - sp.page_margin_left - sp.page_margin_right
+    width = w - sp.page_margin_left - sp.page_margin_right - 2 * FRAME_PADDING     # the text column's width
     maker, sample = band_maker(doc, theme, settled(system, doc.blocks), is_rtl_document(doc),
                                policy.assets, collector)
     with warnings.catch_warnings():

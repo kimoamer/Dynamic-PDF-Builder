@@ -27,7 +27,8 @@ from ..core.numbering import REF as _REF
 from ..core.table_types import ascii_digits, infer_table, read_cell
 
 RULES = ("total_mismatch", "percent_sum", "repeated_heading", "unresolved_ref", "mixed_digits",
-         "number_format", "date_format", "missing_alt_text", "empty_section")
+         "number_format", "date_format", "missing_alt_text", "empty_section", "formula_error",
+         "unresolved_citation")
 _NOT_PROSE = {"code", "mermaid", "math", "diagram", "qrcode", "shape", "spacer", "divider", "page_break",
               "watermark", "page_media", "table_of_contents"}
 _NOT_ADDITIVE = re.compile(r"average|mean|median|avg|rate|ratio|per\b|price|متوسط|معدل|نسبة|سعر", re.I)
@@ -135,10 +136,12 @@ def _totals(i, b, rows, body, warn):
                     covered.append(vals[s].value if vals[s] else 0.0)
                     last = s
                 groups.append(covered + [v.value for v in vals[last + 1:t] if v])
+            got = vals[t].value
+            if run and abs(sum(run) - got) <= _tol(dec, len(run)):
+                continue                              # its own section adds up, even a section of one line
             groups = [g for g in groups if len(g) >= 2]
             if not groups:
                 continue
-            got = vals[t].value
             if any(abs(sum(g) - got) <= _tol(dec, len(g)) for g in groups):
                 continue
             label = plain_text(next((c for c in rows[t] if str(c).strip()), "total"))
@@ -246,6 +249,9 @@ def _refs(sem, warn):
             for ref in _REF.findall(run.text):
                 if ref not in ids:
                     warn("unresolved_ref", f"{{ref:{ref}}} names no heading, table or figure", i, where)
+            from ..core.formulas import VALUE
+            for m in VALUE.finditer(run.text):
+                warn("unresolved_ref", f"{m.group(0)} names no table with that id, or no such cell in it", i, where)
     for i, b in _walk(sem.blocks):
         if b.type == "footnote" and b.marker not in used:
             warn("unresolved_ref", f"footnote {b.marker!r} is defined but never referenced", i)
@@ -320,6 +326,16 @@ def _alt(sem, warn):
             warn("missing_alt_text", f"image {image.src!r} has no alt text for readers who cannot see it", i)
 
 
+def _citations(sem, warn):
+    from ..core.citations import unresolved
+    for i, b in _walk(sem.blocks):
+        if b.type in _NOT_PROSE:
+            continue
+        for s in block_text(b):
+            for key in unresolved(s):
+                warn("unresolved_citation", f"[@{key}] has no entry in the bibliography (BibTeX)", i)
+
+
 def lint(sem: SemanticDocument, rules: Optional[Iterable[str]] = None) -> List[LintWarning]:
     """Warnings about ``sem``'s content, in document order. ``rules`` limits the rules run."""
     wanted = set(rules) if rules is not None else set(RULES)
@@ -333,6 +349,12 @@ def lint(sem: SemanticDocument, rules: Optional[Iterable[str]] = None) -> List[L
             out.append(LintWarning(rule, message, block, where))
 
     for i, b, rows, body in _tables(sem):
+        for r, row in enumerate(rows):
+            for c, cell in enumerate(row):
+                if str(cell).strip() == "#ERROR":      # a formula that could not be computed (permissive mode)
+                    from ..core.formulas import col_letter
+                    warn("formula_error", f"{col_letter(c)}{r + 2}: the formula could not be computed; "
+                                          "render in strict mode to see why", i, "table")
         _totals(i, b, rows, body, warn)
         _shares(i, b, rows, body, warn)
         _formats(i, b, rows, body, warn)
@@ -343,6 +365,7 @@ def lint(sem: SemanticDocument, rules: Optional[Iterable[str]] = None) -> List[L
             if len(vals) >= 2 and all(0 <= v <= 100 for v in vals) and 90 <= s <= 110 and abs(s - 100) > 0.5 * len(vals):
                 warn("percent_sum", f"pie slices add up to {s:g}; as shares they should make 100", b_i, "chart")
     _refs(sem, warn)
+    _citations(sem, warn)
     _digits(sem, warn)
     _dates(sem, warn)
     _headings(sem, warn)

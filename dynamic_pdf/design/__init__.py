@@ -13,7 +13,7 @@ from .profile import Profile, ProfileDecision, select_profile, resolve_profile_n
 from .recipes import (DesignRecipe, EVIDENCE_RECIPES, EvidenceRecipe, RECIPES, apply_evidence_recipe,
                       apply_recipe, recipe_for)
 from .tokens import DesignTokens, compile_tokens, heading_size
-from .reviewed_quality import apply_evidence_typography, apply_reviewed_quality
+from .reviewed_quality import apply_evidence_typography, apply_paper_style, apply_reviewed_quality
 
 
 class DesignPlan(BaseModel):
@@ -72,6 +72,8 @@ def plan_design(doc: SemanticDocument, requested: Optional[str] = None,
         notes += apply_brand(theme, brand)
     script = "bilingual" if doc.stats.bilingual else doc.direction
     notes += apply_reviewed_quality(theme, script=script, preserve_brand=bool(brand))
+    if recipe.paper:
+        notes += apply_paper_style(theme)
     if evidence is not None:
         notes += apply_evidence_typography(theme, recipe)
     tokens = compile_tokens(theme)
@@ -85,6 +87,8 @@ def apply_plan(doc: SemanticDocument, plan: DesignPlan) -> SemanticDocument:
     out = doc.model_copy(deep=True)
     out.meta.section_numbering = plan.section_numbering
     r = plan.recipe
+    if r.paper:
+        out.meta.exhibit_numbering = True        # a paper numbers its tables and figures
     want_toc = (r.toc == "always" and doc.stats.headings >= 2) or (
         r.toc == "auto" and doc.stats.headings >= r.toc_min_headings)
     if want_toc and not doc.stats.has_toc:

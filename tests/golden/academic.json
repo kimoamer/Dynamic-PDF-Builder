@@ -8,32 +8,32 @@
  "pdf_outline": [
   [
    1,
-   "1  Abstract",
+   "Abstract",
    1
   ],
   [
    1,
-   "2  Introduction",
+   "1  Introduction",
    1
   ],
   [
    1,
-   "3  Methods",
+   "2  Methods",
    1
   ],
   [
    1,
-   "4  Results",
+   "3  Results",
    1
   ],
   [
    1,
-   "5  Discussion",
+   "4  Discussion",
    1
   ],
   [
    1,
-   "6  References",
+   "References",
    1
   ]
  ],
@@ -48,27 +48,27 @@
  "docx_headings": [
   [
    "Heading 1",
-   "1  Abstract"
+   "Abstract"
   ],
   [
    "Heading 1",
-   "2  Introduction"
+   "1  Introduction"
   ],
   [
    "Heading 1",
-   "3  Methods"
+   "2  Methods"
   ],
   [
    "Heading 1",
-   "4  Results"
+   "3  Results"
   ],
   [
    "Heading 1",
-   "5  Discussion"
+   "4  Discussion"
   ],
   [
    "Heading 1",
-   "6  References"
+   "References"
   ]
  ],
  "docx_tables": [],
@@ -76,7 +76,8 @@
  "layout": [
   "headings: shallow outline: stronger H1 contrast",
   "measure: 88 chars/line",
-  "pagination: 2 pages, last 72% full; kept rhythm (tightening within limits would not save a page)",
-  "contents: 1 page of content measured: no contents page under 4 pages unless the author adds one"
+  "title: paper: title and authors set at the head of page one",
+  "pagination: 2 pages, last 71% full; kept rhythm (tightening within limits would not save a page)",
+  "contents: 1 page of content measured: no contents page under 12 pages unless the author adds one"
  ]
 }

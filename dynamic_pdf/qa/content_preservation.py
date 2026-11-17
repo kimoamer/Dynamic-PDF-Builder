@@ -26,7 +26,9 @@ _W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 _WP = "{http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing}"
 _MC_FALLBACK = "{http://schemas.openxmlformats.org/markup-compatibility/2006}Fallback"
 _R_NS = "{http://schemas.openxmlformats.org/package/2006/relationships}"
-_LATIN = re.compile(r"[A-Za-z]{2,}|[0-9٠-٩]+")
+# Western and Arabic-Indic digits are never one number: extraction sets neighbouring table cells
+# side by side without a space, and "99" beside "٨" must not read as a third number
+_LATIN = re.compile(r"[A-Za-z]{2,}|[0-9]+|[٠-٩]+")
 _INDIC = "٠١٢٣٤٥٦٧٨٩"
 _ARABIC = re.compile(r"[ء-يٱ-ۓ]{2,}")
 _ARABIC_ANY = re.compile(r"[؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]")
@@ -138,13 +140,13 @@ def _paragraphs(root) -> List[str]:
         (r for r in root.iter(_W + "footnoteReference") if r.get(_W + "customMarkFollows") not in ("1", "true")), 1)}
 
     def piece(e) -> str:
-        if e.tag == _W + "t":
+        if e.tag in (_W + "t", _W + "delText"):        # a suggested removal is still on the page
             return e.text or ""
         return numbers.get(e, "") if e.tag == _W + "footnoteReference" else " "
 
     def text(p) -> str:              # a line break or tab between runs separates words
         return "".join(piece(e) for e in p.iter()
-                       if e.tag in (_W + "t", _W + "footnoteReference") or e.tag in breaks)
+                       if e.tag in (_W + "t", _W + "delText", _W + "footnoteReference") or e.tag in breaks)
     return [_squash(text(p)) for p in root.iter(_W + "p")]
 
 

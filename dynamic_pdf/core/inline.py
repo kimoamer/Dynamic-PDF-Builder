@@ -3,7 +3,9 @@ Inline Markdown → typed ``TextRun`` spans.
 
 Parsed once with markdown-it (CommonMark + strikethrough), then extended with
 the project's inline conventions (``==highlight==``, ``^sup^``, ``~sub~`` via
-``<sub>``, footnote refs ``[^n]``). Renderers (PDF, DOCX) consume runs instead
+``<sub>``, footnote refs ``[^n]``) and CriticMarkup for suggested edits:
+``{++added++}``, ``{--removed--}``, ``{~~old~>new~~}``, ``{==text==}{>>comment<<}`` and
+``{>>comment<<}``. Renderers (PDF, DOCX) consume runs instead
 of re-parsing or regex-rewriting Markdown, so link targets, emphasis and code
 spans keep their semantics in every output format.
 """
@@ -31,6 +33,9 @@ class TextRun(BaseModel):
     link: Optional[str] = None          # validated href (http/https/mailto/#)
     footnote_ref: Optional[str] = None  # marker of a referenced footnote
     line_break: bool = False            # hard/soft line break run (text == "\n")
+    inserted: bool = False              # a suggested addition (CriticMarkup {++ ++})
+    deleted: bool = False               # a suggested removal (CriticMarkup {-- --})
+    comment: Optional[str] = None       # a reviewer's comment on this text (CriticMarkup {>> <<})
 
     def same_style(self, other: "TextRun") -> bool:
         a = self.model_dump(exclude={"text"})
@@ -92,13 +97,49 @@ def _split_extensions(text: str, style: dict) -> List[TextRun]:
     return runs
 
 
+# shortcut: a suggestion is parsed on its own, so emphasis cannot open outside it and close inside; CriticMarkup asks the same
+CRITIC = re.compile(r"\{\+\+(?P<ins>.*?)\+\+\}|\{--(?P<del>.*?)--\}|\{~~(?P<old>.*?)~>(?P<new>.*?)~~\}"
+                    r"|\{==(?P<mark>.*?)==\}\{>>(?P<on>.*?)<<\}|\{>>(?P<note>.*?)<<\}", re.S)
+
+
 def parse_inline(text: str) -> List[TextRun]:
-    """Parse inline Markdown into a flat list of styled runs (lossless text)."""
+    """Parse inline Markdown into a flat list of styled runs (lossless text). Suggested edits
+    and comments (CriticMarkup) mark the runs they cover; a comment's own words are not text."""
     if not text:
         return []
     from .numbering import resolve_refs
     # {ref:id} reads "Table 2" (linked) while a document is rendered; otherwise it stays as written
     text = resolve_refs(text, lambda label, anchor: f"[{_md_escape(label)}](#{anchor})" if anchor else label)
+    if "{" not in text or not CRITIC.search(text):
+        return _parse(text)
+    out: List[TextRun] = []
+    pos = 0
+    for m in CRITIC.finditer(text):
+        out += _parse(text[pos:m.start()])
+        pos = m.end()
+        g = m.groupdict()
+        if g["ins"] is not None:
+            out += [r.model_copy(update={"inserted": True}) for r in _parse(g["ins"])]
+        elif g["del"] is not None:
+            out += [r.model_copy(update={"deleted": True}) for r in _parse(g["del"])]
+        elif g["old"] is not None:
+            out += [r.model_copy(update={"deleted": True}) for r in _parse(g["old"])]
+            out += [r.model_copy(update={"inserted": True}) for r in _parse(g["new"])]
+        elif g["mark"] is not None:
+            out += [r.model_copy(update={"comment": g["on"].strip()}) for r in _parse(g["mark"])]
+        elif out and out[-1].text.strip() and not out[-1].line_break:
+            # a comment alone remarks on the word before it
+            last = out.pop()
+            head, word = re.match(r"(.*?)(\S+\s*)$", last.text, re.S).groups()
+            out += ([last.model_copy(update={"text": head})] if head else []) + [
+                last.model_copy(update={"text": word, "comment": g["note"].strip()})]
+    out += _parse(text[pos:])
+    return _merge(out)
+
+
+def _parse(text: str) -> List[TextRun]:
+    if not text:
+        return []
     out: List[TextRun] = []
     # Markdown decides what a newline means: a soft break inside a paragraph is a space
     # (text wrapped by an editor), a hard break ("  " or "\" before it) is a new line. A

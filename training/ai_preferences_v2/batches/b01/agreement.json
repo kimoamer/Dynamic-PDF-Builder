@@ -1,0 +1,45 @@
+{
+ "judges": [
+  "claude-opus-5-5",
+  "claude-sonnet-5-5"
+ ],
+ "pairs": [
+  {
+   "judges": [
+    "claude-opus-5-5",
+    "claude-sonnet-5-5"
+   ],
+   "sheets": 92,
+   "same_answer": 84,
+   "cohen_kappa": 0.824,
+   "both_clear": 92,
+   "clear_agreed": 84
+  }
+ ],
+ "reversed_repeats": {
+  "claude-opus-5-5": {
+   "repeats": 46,
+   "consistent": 42
+  },
+  "claude-sonnet-5-5": {
+   "repeats": 46,
+   "consistent": 38
+  }
+ },
+ "with_humans": {
+  "claude-opus-5-5": {
+   "judgments": 0,
+   "same_answer": 0
+  },
+  "claude-sonnet-5-5": {
+   "judgments": 0,
+   "same_answer": 0
+  }
+ },
+ "note": "AI judges agreeing with each other is not evidence of quality; it bounds how noisy one judge is.",
+ "recorded": {
+  "claude-opus-5-5": 92,
+  "claude-sonnet-5-5": 92
+ },
+ "not_recorded": []
+}
