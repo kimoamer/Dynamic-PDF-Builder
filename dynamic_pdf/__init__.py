@@ -13,6 +13,7 @@ from .builder import (
 from .schema.blocks import Block
 from .streaming import stream
 from .guide import guide
+from .kits import kit, kit_example, kits
 from .fonts.manager import register_custom_font, list_available_fonts
 from .themes.registry import list_themes, register_theme, get_theme
 from .policy import RenderPolicy, ResourceLimits, Diagnostic
@@ -35,7 +36,7 @@ __version__ = "0.3.0"
 
 __all__ = [
     # Core
-    "DocumentBuilder", "ExportResult", "Block", "render", "guide",
+    "DocumentBuilder", "ExportResult", "Block", "render", "guide", "kit", "kit_example", "kits",
     # Helpers
     "markdown_to_pdf", "render_from_json", "render_to_bytes", "render_to_base64",
     # Streaming

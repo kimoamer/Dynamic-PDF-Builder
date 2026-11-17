@@ -1,5 +1,5 @@
 """
-An MCP server for agents: guide, render, review, variants, explain, lint and schema.
+An MCP server for agents: guide, render, review, variants, explain, lint, kit and schema.
 
     pip install "dynamic-pdf-builder[mcp]"
     python -m dynamic_pdf.ai.mcp_server --out-dir ./mcp-out
@@ -39,7 +39,7 @@ captions with ids and {ref:id} references, [@key] citations with a BibTeX file, 
 Work in a loop: `render` the document, `review` it (each issue comes with its page and what to change, and
 page images are saved for you to look at), fix the Markdown, review again. `variants` tries several designs
 and recommends one; `explain` says why the design is as it is; `lint` checks the content (totals, shares,
-references). Call `guide` for the full syntax with examples, or `guide` with a topic: markdown, charts,
+references). `kit` makes a ready-made document (an invoice) from data. Call `guide` for the full syntax with examples, or `guide` with a topic: markdown, charts,
 tables, academic, review-and-changes, design, output, arabic, limits."""
 
 
@@ -172,12 +172,33 @@ def lint(document: Optional[dict] = None, markdown: Optional[str] = None) -> lis
     return [w.to_dict() for w in _builder(document, None, markdown).lint()]
 
 
+def kit(name: str, data: Optional[dict] = None, filename: str = "", out_dir: str = ".") -> dict:
+    """A ready-made document from data, with every part it needs: kit 'invoice' (seller, buyer, dates,
+    lines with computed totals, VAT and the amount in words, in English or Arabic). Without `data`, returns
+    example data to fill in; with it, writes `filename` (.pdf, .docx or .xlsx) like `render`."""
+    from ..kits import kit as make, kit_example
+    try:
+        if data is None:
+            return {"example": kit_example(name)}
+        builder = make(name, data)
+    except ValueError as e:
+        raise InputError(str(e)) from None
+    filename = filename or f"{name}.pdf"
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in (".pdf", ".docx", ".xlsx"):
+        raise InputError(f"filename: {filename!r} needs a .pdf, .docx or .xlsx extension. Fix: e.g. 'invoice.pdf'")
+    path = _inside(out_dir, filename, "filename")
+    os.makedirs(out_dir, exist_ok=True)
+    res = builder.export(path)
+    return {"path": path, "status": res.status, "pages": res.page_count}
+
+
 def tools(out_dir: str) -> dict:
     """The tool functions, bound to the output folder. ``lint`` appears only if the builder has it."""
     from .. import DocumentBuilder
     found = {"guide": guide, "schema": schema, "render": functools.partial(render, out_dir=out_dir),
              "variants": functools.partial(variants, out_dir=out_dir), "review": functools.partial(review, out_dir=out_dir),
-             "explain": explain}
+             "explain": explain, "kit": functools.partial(kit, out_dir=out_dir)}
     if hasattr(DocumentBuilder, "lint"):
         found["lint"] = lint
     return found

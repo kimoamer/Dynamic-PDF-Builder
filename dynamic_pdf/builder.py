@@ -118,8 +118,8 @@ class DocumentBuilder:
         self._citation_style = "apa"
         self._policy = policy or RenderPolicy()
         self.last_render = None   # LayoutEngine of the most recent render (diagnostics, page_count)
-        self._design_mode: Optional[str] = None   # None = classic theme rendering (v0.3)
-        self._design_explicit = False             # export()/CLI default to design("auto")
+        self._design_mode: Optional[str] = "auto"   # designed by default; design(None) = the classic v0.3 look
+        self._design_explicit = False
         self._brand = None
         self._source_kind = "api"
         self._source_text: Optional[str] = None
@@ -529,7 +529,7 @@ class DocumentBuilder:
         return self
 
     def theme(self, name: str) -> 'DocumentBuilder':
-        self._theme = name
+        self._theme, self._theme_explicit = name, True      # the design starts from this theme
         return self
 
     def fonts(self, heading: Optional[str] = None, body: Optional[str] = None,
@@ -1159,14 +1159,6 @@ class DocumentBuilder:
             return result
         if fmt not in ("pdf", "docx"):
             raise ValueError(f"Unsupported export format {fmt!r}; use 'pdf', 'docx' or 'xlsx'")
-        if not self._design_explicit and self._design_mode is None:
-            # export() is a new-style API: intelligent design unless opted out
-            # with design(None). Legacy render()/render_bytes() are unchanged.
-            self._design_mode = "auto"
-            try:
-                return self.export(path, format=fmt, qa=qa)
-            finally:
-                self._design_mode = None
         result = ExportResult()
         if qa:
             from .layout.engine import _write_output

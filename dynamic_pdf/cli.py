@@ -114,6 +114,13 @@ def main():
     guide_p = sub.add_parser("guide", help="What the library does and how to write for it (for people and AI agents)")
     guide_p.add_argument("topic", nargs="?", default=None, help="One section: markdown, charts, tables, academic ...")
 
+    # ─── kit ───
+    kit_p = sub.add_parser("kit", help="A ready-made document (an invoice ...) from your data")
+    kit_p.add_argument("name", help="The kit: invoice")
+    kit_p.add_argument("data", nargs="?", default=None, help="The data, as a JSON file")
+    kit_p.add_argument("-o", "--output", default=None, help="Output .pdf, .docx or .xlsx")
+    kit_p.add_argument("--example", action="store_true", help="Print example data to start from")
+
     # ─── themes ───
     sub.add_parser("themes", help="List available themes")
 
@@ -161,6 +168,19 @@ def main():
         new = _load(_ap.Namespace(input=args.new, theme=args.theme, data=None), None)
         res = new.compared_with(old, reviewer=args.reviewer).export(args.output)
         print(f"changes: {res.docx_path or res.pdf_path}")
+    elif args.command == "kit":
+        import json
+        from .kits import kit, kit_example
+        try:
+            if args.example or not args.data:
+                print(json.dumps(kit_example(args.name), ensure_ascii=False, indent=2))
+                return
+            with open(args.data, encoding="utf-8") as f:
+                res = kit(args.name, json.load(f)).export(args.output or f"{args.name}.pdf")
+        except (ValueError, OSError) as e:
+            print(f"Error: {e}", file=sys.stderr)
+            sys.exit(1)
+        print(f"{args.name}: {res.pdf_path or res.docx_path or res.xlsx_path}")
     elif args.command == "themes":
         _cmd_themes()
     elif args.command == "schema":

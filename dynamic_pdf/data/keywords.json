@@ -117,6 +117,10 @@
     "total": {
       "raw": ["^\\s*(grand )?total\\b", "\\btotals?\\s*$", "^\\s*(sum|overall|all)\\s*$", "^\\s*(الإجمالي|إجمالي|المجموع|مجموع|الكلي|المجموع الكلي)"]
     },
+    "in_words": {
+      "_about": "a row that writes an amount in words: not data of the column it runs over",
+      "raw": ["\\bin words\\b", "كتاب[ةه]"]
+    },
     "subtotal": {
       "raw": ["^\\s*sub-?\\s?total", "^\\s*(المجموع الفرعي|إجمالي فرعي|الإجمالي الفرعي)"]
     },

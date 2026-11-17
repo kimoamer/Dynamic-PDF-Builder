@@ -238,6 +238,9 @@ one image a page), fix, `review` again.
 
 ## Themes
 
+Every document is designed by default and the design starts from the theme you choose. For a theme's
+classic look exactly as below, call `design(None)` before rendering.
+
 | Theme | Style | Drop Cap | Best For |
 |-------|-------|----------|----------|
 | `claude` | Warm terracotta accent, white background | ✅ | General reports, AI summaries |
@@ -1313,9 +1316,9 @@ computed by Word, so page counts can differ from the PDF; text watermarks use VM
 Word, not by every viewer); LibreOffice shows equations only with its Math module installed.
 Footnotes are real Word footnotes.
 
-`export()`, `export_both()` and the CLI apply intelligent design by default (opt out with
-`design(None)` or `--design none`); an explicitly chosen theme becomes the design's base. The
-legacy `render()`, `render_bytes()` and `render_from_json()` calls keep classic theme rendering.
+Every output applies intelligent design by default: `export()`, `export_both()`, `render()`,
+`render_bytes()`, `render_from_json()` and the CLI (opt out with `design(None)` or `--design none`
+for the classic theme look); an explicitly chosen theme becomes the design's base.
 
 `design("auto")` selects a profile deterministically from metadata and content signals
 (`executive_report`, `proposal`, `corporate_memo`, `academic_report`, `technical_manual`,
@@ -1539,6 +1542,9 @@ SOURCE_DATE_EPOCH=1700000000 dynamic-pdf render report.md --format both
 Work since v0.3.0, in brief. Design records for each step are under `docs/`.
 
 **Changes that can affect existing users**
+- `render()`, `render_bytes()` and `render_from_json()` design the document, as `export()` always has.
+  For the classic theme look of v0.3, call `design(None)` first. `theme()` now counts as choosing a
+  theme, so the design starts from it, as `DocumentBuilder(theme=...)` does.
 - `pypdfium2` (BSD-3/Apache-2.0) is a core dependency: design variants and QA read the rendered
   pages, and a plain install could not. `[qa-permissive]` stays, empty in effect.
 - `[all]` no longer installs PyMuPDF (AGPL); ask for it with `[qa]`.
@@ -1547,6 +1553,8 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
   references and lists of figures and tables are Word fields.
 
 **New**
+- Ready-made documents: `kit("invoice", data)` (CLI `kit`, MCP `kit`) writes a whole invoice in English or
+  Arabic: seller and buyer, dates, the lines with computed amounts, VAT, total and the amount in words.
 - The library explains itself to agents and people: a guide in the package (`guide()`, CLI `guide`,
   MCP `guide`), MCP instructions sent on connect, Markdown input for every MCP tool, field
   descriptions in the JSON Schema, ```` ```chart ```` blocks holding JSON in Markdown, and `llms.txt`.
@@ -1573,6 +1581,11 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
 - License expression `MIT AND OFL-1.1` with every font licence in the package; `py.typed`.
 
 **Fixed**
+- A justified line before a long e-mail address or URL no longer stretches its words far apart: such a
+  line keeps its natural spacing, and the address stays whole, so it copies intact.
+- Right-to-left text: lines ending in a line break (an address, Label: value lines) sat on the left in
+  justified paragraphs; two columns now read from the right, as in Word.
+- A column of amounts with an "in words" row under it was read as text and lost its right alignment.
 - Arabic in charts read backwards with Matplotlib 3.11, which shapes Arabic itself.
 - A compound word lost its hyphen when its paragraph ran onto the next page.
 - Crossed emphasis (`**a *b** c*`) stopped the whole PDF; a JPEG without a JFIF or Exif header

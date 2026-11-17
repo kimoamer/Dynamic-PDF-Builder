@@ -11,6 +11,7 @@ import re
 import unicodedata
 import html as html_mod
 import contextvars
+import copy
 from functools import lru_cache
 from typing import Optional
 from reportlab.lib.enums import TA_JUSTIFY, TA_LEFT, TA_RIGHT
@@ -233,18 +234,56 @@ class Paragraph(_RLParagraph):
         from .tagging import draw_tagged
         return draw_tagged(self, canvas, lambda: super(Paragraph, self).drawOn(canvas, x, y, _sW))
 
+    # a justified line is left at its natural spacing when each gap would grow by more than this (in ems)
+    LOOSE_EM = 0.5
+
+    def _loose_lines(self, bl) -> dict:
+        """Lines justification would tear apart (the line before a long e-mail address or URL that
+        cannot break): {index: extra space}. They are set at natural spacing from the start edge,
+        as a last line is; the long word itself is left whole, so it copies intact."""
+        if bl is None or self.style.alignment != TA_JUSTIFY:
+            return {}
+        out = {}
+        for i, ln in enumerate(bl.lines[:-1]):
+            if bl.kind == 0:
+                extra, gaps = ln[0], len(ln[1]) - 1
+            else:
+                extra, gaps = getattr(ln, "extraSpace", 0), getattr(ln, "wordCount", 0) - 1
+                if getattr(ln, "lineBreak", False):
+                    continue
+            if gaps > 0 and extra / gaps > self.LOOSE_EM * self.style.fontSize:
+                out[i] = extra
+        return out
+
+    @staticmethod
+    def _natural(ln, kind):
+        if kind == 0:
+            return (0,) + tuple(ln[1:])
+        ln = copy.copy(ln)
+        ln.lineBreak = True                      # ReportLab sets such a line without stretching
+        return ln
+
     def drawPara(self, debug=0):
         base = self._bidi_base()
         bl = getattr(self, "blPara", None)
-        if base is None or bl is None:
+        loose = self._loose_lines(bl)
+        if (base is None or bl is None) and not loose:
             return super().drawPara(debug)
         logical = bl.lines
         had = "_offsets" in self.__dict__
         saved = self.__dict__.get("_offsets")
         try:
-            bl.lines = [_visual_line(ln, bl.kind, base) for ln in logical]
+            lines = [self._natural(ln, bl.kind) if i in loose else ln for i, ln in enumerate(logical)]
+            bl.lines = [_visual_line(ln, bl.kind, base) for ln in lines] if base else lines
             if base == "R" and self.style.alignment == TA_JUSTIFY and logical:
                 self._offsets = self._rtl_justify_offsets(bl, saved)
+                # ReportLab sets a line it does not stretch (one ending in a line break, or a loose
+                # one) flush left; in right-to-left text it belongs at the right
+                for i, ln in enumerate(lines[:-1]):
+                    if i in loose:
+                        self._offsets[i] += loose[i]
+                    elif bl.kind == 1 and getattr(ln, "lineBreak", False):
+                        self._offsets[i] += max(0.0, getattr(ln, "extraSpace", 0))
             return super().drawPara(debug)
         finally:
             bl.lines = logical
@@ -2355,18 +2394,23 @@ def _coerce_child(b):
 def _render_columns(block, theme, count, ctx=None):
     col_lists = [block.left, block.right] if count == 2 else (block.columns or [])
     ratios = [block.ratio, 1 - block.ratio] if count == 2 else [1.0 / max(len(col_lists), 1)] * len(col_lists)
+    col_lists = [[_coerce_child(b) for b in col] for col in col_lists]
+    sample = " ".join(str(getattr(b, "text", None) or getattr(b, "title", None) or "") for col in col_lists for b in col)
+    rtl = _is_rtl(sample)
+    if rtl:                       # right-to-left text reads its first column on the right, as Word sets it
+        col_lists, ratios = col_lists[::-1], ratios[::-1]
     total_w = ctx.available_width if ctx else 460
     col_widths = [total_w * r for r in ratios]
     rendered = []
     for col in col_lists:
         cf = []
         for b in col:
-            cf.extend(create_flowables(_coerce_child(b), theme, ctx))
+            cf.extend(create_flowables(b, theme, ctx))
         rendered.append(cf)
     t = Table([rendered], colWidths=col_widths, style=TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 0),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+        ('LEFTPADDING', (0, 0), (-1, -1), 8 if rtl else 0),       # the gap sits between the columns
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0 if rtl else 8),
         ('TOPPADDING', (0, 0), (-1, -1), 0),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
     ]))

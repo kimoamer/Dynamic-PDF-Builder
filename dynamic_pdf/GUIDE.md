@@ -32,7 +32,8 @@ b.export("tables.xlsx")      # its tables as a workbook (needs the xlsx extra)
 result = b.review("pages/")  # what a reader would notice, with page images in pages/
 ```
 
-Use `export()`: it designs the document. `render()` is the older call and draws it without design.
+`export()` picks the format by the extension; `render()` writes the PDF (or returns its bytes). Both design
+the document; `b.design(None)` asks for the plain classic look instead.
 
 Terminal:
 
@@ -46,7 +47,7 @@ dynamic-pdf lint report.md
 
 AI agents over MCP (`pip install "dynamic-pdf-builder[mcp]"`, then
 `python -m dynamic_pdf.ai.mcp_server --out-dir ./out`): tools `guide`, `render`, `review`, `variants`,
-`explain`, `lint` and `schema`. `render`, `review`, `variants`, `explain` and `lint` take `markdown` (a
+`explain`, `lint`, `kit` and `schema`. `render`, `review`, `variants`, `explain` and `lint` take `markdown` (a
 string) or `document` (JSON). The loop that works: write Markdown, `render`, `review`, fix what it lists,
 `review` again.
 
@@ -178,13 +179,33 @@ Table: Invoice lines {#invoice}
 
 ## Design
 
-- `export()` designs the document by itself. `b.design("auto")` does the same for `render()`.
+- Every output is designed by default (`export()`, `render()` and the CLI). `b.design(None)` asks for the
+  classic look of the chosen theme instead.
 - `b.design(direction="editorial_modern")` picks an art direction: corporate_conservative,
   editorial_modern, executive_premium, financial_data, arabic_institutional, academic_paper.
 - `b.design_variants(n=3)` (CLI `variants`) renders several directions, checks each, and recommends one.
 - `b.design_explain()` (MCP `explain`) says why each decision was made.
-- Themes for the undesigned `render()`: claude, chatgpt, corporate_dark, academic, modern_minimal,
+- Themes (the design starts from the one you choose; with `design(None)` it is the whole look): claude, chatgpt, corporate_dark, academic, modern_minimal,
   government, data_report. A brand kit (colours, fonts, logo) goes in `b.design(brand=BrandKit(...))`.
+
+## Kits
+
+Ready-made documents: give the data, get the whole document with every part it needs, designed and checked.
+
+```python
+from dynamic_pdf import kit, kit_example
+data = kit_example("invoice")          # example data to change
+kit("invoice", data).export("invoice.pdf")   # or .docx, or .xlsx for the lines with their formulas
+```
+
+Terminal: `dynamic-pdf kit invoice --example > invoice.json`, then `dynamic-pdf kit invoice invoice.json -o
+invoice.pdf`. MCP: the `kit` tool (without `data` it returns the example).
+
+`invoice` reads: `number`, `date`, `due`, `currency` (SAR, EGP, USD ... for the amount in words), `seller` and
+`buyer` (each `name`, `address`, `tax_id`, `email`, `phone`), `items` (each `description`, `quantity`,
+`price`), `tax_rate` (percent, optional), `payment` (label: value pairs) and `notes`, and `language`: `en`
+or `ar`. It writes the seller and buyer side by side, the lines with each amount, the subtotal, VAT, total
+due and the amount in words as formulas. A missing or malformed field is refused with its name and the fix.
 
 ## Output
 

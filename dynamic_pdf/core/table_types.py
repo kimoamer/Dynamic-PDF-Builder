@@ -251,11 +251,12 @@ def infer_table(headers: Sequence[str], rows: Sequence[Sequence[str]]) -> TableT
     cells = [[read_cell(r[ci]) if ci < len(r) else Cell("empty") for r in rows] for ci in range(ncols)]
     subtotal, total = pattern("tables", "subtotal"), pattern("tables", "total")
     labels = []
-    # a total row is not data of its column, so roles are read without it
+    # a total row, or an amount in words, is not data of its column, so roles are read without it
     for r in rows:
         first = next((plain_text(str(c)) for c in r if str(c).strip()), "")
         labels.append(first)
-    is_total = [bool(subtotal.search(x) or total.search(x)) for x in labels]
+    in_words = pattern("tables", "in_words")
+    is_total = [bool(subtotal.search(x) or total.search(x) or in_words.search(x)) for x in labels]
     body = [[c for c, t in zip(col, is_total) if not t] or col for col in cells]
     columns = [_role(headers[ci] if ci < len(headers) else "", body[ci], ci == 0) for ci in range(ncols)]
     roles = [c.role for c in columns]
