@@ -58,7 +58,7 @@ def test_page_facts_are_one_versioned_reading_of_the_pdf():
 
 
 def test_page_facts_measure_the_type_on_the_page():
-    b = report()
+    b = report().design(None)                  # the classic claude theme, measured on the page
     theme = get_theme("claude")
     facts = F.read_pdf(b.render())
     assert facts.document["body_size"] == pytest.approx(theme.typography.base_size, abs=0.1)

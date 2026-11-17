@@ -1586,6 +1586,9 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
 - Right-to-left text: lines ending in a line break (an address, Label: value lines) sat on the left in
   justified paragraphs; two columns now read from the right, as in Word.
 - A column of amounts with an "in words" row under it was read as text and lost its right alignment.
+- Line and area charts in the PDF read `{"categories": [...], "series": {...}}` as the bar charts do.
+- The `logo_left` and `logo_right` headers drew the logo twice. A logo in the chosen theme stays in the
+  designed header, from page one, as a letterhead.
 - Arabic in charts read backwards with Matplotlib 3.11, which shapes Arabic itself.
 - A compound word lost its hyphen when its paragraph ran onto the next page.
 - Crossed emphasis (`**a *b** c*`) stopped the whole PDF; a JPEG without a JFIF or Exif header

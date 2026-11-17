@@ -43,7 +43,7 @@ def test_custom_brand_colours_remain_intact():
 
 def test_intelligent_design_uses_reviewed_standard():
     b = DocumentBuilder().meta(title="Report").heading("Highlights").paragraph("Several results were recorded.")
-    assert b._prepared()[1] is None
+    assert b.design(None)._prepared()[1] is None
     b.design("executive_report")
     _, theme = b._prepared()
     assert theme.typography.base_size == 11.5

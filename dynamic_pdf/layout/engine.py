@@ -590,7 +590,7 @@ class LayoutEngine:
             dw, dh = _draw_image(c, hf.logo, x, h - bar_h + (bar_h - hf.logo_max_height) / 2,
                                  hf.logo_max_height * 3, hf.logo_max_height)
             x += dw + 14
-        self._header_content(c, w, h, bar_h, hf, x_start=x)
+        self._header_content(c, w, h, bar_h, hf, x_start=x, logo=False)
 
     def _header_logo_right(self, c, w, h, bar_h, hf):
         """Logo right + title left on a bar."""
@@ -600,7 +600,7 @@ class LayoutEngine:
             _draw_image(c, hf.logo, w - 30 - hf.logo_max_height * 3,
                         h - bar_h + (bar_h - hf.logo_max_height) / 2,
                         hf.logo_max_height * 3, hf.logo_max_height, align="right")
-        self._header_content(c, w, h, bar_h, hf)
+        self._header_content(c, w, h, bar_h, hf, logo=False)
 
     def _header_minimal(self, c, w, h, bar_h, hf):
         """No background — just text."""
@@ -696,15 +696,16 @@ class LayoutEngine:
 
     # ─── Shared header content helper ──────────────────────────────
 
-    def _header_content(self, c, w, h, bar_h, hf, text_color=None, x_start=30, y_offset=0):
-        """Draw logo + title + subtitle (shared across bar-based styles)."""
+    def _header_content(self, c, w, h, bar_h, hf, text_color=None, x_start=30, y_offset=0, logo=True):
+        """Draw logo + title + subtitle (shared across bar-based styles); ``logo=False`` when the
+        style has placed the logo itself."""
         tc = text_color or self._hdr_text()
         ts = self.theme.typography.header_title_size
         sts = self.theme.typography.header_subtitle_size
         x = x_start
 
         # Logo
-        if hf.logo:
+        if hf.logo and logo:
             max_lh = min(hf.logo_max_height, bar_h - 16)
             dw, dh = _draw_image(c, hf.logo, x,
                                  h - bar_h + (bar_h - max_lh) / 2 - y_offset,

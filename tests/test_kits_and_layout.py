@@ -116,3 +116,22 @@ def test_the_mcp_kit_tool(tmp_path):
     assert tools["kit"]("invoice", kit_example("invoice"), "i.docx")["path"].endswith("i.docx")
     with pytest.raises(M.InputError, match="missing"):
         tools["kit"]("invoice", {"number": "1"})
+
+
+def test_a_theme_logo_is_drawn_once_and_kept_by_the_design(tmp_path):
+    import pypdfium2 as pdfium
+    import pypdfium2.raw as raw
+    from PIL import Image
+
+    from dynamic_pdf.themes.registry import get_theme, register_theme
+    logo = tmp_path / "logo.png"
+    Image.new("RGB", (120, 40), "#336699").save(logo)
+    t = get_theme("claude")
+    t.name, t.header_footer.enabled, t.header_footer.header_style = "test_logo_once", True, "logo_left"
+    t.header_footer.logo = str(logo)
+    register_theme(t)
+
+    def images(pdf):
+        return sum(o.type == raw.FPDF_PAGEOBJ_IMAGE for o in pdfium.PdfDocument(pdf)[0].get_objects())
+    assert images(DocumentBuilder(theme=t.name).paragraph("x").design(None).render()) == 1
+    assert images(DocumentBuilder(theme=t.name).paragraph("x").render()) == 1   # the design keeps it on page one

@@ -424,8 +424,9 @@ def _stacked_bar(block, theme):
 def _line(block, theme):
     data = block.data
     fig, ax = _fig(block)
-    # Multi-series or single
-    if isinstance(data, dict) and data and isinstance(next(iter(data.values())), dict):
+    # Multi-series ({"categories", "series"} or nested dicts) or single
+    if isinstance(data, dict) and data and ("series" in data and "categories" in data
+                                            or isinstance(next(iter(data.values())), dict)):
         cats, series = _multi_series(data)
         c = _colors(block, len(series))
         x = np.arange(len(cats))
@@ -452,7 +453,8 @@ def _line(block, theme):
 def _area(block, theme):
     data = block.data
     fig, ax = _fig(block)
-    if isinstance(data, dict) and data and isinstance(next(iter(data.values())), dict):
+    if isinstance(data, dict) and data and ("series" in data and "categories" in data
+                                            or isinstance(next(iter(data.values())), dict)):
         cats, series = _multi_series(data)
         c = _colors(block, len(series))
         x = np.arange(len(cats))

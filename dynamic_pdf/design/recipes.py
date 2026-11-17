@@ -260,4 +260,8 @@ def apply_recipe(recipe: DesignRecipe, base: Optional[Theme] = None) -> Theme:
     hf.show_page_number = True
     hf.page_number_format = recipe.page_number_format
     hf.skip_first_page_header = recipe.skip_first_page_header
+    if base is not None and hf.logo:          # the chosen theme's logo is a letterhead: it stays, from page one
+        hf.header_style = hf.header_style if "logo" in hf.header_style else "logo_right"
+        hf.height = max(hf.height, 40.0)
+        hf.skip_first_page_header = False
     return t

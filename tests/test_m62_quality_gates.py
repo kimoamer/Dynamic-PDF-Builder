@@ -208,7 +208,7 @@ def test_arabic_report_tables_stay_with_their_lead_in_text(monkeypatch):
 
 def test_keep_tail_splits_the_intro_instead_of_moving_it_whole():
     para = "Line of a long lead-in paragraph that wraps across several lines of text. " * 6
-    b = DocumentBuilder().meta(title="Tail")
+    b = DocumentBuilder().meta(title="Tail").design(None)
     b.paragraph("Filler paragraph. " * 110)
     b.paragraph(para)
     b.table(["Item", "Value"], [[f"Item {i}", str(i)] for i in range(8)], caption="Values")
@@ -303,7 +303,7 @@ def test_compose_cache_invalidates_on_edit(monkeypatch):
 
 
 def test_legacy_render_bytes_unchanged(monkeypatch):
-    b = DocumentBuilder().heading("Legacy").paragraph("Classic rendering.")
+    b = DocumentBuilder().heading("Legacy").paragraph("Classic rendering.").design(None)
     calls = _count_renders(monkeypatch)
     data = b.render_bytes()
     assert data.startswith(b"%PDF") and calls == [1]       # one fresh classic render per call
