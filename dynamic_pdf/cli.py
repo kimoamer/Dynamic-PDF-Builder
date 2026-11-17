@@ -10,6 +10,7 @@ Usage:
     dynamic-pdf batch letter.md --data people.csv -o out/ --name "letter-{{ id }}"
     dynamic-pdf lint input.md [--json] [--strict]
     dynamic-pdf review input.md [-o pages/] [--json]
+    dynamic-pdf compare old.md new.md -o changes.docx
     dynamic-pdf render input.md --direction auto --grammar --brand brand.json
     dynamic-pdf variants input.md -o designs/ -n 3
     dynamic-pdf themes
@@ -100,6 +101,14 @@ def main():
     rev_p.add_argument("-t", "--theme", default="claude", help="Theme name (default: claude)")
     rev_p.add_argument("--design", default=None, metavar="PROFILE", help='Design profile, e.g. "auto"')
 
+    # ─── compare ───
+    cmp_p = sub.add_parser("compare", help="Mark what changed between two versions: tracked changes in Word, a review copy in PDF")
+    cmp_p.add_argument("old", help="Earlier version (.md or .json)")
+    cmp_p.add_argument("new", help="Later version (.md or .json)")
+    cmp_p.add_argument("-o", "--output", default="changes.docx", help="Output .docx or .pdf (default: changes.docx)")
+    cmp_p.add_argument("--reviewer", default=None, help='Name on each change (default "Changes")')
+    cmp_p.add_argument("-t", "--theme", default="claude", help="Theme name (default: claude)")
+
     # ─── themes ───
     sub.add_parser("themes", help="List available themes")
 
@@ -132,6 +141,12 @@ def main():
         _cmd_lint(args)
     elif args.command == "review":
         _cmd_review(args)
+    elif args.command == "compare":
+        import argparse as _ap
+        old = _load(_ap.Namespace(input=args.old, theme=args.theme, data=None), None)
+        new = _load(_ap.Namespace(input=args.new, theme=args.theme, data=None), None)
+        res = new.compared_with(old, reviewer=args.reviewer).export(args.output)
+        print(f"changes: {res.docx_path or res.pdf_path}")
     elif args.command == "themes":
         _cmd_themes()
     elif args.command == "schema":

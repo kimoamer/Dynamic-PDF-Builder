@@ -115,3 +115,13 @@ def test_templates_write_amounts_in_words():
     from dynamic_pdf.templates.engine import render_template
     out = render_template('{{ t | words("SAR") }} / {{ t | words("en", "USD") }}', {"t": 3})
     assert out == "فقط ثلاثة ريالات لا غير / Three dollars only"
+
+
+def test_text_quotes_a_table_cell_and_follows_it():
+    md = ("# Invoice\n\nThe total due is {=inv!B4}, in words {=inv!B5}. Unknown {=nope!A1}.\n\n"
+          "| Item | Amount |\n|---|---|\n| Paper | SAR 37.50 |\n| Toner | SAR 2,620.00 |\n| Total | =SUM(ABOVE) |\n"
+          "| In words | =WORDS(B4) |\n\nTable: Lines {#inv}\n")
+    b = DocumentBuilder.from_markdown(md)
+    assert b.build().blocks[1].text == ("The total due is SAR 2,657.50, in words Two thousand six hundred fifty-seven "
+                                        "riyals and fifty halalas only. Unknown {=nope!A1}.")
+    assert [w.rule for w in b.lint()] == ["unresolved_ref"]

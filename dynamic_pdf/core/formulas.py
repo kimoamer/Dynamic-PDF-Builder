@@ -372,6 +372,33 @@ def compute_table(block, language: str = "en", strict: bool = True, index: int =
     return block.model_copy(update=update)
 
 
+VALUE = re.compile(r"\{=([A-Za-z][\w:.-]*)!\$?([A-Z]{1,2})\$?(\d+)\}")
+
+
+def link_values(blocks: list) -> list:
+    """Text that quotes a table cell, ``{=invoice!D7}``, shows what the cell shows (its result,
+    when it holds a formula), so a figure in the prose cannot drift from its table. A table is
+    named by its id; an unknown table or cell stays as written and ``lint()`` reports it."""
+    grids = {b.id: [list(b.headers)] + [list(r) for r in b.rows] + ([list(b.footer_row)] if b.footer_row else [])
+             for b in blocks if getattr(b, "type", None) == "table" and getattr(b, "id", None)}
+
+    def cell(m):
+        grid = grids.get(m.group(1))
+        r, c = int(m.group(3)) - 1, _col_index(m.group(2))
+        if grid is None or r >= len(grid) or c >= len(grid[r]):
+            return m.group(0)
+        return str(grid[r][c])
+
+    from .citations import _SKIP_TYPES, _walk_strings
+    out, changed = [], False
+    for b in blocks:
+        if getattr(b, "type", None) not in _SKIP_TYPES and getattr(b, "type", None) != "table" and "{=" in repr(b.model_dump()):
+            b = type(b).model_validate(_walk_strings(b.model_dump(), lambda s: VALUE.sub(cell, s) if "{=" in s else s))
+            changed = True
+        out.append(b)
+    return out if changed else blocks
+
+
 def compute_blocks(blocks: list, language: str = "en", strict: bool = True) -> list:
     """The blocks with their tables' formulas computed. The list itself when there are none, so
     a document without formulas costs one scan."""

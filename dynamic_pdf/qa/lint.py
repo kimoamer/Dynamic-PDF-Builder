@@ -247,6 +247,9 @@ def _refs(sem, warn):
             for ref in _REF.findall(run.text):
                 if ref not in ids:
                     warn("unresolved_ref", f"{{ref:{ref}}} names no heading, table or figure", i, where)
+            from ..core.formulas import VALUE
+            for m in VALUE.finditer(run.text):
+                warn("unresolved_ref", f"{m.group(0)} names no table with that id, or no such cell in it", i, where)
     for i, b in _walk(sem.blocks):
         if b.type == "footnote" and b.marker not in used:
             warn("unresolved_ref", f"footnote {b.marker!r} is defined but never referenced", i)

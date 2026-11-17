@@ -1336,10 +1336,23 @@ Currencies: SAR, EGP, AED, KWD, QAR, OMR, BHD, JOD, USD, EUR, GBP (English). The
 `dynamic_pdf.core.words.amount_in_words(1250.5, "ar", "SAR")` and the template filter
 `{{ total | words("SAR") }}`.
 
+Text can quote a cell of a table that has an id, so a figure in the prose cannot drift from its
+table: "The total due is `{=invoice!D5}`" shows what D5 shows (Markdown gives the id with
+`Table: Invoice lines {#invoice}` under the table). An unknown table or cell stays as written and
+`lint()` reports it.
+
 `export("tables.xlsx")` (or `render_xlsx()`, CLI `render -o tables.xlsx`) writes every table as a
 sheet of a workbook, with the `xlsx` extra: numbers as numbers in the formats the document uses,
 and formulas as working spreadsheet formulas (`ABOVE` becomes the range it covers; `WORDS`, which
 no spreadsheet has, its text). Sheets read right to left in an Arabic document.
+
+### Comparing two versions
+
+`new.compared_with(old)` returns this document with every difference from the earlier one marked
+as a suggested edit; export it to DOCX for tracked changes to accept or reject, or to PDF for a
+review copy. Changed words in paragraphs, headings, quotes and list items, changed table cells and
+added or removed rows, and added or removed blocks are marked; formulas are compared by what they
+show. CLI: `dynamic-pdf compare old.md new.md -o changes.docx [--reviewer Finance]`.
 
 ### Suggested edits and comments
 
@@ -1508,6 +1521,8 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
   references and lists of figures and tables are Word fields.
 
 **New**
+- Linked values (`{=table-id!D5}` in text shows the cell) and version comparison
+  (`compared_with()`, CLI `compare`) as tracked changes in Word and a review copy in PDF.
 - Citations from BibTeX (`[@key]`, `bibliography: refs.bib`, `builder.bibtex()`), written in APA or
   IEEE with the list of works cited; numbered equations with `{ref:id}` references, in PDF and Word.
 - Computed tables: spreadsheet formulas in cells (`=B2*C2`, `=SUM(ABOVE)`), computed in decimals and

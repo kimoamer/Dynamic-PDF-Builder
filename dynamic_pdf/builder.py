@@ -845,6 +845,20 @@ class DocumentBuilder:
         self._blocks.append(BibliographyBlock(entries=be, style=style))
         return self
 
+    def compared_with(self, old: Union['DocumentBuilder', str], reviewer: Optional[str] = None) -> 'DocumentBuilder':
+        """A new document: this one, with every difference from ``old`` (a builder, or Markdown)
+        marked as a suggested edit. Export it to DOCX for tracked changes to accept or reject, or
+        to PDF for a review copy. Formulas and citations are compared by what they show. The
+        changes are signed by ``reviewer`` (default: this document's reviewer, else "Changes")."""
+        from .core.compare import compare_blocks
+        if isinstance(old, str):
+            old = DocumentBuilder.from_markdown(old, policy=self._policy)
+        out = DocumentBuilder(theme=self._theme, policy=self._policy)
+        out._theme_explicit = self._theme_explicit
+        out._meta = self._meta.model_copy(update={"reviewer": reviewer or self._meta.reviewer or "Changes"})
+        out._blocks = compare_blocks(old.build().blocks, self.build().blocks)
+        return out
+
     def bibtex(self, source: str, style: Optional[str] = None) -> 'DocumentBuilder':
         """A BibTeX library for ``[@key]`` citations in the text: BibTeX text, or the path of a
         ``.bib`` file (read under the asset policy, as images are). ``style``: ``"apa"``
@@ -1011,9 +1025,11 @@ class DocumentBuilder:
         from .core.formulas import compute_blocks
         meta = self._meta
         arabic = (meta.language or "").lower().startswith("ar") or meta.rtl or meta.direction == "rtl"
+        from .core.formulas import link_values
         from .core.numbering import number_equations
         blocks = compute_blocks(self._blocks, "ar" if arabic else "en",
                                 strict=self._policy.strict if strict is None else strict)
+        blocks = link_values(blocks)
         blocks = number_equations(blocks)
         if self._library:
             from .core.citations import apply_citations
