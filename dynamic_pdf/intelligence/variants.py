@@ -202,9 +202,10 @@ def _initials(doc, theme) -> List[str]:
     return out
 
 
-def _intended(plan: ArtDirectionPlan, pdf_pages, opener_titles: Sequence[str]) -> List[int]:
-    """Pages planned to be quiet: the cover, contents, opening pages and statement pages."""
-    pages = {1} if plan.cover not in ("masthead", "title_block", "none") else set()
+def _intended(cover: bool, pdf_pages, opener_titles: Sequence[str]) -> List[int]:
+    """Pages planned to be quiet: the cover (when the first page is one), contents, opening
+    pages and statement pages."""
+    pages = {1} if cover else set()
     titles = {_words(t) for t in opener_titles}
     for p in pdf_pages:
         if _words(p.first_line) in titles or (p.words <= 60 and p.largest_type >= 18 and p.page > 1):
@@ -445,7 +446,7 @@ class _Runner:
         first = critique_facts(facts)
         contents = [v["toc"] for v in LABELS.values()] if any(
             b.type == "table_of_contents" for b in made.document.blocks) else []
-        quiet = _intended(made.plan, first.pages, [*titles, *contents])
+        quiet = _intended(made.plan.cover not in ("masthead", "title_block", "none"), first.pages, [*titles, *contents])
         return critique_facts(facts, intended=quiet) if quiet else first
 
     def _docx(self, made, rep: VariantReport) -> Optional[bytes]:

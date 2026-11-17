@@ -28,7 +28,7 @@ from .schema.blocks import (
     SectionOpenerBlock, PerformancePageBlock, ParallelLedgerBlock,
 )
 from .layout.engine import LayoutEngine
-from .policy import RenderPolicy, ResourceLimits, STRICT
+from .policy import PERMISSIVE, RenderPolicy, ResourceLimits, STRICT
 from .assets import AssetPolicy
 from .utils.errors import ResourceLimitError
 
@@ -1053,6 +1053,28 @@ class DocumentBuilder:
             raise QualityError(report.summary() + ": " + "; ".join(
                 f.message for f in report.errors[:5]), report)
         return data, report
+
+    def review(self, folder: Optional[str] = None, *, dpi: int = 60) -> dict:
+        """Render the PDF once and say what a reader would notice, for you or an agent to fix in
+        the document and review again. Nothing is changed and nothing is auto-fixed.
+
+        Returns ``{"pages", "passed", "issues", "images"}``. Each issue has ``page`` (None for the
+        whole document), ``severity`` (``error`` or ``warning``), ``code``, ``message`` and ``fix``,
+        what to change, in words. The issues come from the page checks, the page critique (empty
+        and repeated pages), render diagnostics and ``lint()``. ``folder`` saves one PNG a page
+        there (``page-001.png`` ...) and lists the paths in ``images``; ``passed`` is False when an
+        issue is an error."""
+        import dataclasses
+
+        from .qa.loop import render_with_qa
+        from .qa.review import collect
+        kept = self._policy
+        self._policy = dataclasses.replace(kept, error_mode=PERMISSIVE)   # a failing block is an issue to report, not an exception
+        try:
+            data, report = render_with_qa(self, "pdf", max_attempts=1)
+            return collect(self, data, report, folder, dpi)
+        finally:
+            self._policy = kept
 
     def export(self, path: str, format: Optional[str] = None, qa: bool = False) -> 'ExportResult':
         """Export to ``path``; format inferred from the extension (``.pdf``/``.docx``)

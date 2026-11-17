@@ -1,5 +1,5 @@
 """
-An MCP server for agents: schema, render, variants, explain, and lint when the builder has it.
+An MCP server for agents: schema, render, variants, review, explain, and lint when the builder has it.
 
     pip install "dynamic-pdf-builder[mcp]"
     python -m dynamic_pdf.ai.mcp_server --out-dir ./mcp-out
@@ -101,6 +101,14 @@ def variants(document: dict, n: int = 3, folder: str = "variants", out_dir: str 
     return {**made.to_dict(), "files": made.export(_inside(out_dir, folder, "folder"))}
 
 
+def review(document: dict, design: str = "auto", folder: str = "review", dpi: int = 60, out_dir: str = ".") -> dict:
+    """Render once and list what a reader would notice, each issue with its page and what to change;
+    one PNG a page goes to the folder so you can look at the pages. Fix the document and review again."""
+    if not 20 <= dpi <= 150:
+        raise InputError(f"dpi: {dpi} is out of range. Fix: use 20 to 150 (60 is enough to see the layout)")
+    return _builder(document, design).review(_inside(out_dir, folder, "folder"), dpi=dpi)
+
+
 def explain(document: dict, design: str = "auto") -> dict:
     """Why each design decision was made."""
     return _builder(document, design).design_explain()
@@ -115,7 +123,8 @@ def tools(out_dir: str) -> dict:
     """The tool functions, bound to the output folder. ``lint`` appears only if the builder has it."""
     from .. import DocumentBuilder
     found = {"schema": schema, "render": functools.partial(render, out_dir=out_dir),
-             "variants": functools.partial(variants, out_dir=out_dir), "explain": explain}
+             "variants": functools.partial(variants, out_dir=out_dir), "review": functools.partial(review, out_dir=out_dir),
+             "explain": explain}
     if hasattr(DocumentBuilder, "lint"):
         found["lint"] = lint
     return found

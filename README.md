@@ -198,6 +198,9 @@ dynamic-pdf render report.md --section-numbers
 # Render a JSON document
 dynamic-pdf render payload.json -o output.pdf
 
+# What a reader would notice, each with what to change; page images in pages/
+dynamic-pdf review report.md -o pages/
+
 # List all available themes
 dynamic-pdf themes
 
@@ -1324,8 +1327,27 @@ for real errors; permissive mode returns the report. Additional page checks flag
 before continuing content, detached captions, oversized headings and low page density.
 `python -m dynamic_pdf.qa.golden tests/fixtures tests/golden [--update] [--sheets]` verifies
 structural fingerprints of the fixture corpus and writes page contact sheets for review; CI
-uploads them as the `page-contact-sheets` artifact. QA needs `pip install "dynamic-pdf-builder[qa]"`
-(PyMuPDF, AGPL) and LibreOffice for DOCX visual checks.
+uploads them as the `page-contact-sheets` artifact. QA reads pages with PDFium, a core
+dependency; PyMuPDF (`[qa]`, AGPL) is used instead when installed. DOCX visual checks need
+LibreOffice.
+
+### Review: render, look, fix
+
+`review()` renders once and lists what a reader would notice, without changing anything, so you
+or an agent can fix the document and review again:
+
+```python
+r = DocumentBuilder.from_markdown(text).review("pages/")      # one PNG a page in pages/
+for issue in r["issues"]:
+    print(issue["page"], issue["severity"], issue["code"], issue["message"])
+    print("   fix:", issue["fix"])                              # what to change, in words
+r["passed"]                                                    # False when any issue is an error
+```
+
+Issues come from the page checks above, the page critique (mostly empty or repeated pages; a
+cover or an opening page is not reported), render diagnostics (a missing image, a formula shown
+as source) and `lint()`. A failing block is reported, not raised. The same review is the CLI's
+`dynamic-pdf review report.md -o pages/` (exit code 1 on errors) and the MCP server's `review` tool.
 
 ## Error handling, security & limits
 

@@ -9,6 +9,7 @@ Usage:
     dynamic-pdf render invoice.md --data invoice.json --data lines=lines.csv
     dynamic-pdf batch letter.md --data people.csv -o out/ --name "letter-{{ id }}"
     dynamic-pdf lint input.md [--json] [--strict]
+    dynamic-pdf review input.md [-o pages/] [--json]
     dynamic-pdf render input.md --direction auto --grammar --brand brand.json
     dynamic-pdf variants input.md -o designs/ -n 3
     dynamic-pdf themes
@@ -90,6 +91,15 @@ def main():
     lint_p.add_argument("--json", action="store_true", help="Print the warnings as JSON")
     lint_p.add_argument("--strict", action="store_true", help="Exit with code 1 when there are warnings")
 
+    # ─── review ───
+    rev_p = sub.add_parser("review", help="List what a reader would notice on the pages, each with what to change")
+    rev_p.add_argument("input", help="Input file (.md or .json)")
+    rev_p.add_argument("-o", "--output", default=None, metavar="DIR", help="Save one PNG a page here")
+    rev_p.add_argument("--dpi", type=int, default=60, help="Resolution of the page images (default 60)")
+    rev_p.add_argument("--json", action="store_true", help="Print the review as JSON")
+    rev_p.add_argument("-t", "--theme", default="claude", help="Theme name (default: claude)")
+    rev_p.add_argument("--design", default=None, metavar="PROFILE", help='Design profile, e.g. "auto"')
+
     # ─── themes ───
     sub.add_parser("themes", help="List available themes")
 
@@ -120,6 +130,8 @@ def main():
             sys.exit(2)
     elif args.command == "lint":
         _cmd_lint(args)
+    elif args.command == "review":
+        _cmd_review(args)
     elif args.command == "themes":
         _cmd_themes()
     elif args.command == "schema":
@@ -299,6 +311,26 @@ def _cmd_batch(args):
         paths += [p for p in (res.pdf_path, res.docx_path) if p]
         diagnostics += res.diagnostics
     _report(paths, diagnostics)
+
+
+def _cmd_review(args):
+    builder = _load(args, None)
+    if args.design:
+        builder.design(args.design)
+    result = builder.review(args.output, dpi=args.dpi)
+    if args.json:
+        import json
+        print(json.dumps(result, ensure_ascii=False, indent=1))
+    else:
+        for i in result["issues"]:
+            where = f"page {i['page']}" if i["page"] else "document"
+            print(f"{i['severity']:7} {where:9} {i['code']}: {i['message']}")
+            if i["fix"]:
+                print(f"{'':17} fix: {i['fix']}")
+        print(f"{result['pages']} pages, {len(result['issues'])} issues; "
+              + ("passed" if result["passed"] else "has errors")
+              + (f"; page images in {args.output}" if args.output else ""))
+    sys.exit(0 if result["passed"] else 1)
 
 
 def _cmd_lint(args):
