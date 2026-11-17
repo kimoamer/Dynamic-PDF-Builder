@@ -203,7 +203,9 @@ def _letter(data: dict):
             "document_type: letter", f"author: {json.dumps(sender.get('name') or sign['name'], ensure_ascii=False)}",
             "---", ""]
     letterhead = [f"**{_esc(sender['name'])}**"] if sender.get("name") else []
-    md = ["\\\n".join(letterhead + [_esc(sender[k]) for k in ("address", "email", "phone") if sender.get(k)])]
+    # with a logo the sender is the letterhead at the head of the page, not a block in the text
+    md = [] if data.get("logo") else \
+        ["\\\n".join(letterhead + [_esc(sender[k]) for k in ("address", "email", "phone") if sender.get(k)])]
     meta = [f"{lab['ref']}: {_esc(data['reference'])}" if data.get("reference") else "",
             f"{lab['date']}: {_esc(data['date'])}"]
     md.append("\n".join(x for x in meta if x))
@@ -648,6 +650,10 @@ def _certificate(data: dict):
     b._meta.orientation, b._meta.page_system = Orientation.LANDSCAPE, PageSystem()
     b.document_type("general")
     blocks = [SpacerBlock(height=56)]
+    if data.get("logo"):
+        from .schema.blocks import ImageBlock
+        blocks = [SpacerBlock(height=24), ImageBlock(src=data["logo"], height=52, alignment="center",
+                                                     alt_text=data.get("organisation") or "Logo"), SpacerBlock(height=10)]
     if data.get("organisation"):
         blocks.append(line(data["organisation"], 13, True))
     blocks += [SpacerBlock(height=14), line(title, 32, True, "#1F3A5F"), SpacerBlock(height=22),
@@ -696,9 +702,19 @@ def kit(name: str, data: dict, theme: Optional[str] = None):
         b = _find(name)[0](data)
     except ValueError as e:
         raise ValueError(f"{name}: {e}") from None
+    if data.get("logo") and name in _LOGO_HEADER:       # the brand at the head of every page
+        party = data.get("seller") or data.get("sender") or {}
+        values = {"company": party.get("name") or data.get("company") or data.get("prepared_by"),
+                  **{k: party.get(k) for k in ("address", "website", "email", "phone")}}
+        b.page_system(_LOGO_HEADER[name], logo=data["logo"], **{k: str(v) for k, v in values.items() if v})
     if theme:
         b.theme(theme)
     return b
+
+
+# which header carries a kit's logo; a CV keeps none (applicant tracking systems), a certificate sets it on the page
+_LOGO_HEADER = {"invoice": "modern", "quote": "modern", "letter": "letterhead", "feasibility": "report",
+                "statements": "report"}
 
 
 def _find(name: str):

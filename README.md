@@ -1553,6 +1553,9 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
   references and lists of figures and tables are Word fields.
 
 **New**
+- A logo in any kit's data (`"logo": "logo.png"`) heads the document: a letterhead on a letter, a logo
+  header on an invoice or quotation, a report header on studies and statements, the logo over a
+  certificate's title. `logo:` alone in the front matter brings a header to carry it.
 - Headers and footers: presets (`letterhead`, `modern`, `banner`, `report`, `minimal`) placed by reading
   edge with the logo, title, running section, company and page number, in PDF and Word, from
   `page_system("modern", logo=..., company=...)` or the front matter (`header:`, `logo:`, `company:` ...);

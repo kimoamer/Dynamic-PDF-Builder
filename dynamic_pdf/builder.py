@@ -1275,9 +1275,13 @@ class DocumentBuilder:
             builder.document_type(fm["document_type"])
         if fm.get("direction") in ("ltr", "rtl"):
             builder.direction(fm["direction"])
-        if isinstance(fm.get("header"), str) and fm["header"].strip():
+        header = fm.get("header") if isinstance(fm.get("header"), str) and fm["header"].strip() else None
+        if header is None and isinstance(fm.get("logo"), str) and fm["logo"].strip():
+            # a logo alone asks for a header to carry it: a letterhead on a letter or invoice, else modern
+            header = "letterhead" if str(fm.get("document_type", "")).lower() in ("letter", "invoice") else "modern"
+        if header:
             from .schema.page_system import FIELDS
-            builder.page_system(fm["header"].strip(), logo=fm.get("logo") or None,
+            builder.page_system(header.strip(), logo=fm.get("logo") or None,
                                 **{k: fm[k] for k in FIELDS if isinstance(fm.get(k), str) and k not in ("title", "page", "pages")})
         if str(fm.get("numbering", "")).lower() in ("true", "yes", "1"):
             builder._meta.exhibit_numbering = True

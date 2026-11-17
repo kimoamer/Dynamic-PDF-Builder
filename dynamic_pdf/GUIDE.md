@@ -68,8 +68,8 @@ bibliography: refs.bib             # BibTeX for [@key] citations
 citation-style: apa                # apa (author and year) or ieee (numbers)
 reviewer: Policy AI                # name on suggested edits and comments
 header: modern                     # header and footer: letterhead, modern, banner, report, minimal
-logo: logo.png                     # with header: the logo in it
-company: Nile Co.                  # with header: also website, email, phone, department, confidentiality ...
+logo: logo.png                     # the logo; without header, a letterhead (letters, invoices) or modern
+company: Nile Co.                  # for the header: also address, website, email, phone, confidentiality ...
 ---
 ```
 
@@ -239,7 +239,10 @@ kit("invoice", data).export("invoice.pdf")   # or .docx, or .xlsx for the lines 
 Terminal: `dynamic-pdf kit invoice --example > invoice.json`, then `dynamic-pdf kit invoice invoice.json -o
 invoice.pdf`. MCP: the `kit` tool (without `data` it returns the example).
 
-Every kit reads `language`: `en` or `ar`. A missing or malformed field is refused with its name and the fix.
+Every kit reads `language`: `en` or `ar`, and `logo` (a PNG, JPEG or SVG path): the letter gets a
+letterhead with the sender's name, address and contacts; the invoice and quotation a logo header; the
+feasibility study and statements a report header; the certificate the logo over its title. A CV takes
+none, for applicant tracking systems. A missing or malformed field is refused with its name and the fix.
 
 - `invoice` reads `number`, `date`, `due`, `currency` (SAR, EGP, USD ... for the amount in words), `seller`
   and `buyer` (each `name`, `address`, `tax_id`, `email`, `phone`), `items` (each `description`,

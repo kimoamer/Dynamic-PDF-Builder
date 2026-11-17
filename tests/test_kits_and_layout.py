@@ -448,3 +448,24 @@ def test_bands_share_the_text_columns_edges(tmp_path):
     title_x = tp.get_charbox(tp.search("Review").get_next()[0])[0]
     body_x = min(tp.get_charbox(k)[0] for k in range(tp.count_chars()) if tp.get_text_range(k, 1).strip())
     assert abs(title_x - body_x) < 1.5
+
+
+def test_a_kit_logo_goes_where_the_document_wants_it(tmp_path):
+    logo = _logo(tmp_path)
+    letter = kit("letter", {**kit_example("letter"), "logo": logo})
+    ps = letter._meta.page_system
+    assert ps.first_header.rows[0].start[0].src == logo and ps.values["company"] == "Nile Office Supplies"
+    assert ps.values["address"] == "King Fahd Road, Riyadh 12271"
+    assert not any("King Fahd" in (getattr(b, "text", "") or "") for b in letter._blocks)   # not twice
+    assert kit("invoice", {**kit_example("invoice"), "logo": logo})._meta.page_system is not None
+    assert kit("cv", {**kit_example("cv"), "logo": logo})._meta.page_system.header is None   # ATS: no header
+    cert = kit("certificate", {**kit_example("certificate"), "logo": logo})
+    assert any(b.type == "image" and b.src == logo for b in cert._blocks)
+
+
+def test_a_front_matter_logo_alone_brings_a_header(tmp_path):
+    logo = _logo(tmp_path)
+    b = DocumentBuilder.from_markdown(f"---\ntitle: T\nlogo: {logo}\n---\n\n# T\n\nText.\n")
+    assert b._meta.page_system is not None and b._meta.page_system.first_page == "custom"
+    letter = DocumentBuilder.from_markdown(f"---\ntitle: T\nlogo: {logo}\ndocument_type: letter\n---\n\nDear Sir,\n")
+    assert len(letter._meta.page_system.first_header.rows) == 3                # the letterhead
