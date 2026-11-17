@@ -76,6 +76,13 @@ cover_color: "#1B365D"             # the cover's ground (a panel beside the text
 ---
 ```
 
+Colour: `[word]{red}` colours a word or a single letter, `[text]{bg=yellow}` puts a colour behind it,
+and both combine: `[text]{color=#C00 bg=yellow}`. Names: red, green, blue, orange, purple, teal, pink,
+brown, gray, black, white, yellow, gold, navy (and أحمر، أخضر، أزرق، برتقالي، بنفسجي، وردي، بني، رمادي،
+أسود، أبيض، أصفر، ذهبي، كحلي), or any hex colour. It works wherever text does (headings, table cells,
+lists), in PDF and Word; a letter coloured inside an Arabic word stays joined. Put emphasis outside
+the span: `**[word]{red}**`.
+
 Text: `**bold**`, `*italic*`, `~~struck~~`, `` `code` ``, `==highlight==`, `x^2^`, `H<sub>2</sub>O`,
 `[link](https://example.com)`, footnotes `text[^1]` with `[^1]: the note` anywhere below.
 

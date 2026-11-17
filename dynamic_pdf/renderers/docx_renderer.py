@@ -417,6 +417,10 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                     f.size = Pt(size)
                 if color:
                     f.color.rgb = rgb(color)
+                if tr.color:                       # the author's colour for these words
+                    f.color.rgb = rgb(tr.color)
+                if tr.background:
+                    F.set_run_shading(run, tr.background.lstrip("#"))
                 rtl = is_rtl_text(tr.text)
                 if tr.code:
                     F.set_run_fonts(run, mono, mono)

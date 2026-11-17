@@ -444,6 +444,16 @@ def _md_inline(text: str) -> str:
     text = re.sub(r'~~(.+?)~~', r'<strike>\1</strike>', text)
     # Links: [text](url)  (footnote refs [^N] are handled below)
     text = re.sub(r'\[([^\]^][^\]]*)\]\(([^)\s]+)(?:\s+&quot;[^&]*&quot;)?\)', _link_sub, text)
+    # Coloured text: [text]{red}, [text]{color=#C00 bg=yellow}; anything else in braces stays text
+    def _span(m):
+        from ..core.inline import span_style
+        look = span_style(m.group("a"))
+        if look is None:
+            return m.group(0)
+        attrs = (f' color="{look[0]}"' if look[0] else "") + (f' backColor="{look[1]}"' if look[1] else "")
+        return f'<font{attrs}>{m.group("t")}</font>'
+    from ..core.inline import SPAN
+    text = SPAN.sub(_span, text)
     # Highlight: ==text==
     text = re.sub(r'==(.+?)==', r'<font backColor="#FEF3CD">\1</font>', text)
     # Superscript: <sup>text</sup> or ^text^

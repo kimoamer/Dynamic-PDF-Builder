@@ -1557,6 +1557,9 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
   references and lists of figures and tables are Word fields.
 
 **New**
+- Coloured words and letters: `[word]{red}`, `[text]{bg=yellow}`, `[text]{color=#C00 bg=yellow}`, with
+  English and Arabic colour names or any hex colour, wherever text goes, in PDF and Word. A letter
+  coloured inside an Arabic word stays joined to its neighbours.
 - `page_border: thin | double | thick` (front matter, or `meta.page_border`) frames every page, in PDF
   and Word. Check boxes in a Word checklist can be ticked.
 - Maps, location sketches and mind maps as chart types (`map` from your own GeoJSON with values and

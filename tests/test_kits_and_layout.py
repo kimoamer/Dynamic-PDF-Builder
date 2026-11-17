@@ -613,3 +613,24 @@ def test_encryption_never_leaves_a_word_file_or_workbook_in_the_clear(tmp_path):
         with pytest.raises(EncryptionError, match="protects the PDF only"):
             call()
     assert not (tmp_path / "x.docx").exists()
+
+
+def test_coloured_words_and_letters_in_pdf_and_word():
+    import zipfile
+    import pypdfium2 as pdfium
+    from dynamic_pdf.core.inline import parse_inline, plain_text, span_style
+    assert span_style("red") == ("#C62828", None) and span_style("color=#c00 bg=yellow") == ("#CC0000", "#FFF2A8")
+    assert span_style("أحمر") == ("#C62828", None) and span_style("#anchor") is None and span_style("onclick=x") is None
+    runs = parse_inline("A [red]{red} word, ال[ع]{red}ربية and [kept]{unknown}.")
+    assert [(r.text, r.color) for r in runs if r.color] == [("red", "#C62828"), ("ع", "#C62828")]
+    assert plain_text("A [red]{red} word and [kept]{unknown}.") == "A red word and [kept]{unknown}."
+    md = "# [Title]{blue}\n\nA [red]{red} word on [yellow]{bg=yellow}; نص [أحمر]{أحمر}.\n\n| A |\n|---|\n| [ok]{green} |\n"
+    b = DocumentBuilder.from_markdown(md)
+    page = pdfium.PdfDocument(b.render())[0]
+    text = page.get_textpage().get_text_range()
+    assert "A red word on yellow" in text and "{" not in text                   # the markup is gone, the words stay
+    pixels = set(page.render(scale=1).to_pil().convert("RGB").getdata())
+    assert any(r > 170 and g < 80 and bl < 80 for r, g, bl in pixels)           # something is red
+    xml = zipfile.ZipFile(io.BytesIO(b.render_docx())).read("word/document.xml").decode()
+    assert 'w:color w:val="C62828"' in xml and 'w:fill="FFF2A8"' in xml and 'w:color w:val="2E7D32"' in xml
+    assert not b.lint()

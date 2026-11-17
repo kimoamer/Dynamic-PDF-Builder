@@ -34,7 +34,7 @@ Write the document as Markdown and pass it as `markdown`. Beyond plain Markdown 
 (title, author, language, document_type ...), tables with spreadsheet formulas (=B2*C2, =SUM(ABOVE),
 =WORDS(D5) for an amount in words), ```chart blocks holding JSON, $$ equations $$ {#eq-id}, figure and table
 captions with ids and {ref:id} references, [@key] citations with a BibTeX file, :::warning callouts,
-quotes (> text, > — Name; > [!pullquote]), ```signature blocks holding JSON, a header and footer preset
+coloured words ([word]{red}, [text]{bg=yellow}), quotes (> text, > — Name; > [!pullquote]), ```signature blocks holding JSON, a header and footer preset
 in the front matter (header: modern, logo: logo.png, company: ...), [TOC], and suggested edits ({++added++} {--removed--} {>>comment<<}) that become tracked changes in Word.
 
 Work in a loop: `render` the document, `review` it (each issue comes with its page and what to change, and
