@@ -481,3 +481,11 @@ def test_a_certificate_has_a_frame_and_stays_on_one_page(tmp_path):
         assert b._blocks[0].type == "page_media" and b._blocks[0].src.startswith("data:image/png")
         assert len(pdfium.PdfDocument(b.render())) == 1
     assert kit("certificate", {**kit_example("certificate"), "frame": False})._blocks[0].type != "page_media"
+
+
+def test_a_built_cover_takes_the_title_off_the_next_page():
+    md = "---\ntitle: Annual review\n---\n\n# Annual review\n\n## Results\n\n" + "Revenue rose in every region. " * 600
+    b = DocumentBuilder.from_markdown(md).design("executive_report")
+    blocks = b._prepared()[0].blocks
+    assert blocks[0].type == "cover_page"
+    assert [x.text for x in blocks if x.type == "heading"][0] == "Results"       # the title is on the cover only

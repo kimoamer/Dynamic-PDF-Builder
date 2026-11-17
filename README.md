@@ -1607,6 +1607,8 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
 - Right-to-left text: lines ending in a line break (an address, Label: value lines) sat on the left in
   justified paragraphs; two columns now read from the right, as in Word.
 - A column of amounts with an "in words" row under it was read as text and lost its right alignment.
+- A long document that opens with its title, given a cover by the design, no longer repeats the title at
+  the head of the page after the cover.
 - A report whose sections are numbered no longer numbers its title ("1 Annual review", "1.1 Results").
 - The page number reads in the document's language ("صفحة 2 من 3"), in PDF and Word.
 - A negative bar's label no longer runs into the axis names.
