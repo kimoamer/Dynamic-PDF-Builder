@@ -11,6 +11,7 @@ Usage:
     dynamic-pdf lint input.md [--json] [--strict]
     dynamic-pdf review input.md [-o pages/] [--json]
     dynamic-pdf compare old.md new.md -o changes.docx
+    dynamic-pdf guide [topic]
     dynamic-pdf render input.md --direction auto --grammar --brand brand.json
     dynamic-pdf variants input.md -o designs/ -n 3
     dynamic-pdf themes
@@ -109,6 +110,10 @@ def main():
     cmp_p.add_argument("--reviewer", default=None, help='Name on each change (default "Changes")')
     cmp_p.add_argument("-t", "--theme", default="claude", help="Theme name (default: claude)")
 
+    # ─── guide ───
+    guide_p = sub.add_parser("guide", help="What the library does and how to write for it (for people and AI agents)")
+    guide_p.add_argument("topic", nargs="?", default=None, help="One section: markdown, charts, tables, academic ...")
+
     # ─── themes ───
     sub.add_parser("themes", help="List available themes")
 
@@ -141,6 +146,15 @@ def main():
         _cmd_lint(args)
     elif args.command == "review":
         _cmd_review(args)
+    elif args.command == "guide":
+        from .guide import guide, topics
+        try:
+            print(guide(args.topic))
+        except ValueError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            sys.exit(1)
+        if not args.topic:
+            print("Topics: " + ", ".join(topics()))
     elif args.command == "compare":
         import argparse as _ap
         old = _load(_ap.Namespace(input=args.old, theme=args.theme, data=None), None)
@@ -385,8 +399,8 @@ def _cmd_themes():
 
 def _cmd_schema(output):
     import json
-    from .schema.document import Document
-    text = json.dumps(Document.model_json_schema(), ensure_ascii=False, indent=1)
+    from .schema.describe import document_schema
+    text = json.dumps(document_schema(), ensure_ascii=False, indent=1)
     if output:
         with open(output, "w", encoding="utf-8") as f:
             f.write(text + "\n")

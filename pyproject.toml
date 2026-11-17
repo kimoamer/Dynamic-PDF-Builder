@@ -65,7 +65,7 @@ version = {attr = "dynamic_pdf.__version__"}
 include = ["dynamic_pdf*"]
 
 [tool.setuptools.package-data]
-dynamic_pdf = ["py.typed", "fonts/bundled/*.ttf", "fonts/bundled/catalog.json", "fonts/bundled/LICENSES/*.txt", "design/approved_grammar.json", "models/*.json", "data/*.json"]
+dynamic_pdf = ["py.typed", "GUIDE.md", "fonts/bundled/*.ttf", "fonts/bundled/catalog.json", "fonts/bundled/LICENSES/*.txt", "design/approved_grammar.json", "models/*.json", "data/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

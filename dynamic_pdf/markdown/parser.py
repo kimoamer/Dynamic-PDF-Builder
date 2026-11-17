@@ -179,6 +179,8 @@ def _parse_body(md_text: str) -> list:
             code = (t.content or "").rstrip("\n")
             if lang == "mermaid":
                 blocks.append(MermaidBlock(diagram=code))
+            elif lang == "chart":
+                blocks.append(_chart_block(code, fence_id))
             elif lang in ("math", "latex"):
                 blocks.append(MathBlock(latex=code, id=fence_id))
             else:
@@ -232,6 +234,23 @@ def _parse_body(md_text: str) -> list:
 
 _TABLE_CAPTION = re.compile(r"^Table:\s+(\S.*)$", re.S)
 _ATTR_ID = re.compile(r"\s*\{#([A-Za-z][\w:.-]*)\}\s*$")
+
+
+def _chart_block(code: str, anchor):
+    """A ```chart fence: a JSON object with ``type`` and ``data`` (as ``DocumentBuilder.chart``
+    takes them) and optionally ``title``, ``x_label``, ``y_label``, ``colors``, ``legend``."""
+    import json
+    from ..schema.blocks import ChartBlock
+    try:
+        spec = json.loads(code)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"a ```chart block holds JSON, as {{\"type\": \"bar\", \"data\": {{\"A\": 1}}}}; "
+                         f"this one does not parse: {e}") from None
+    if not isinstance(spec, dict) or "data" not in spec or not (spec.get("type") or spec.get("chart_type")):
+        raise ValueError('a ```chart block needs "type" (bar, line, pie ...) and "data"')
+    spec = dict(spec)
+    spec["chart_type"] = spec.pop("type", None) or spec["chart_type"]
+    return ChartBlock(id=anchor, **spec)
 
 
 def _attr_id(text: str):

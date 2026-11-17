@@ -1,0 +1,20 @@
+# Dynamic PDF Builder
+
+> A Python library that turns Markdown, JSON or a fluent API into a designed document: a PDF to read, a DOCX to edit in Word, and the tables as an Excel workbook. You write the content; the library designs it, checks every page, and handles Arabic and right-to-left text as well as English.
+
+Install with `pip install dynamic-pdf-builder` (add `[mcp]` for the MCP server, `[xlsx]` for workbooks).
+
+The complete guide, with an example for every feature, ships inside the package. Read it with `dynamic_pdf.guide()` in Python, `dynamic-pdf guide` in a terminal, or the `guide` tool of the MCP server. Each `##` section is a topic: `dynamic-pdf guide tables`.
+
+The loop that works: write Markdown, `export("x.pdf")` (or `.docx`, `.xlsx`), `review()` to list what a reader would notice (each issue with its page and the fix), change the Markdown, review again. Use `export()`, not `render()`: only `export()` designs the document.
+
+## Docs
+
+- [Guide](dynamic_pdf/GUIDE.md): what it does, the Markdown it reads (front matter, charts, formula tables, equations, citations, callouts, suggested edits), output, the Python API, Arabic, limits
+- [README](README.md): installation, every block type, themes, changelog
+- [Configuration](docs/CONFIGURATION.md): every `DYNAMIC_PDF_*` setting and what the library does to its host
+
+## Agents
+
+- MCP server: `python -m dynamic_pdf.ai.mcp_server --out-dir ./out`. It introduces itself on connect. Tools: `guide`, `render`, `review`, `variants`, `explain`, `lint`, `schema`. Each document tool takes `markdown` (a string) or `document` (JSON), and writes only inside the output folder.
+- JSON Schema of a document, with a description of each field: `dynamic-pdf schema` or the `schema` tool.

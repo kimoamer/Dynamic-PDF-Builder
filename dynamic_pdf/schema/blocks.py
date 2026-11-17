@@ -122,8 +122,8 @@ class ImageBlock(BaseBlock):
     caption: Optional[str] = None
     alt_text: Optional[str] = None                  # WCAG 1.1.1
     alignment: str = "center"
-    width: Optional[float] = None
-    height: Optional[float] = None
+    width: Optional[float] = None                   # points; the picture keeps its proportions
+    height: Optional[float] = None                  # points
     figure_number: Optional[int] = None             # "Figure 1"
     border: bool = False
     shadow: bool = False
@@ -134,15 +134,15 @@ class ImageBlock(BaseBlock):
 
 class ChartBlock(BaseBlock):
     type: Literal["chart"] = "chart"
-    chart_type: str                                 # bar, line, pie, scatter, horizontal_bar, area, stacked_bar, grouped_bar, histogram, heatmap, waterfall, funnel, gauge
+    chart_type: str                                 # bar, vertical_bar, horizontal_bar, grouped_bar, stacked_bar, line, area, pie, donut, scatter, bubble, histogram, heatmap, waterfall, funnel, gauge, sparkline, treemap
     data: Any
     title: Optional[str] = None
     colors: Optional[List[str]] = None
     x_label: Optional[str] = None
     y_label: Optional[str] = None
     legend: bool = True
-    width: float = 6.0
-    height: float = 4.0
+    width: float = 6.0                              # inches
+    height: float = 4.0                             # inches
 
 # ─────────────────────── Math & Diagrams ───────────────────────
 

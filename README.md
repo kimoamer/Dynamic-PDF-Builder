@@ -15,6 +15,7 @@
 - [Quick Start](#quick-start)
 - [Input Modes](#input-modes)
 - [CLI Usage](#cli-usage)
+- [Using with AI agents](#using-with-ai-agents)
 - [Themes](#themes)
 - [Header & Footer Styles](#header--footer-styles)
 - [Block Reference](#block-reference)
@@ -209,6 +210,31 @@ dynamic-pdf version
 ```
 
 ---
+
+## Using with AI agents
+
+The library explains itself, so an agent needs no outside notes:
+
+- **The guide ships with the package**: `dynamic_pdf.guide()` returns it, `dynamic_pdf.guide("tables")`
+  one topic, and `dynamic-pdf guide [topic]` prints it. It covers the Markdown the library reads, with
+  an example for every feature, the output formats, the Python API, Arabic, and what it cannot do.
+- **MCP server** (`pip install "dynamic-pdf-builder[mcp]"`):
+
+  ```bash
+  python -m dynamic_pdf.ai.mcp_server --out-dir ./out
+  ```
+
+  It tells the agent what the library is and how to work with it when it connects. Tools: `guide`,
+  `render` (.pdf, .docx or .xlsx), `review`, `variants`, `explain`, `lint` and `schema`. Each document
+  tool takes the document as `markdown` (a string, the easiest) or as `document` (JSON); files are
+  written only inside the output folder, remote images stay off, and an invalid document is refused
+  with each failing field and how to fix it.
+- **The JSON Schema describes its fields** (`dynamic-pdf schema`, or the `schema` tool), for agents
+  that send JSON.
+- **`llms.txt`** at the repository root points to all of the above.
+
+The loop that works: write Markdown, `render`, `review` (each issue with its page and the fix, and
+one image a page), fix, `review` again.
 
 ## Themes
 
@@ -1521,6 +1547,9 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
   references and lists of figures and tables are Word fields.
 
 **New**
+- The library explains itself to agents and people: a guide in the package (`guide()`, CLI `guide`,
+  MCP `guide`), MCP instructions sent on connect, Markdown input for every MCP tool, field
+  descriptions in the JSON Schema, ```` ```chart ```` blocks holding JSON in Markdown, and `llms.txt`.
 - Linked values (`{=table-id!D5}` in text shows the cell) and version comparison
   (`compared_with()`, CLI `compare`) as tracked changes in Word and a review copy in PDF.
 - Citations from BibTeX (`[@key]`, `bibliography: refs.bib`, `builder.bibtex()`), written in APA or
