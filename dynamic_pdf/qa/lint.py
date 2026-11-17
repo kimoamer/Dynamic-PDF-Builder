@@ -136,10 +136,12 @@ def _totals(i, b, rows, body, warn):
                     covered.append(vals[s].value if vals[s] else 0.0)
                     last = s
                 groups.append(covered + [v.value for v in vals[last + 1:t] if v])
+            got = vals[t].value
+            if run and abs(sum(run) - got) <= _tol(dec, len(run)):
+                continue                              # its own section adds up, even a section of one line
             groups = [g for g in groups if len(g) >= 2]
             if not groups:
                 continue
-            got = vals[t].value
             if any(abs(sum(g) - got) <= _tol(dec, len(g)) for g in groups):
                 continue
             label = plain_text(next((c for c in rows[t] if str(c).strip()), "total"))

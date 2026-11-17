@@ -231,3 +231,67 @@ def test_a_cv_reads_cleanly_for_applicant_tracking_systems():
     docx = Document(io.BytesIO(b.render_docx()))
     assert not docx.tables and not any(p.text for s in docx.sections for p in s.header.paragraphs + s.footer.paragraphs)
     assert [p.style.name for p in docx.paragraphs if p.text == "Experience"] == ["Heading 2"]
+
+
+def test_npv_and_irr_are_computed_as_a_spreadsheet_computes_them():
+    md = ("| Year | Net |\n|---|---:|\n| 0 | -10,000 |\n| 1 | 3,000 |\n| 2 | 4,200 |\n| 3 | 6,800 |\n"
+          "| NPV | =B2+NPV(10%, B3:B5) |\n| IRR | =IRR(B2:B5) |\n")
+    rows = DocumentBuilder.from_markdown(md).build().blocks[0].rows
+    assert rows[-2][1] == "1,307" and rows[-1][1] == "16.3%"          # 1,307.29 and 16.34%, as Excel gives
+    from dynamic_pdf.core.formulas import FormulaError
+    with pytest.raises(FormulaError, match="change sign"):
+        DocumentBuilder.from_markdown("| A | B |\n|---|---|\n| x | 5 |\n| y | =IRR(B2:B2) |\n").build()
+
+
+def test_the_feasibility_kit():
+    b = kit("feasibility", kit_example("feasibility"))
+    doc = b.build()
+    table = [x for x in doc.blocks if x.type == "table"][0]
+    assert table.rows[0][1:] == ["2,500,000", "0", "0", "-2,500,000", "-2,500,000"]
+    assert table.rows[-2][-2] == "1,514,510" and table.rows[-1][-2] == "35.1%"
+    text = " ".join(getattr(x, "text", "") or "" for x in doc.blocks)
+    assert "net present value is 1,514,510" in text and "Payback period: 2.2 years." in text
+    chart = [x for x in doc.blocks if x.type == "chart"][0]
+    assert chart.colors[0] != chart.colors[1] and len(set(chart.colors[1:])) == 1     # the outlay year stands apart
+    assert not b.lint()
+    with pytest.raises(ValueError, match="feasibility: 'years' needs at least two"):
+        kit("feasibility", {**kit_example("feasibility"), "years": [{"year": "2026"}]})
+
+
+def test_a_numbered_report_does_not_number_its_title():
+    b = DocumentBuilder.from_markdown("---\ntitle: Annual review\n---\n\n# Annual review\n\n## Results\n\nText.\n")
+    b.design("executive_report")
+    doc, _ = b._prepared()
+    heads = [x for x in doc.blocks if x.type == "heading"]
+    assert (heads[0].hints or {}).get("unnumbered") and not (heads[1].hints or {}).get("unnumbered")
+
+
+def test_the_page_number_reads_in_the_document_language():
+    from dynamic_pdf.i18n import page_format
+    assert page_format("Page {n} of {total}", "ar") == "صفحة {n} من {total}"
+    assert page_format("Page {n} of {total}", "en") == "Page {n} of {total}" and page_format("{n} / {total}", "ar") == "{n} / {total}"
+
+
+def test_the_statements_kit_balances_and_reads_like_accounts():
+    b = kit("statements", kit_example("statements"))
+    tables = [x for x in b.build().blocks if x.type == "table"]
+    income = {r[0].strip("*"): r[1] for r in tables[0].rows}
+    assert income["Cost of sales"] == "(6,200,000)" and income["Gross profit"] == "4,600,000"
+    assert income["Profit for the year"] == "1,834,500"
+    assert tables[1].rows[-1][1:] == tables[2].rows[-1][1:] == ["12,350,000", "11,090,000"]
+    assert not b.lint()                                   # every total adds up, a one-line section included
+    d = kit_example("statements")
+    d["position"]["current_assets"][2]["values"] = [1250001, 840000]
+    with pytest.raises(ValueError, match="does not balance in 2026: assets 12,350,001 but equity and liabilities 12,350,000"):
+        kit("statements", d)
+
+
+def test_lint_still_catches_a_wrong_one_line_total():
+    md = "| Item | 2026 |\n|---|---:|\n| A | 100 |\n| Total A | 100 |\n| B | 50 |\n| Total B | 70 |\n"
+    assert [w.rule for w in DocumentBuilder.from_markdown(md).lint()] == ["total_mismatch"]
+
+
+def test_figures_and_years_do_not_decide_a_table_direction():
+    from dynamic_pdf.core.normalize import is_rtl_table
+    assert is_rtl_table(["البند", "2026", "2025"]) and not is_rtl_table(["Item", "2026", "2025"])
+    assert not is_rtl_table(["Revenue", "الإيرادات", "Notes"]) and not is_rtl_table(["2026", "2025"])

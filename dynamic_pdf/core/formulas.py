@@ -12,8 +12,10 @@ Computed table cells: a cell that starts with ``=`` holds a formula, written as 
 Cells are named as a spreadsheet names them: columns A, B, C ... and rows from 1, the header row,
 so a formula means the same here, in Word and in an exported workbook. ``ABOVE`` and ``LEFT`` are
 Word's: the numbers above in the column, or to the left in the row, up to the first cell that is
-not a number. Functions: SUM, AVERAGE, MIN, MAX, COUNT, ROUND, ABS, and WORDS (the amount in
-words, see ``core.words``). ``15%`` is 0.15. Arithmetic is decimal, so 0.1 + 0.2 is 0.3, and
+not a number. Functions: SUM, AVERAGE, MIN, MAX, COUNT, ROUND, ABS, WORDS (the amount in
+words, see ``core.words``), and NPV and IRR as a spreadsheet has them: ``NPV(rate, flows)`` discounts
+the first flow by one period, so a project's value is ``=B2+NPV(10%, B3:B7)``; ``IRR(flows)`` is the
+rate at which their value is zero, written as a percent. ``15%`` is 0.15. Arithmetic is decimal, so 0.1 + 0.2 is 0.3, and
 ROUND rounds half away from zero, as spreadsheets do.
 
 A result is written as its column writes numbers: the same decimals, thousands separators,
@@ -31,7 +33,7 @@ _TOKEN = re.compile(r'\s*(?:(?P<str>"[^"]*")|(?P<ref>\$?[A-Z]{1,2}\$?\d+(?::\$?[
                     r"|(?P<num>\d+(?:\.\d+)?)|(?P<name>[A-Za-z_]+)|(?P<op>[-+*/(),%]))")
 _NUMBER_SPAN = re.compile(r"[-−–(]?[0-9٠-٩][0-9٠-٩,٬]*(?:[.٫][0-9٠-٩]+)?\)?")
 _INDIC = str.maketrans("0123456789", "٠١٢٣٤٥٦٧٨٩")
-FUNCTIONS = ("SUM", "AVERAGE", "MIN", "MAX", "COUNT", "ROUND", "ABS", "WORDS")
+FUNCTIONS = ("SUM", "AVERAGE", "MIN", "MAX", "COUNT", "ROUND", "ABS", "WORDS", "NPV", "IRR")
 
 
 class FormulaError(DynamicPDFError, ValueError):
@@ -270,7 +272,18 @@ class _Parser:
             return self.num(args[0]).quantize(Decimal(1).scaleb(-places), rounding=ROUND_HALF_UP)
         if name == "ABS":
             return abs(self.num(args[0]))
+        if name == "NPV":
+            if len(args) < 2:
+                self.fail("NPV takes the rate and then the cash flows, as =NPV(10%, B3:B7)")
+            rate = self.num(args[0])
+            flows = [n for a in args[1:] for n in (a if isinstance(a, list) else [self.num(a)])]
+            return _npv(rate, flows, first=1)
         numbers = [n for a in args for n in (a if isinstance(a, list) else [self.num(a)])]
+        if name == "IRR":
+            rate = _irr(numbers)
+            if rate is None:
+                self.fail("IRR needs cash flows that change sign (an outlay, then returns) and a rate that zeroes them")
+            return rate
         if name == "COUNT":
             return Decimal(len(numbers))
         if name == "SUM":
@@ -285,6 +298,31 @@ class _Parser:
         from .words import CURRENCIES
         units = {cell.unit for _, cell in self.reader if cell.kind == "currency" and cell.unit}
         return units.pop() if len(units) == 1 and next(iter(units)) in CURRENCIES else None
+
+
+def _npv(rate: Decimal, flows: List[Decimal], first: int = 0) -> Decimal:
+    return sum((v / (1 + rate) ** (t + first) for t, v in enumerate(flows)), Decimal(0))
+
+
+def _irr(flows: List[Decimal]) -> Optional[Decimal]:
+    """The rate that makes the flows' value zero (period 0 first), found by bisection between -99%
+    and 1000%; None when the flows never change sign or no such rate lies in that range."""
+    if not (any(v < 0 for v in flows) and any(v > 0 for v in flows)):
+        return None
+    lo, hi = Decimal("-0.99"), Decimal(10)
+    f_lo, f_hi = _npv(lo, flows), _npv(hi, flows)
+    if f_lo * f_hi > 0:
+        return None
+    for _ in range(200):                     # 2^-200 of the interval: far below a basis point
+        mid = (lo + hi) / 2
+        f_mid = _npv(mid, flows)
+        if f_mid == 0:
+            return mid
+        if (f_mid < 0) == (f_lo < 0):
+            lo, f_lo = mid, f_mid
+        else:
+            hi = mid
+    return (lo + hi) / 2
 
 
 # ── writing a result as its column writes numbers ──────────────────────────────────────
@@ -312,6 +350,8 @@ def format_result(value, table: _Table, r: int, c: int) -> str:
     found = _template(table, r, c)
     read = table.seen.get((r, c)) or []
     column = [table.raw(row, c) for row in range(1, len(table.grid)) if c < len(table.grid[row])]
+    if re.match(r"\s*=\s*IRR\s*\(", table.raw(r, c), re.I):        # a rate, whatever its column holds
+        return _digits(value * 100, 1, False, any(re.search("[٠-٩]", t) for t in column)) + "%"
     if found is None:
         places = 2 if "/" in table.raw(r, c) else max([cell.decimals for _, cell in read] + [0])
         return _digits(value, places, _grouping(column + [t for t, _ in read]), indic=False)

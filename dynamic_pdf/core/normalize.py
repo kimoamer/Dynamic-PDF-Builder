@@ -150,6 +150,13 @@ def is_rtl_text(text: str) -> bool:
     return False
 
 
+def is_rtl_table(cells) -> bool:
+    """A table reads right to left when most of its header cells that hold words do; figures and years
+    have no direction and do not vote, so "البند | 2026 | 2025" is right to left."""
+    worded = [c for c in cells if re.search(r"[^\W\d_]", c)]
+    return bool(worded) and sum(is_rtl_text(c) for c in worded) * 2 > len(worded)
+
+
 def _slug(text: str) -> str:
     s = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
     s = re.sub(r"[^a-zA-Z0-9]+", "-", s).strip("-").lower()

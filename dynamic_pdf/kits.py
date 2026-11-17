@@ -323,10 +323,295 @@ def _for_ats(b, lang: str):
     return b
 
 
+_FEASIBILITY_LABELS = {
+    "en": {"prepared": "Prepared by", "date": "Date", "summary": "Summary", "assumptions": "Assumptions",
+           "rate": "Discount rate", "flows": "Cash flows", "year": "Year", "investment": "Investment",
+           "revenue": "Revenue", "costs": "Operating costs", "net": "Net cash flow", "cumulative": "Cumulative",
+           "total": "Total", "npv": "NPV at {rate}", "irr": "IRR",
+           "results": "Results", "payback": "Payback period: {years} years.", "no_payback":
+           "The investment is not recovered within the period studied.", "chart": "Net cash flow by year",
+           "risks": "Risks", "conclusion": "Conclusion",
+           "reading": "At a discount rate of {rate}, the net present value is {npv} and the internal rate of "
+                      "return is {irr}."},
+    "ar": {"prepared": "إعداد", "date": "التاريخ", "summary": "الملخص", "assumptions": "الافتراضات",
+           "rate": "معدل الخصم", "flows": "التدفقات النقدية", "year": "السنة", "investment": "الاستثمار",
+           "revenue": "الإيرادات", "costs": "تكاليف التشغيل", "net": "صافي التدفق النقدي", "cumulative": "التراكمي",
+           "total": "الإجمالي", "npv": "صافي القيمة الحالية ({rate})", "irr": "معدل العائد الداخلي",
+           "results": "النتائج", "payback": "فترة الاسترداد: {years} سنة.", "no_payback":
+           "لا يُسترد الاستثمار خلال الفترة المدروسة.", "chart": "صافي التدفق النقدي حسب السنة",
+           "risks": "المخاطر", "conclusion": "الخلاصة",
+           "reading": "عند معدل خصم {rate} يبلغ صافي القيمة الحالية {npv}، ويبلغ معدل العائد الداخلي {irr}."},
+}
+
+_FEASIBILITY_EXAMPLE = {
+    "language": "en",
+    "title": "Feasibility study: a second production line",
+    "prepared_by": "Finance department",
+    "date": "November 2026",
+    "currency": "EGP",
+    "summary": "A second line would raise capacity by 40% to meet the orders the plant now turns away.",
+    "discount_rate": "12%",
+    "years": [{"year": "2026", "investment": 2500000},
+              {"year": "2027", "revenue": 1800000, "costs": 950000},
+              {"year": "2028", "revenue": 2600000, "costs": 1300000},
+              {"year": "2029", "revenue": 3100000, "costs": 1500000},
+              {"year": "2030", "revenue": 3300000, "costs": 1600000}],
+    "assumptions": ["Prices rise with inflation; figures are in 2026 pounds",
+                    "The line runs two shifts from the second year"],
+    "risks": ["A delay in delivering the machines would move every inflow by a year"],
+}
+
+
+def _rate(value) -> Decimal:
+    """12%, "12%", 12 or 0.12, as a fraction."""
+    text = str(value).strip()
+    r = _number(text.rstrip("%"), "discount_rate")
+    return r / 100 if text.endswith("%") or r > 1 else r
+
+
+def _feasibility(data: dict):
+    from .builder import DocumentBuilder
+    from .core.formulas import _npv
+    from .schema.blocks import ChartBlock
+    lang = (data.get("language") or "en").lower()
+    if lang not in _FEASIBILITY_LABELS:
+        raise ValueError(f"language {lang!r} is not supported. Fix: use 'en' or 'ar'")
+    lab = _FEASIBILITY_LABELS[lang]
+    title, years = _need(data, "title"), _need(data, "years")
+    rate = _rate(_need(data, "discount_rate"))
+    if not isinstance(years, list) or len(years) < 2:
+        raise ValueError("'years' needs at least two years, the first with the investment. Fix: see the kit's example")
+    unit = f" ({str(data['currency']).upper()})" if data.get("currency") else ""
+    pct = f"{(rate * 100).normalize():f}%"
+
+    rows, nets, figures = [], [], []
+    for i, y in enumerate(years):
+        r = i + 2
+        if not isinstance(y, dict) or not y.get("year"):
+            raise ValueError(f"'years[{i}].year' is missing. Fix: add it; the kit's example shows every field")
+        inv, rev, cost = (_number(y.get(k) or 0, f"years[{i}].{k}") for k in ("investment", "revenue", "costs"))
+        nets.append(rev - cost - inv)
+        figures += [inv, rev, cost]
+    # whole amounts are written whole: 2,500,000 rather than 2,500,000.00 down a column of millions
+    places = max([-f.normalize().as_tuple().exponent for f in figures] + [0])
+    places = max(places, 2) if places else 0
+
+    def show(x):
+        return f"{x:,.{places}f}"
+    for i, (y, inv, rev, cost) in enumerate(zip(years, figures[0::3], figures[1::3], figures[2::3])):
+        r = i + 2
+        cumulative = f"=E{r}" if i == 0 else f"=F{r - 1}+E{r}"
+        rows.append(f"| {_esc(y['year'])} | {show(inv)} | {show(rev)} | {show(cost)} | =C{r}-D{r}-B{r} | {cumulative} |")
+    last = len(years) + 1
+    rows.append(f"| {lab['total']} | =SUM(B2:B{last}) | =SUM(C2:C{last}) | =SUM(D2:D{last}) | =SUM(E2:E{last}) | |")
+    npv_row, irr_row = last + 2, last + 3
+    rows.append(f"| {lab['npv'].format(rate=pct)} | | | | =E2+NPV({pct}, E3:E{last}) | |")
+    rows.append(f"| {lab['irr']} | | | | =IRR(E2:E{last}) | |")
+
+    # payback: the year the cumulative flow turns positive, with the part of that year it takes
+    cum, payback = Decimal(0), None
+    for t, v in enumerate(nets):
+        if cum < 0 <= cum + v and t > 0:
+            payback = (t - 1) + (-cum / v)
+            break
+        cum += v
+    head = ["---", f"title: {json.dumps(title, ensure_ascii=False)}", f"language: {lang}", "document_type: financial_report",
+            "numbering: false"] + ([f"author: {json.dumps(data['prepared_by'], ensure_ascii=False)}"] if data.get("prepared_by") else []) + \
+           ["---", "", f"# {_esc(title)}", ""]
+    meta = [f"{lab['prepared']}: {_esc(data['prepared_by'])}" if data.get("prepared_by") else "",
+            f"{lab['date']}: {_esc(data['date'])}" if data.get("date") else ""]
+    md = head + ["\n".join(x for x in meta if x), ""]
+    if data.get("summary"):
+        md += [f"## {lab['summary']}", "", data["summary"], ""]
+    md += [f"## {lab['assumptions']}", "", f"- {lab['rate']}: {pct}"] + [f"- {_esc(a)}" for a in data.get("assumptions") or []] + [""]
+    md += [f"## {lab['flows']}", "",
+           f"| {lab['year']} | {lab['investment']}{unit} | {lab['revenue']}{unit} | {lab['costs']}{unit} | "
+           f"{lab['net']}{unit} | {lab['cumulative']}{unit} |", "|---|---:|---:|---:|---:|---:|"] + rows + \
+          ["", f"Table: {lab['flows']} {{#flows}}", "", f"## {lab['results']}", "",
+           lab["reading"].format(rate=pct, npv=f"{{=flows!E{npv_row}}}", irr=f"{{=flows!E{irr_row}}}") + " " +
+           (lab["payback"].format(years=f"{payback:.1f}") if payback is not None else lab["no_payback"]), ""]
+    for key in ("risks",):
+        if data.get(key):
+            md += [f"## {lab[key]}", ""] + [f"- {_esc(x)}" for x in data[key]] + [""]
+    if data.get("conclusion"):
+        md += [f"## {lab['conclusion']}", "", data["conclusion"], ""]
+    b = DocumentBuilder.from_markdown("\n".join(md))
+    # one series: one colour, with the years that cost money in a second
+    chart = ChartBlock(chart_type="bar", title=lab["chart"] + unit,
+                       data={str(y["year"]): float(v) for y, v in zip(years, nets)},
+                       colors=["#B4413C" if v < 0 else "#1F4E79" for v in nets])
+    at = next(i for i, x in enumerate(b._blocks) if x.type == "table") + 1
+    b._blocks.insert(at, chart)
+    return b
+
+
+_STATEMENT_LABELS = {
+    "en": {"title": "Financial statements", "amounts": "All amounts in {currency}", "item": "Item",
+           "income": "Statement of profit or loss", "revenue_total": "Total revenue", "gross": "Gross profit",
+           "operating": "Operating profit", "before_tax": "Profit before tax", "net": "Profit for the year",
+           "position": "Statement of financial position", "assets": "Assets", "equity_liabilities": "Equity and liabilities",
+           "non_current_assets": "Non-current assets", "current_assets": "Current assets",
+           "total_non_current_assets": "Total non-current assets", "total_current_assets": "Total current assets",
+           "total_assets": "Total assets", "equity": "Equity", "total_equity": "Total equity",
+           "non_current_liabilities": "Non-current liabilities", "current_liabilities": "Current liabilities",
+           "total_non_current_liabilities": "Total non-current liabilities",
+           "total_current_liabilities": "Total current liabilities", "total_equity_liabilities": "Total equity and liabilities",
+           "notes": "Notes"},
+    "ar": {"title": "القوائم المالية", "amounts": "جميع المبالغ بـ {currency}", "item": "البند",
+           "income": "قائمة الأرباح أو الخسائر", "revenue_total": "إجمالي الإيرادات", "gross": "مجمل الربح",
+           "operating": "الربح التشغيلي", "before_tax": "الربح قبل الضريبة", "net": "صافي ربح السنة",
+           "position": "قائمة المركز المالي", "assets": "الأصول", "equity_liabilities": "حقوق الملكية والالتزامات",
+           "non_current_assets": "الأصول غير المتداولة", "current_assets": "الأصول المتداولة",
+           "total_non_current_assets": "إجمالي الأصول غير المتداولة", "total_current_assets": "إجمالي الأصول المتداولة",
+           "total_assets": "إجمالي الأصول", "equity": "حقوق الملكية", "total_equity": "إجمالي حقوق الملكية",
+           "non_current_liabilities": "الالتزامات غير المتداولة", "current_liabilities": "الالتزامات المتداولة",
+           "total_non_current_liabilities": "إجمالي الالتزامات غير المتداولة",
+           "total_current_liabilities": "إجمالي الالتزامات المتداولة",
+           "total_equity_liabilities": "إجمالي حقوق الملكية والالتزامات", "notes": "إيضاحات"},
+}
+
+_STATEMENTS_EXAMPLE = {
+    "language": "en",
+    "company": "Delta Engineering Co.",
+    "period": "For the year ended 31 December 2026",
+    "currency": "EGP",
+    "periods": ["2026", "2025"],
+    "income": {
+        "revenue": [{"label": "Sales", "values": [10800000, 9400000]}],
+        "cost_of_sales": [{"label": "Cost of sales", "values": [6200000, 5500000]}],
+        "operating_expenses": [{"label": "Selling and distribution", "values": [950000, 870000]},
+                               {"label": "General and administrative", "values": [1100000, 1020000]}],
+        "other": [{"label": "Finance costs", "values": [-180000, -210000]}],
+        "tax": [{"label": "Income tax", "values": [535500, 405000]}],
+    },
+    "position": {
+        "non_current_assets": [{"label": "Property, plant and equipment", "values": [7400000, 6900000]}],
+        "current_assets": [{"label": "Inventories", "values": [1600000, 1450000]},
+                           {"label": "Trade receivables", "values": [2100000, 1900000]},
+                           {"label": "Cash", "values": [1250000, 840000]}],
+        "equity": [{"label": "Share capital", "values": [5000000, 5000000]},
+                   {"label": "Retained earnings", "values": [3984500, 2150000]}],
+        "non_current_liabilities": [{"label": "Long-term loans", "values": [1800000, 2200000]}],
+        "current_liabilities": [{"label": "Trade payables", "values": [1565500, 1740000]}],
+    },
+    "notes": ["Prepared under International Financial Reporting Standards."],
+}
+
+
+def _statements(data: dict):
+    from .builder import DocumentBuilder
+    lang = (data.get("language") or "en").lower()
+    if lang not in _STATEMENT_LABELS:
+        raise ValueError(f"language {lang!r} is not supported. Fix: use 'en' or 'ar'")
+    lab = _STATEMENT_LABELS[lang]
+    company, periods = _need(data, "company"), data.get("periods") or [""]
+    income, position = _need(data, "income"), _need(data, "position")
+    cols = "BCDEFG"[:len(periods)]
+
+    def lines(section: dict, key: str, sign: int = 1):
+        """[(label, [values])] of one section; costs are entered as positive amounts and shown in brackets."""
+        out = []
+        for i, item in enumerate(section.get(key) or []):
+            where = f"{key}[{i}]"
+            if not isinstance(item, dict) or not item.get("label"):
+                raise ValueError(f"'{where}.label' is missing. Fix: add it; the kit's example shows every field")
+            values = item.get("values", [item.get("amount")])
+            if not isinstance(values, list) or len(values) != len(periods):
+                raise ValueError(f"'{where}.values' needs one amount for each of the periods {periods}")
+            out.append((item["label"], [sign * _number(v, f"{where}.values") for v in values]))
+        return out
+
+    def show(v: Decimal) -> str:
+        text = f"{abs(v):,.{2 if v != v.to_integral() else 0}f}"
+        return f"({text})" if v < 0 else text
+
+    class Table:
+        def __init__(self):
+            self.rows = []
+
+        def head(self, label):
+            self.rows.append(f"| **{_esc(label)}** |" + " |" * len(cols))
+
+        def add(self, items):
+            start = len(self.rows) + 2
+            for label, values in items:
+                self.rows.append(f"| {_esc(label)} | " + " | ".join(show(v) for v in values) + " |")
+            return start, len(self.rows) + 1                    # the spreadsheet rows they took
+
+        def formula(self, label, make):
+            self.rows.append(f"| {label} | " + " | ".join("=" + make(c) for c in cols) + " |")
+            return len(self.rows) + 1
+
+        def markdown(self, title=None, anchor=None):
+            head = f"| {lab['item']} | " + " | ".join(_esc(p) for p in periods) + " |"
+            caption = ["", f"Table: {title} {{#{anchor}}}"] if title else []
+            return [head, "|---|" + "---:|" * len(cols)] + self.rows + caption + [""]
+
+    def total(items):
+        return [sum((v[k] for _, v in items), Decimal(0)) for k in range(len(periods))]
+
+    def summed(a, b):
+        return (lambda c: f"SUM({c}{a}:{c}{b})") if b >= a else (lambda c: "0")
+
+    # statement of profit or loss
+    t = Table()
+    rev = lines(income, "revenue")
+    a, b = t.add(rev)
+    r_rev = t.formula(lab["revenue_total"], summed(a, b))
+    a, b = t.add(lines(income, "cost_of_sales", -1))
+    r_gross = t.formula(f"**{lab['gross']}**", lambda c: f"{c}{r_rev}+" + summed(a, b)(c))
+    a, b = t.add(lines(income, "operating_expenses", -1))
+    r_op = t.formula(f"**{lab['operating']}**", lambda c: f"{c}{r_gross}+" + summed(a, b)(c))
+    a, b = t.add(lines(income, "other"))
+    r_pbt = t.formula(f"**{lab['before_tax']}**", lambda c: f"{c}{r_op}+" + summed(a, b)(c))
+    a, b = t.add(lines(income, "tax", -1))
+    t.formula(f"**{lab['net']}**", lambda c: f"{c}{r_pbt}+" + summed(a, b)(c))
+    income_md = t.markdown()                                  # its heading already names it
+
+    # statement of financial position: assets, then equity and liabilities, which must agree
+    groups = {k: lines(position, k) for k in ("non_current_assets", "current_assets", "equity",
+                                               "non_current_liabilities", "current_liabilities")}
+    assets = [sum(x) for x in zip(total(groups["non_current_assets"]), total(groups["current_assets"]))]
+    claims = [sum(x) for x in zip(*(total(groups[k]) for k in ("equity", "non_current_liabilities", "current_liabilities")))]
+    for p, x, y in zip(periods, assets, claims):
+        if x != y:
+            raise ValueError(f"the statement of financial position does not balance{' in ' + str(p) if p else ''}: "
+                             f"assets {x:,} but equity and liabilities {y:,} (a difference of {x - y:,}). "
+                             "Fix: check the amounts; total assets must equal equity plus liabilities")
+    t = Table()
+    subtotal = []
+    for key in ("non_current_assets", "current_assets"):
+        t.head(lab[key])
+        a, b = t.add(groups[key])
+        subtotal.append(t.formula(lab["total_" + key], summed(a, b)))
+    t.formula(f"**{lab['total_assets']}**", lambda c: "+".join(f"{c}{r}" for r in subtotal))
+    assets_md = t.markdown(lab["assets"], "assets")
+    t, subtotal = Table(), []
+    for key in ("equity", "non_current_liabilities", "current_liabilities"):
+        t.head(lab[key])
+        a, b = t.add(groups[key])
+        subtotal.append(t.formula(lab["total_" + key], summed(a, b)))
+    t.formula(f"**{lab['total_equity_liabilities']}**", lambda c: "+".join(f"{c}{r}" for r in subtotal))
+    claims_md = t.markdown(lab["equity_liabilities"], "equity-liabilities")
+
+    title = data.get("title") or lab["title"]
+    head = ["---", f"title: {json.dumps(company, ensure_ascii=False)}", f"subject: {json.dumps(title, ensure_ascii=False)}",
+            f"language: {lang}", "document_type: financial_report", "numbering: false", "---", "", f"# {_esc(company)}", ""]
+    sub = [_esc(title)] + ([_esc(data["period"])] if data.get("period") else []) + \
+          ([lab["amounts"].format(currency=_esc(data["currency"]))] if data.get("currency") else [])
+    md = head + ["\\\n".join(sub), "", f"## {lab['income']}", ""] + income_md + \
+        [f"## {lab['position']}", ""] + assets_md + claims_md
+    if data.get("notes"):
+        md += [f"## {lab['notes']}", ""] + [f"{i}. {_esc(n)}" for i, n in enumerate(data["notes"], 1)] + [""]
+    return DocumentBuilder.from_markdown("\n".join(md))
+
+
 KITS = {"invoice": (_invoice, _INVOICE_EXAMPLE),
         "quote": (lambda d: _invoice(d, "quote"), _QUOTE_EXAMPLE),
         "letter": (_letter, _LETTER_EXAMPLE),
-        "cv": (_cv, _CV_EXAMPLE)}
+        "cv": (_cv, _CV_EXAMPLE),
+        "feasibility": (_feasibility, _FEASIBILITY_EXAMPLE),
+        "statements": (_statements, _STATEMENTS_EXAMPLE)}
 
 
 def kits() -> list:

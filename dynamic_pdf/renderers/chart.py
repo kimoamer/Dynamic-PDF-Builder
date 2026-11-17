@@ -350,6 +350,9 @@ def _bar(block, theme):
     bars = ax.bar(labels, values, color=c, width=0.6, zorder=3)
     dec = _decimals(values)
     ax.bar_label(bars, labels=[_num(v, dec) for v in values], padding=3, fontsize=8, color="#444444")
+    if min(values, default=0) < 0:          # room under a negative bar for its label, clear of the axis names
+        lo, hi = ax.get_ylim()
+        ax.set_ylim(lo - (hi - lo) * 0.08, hi)
     _style_ax(ax, theme)
     _value_axis(ax.yaxis)
     _label_axes(ax, block)
@@ -364,6 +367,9 @@ def _horizontal_bar(block, theme):
     c = _colors(block, len(labels))
     bars = ax.barh(labels, values, color=c, height=0.6, zorder=3)
     ax.bar_label(bars, labels=[_num(v, _decimals(values)) for v in values], padding=3, fontsize=8, color="#444444")
+    if min(values, default=0) < 0:          # room left of a negative bar for its label
+        lo, hi = ax.get_xlim()
+        ax.set_xlim(lo - (hi - lo) * 0.12, hi)
     _value_axis(ax.xaxis)
     ax.spines["left"].set_visible(False)
     ax.spines["top"].set_visible(False)

@@ -139,7 +139,8 @@ C ... and rows count from 1, the header row.
 Table: Invoice lines {#invoice}
 ```
 
-- Functions: SUM, AVERAGE, MIN, MAX, COUNT, ROUND, ABS; `ABOVE` and `LEFT` (the numbers above in the
+- Functions: SUM, AVERAGE, MIN, MAX, COUNT, ROUND, ABS, NPV and IRR (as a spreadsheet has them:
+  `=B2+NPV(10%, B3:B7)` for a project's value, `=IRR(B2:B7)` written as a percent); `ABOVE` and `LEFT` (the numbers above in the
   column, or to the left in the row); `15%` is 0.15. Arithmetic is decimal and exact.
 - A result is written like its column: currency, decimals, thousands separators, percent, negatives in
   parentheses, Arabic-Indic digits.
@@ -221,6 +222,17 @@ Every kit reads `language`: `en` or `ar`. A missing or malformed field is refuse
   systems: standard section names, the job title on its own line with "organisation | location |
   dates" under it, no running header or footer, text flush to the start edge and never hyphenated, a
   tagged PDF, and in Word real heading styles with no tables or text boxes.
+- `feasibility`: a feasibility study. `title`, `prepared_by`, `date`, `currency`, `summary` (Markdown),
+  `discount_rate` ("12%"), `years` (each `year`, `investment`, `revenue`, `costs`; the first year carries
+  the investment), `assumptions`, `risks` and `conclusion`. It writes the cash flows by year with net and
+  cumulative flows, NPV and IRR as formulas, the payback period, and a chart of the net flow by year.
+- `statements`: financial statements. `company`, `title`, `period`, `currency`, `periods` (column titles,
+  e.g. `["2026", "2025"]` for a comparative year), `income` (`revenue`, `cost_of_sales`,
+  `operating_expenses`, `other`, `tax`) and `position` (`non_current_assets`, `current_assets`, `equity`,
+  `non_current_liabilities`, `current_liabilities`), each a list of `{"label", "values"}` with one amount a
+  period; costs are entered as positive amounts and shown in brackets, `other` keeps its sign. Gross,
+  operating and net profit and every total are formulas. Statements that do not balance are refused with
+  the difference.
 
 ## Output
 

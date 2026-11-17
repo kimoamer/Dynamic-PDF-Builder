@@ -223,8 +223,12 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
         for b in sem.blocks:
             if b.type == "heading" and plain.fullmatch(" ".join(plain_text(b.text).split()).lower()):
                 b.hints = {**(b.hints or {}), "unnumbered": True}
-    # ── a paper opens with its title and authors on page one, never on a cover ──
     from .art_direction import _opens_with_title
+    # ── the title is not a section: numbering starts at the heading after it ──
+    if plan.section_numbering and _opens_with_title(sem):
+        title = next(b for b in sem.blocks if b.type == "heading")
+        title.hints = {**(title.hints or {}), "unnumbered": True}
+    # ── a paper opens with its title and authors on page one, never on a cover ──
     if plan.recipe.paper and not st.has_cover and sem.meta.title and not _opens_with_title(sem):
         sem.blocks.insert(0, CoverPageBlock(title=sem.meta.title, subtitle=sem.meta.subject or sem.meta.description,
                                             author=sem.meta.author, hints={"title_block": True}))

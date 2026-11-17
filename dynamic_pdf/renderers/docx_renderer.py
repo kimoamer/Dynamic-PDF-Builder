@@ -332,7 +332,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             self._runs(fp, left_text, base=style_run)
             fp.add_run("    ")
         if hf.show_page_number:
-            fmt = hf.page_number_format or "Page {n}"
+            from ..i18n import page_format
+            fmt = page_format(hf.page_number_format or "Page {n}", "ar" if self.rtl_doc else self.sem.language)
             for part in re.split(r"(\{n\}|\{total\})", fmt):
                 if part == "{n}":
                     F.add_field(fp, "PAGE", "1", style_run)
@@ -850,7 +851,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         F.set_table_cell_margins(t, 50, 50, int(hints.get("cell_padding", 6) * 20), int(hints.get("cell_padding", 6) * 20))
         # Column order follows the table's own language, not the document's
         sample = [plain_text(str(x)) for x in (headers or (rows[0] if rows else [])) if str(x).strip()]
-        if sample and sum(is_rtl_text(x) for x in sample) * 2 > len(sample):
+        from ..core.normalize import is_rtl_table
+        if is_rtl_table(sample):
             F.set_table_bidi(t)
         # columns of figures are right-aligned (decimal-friendly); a column of years or codes is not
         numeric_cols = set(hints["numeric_cols"] if "numeric_cols" in hints else table_types(b).numeric_cols)

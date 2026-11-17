@@ -1649,7 +1649,8 @@ def _render_table(block, theme, bs, ctx=None):
     # Column order follows the table's own language (majority of header cells),
     # so bilingual tables led by English are not mirrored.
     sample = [str(x) for x in (block.headers or (block.rows[0] if block.rows else [])) if str(x).strip()]
-    tbl_rtl = bool(sample) and sum(_is_rtl(x) for x in sample) * 2 > len(sample)
+    from ..core.normalize import is_rtl_table
+    tbl_rtl = is_rtl_table([re.sub(r"\]\([^)]*\)", "]", x) for x in sample])     # link targets do not vote
     if hints.get("font_size"):
         bs = ParagraphStyle('TBase', parent=bs, fontSize=hints["font_size"],
                             leading=hints["font_size"] * 1.3)

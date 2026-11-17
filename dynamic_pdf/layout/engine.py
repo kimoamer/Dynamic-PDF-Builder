@@ -926,7 +926,8 @@ class LayoutEngine:
     # ─── Helpers ──────────────────────────────────────────────────
 
     def _fmt_page(self, hf, doc):
-        fmt = hf.page_number_format
+        from ..i18n import page_format
+        fmt = page_format(hf.page_number_format, self._language())
         counter = self._page_counter
         # During the first multiBuild pass the total is unknown; that pass is
         # always re-run (see _PageCounter), so a provisional value never ships.
