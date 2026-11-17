@@ -578,7 +578,9 @@ builder.math(r"E = mc^2")
 builder.math(r"\sum_{i=0}^{n} i^2 = \frac{(n^2+n)(2n+1)}{6}")
 ```
 
-Rendered via `matplotlib.mathtext` — **no LaTeX installation required**.
+In the PDF the formula is drawn with `matplotlib.mathtext` — **no LaTeX installation required**.
+In the DOCX it is a native Word equation (Office Math), so it can be edited in Word and is read
+by screen readers; a formula Office Math cannot hold falls back to the picture.
 
 ### Mermaid Diagrams
 
@@ -1163,7 +1165,7 @@ tests/                      #  pytest suite run by GitHub Actions (see Testing)
 | `matplotlib ≥ 3.8` | Charts (17 types) + LaTeX math rendering |
 | `Pillow ≥ 10.0` | Image processing |
 | `svglib ≥ 1.5` | SVG → ReportLab Drawing conversion |
-| `latex2mathml ≥ 3.76` | LaTeX → MathML conversion |
+| `latex2mathml ≥ 3.76` | LaTeX → MathML, for native Word equations |
 | `pyphen ≥ 0.14` | Text hyphenation |
 
 ### Optional
@@ -1238,8 +1240,8 @@ Caption, Quote, Code, TOC n), multi-level list numbering that restarts per list,
 repeating header rows and right-aligned numeric columns, hyperlinks and bookmarks, a TOC
 field (refreshed when Word opens the file), header/footer with `PAGE`/`NUMPAGES` fields,
 core properties, Arabic bidi paragraphs/runs with complex-script fonts, and per-table
-column order for bilingual documents. Charts, diagrams, math and QR codes are embedded as
-images with alt text (Word has no native equivalent). Known differences: page breaks are
+column order for bilingual documents. Equations are native Word equations (Office Math).
+Charts, diagrams and QR codes are embedded as images with alt text. Known differences: page breaks are
 computed by Word, so page counts can differ from the PDF; footnotes are rendered as notes
 paragraphs; text watermarks use VML (shown by Word, not by every viewer).
 

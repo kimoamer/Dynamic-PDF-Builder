@@ -23,7 +23,7 @@ from typing import List, Optional
 from docx import Document as new_docx
 from docx.enum.section import WD_ORIENT
 from docx.enum.table import WD_TABLE_ALIGNMENT
-from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK, WD_COLOR_INDEX
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK, WD_COLOR_INDEX, WD_TAB_ALIGNMENT
 from docx.oxml.ns import qn
 from docx.shared import Emu, Pt
 from docx.table import _Cell
@@ -1108,6 +1108,25 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         self._picture(c, png, f"Mermaid diagram: {b.diagram[:500]}")
 
     def _b_math(self, c, b):
+        from .omml import latex_to_omml
+        try:
+            numbered = bool(b.equation_number)
+            eq = latex_to_omml(b.latex, display=not (numbered or b.inline))
+        except Exception:  # noqa: BLE001 - what OMML cannot hold is drawn as a picture, as before
+            eq = None
+        if eq is not None:
+            p = self._para(c, "Normal")
+            p.alignment = WD_ALIGN_PARAGRAPH.LEFT if b.inline else WD_ALIGN_PARAGRAPH.CENTER
+            if numbered:                         # the equation centred, its number at the far edge
+                stops = p.paragraph_format.tab_stops
+                stops.add_tab_stop(Pt(self.content_width_pt / 2), WD_TAB_ALIGNMENT.CENTER)
+                stops.add_tab_stop(Pt(self.content_width_pt), WD_TAB_ALIGNMENT.RIGHT)
+                p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                p.add_run("\t")
+            p._p.append(eq)
+            if numbered:
+                p.add_run(f"\t({b.equation_number})")
+            return
         from .math import math_png
         try:
             png = math_png(b.latex, paper=self.paper)
