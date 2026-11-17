@@ -524,6 +524,8 @@ def _nest(markup: str) -> str:
 
 def _safe_color(h: str, fallback: str = "#000000") -> HexColor:
     try:
+        if isinstance(h, str) and re.fullmatch(r"#[0-9a-fA-F]{3}", h):
+            h = "#" + "".join(ch * 2 for ch in h[1:])       # #fff is white: HexColor would read it as 0x000fff
         return HexColor(h)
     except Exception:
         return HexColor(fallback)
@@ -1004,12 +1006,37 @@ class ShapeFlowable(Flowable):
                     b.end_angle - b.start_angle, fill=do_fill, stroke=1)
 
         if b.label:
-            lc = _safe_color(b.label_color or "#ffffff")
-            c.setFillColor(lc)
-            c.setFont("Helvetica-Bold", 10)
-            c.drawCentredString(x + b.width / 2, y + b.height / 2 - 5, b.label)
+            # a paragraph, so Arabic is shaped, symbols find a face and a long label wraps; its colour
+            # reads on the fill unless one is given
+            from .page_system import readable_on
+            rtl = _is_rtl(b.label)
+            ink = b.label_color or (readable_on(b.fill_color) if b.fill_color else self.theme.colors.text_primary)
+            font = _arabic_font(self.theme, bold=True) if rtl else get_font_name(self.theme.typography.body_family, bold=True)
+            para = Paragraph(_plain_markup(b.label), ParagraphStyle(
+                "ShapeLabel", fontName=font, fontSize=10, leading=16 if rtl else 13, alignment=1, textColor=_safe_color(ink)))
+            _, ph = para.wrap(max(b.width - 12, 20), b.height)
+            para.drawOn(c, x + 6, y + (b.height - ph) / 2)
 
         c.restoreState()
+
+
+def shape_png(block, theme, scale: float = 3.0) -> bytes:
+    """The shape exactly as the PDF draws it, as a PNG on a clear ground (for Word, which has no
+    flowing vector shapes)."""
+    import io
+    import pypdfium2 as pdfium
+    from reportlab.pdfgen.canvas import Canvas
+    flow = ShapeFlowable(block.model_copy(update={"alignment": "left"}), theme)
+    edge = (block.stroke_width or 1) + 1              # room for the outline, which straddles the shape's edge
+    w, h = flow.wrap(block.width, 10000)
+    buf = io.BytesIO()
+    canv = Canvas(buf, pagesize=(w + 2 * edge, h))
+    flow.drawOn(canv, edge, 0)
+    canv.save()
+    image = pdfium.PdfDocument(buf.getvalue())[0].render(scale=scale, fill_color=(255, 255, 255, 0)).to_pil()
+    out = io.BytesIO()
+    image.save(out, "PNG", dpi=(72 * scale, 72 * scale))
+    return out.getvalue()
 
 
 class LegendFlowable(Flowable):

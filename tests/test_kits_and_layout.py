@@ -539,3 +539,42 @@ def test_preface_and_conclusion_pages_in_both_languages():
     en = DocumentBuilder().preface_page("Why this report.").heading("Body").conclusion_page("What next.")
     assert [x.title for x in en._blocks if x.type == "introduction_page"] == ["Preface", "Conclusion"]
     assert en.render_docx()
+
+
+def test_maps_sketches_and_mind_maps_draw_in_pdf_and_word():
+    import pypdfium2 as pdfium
+    square = [[30, 30], [31, 30], [31, 31], [30, 31], [30, 30]]
+    gj = {"type": "FeatureCollection", "features": [
+        {"type": "Feature", "properties": {"name": "North"}, "geometry": {"type": "Polygon", "coordinates": [square]}},
+        {"type": "Feature", "properties": {"name": "South"},
+         "geometry": {"type": "Polygon", "coordinates": [[[x, y - 1] for x, y in square]]}}]}
+    b = DocumentBuilder()
+    b.chart("map", {"geojson": gj, "values": {"North": 3, "South": 9}, "points": [{"name": "Depot", "lon": 30.5, "lat": 30.2}]},
+            title="Sales by region")
+    b.chart("sketch", {"roads": [{"name": "شارع التحرير", "points": [[0, 5], [10, 5]]}],
+                       "places": [{"name": "مكتبنا", "at": [6, 4], "kind": "site"}], "north": 0}, title="كروكي الموقع")
+    b.chart("mindmap", {"Strategy": {"Growth": ["Markets", "Pricing"], "Costs": ["Suppliers"]}})
+    pdf = pdfium.PdfDocument(b.render())                                 # chart text is drawn as outlines
+    inked = sum(1 for pg in pdf for px in pg.render(scale=0.3).to_pil().convert("L").getdata() if px < 200)
+    assert len(pdf) <= 3 and inked > 1500                                # three drawings, each within its page
+    from docx import Document
+    assert len(Document(io.BytesIO(b.render_docx())).inline_shapes) == 3 and not b.lint()
+    md = '```chart\n{"type": "mindmap", "data": {"Plan": {"A": ["x"], "B": []}}}\n```\n'
+    assert DocumentBuilder.from_markdown(md)._blocks[0].chart_type == "mindmap"
+    for bad, say in (({"geojson": {"type": "FeatureCollection", "features": []}}, "nothing to draw"),):
+        with pytest.raises(Exception, match=say):
+            DocumentBuilder().chart("map", bad).render()
+    with pytest.raises(Exception, match="one topic"):
+        DocumentBuilder().chart("mindmap", {"A": {}, "B": {}}).render()
+
+
+def test_shapes_are_shapes_in_word_and_labels_read():
+    import pypdfium2 as pdfium
+    from docx import Document
+    from dynamic_pdf.layout.factory import _safe_color
+    assert _safe_color("#fff").hexval() == "0xffffff"                    # not 0x000fff
+    b = DocumentBuilder().shape("circle", width=60, height=60, fill_color="#E53E3E", label="A").shape(
+        "rounded_rect", width=250, height=60, fill_color="#F7FAFC", label="حالة: نشط ✓")
+    assert "A" in pdfium.PdfDocument(b.render())[0].get_textpage().get_text_range()
+    docx = Document(io.BytesIO(b.render_docx()))
+    assert len(docx.inline_shapes) == 2 and not docx.tables               # pictures of the shapes, not table cells

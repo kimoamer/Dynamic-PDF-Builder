@@ -1554,6 +1554,9 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
   references and lists of figures and tables are Word fields.
 
 **New**
+- Maps, location sketches and mind maps as chart types (`map` from your own GeoJSON with values and
+  points, `sketch` with roads, blocks, places and a north arrow, `mindmap`), in PDF and Word, from the
+  ```` ```chart ```` fence, with Arabic labels.
 - Covers: every cover is a designed, bare page with the largest type in the document, a rule over the
   title and the logo on a light plate when the ground is dark; `split` sets a panel of colour beside
   the text; `cover:`, `cover_color:` and `cover_image:` in the front matter build one from the title,
@@ -1614,6 +1617,9 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
 - License expression `MIT AND OFL-1.1` with every font licence in the package; `py.typed`.
 
 **Fixed**
+- Shapes in Word were all rectangles as wide as the page: a circle, an arrow or a polygon is now a
+  picture of the shape the PDF draws. A shape's Arabic label drew as boxes; its colour reads on the
+  fill; `#fff` (three-digit hex) was read as blue.
 - A justified line before a long e-mail address or URL no longer stretches its words far apart: such a
   line keeps its natural spacing, and the address stays whole, so it copies intact.
 - Right-to-left text: lines ending in a line break (an address, Label: value lines) sat on the left in

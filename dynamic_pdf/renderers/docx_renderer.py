@@ -1308,22 +1308,10 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             self._caption(c, "", b.caption)
 
     def _b_shape(self, c, b):
-        # Decorative vector shape: native framed cell with its label (editable text)
-        fill = b.fill_color or self.tokens.colors["surface"]
-        t = c.add_table(rows=1, cols=1)
-        F.set_table_borders(t, color=b.stroke_color or self.tokens.colors["border"],
-                            size=max(2, int((b.stroke_width or 1) * 8)))
-        t.alignment = {"left": WD_TABLE_ALIGNMENT.LEFT, "right": WD_TABLE_ALIGNMENT.RIGHT}.get(
-            b.alignment, WD_TABLE_ALIGNMENT.CENTER)
-        cell = t.rows[0].cells[0]
-        cell.width = Pt(min(b.width, self.content_width_pt))
-        t.rows[0].height = Pt(b.height)
-        F.set_cell_shading(cell, fill)
-        p = self._para(cell, "Normal", b.label or "")
-        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        if b.label:
-            self._runs(p, b.label, color=b.label_color)
-        self._spacer_after(c)
+        # the shape as the PDF draws it: Word has no flowing vector shapes, and a table cell is always a rectangle
+        from ..layout.factory import shape_png
+        self._picture(c, shape_png(b, self.theme), b.label or f"{b.shape_type} shape",
+                      width_pt=min(b.width + 2 * ((b.stroke_width or 1) + 1), self.content_width_pt), align=b.alignment)
 
     # ─── data display ───
 

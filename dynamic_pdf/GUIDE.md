@@ -127,6 +127,22 @@ a whole: no negative values. Data a chart cannot draw truthfully is refused with
 In Word, bar, line, area, pie and doughnut charts are native Word charts whose data can be edited; the
 other types are pictures.
 
+Maps, location sketches and mind maps are chart types too:
+
+- `map`: regions from GeoJSON you supply (nothing is downloaded), shaded by a value each, with named
+  points: `{"type": "map", "data": {"geojson": {...} or "regions.geojson", "label": "name", "values":
+  {"Cairo": 9.5}, "points": [{"name": "Port", "lon": 32.3, "lat": 31.2}], "highlight": ["Giza"]}}`.
+- `sketch`: a location sketch (a croquis), not to scale, in any units: `{"roads": [{"name": "Tahrir St",
+  "points": [[0, 5], [10, 5]], "width": 2}], "blocks": [{"name": "Park", "box": [1, 6, 4, 9]}], "places":
+  [{"name": "Our office", "at": [6, 4], "kind": "site"}, {"name": "Mosque", "at": [3, 6]}], "north": 0,
+  "note": "Not to scale"}`. `north` is degrees clockwise from the top of the page.
+- `mindmap`: one topic and its branches: `{"Strategy": {"Growth": ["New markets", "Pricing"], "Costs":
+  ["Suppliers"]}}`.
+
+Shapes (`b.shape("rounded_rect", width=250, height=60, fill_color="#F7FAFC", label="Status: active")`: rect,
+rounded_rect, circle, ellipse, line, arrow, polygon, arc, wedge) are vector in the PDF and a picture of
+the same drawing in Word; a label may be Arabic or carry symbols.
+
 ## Tables
 
 A GFM table. Columns of figures are right-aligned; rows labelled Total or Subtotal are set in bold with
