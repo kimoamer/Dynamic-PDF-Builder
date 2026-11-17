@@ -217,7 +217,10 @@ Every kit reads `language`: `en` or `ar`. A missing or malformed field is refuse
 - `cv`: a CV. `name`, `headline`, `contact` (`email`, `phone`, `location`, `links`), `summary` (Markdown),
   `experience` (each `role`, `organisation`, `location`, `start`, `end` (none: to the present), `points`),
   `education` (each `degree`, `institution`, `start`, `end`, `note`), `skills` (a list, or groups:
-  `{"Tools": ["Excel", "SQL"]}`), `languages` and `certifications`.
+  `{"Tools": ["Excel", "SQL"]}`), `languages` and `certifications`. It is set for applicant tracking
+  systems: standard section names, the job title on its own line with "organisation | location |
+  dates" under it, no running header or footer, text flush to the start edge and never hyphenated, a
+  tagged PDF, and in Word real heading styles with no tables or text boxes.
 
 ## Output
 

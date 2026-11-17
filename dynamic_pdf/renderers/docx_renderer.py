@@ -701,8 +701,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
 
     def _b_rich_text(self, c, b):
         p = self._para(c, "Normal", b.text)
-        p.alignment = {"center": WD_ALIGN_PARAGRAPH.CENTER, "right": WD_ALIGN_PARAGRAPH.RIGHT,
-                       "justify": WD_ALIGN_PARAGRAPH.JUSTIFY}.get(b.alignment, p.alignment)
+        p.alignment = {"left": WD_ALIGN_PARAGRAPH.LEFT, "center": WD_ALIGN_PARAGRAPH.CENTER,
+                       "right": WD_ALIGN_PARAGRAPH.RIGHT, "justify": WD_ALIGN_PARAGRAPH.JUSTIFY}.get(b.alignment, p.alignment)
         self._runs(p, b.text, bold=b.bold or None, italic=b.italic or None,
                    size=b.font_size, color=b.color)
 

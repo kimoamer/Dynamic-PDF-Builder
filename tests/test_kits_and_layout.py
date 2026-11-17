@@ -200,14 +200,34 @@ def test_a_phone_number_in_arabic_reads_left_to_right_in_word():
 def test_the_cv_kit():
     doc = kit("cv", kit_example("cv")).build()
     heads = [b.text for b in doc.blocks if b.type == "heading"]
-    assert heads[:3] == ["Layla Mansour", "Profile", "Experience"] and "Senior financial analyst, Delta Engineering Co." in heads
+    assert heads[:3] == ["Layla Mansour", "Summary", "Experience"] and "Senior financial analyst" in heads
     text = " ".join(getattr(b, "text", "") or "" for b in doc.blocks)
-    assert "2022 – present · Cairo" in text and "2019 – 2022 · Alexandria" in text
+    assert "Delta Engineering Co. | Cairo | 2022 – Present" in text and "Nile Office Supplies | Alexandria | 2019 – 2022" in text
     ar = kit("cv", {"language": "ar", "name": "ليلى", "headline": "محللة مالية",
                     "contact": {"email": "layla@example.com"},
                     "education": [{"degree": "بكالوريوس", "institution": "جامعة القاهرة", "start": "2015", "end": "2019"}]})
-    paras = [b.text for b in ar.build().blocks if b.type == "paragraph"]
-    assert any(p.startswith("**محللة مالية**") and "layla" in p for p in paras)    # one paragraph: it reads from the right
-    assert "من 2015 إلى 2019" in paras
+    paras = [b for b in ar.build().blocks if b.type == "rich_text"]
+    assert any(p.text.startswith("**محللة مالية**") and "layla" in p.text for p in paras)  # one paragraph: from the right
+    assert any(p.text == "جامعة القاهرة | من 2015 إلى 2019" for p in paras) and {p.alignment for p in paras} == {"right"}
     with pytest.raises(ValueError, match=r"cv: 'experience\[0\]\.role' is missing"):
         kit("cv", {"name": "x", "experience": [{"organisation": "y"}]})
+
+
+def test_a_cv_reads_cleanly_for_applicant_tracking_systems():
+    import re
+
+    import pypdfium2 as pdfium
+    from docx import Document
+    d = kit_example("cv")
+    d["summary"] = " ".join(["Specialising in consolidation, intercompany reconciliation, transfer-pricing documentation "
+                             "and international financial reporting standards implementation."] * 4)
+    b = kit("cv", d)
+    pdf = b.render()
+    assert b.last_design.decision.profile.value == "general"                  # no numbered sections
+    text = "".join(pdfium.PdfDocument(pdf)[i].get_textpage().get_text_range() for i in range(len(pdfium.PdfDocument(pdf))))
+    assert text.count("Layla Mansour") == 1 and "Page" not in text            # no running header or footer
+    assert not re.search(r"[a-z]-\s*\n", text)                               # no word split over two lines
+    assert "Summary" in text and "intercompany reconciliation" in " ".join(text.split())
+    docx = Document(io.BytesIO(b.render_docx()))
+    assert not docx.tables and not any(p.text for s in docx.sections for p in s.header.paragraphs + s.footer.paragraphs)
+    assert [p.style.name for p in docx.paragraphs if p.text == "Experience"] == ["Heading 2"]

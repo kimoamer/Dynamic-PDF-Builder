@@ -1557,7 +1557,8 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
   `quote`: seller and buyer, dates, the lines with computed amounts, discount, VAT, total and the amount
   in words, each figure rounded where computed so the printed figures add up. `letter`: a formal letter
   with letterhead, reference, recipient, subject, body and signature. `cv`: a CV with experience,
-  education, skills and languages.
+  education, skills and languages, set for applicant tracking systems (no running header or footer,
+  no hyphenation, standard sections, tagged PDF, plain Word structure).
 - The library explains itself to agents and people: a guide in the package (`guide()`, CLI `guide`,
   MCP `guide`), MCP instructions sent on connect, Markdown input for every MCP tool, field
   descriptions in the JSON Schema, ```` ```chart ```` blocks holding JSON in Markdown, and `llms.txt`.
@@ -1589,6 +1590,7 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
 - Right-to-left text: lines ending in a line break (an address, Label: value lines) sat on the left in
   justified paragraphs; two columns now read from the right, as in Word.
 - A column of amounts with an "in words" row under it was read as text and lost its right alignment.
+- Word: `rich_text` with `alignment="left"` was set by its style (possibly justified); it is left-aligned.
 - Word: a phone number in Arabic text ("+966 11 000 0000") read with its groups reversed; it is now
   embedded left to right. Numbers that are not phone-shaped ("2024 2025") are left as written.
 - Signatures: Arabic names are shaped and set from the right; a name is literal text (`&` or `<` no

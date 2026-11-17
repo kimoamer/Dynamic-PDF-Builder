@@ -227,10 +227,10 @@ def _letter(data: dict):
 
 
 _CV_LABELS = {
-    "en": {"summary": "Profile", "experience": "Experience", "education": "Education", "skills": "Skills",
+    "en": {"summary": "Summary", "experience": "Experience", "education": "Education", "skills": "Skills",
            "languages": "Languages", "certifications": "Certifications", "comma": ", ",
-           "span": "{start} – {end}", "since": "{start} – present"},
-    "ar": {"summary": "نبذة", "experience": "الخبرات", "education": "التعليم", "skills": "المهارات",
+           "span": "{start} – {end}", "since": "{start} – Present"},
+    "ar": {"summary": "الملخص", "experience": "الخبرات", "education": "التعليم", "skills": "المهارات",
            "languages": "اللغات", "certifications": "الشهادات", "comma": "، ",
            "span": "من {start} إلى {end}", "since": "من {start} حتى الآن"},
 }
@@ -268,10 +268,10 @@ def _cv(data: dict):
     contact = data.get("contact") or {}
     reach = [contact.get(k) for k in ("email", "phone", "location")] + list(contact.get("links") or [])
     md = ["---", f"title: {json.dumps(name, ensure_ascii=False)}", f"author: {json.dumps(name, ensure_ascii=False)}",
-          f"language: {lang}", "numbering: false", "---", "", f"# {_esc(name)}", ""]
+          f"language: {lang}", "document_type: general", "numbering: false", "---", "", f"# {_esc(name)}", ""]
     # the headline and the contact line are one paragraph, so they take the direction of the headline
     head = ([f"**{_esc(data['headline'])}**"] if data.get("headline") else []) + \
-        ([" · ".join(_esc(x) for x in reach if x)] if any(reach) else [])
+        ([" | ".join(_esc(x) for x in reach if x)] if any(reach) else [])
     if head:
         md += ["\\\n".join(head), ""]
     if data.get("summary"):
@@ -291,10 +291,11 @@ def _cv(data: dict):
         for i, e in enumerate(entries):
             if not isinstance(e, dict) or not e.get(what):
                 raise ValueError(f"'{key}[{i}].{what}' is missing. Fix: add it; the kit's example shows every field")
-            md += [f"### {_esc(e[what])}" + (f"{lab['comma']}{_esc(e[where])}" if e.get(where) else ""), ""]
-            line = [dated(e), _esc(e.get("location") or "")]
+            # the layout parsers expect: the title as a heading, then "organisation | location | dates"
+            md += [f"### {_esc(e[what])}", ""]
+            line = [_esc(e.get(where) or ""), _esc(e.get("location") or ""), dated(e)]
             if any(line):
-                md += [" · ".join(x for x in line if x), ""]
+                md += [" | ".join(x for x in line if x), ""]
             if e.get("note"):
                 md += [_esc(e["note"]), ""]
             md += [f"- {p}" for p in e.get("points") or []] + [""]
@@ -306,7 +307,20 @@ def _cv(data: dict):
     for key in ("languages", "certifications"):
         if data.get(key):
             md += [f"## {lab[key]}", ""] + [f"- {_esc(x)}" for x in data[key]] + [""]
-    return DocumentBuilder.from_markdown("\n".join(md))
+    b = DocumentBuilder.from_markdown("\n".join(md))
+    return _for_ats(b, lang)
+
+
+def _for_ats(b, lang: str):
+    """What applicant tracking systems read well: no running header or footer (no name or page number
+    repeated in the text), paragraphs set flush to the start edge and never hyphenated (a keyword split
+    over two lines is lost), and a tagged PDF whose structure gives the reading order."""
+    from .schema.blocks import RichTextBlock
+    from .schema.page_system import PageSystem
+    b._meta.page_system, b._meta.tagged = PageSystem(), True
+    edge = "right" if lang == "ar" else "left"
+    b._blocks = [RichTextBlock(text=x.text, alignment=edge) if x.type == "paragraph" else x for x in b._blocks]
+    return b
 
 
 KITS = {"invoice": (_invoice, _INVOICE_EXAMPLE),
