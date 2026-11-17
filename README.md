@@ -50,7 +50,7 @@ pip install "dynamic-pdf-builder[diagrams]"   # Mermaid diagrams via Playwright
 pip install "dynamic-pdf-builder[plotly]"     # Plotly charts
 pip install "dynamic-pdf-builder[pdf]"        # PDF merge / encrypt via pikepdf
 pip install "dynamic-pdf-builder[qrcode]"     # QR code blocks
-pip install "dynamic-pdf-builder[xlsx]"       # XLSX data sources for templates
+pip install "dynamic-pdf-builder[xlsx]"       # XLSX data sources; editable data behind Word charts
 pip install "dynamic-pdf-builder[qa]"         # PyMuPDF for QA (AGPL): faster and used when installed
 pip install "dynamic-pdf-builder[ai]"         # optional AI layer (needs an API key, only when asked)
 pip install "dynamic-pdf-builder[mcp]"        # MCP server for agents
@@ -1244,7 +1244,10 @@ column order for bilingual documents. Equations are native Word equations (Offic
 Numbered captions ("Table 2", "Figure 3") hold their number in a `SEQ` field, references to them
 (`{ref:id}`) are `REF` fields, and lists of tables and figures are `TOC \c` fields, so inserting a
 table in Word and updating fields (F9) renumbers captions, references and lists together.
-Charts, diagrams and QR codes are embedded as images with alt text. Known differences: page breaks are
+Bar, column, grouped and stacked bar, line, area, pie and doughnut charts are native Word
+charts in the library's colours: their data and formatting can be edited in Word, and with the
+`xlsx` extra (openpyxl) a workbook is embedded so Word's "Edit Data" opens it. Other chart types,
+diagrams and QR codes are embedded as images with alt text. Known differences: page breaks are
 computed by Word, so page counts can differ from the PDF; footnotes are rendered as notes
 paragraphs; text watermarks use VML (shown by Word, not by every viewer).
 

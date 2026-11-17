@@ -89,8 +89,8 @@ def test_visual_blocks_embed_images_with_alt_text(png_path):
     data = (DocumentBuilder().chart("bar", data={"Q1": 1, "Q2": 2}, title="Sales")
             .math("E = mc^2").image(png_path, caption="Cap", alt_text="red box").render_docx())
     xml = _xml(data)
-    assert xml.count("<pic:pic") == 2                           # the equation is native Office Math, not a picture
-    assert 'descr="bar chart: Sales. Data: Q1: 1; Q2: 2"' in xml
+    assert xml.count("<pic:pic") == 1                           # chart and equation are native Word objects, not pictures
+    assert 'descr="bar chart: Sales. Data: Q1: 1; Q2: 2"' in xml and "<c:chart " in xml
     assert "<m:oMathPara>" in xml and "<m:t>E</m:t>" in xml
     assert 'descr="red box"' in xml
 

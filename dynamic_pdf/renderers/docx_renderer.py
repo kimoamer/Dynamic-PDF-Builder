@@ -1126,15 +1126,44 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         from ..core.numbering import exhibit_label
         from .chart import chart_png
         label, anchor = exhibit_label(b)
-        # a numbered chart carries its title as a caption under it, as a numbered image does
-        png = chart_png(b.model_copy(update={"title": None}) if label and b.title else b, self.theme)
         alt = f"{b.chart_type} chart" + (f": {b.title}" if b.title else "")
         data_txt = _short_data(b.data)
-        self._picture(c, png, f"{alt}. Data: {data_txt}" if data_txt else alt,
-                      max_width_pt=min(self.content_width_pt, 6.3 * 72))
+        alt = f"{alt}. Data: {data_txt}" if data_txt else alt
+        # a numbered chart carries its title as a caption under it, as a numbered image does
+        if not self._native_chart(c, b, alt, title=None if label else b.title):
+            png = chart_png(b.model_copy(update={"title": None}) if label and b.title else b, self.theme)
+            self._picture(c, png, alt, max_width_pt=min(self.content_width_pt, 6.3 * 72))
         if label:
             self._caption(c, label, b.title, anchor)
         self._spacer_after(c)
+
+    def _native_chart(self, c, b, alt: str, title: Optional[str]) -> bool:
+        """The chart as a Word chart, when Word has one like it; False leaves it to the picture,
+        which also reports data the chart cannot draw."""
+        from . import docx_chart as WC
+        from .chart import _colors, _paper, _paper_block, _sized
+        key = b.chart_type.lower().replace("-", "_").replace(" ", "_")
+        if key not in WC.NATIVE:
+            return False
+        try:
+            cats, series = WC.series_of(key, b.data)
+        except Exception:  # noqa: BLE001 - the picture path raises it under the caller's policy
+            return False
+        sized = _sized(b)
+        look = _paper_block(sized, key) if _paper(self.theme) else sized
+        n = len(cats) if (key in WC.ONE_SERIES) else len(series)
+        colours = _colors(look, max(n, 1))
+        width = min(self.content_width_pt, 6.3 * 72, look.width * 72)
+        p = self._para(c, "Normal")
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p.paragraph_format.keep_with_next = True
+        WC.add_chart(p.add_run(), self.doc.part,
+                     lambda book: WC.chart_xml(key, cats, series, colours, title=title, x_label=b.x_label,
+                                               y_label=b.y_label, legend=b.legend, font=word_font(self.tokens.fonts.body),
+                                               arabic_font=self.tokens.fonts.arabic, workbook=book),
+                     cats, series, width_pt=width, height_pt=width * look.height / look.width,
+                     shape_id=self.next_shape(), alt=alt)
+        return True
 
     def _b_diagram(self, c, b):
         from .diagram import diagram_png
