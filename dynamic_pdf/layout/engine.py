@@ -100,7 +100,7 @@ def _uses_page_layers(blocks) -> bool:
         t = getattr(b, "type", None)
         if t in ("page_media", "page_section"):
             return True
-        if t == "cover_page" and not (b.hints or {}).get("title_block"):     # a cover is a bare page
+        if t == "cover_page" and (b.background_image or b.background_color or b.layout):
             return True
         if t == "image" and b.placement and b.placement.mode not in ("inline", "floating"):
             return True
@@ -1211,7 +1211,10 @@ class LayoutEngine:
         hooks = {"onPage": self._on_page}
         if any(getattr(b, "type", None) == "section_opener" for b in self.document.blocks):
             hooks = {"onPageEnd": self._on_page_end}
-        if self.page_system is not None or _uses_page_layers(self.document.blocks):
+        # a cover is a bare page: its header and footer are decided once the page's content is known
+        cover = any(getattr(b, "type", None) == "cover_page" and not (b.hints or {}).get("title_block")
+                    for b in self.document.blocks)
+        if self.page_system is not None or cover or _uses_page_layers(self.document.blocks):
             hooks = {"onPage": self._page_begin, "onPageEnd": self._page_finish}
         tagged = bool(getattr(self.document.meta, "tagged", False))
         border = BORDERS.get(str(getattr(self.document.meta, "page_border", None) or "").lower())
