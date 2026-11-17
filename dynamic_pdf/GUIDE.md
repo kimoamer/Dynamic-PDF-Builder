@@ -214,6 +214,10 @@ Every kit reads `language`: `en` or `ar`. A missing or malformed field is refuse
   `reference`, `recipient` (`name`, `title`, `organisation`, `address`), `subject`, `body` (Markdown, or a
   list of paragraphs), `salutation` and `closing` (defaults in the letter's language), `signature`
   (`name`, `title`), `enclosures` and `cc`.
+- `cv`: a CV. `name`, `headline`, `contact` (`email`, `phone`, `location`, `links`), `summary` (Markdown),
+  `experience` (each `role`, `organisation`, `location`, `start`, `end` (none: to the present), `points`),
+  `education` (each `degree`, `institution`, `start`, `end`, `note`), `skills` (a list, or groups:
+  `{"Tools": ["Excel", "SQL"]}`), `languages` and `certifications`.
 
 ## Output
 

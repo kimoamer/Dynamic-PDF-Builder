@@ -375,6 +375,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         """Add inline Markdown as real Word runs (links, emphasis, code, sup/sub…)."""
         arabic = self.tokens.fonts.arabic
         mono = word_font(self.tokens.fonts.mono)
+        rtl_para = is_rtl_text(md_text or "")
         commented: List = []                   # runs of the comment being written, and its text
         for tr in parse_inline(md_text or ""):
             if commented and commented[-1] != tr.comment:
@@ -427,7 +428,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             elif tr.link:
                 F.add_hyperlink(paragraph, tr.link, tr.text, fmt)
             else:
-                run = paragraph.add_run(tr.text)
+                run = paragraph.add_run(_ltr_numbers(tr.text) if rtl_para else tr.text)
                 fmt(run)
                 if tr.inserted or tr.deleted:
                     self._revise(run, tr.deleted)
@@ -1788,6 +1789,18 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             self._columns(c, [b.sidebar_content, b.main_content], [r, 1 - r])
         else:
             self._columns(c, [b.main_content, b.sidebar_content], [1 - r, r])
+
+
+# a phone number in groups ("+966 11 000 0000", "(02) 2345 6789", "0100 123 4567") inside right-to-left
+# text: the bidi algorithm would set its groups in reverse order, so it is embedded left to right
+# (LRE ... PDF, which Word and LibreOffice honour). Only phone-shaped runs: "2024 2025" in an Arabic
+# sentence is two numbers in reading order and is left alone, as is a number after a Latin word
+# ("SA00 0000 ...": the letters already set it left to right).
+_PHONE = re.compile(r"(?<![\w])(?<![A-Za-z0-9] )[+(0][0-9()]*[0-9)](?:[ \u00a0\-][0-9()]+)+")
+
+
+def _ltr_numbers(text: str) -> str:
+    return _PHONE.sub(lambda m: "\u202a" + m.group() + "\u202c", text)
 
 
 def _tint(hex_color: str, amount: float) -> str:

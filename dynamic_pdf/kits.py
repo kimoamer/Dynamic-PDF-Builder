@@ -226,9 +226,93 @@ def _letter(data: dict):
     return b
 
 
+_CV_LABELS = {
+    "en": {"summary": "Profile", "experience": "Experience", "education": "Education", "skills": "Skills",
+           "languages": "Languages", "certifications": "Certifications", "comma": ", ",
+           "span": "{start} – {end}", "since": "{start} – present"},
+    "ar": {"summary": "نبذة", "experience": "الخبرات", "education": "التعليم", "skills": "المهارات",
+           "languages": "اللغات", "certifications": "الشهادات", "comma": "، ",
+           "span": "من {start} إلى {end}", "since": "من {start} حتى الآن"},
+}
+
+_CV_EXAMPLE = {
+    "language": "en",
+    "name": "Layla Mansour",
+    "headline": "Financial analyst",
+    "contact": {"email": "layla@example.com", "phone": "+20 100 000 0000", "location": "Cairo, Egypt",
+                "links": ["linkedin.com/in/example"]},
+    "summary": "Financial analyst with six years in corporate planning and reporting. Builds the models, "
+               "budgets and board reports that management decides on.",
+    "experience": [
+        {"role": "Senior financial analyst", "organisation": "Delta Engineering Co.", "location": "Cairo",
+         "start": "2022", "end": None,
+         "points": ["Built the five-year plan and the monthly board pack", "Cut the month-end close from 9 to 5 days"]},
+        {"role": "Financial analyst", "organisation": "Nile Office Supplies", "location": "Alexandria",
+         "start": "2019", "end": "2022", "points": ["Ran budgeting for 14 branches"]},
+    ],
+    "education": [{"degree": "BCom, Accounting", "institution": "Cairo University", "start": "2015", "end": "2019",
+                   "note": "Graduated with distinction"}],
+    "skills": {"Finance": ["Financial modelling", "Budgeting", "IFRS reporting"], "Tools": ["Excel", "Power BI", "SQL"]},
+    "languages": ["Arabic (native)", "English (fluent)"],
+    "certifications": ["CMA, 2023"],
+}
+
+
+def _cv(data: dict):
+    from .builder import DocumentBuilder
+    lang = (data.get("language") or "en").lower()
+    if lang not in _CV_LABELS:
+        raise ValueError(f"language {lang!r} is not supported. Fix: use 'en' or 'ar'")
+    lab = _CV_LABELS[lang]
+    name = _need(data, "name")
+    contact = data.get("contact") or {}
+    reach = [contact.get(k) for k in ("email", "phone", "location")] + list(contact.get("links") or [])
+    md = ["---", f"title: {json.dumps(name, ensure_ascii=False)}", f"author: {json.dumps(name, ensure_ascii=False)}",
+          f"language: {lang}", "numbering: false", "---", "", f"# {_esc(name)}", ""]
+    # the headline and the contact line are one paragraph, so they take the direction of the headline
+    head = ([f"**{_esc(data['headline'])}**"] if data.get("headline") else []) + \
+        ([" · ".join(_esc(x) for x in reach if x)] if any(reach) else [])
+    if head:
+        md += ["\\\n".join(head), ""]
+    if data.get("summary"):
+        md += [f"## {lab['summary']}", "", data["summary"], ""]      # the person's own words: Markdown
+
+    def dated(e):
+        start, end = _esc(e.get("start") or ""), _esc(e.get("end") or "")
+        if start:
+            return lab["span"].format(start=start, end=end) if end else lab["since"].format(start=start)
+        return end
+
+    for key, title, what, where in (("experience", "experience", "role", "organisation"),
+                                    ("education", "education", "degree", "institution")):
+        entries = data.get(key) or []
+        if entries:
+            md += [f"## {lab[title]}", ""]
+        for i, e in enumerate(entries):
+            if not isinstance(e, dict) or not e.get(what):
+                raise ValueError(f"'{key}[{i}].{what}' is missing. Fix: add it; the kit's example shows every field")
+            md += [f"### {_esc(e[what])}" + (f"{lab['comma']}{_esc(e[where])}" if e.get(where) else ""), ""]
+            line = [dated(e), _esc(e.get("location") or "")]
+            if any(line):
+                md += [" · ".join(x for x in line if x), ""]
+            if e.get("note"):
+                md += [_esc(e["note"]), ""]
+            md += [f"- {p}" for p in e.get("points") or []] + [""]
+    skills = data.get("skills")
+    if skills:
+        md += [f"## {lab['skills']}", ""]
+        md += ([f"- **{_esc(k)}:** {lab['comma'].join(_esc(x) for x in v)}" for k, v in skills.items()]
+               if isinstance(skills, dict) else [f"- {_esc(x)}" for x in skills]) + [""]
+    for key in ("languages", "certifications"):
+        if data.get(key):
+            md += [f"## {lab[key]}", ""] + [f"- {_esc(x)}" for x in data[key]] + [""]
+    return DocumentBuilder.from_markdown("\n".join(md))
+
+
 KITS = {"invoice": (_invoice, _INVOICE_EXAMPLE),
         "quote": (lambda d: _invoice(d, "quote"), _QUOTE_EXAMPLE),
-        "letter": (_letter, _LETTER_EXAMPLE)}
+        "letter": (_letter, _LETTER_EXAMPLE),
+        "cv": (_cv, _CV_EXAMPLE)}
 
 
 def kits() -> list:

@@ -185,3 +185,29 @@ def test_a_signature_is_literal_text_and_reads_from_the_right_in_arabic():
                    .design(None).render())[:3]                    # the paragraph, the name, the title
     rights = [r for _, _, r in lines]
     assert max(rights) - min(rights) < 2, lines                    # all at the right margin
+
+
+def test_a_phone_number_in_arabic_reads_left_to_right_in_word():
+    from docx import Document
+    data = DocumentBuilder().paragraph("هاتف: +966 11 000 0000 بين 2024 2025").paragraph("Phone: +966 11 000 0000").render_docx()
+    texts = [p.text for p in Document(io.BytesIO(data)).paragraphs if p.text.strip()]
+    ar = next(t for t in texts if "هاتف" in t)
+    en = next(t for t in texts if "Phone" in t)
+    assert "‪+966 11 000 0000‬" in ar and "2024 2025" in ar and "‪" not in ar.split("‬")[1]
+    assert "‪" not in en
+
+
+def test_the_cv_kit():
+    doc = kit("cv", kit_example("cv")).build()
+    heads = [b.text for b in doc.blocks if b.type == "heading"]
+    assert heads[:3] == ["Layla Mansour", "Profile", "Experience"] and "Senior financial analyst, Delta Engineering Co." in heads
+    text = " ".join(getattr(b, "text", "") or "" for b in doc.blocks)
+    assert "2022 – present · Cairo" in text and "2019 – 2022 · Alexandria" in text
+    ar = kit("cv", {"language": "ar", "name": "ليلى", "headline": "محللة مالية",
+                    "contact": {"email": "layla@example.com"},
+                    "education": [{"degree": "بكالوريوس", "institution": "جامعة القاهرة", "start": "2015", "end": "2019"}]})
+    paras = [b.text for b in ar.build().blocks if b.type == "paragraph"]
+    assert any(p.startswith("**محللة مالية**") and "layla" in p for p in paras)    # one paragraph: it reads from the right
+    assert "من 2015 إلى 2019" in paras
+    with pytest.raises(ValueError, match=r"cv: 'experience\[0\]\.role' is missing"):
+        kit("cv", {"name": "x", "experience": [{"organisation": "y"}]})
