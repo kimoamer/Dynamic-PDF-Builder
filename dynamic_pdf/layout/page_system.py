@@ -75,6 +75,7 @@ def text_width(theme, text: str, size: float, bold: bool) -> float:
 
 def wrap_text(theme, text: str, size: float, bold: bool, width: float, max_lines: int):
     """Logical-order lines, and whether text had to be cut to fit."""
+    width += 0.01                                # a slot sized to its text must hold it despite rounding
     lines, current = [], ""
     for word in text.split():
         trial = f"{current} {word}".strip()
@@ -106,6 +107,7 @@ class Cell:
     raw: List[str] = field(default_factory=list)  # item templates, for live Word fields
     items: list = field(default_factory=list)
     height: float = 0
+    rtl: bool = False                            # logos come first in reading order: at the right
 
 
 @dataclass
@@ -184,7 +186,7 @@ class BandMaker:
         return logo_w + text_w
 
     def _cell(self, items, row, x, width, align, size, leading, values, warn, losses) -> Cell:
-        cell = Cell(x, width, align, items=list(items))
+        cell = Cell(x, width, align, items=list(items), rtl=self.rtl)
         text_room = width
         for it in items:
             if isinstance(it, Logo):
@@ -415,7 +417,9 @@ def _draw_cell(canv, cell: Cell, row: Row, theme, x0, top, height, ink, draw_med
     left = x0 + cell.x
     start = {"left": left, "center": left + (cell.width - used) / 2,
              "right": left + cell.width - used}[cell.align]
-    cursor = start
+    # in reading order the logo leads: on the left, or on the right of the text in right-to-left documents
+    text_right = start + text_w
+    cursor = text_right + (_LOGO_GAP if cell.lines else 0) if cell.rtl else start
     for asset, w, h, _ in cell.logos:
         f = fit_image(asset, w, h)
         draw_media(canv, asset, f, cursor, top - (height + h) / 2)
@@ -425,7 +429,9 @@ def _draw_cell(canv, cell: Cell, row: Row, theme, x0, top, height, ink, draw_med
     canv.setFillColor(HexColor(ink))
     for line in cell.lines:
         canv.setFont(font_for(theme, line, row.spec.bold), row.size)
-        if cell.align == "right":
+        if cell.rtl and cell.logos:
+            canv.drawRightString(text_right, baseline, line)
+        elif cell.align == "right":
             canv.drawRightString(left + cell.width, baseline, line)
         elif cell.align == "center":
             canv.drawCentredString(left + cell.width / 2 + logos_w / 2, baseline, line)

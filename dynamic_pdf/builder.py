@@ -716,7 +716,13 @@ class DocumentBuilder:
         return self
 
     def page_system(self, system: Any = None, **fields) -> 'DocumentBuilder':
-        """Slot-based running headers and footers, in place of the theme's."""
+        """Slot-based running headers and footers, in place of the theme's. ``system`` is a
+        ``PageSystem``, its fields as a dict, or a preset's name (letterhead, modern, banner, report,
+        minimal) with ``logo=`` and the field values: ``page_system("modern", logo="logo.png",
+        company="Nile Co.", confidentiality="Internal")``."""
+        if isinstance(system, str):
+            from .schema.page_system import preset
+            system = preset(system, language=self._meta.language or "en", **fields)
         self._meta.page_system = (system if isinstance(system, PageSystem)
                                   else PageSystem.model_validate(system or fields))
         return self
@@ -1269,6 +1275,10 @@ class DocumentBuilder:
             builder.document_type(fm["document_type"])
         if fm.get("direction") in ("ltr", "rtl"):
             builder.direction(fm["direction"])
+        if isinstance(fm.get("header"), str) and fm["header"].strip():
+            from .schema.page_system import FIELDS
+            builder.page_system(fm["header"].strip(), logo=fm.get("logo") or None,
+                                **{k: fm[k] for k in FIELDS if isinstance(fm.get(k), str) and k not in ("title", "page", "pages")})
         if str(fm.get("numbering", "")).lower() in ("true", "yes", "1"):
             builder._meta.exhibit_numbering = True
         style = fm.get("citation-style") or fm.get("citation_style")

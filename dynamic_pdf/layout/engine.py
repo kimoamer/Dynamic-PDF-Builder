@@ -1161,8 +1161,8 @@ class LayoutEngine:
 
         self.page_system = self.document.meta.page_system
         if self.page_system is not None:
-            from ..schema.page_system import settled
-            self.page_system = settled(self.page_system, self.document.blocks)
+            from ..schema.page_system import settled, themed
+            self.page_system = themed(settled(self.page_system, self.document.blocks), self.theme.colors)
         rtl = (is_rtl_document(self.document) if self.page_system is not None
                or _uses_media_model(self.document.blocks) else False)
         self.band_maker = None

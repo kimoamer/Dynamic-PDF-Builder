@@ -186,8 +186,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         self.content_width_pt = w - m["left"] - m["right"]
         system = meta.page_system
         if system is not None:
-            from ..schema.page_system import settled
-            system = self.page_sys = settled(system, self.sem.blocks)
+            from ..schema.page_system import settled, themed
+            system = self.page_sys = themed(settled(system, self.sem.blocks), self.theme.colors)
             from ..fonts import register_fonts
             from ..layout.page_envelope import band_maker, reserve_bands
             register_fonts()

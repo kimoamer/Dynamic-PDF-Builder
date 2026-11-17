@@ -375,3 +375,52 @@ def test_signatures_in_a_row_stand_on_one_line(tmp_path):
     tp = pdfium.PdfDocument(pdf)[0].get_textpage()
     y = [tp.get_charbox(tp.search(n).get_next()[0])[1] for n in ("Left signer", "Right signer")]
     assert abs(y[0] - y[1]) < 1                                      # both names on one baseline
+
+
+def _logo(tmp_path):
+    from PIL import Image
+    path = tmp_path / "logo.png"
+    Image.new("RGB", (300, 100), "#E07A1F").save(path)
+    return str(path)
+
+
+def test_header_presets_from_front_matter(tmp_path):
+    import pypdfium2 as pdfium
+    from dynamic_pdf.schema.page_system import PRESETS
+    for name in PRESETS:
+        md = (f"---\ntitle: Review\nheader: {name}\nlogo: {_logo(tmp_path)}\ncompany: Nile Co.\n"
+              "confidentiality: Internal\n---\n\n# Review\n\n" + "Text. " * 50)
+        b = DocumentBuilder.from_markdown(md)
+        assert b._meta.page_system is not None and b._meta.page_system.values["company"] == "Nile Co."
+        text = pdfium.PdfDocument(b.render())[0].get_textpage().get_text_range()
+        assert "{" not in text                                      # every field filled or dropped
+        assert b.render_docx()
+    with pytest.raises(ValueError, match="presets: letterhead"):
+        DocumentBuilder().page_system("fancy")
+
+
+def test_band_colours_follow_the_theme_by_name():
+    from dynamic_pdf.schema.page_system import preset, themed
+    from dynamic_pdf.themes import get_theme
+    colors = get_theme("claude").colors
+    system = themed(preset("modern", company="X"), colors)
+    assert system.header.accent_color == colors.accent and themed(preset("banner"), colors).header.rows[0].fill == colors.primary
+
+
+def test_an_arabic_band_keeps_its_title_whole_and_its_logo_first(tmp_path):
+    from dynamic_pdf.layout import page_system as P
+    seen = []
+    orig = P.BandMaker._cell
+
+    def spy(self, items, *a, **k):
+        cell = orig(self, items, *a, **k)
+        if cell.logos:
+            seen.append(cell)
+        return cell
+    P.BandMaker._cell = spy
+    try:
+        DocumentBuilder.from_markdown(f"---\ntitle: المراجعة الربعية\nlanguage: ar\nheader: modern\nlogo: {_logo(tmp_path)}\n"
+                                      "---\n\n# المراجعة الربعية\n\nنص.\n").render()
+    finally:
+        P.BandMaker._cell = orig
+    assert seen and all(c.lines == ["المراجعة الربعية"] and c.rtl for c in seen)

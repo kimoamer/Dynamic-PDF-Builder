@@ -67,6 +67,9 @@ numbering: true                    # number captioned tables and figures
 bibliography: refs.bib             # BibTeX for [@key] citations
 citation-style: apa                # apa (author and year) or ieee (numbers)
 reviewer: Policy AI                # name on suggested edits and comments
+header: modern                     # header and footer: letterhead, modern, banner, report, minimal
+logo: logo.png                     # with header: the logo in it
+company: Nile Co.                  # with header: also website, email, phone, department, confidentiality ...
 ---
 ```
 
@@ -83,7 +86,9 @@ Blocks:
 | `Term` then `: definition` on the next line | a definition list |
 | a GFM table, then `Table: caption {#id}` on its own line under it | a table with a caption and an id |
 | `![alt text](photo.jpg "caption"){#fig-id}` alone in a paragraph | a figure |
-| `> quoted text` | a quote |
+| `> quoted text`, then `> — Name` as its last line | a quote with its attribution, a bar along its start edge |
+| `> [!pullquote]` or `> [!epigraph]` as the quote's first line | a statement set large, or a short epigraph toward the end edge |
+| ```` ```signature ```` with `{"name": ..., "title": ..., "image": "sig.png"}`, or a list of them | a signature, or up to four side by side |
 | `:::warning` ... `:::` (also info, tip, success, danger, caution, important, example) | a callout box |
 | ```` ```python ```` ... ```` ``` ```` | code, highlighted |
 | `$$ E = mc^2 $$ {#eq-energy}` or ```` ```math ```` | an equation (numbered when it has an id) |
@@ -188,6 +193,36 @@ Table: Invoice lines {#invoice}
 - `b.design_explain()` (MCP `explain`) says why each decision was made.
 - Themes (the design starts from the one you choose; with `design(None)` it is the whole look): claude, chatgpt, corporate_dark, academic, modern_minimal,
   government, data_report. A brand kit (colours, fonts, logo) goes in `b.design(brand=BrandKit(...))`.
+
+## Headers, footers, logos and signatures
+
+A preset places the logo, title, section, company and page number by reading edge, so it mirrors in
+Arabic, and takes its colours from the design:
+
+```python
+b.page_system("modern", logo="logo.png", company="Nile Co.", confidentiality="Internal")
+```
+
+- `letterhead`: the logo and the company at the head of page one, the website, email and phone under a
+  rule; later pages carry a light running head.
+- `modern`: a strip of the accent colour along the page edge, the logo and title at the start, the
+  running section at the end; confidentiality, company and "3 / 12" below.
+- `banner`: the logo and title on a band of the primary colour (a logo drawn for dark grounds reads best).
+- `report`: the title and running section over a rule; company, confidentiality and the page below.
+- `minimal`: the page number only.
+
+Any arrangement can be built with `b.page_system({...})`: each band has rows, and each row has `start`,
+`center` and `end` slots (or `left` and `right`, which do not mirror) holding text and logos. Text may
+carry fields: `{title}`, `{section}` (the current heading), `{page}`, `{pages}`, `{date}`, `{company}`,
+`{website}`, `{email}`, `{phone}`, `{department}`, `{confidentiality}`, `{code}`, `{period}`. A field
+with no value is left out with its separator. Colours may be hex or a theme colour by name
+(`primary`, `accent`, `text_muted` ...). Page numbers and sections stay live fields in Word.
+
+Signatures: `b.signature("Omar Hassan", title="Director", date="17 November 2026", image="sig.png",
+alignment="start")` (start, center or end) and `b.signatures([{...}, {...}])` for up to four side by side,
+standing on one line. The image goes through the asset policy like any picture.
+
+Quotes: `b.quote(text, attribution="Name", style="blockquote" | "pullquote" | "epigraph")`.
 
 ## Kits
 

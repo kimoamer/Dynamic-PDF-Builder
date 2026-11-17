@@ -34,14 +34,15 @@ Write the document as Markdown and pass it as `markdown`. Beyond plain Markdown 
 (title, author, language, document_type ...), tables with spreadsheet formulas (=B2*C2, =SUM(ABOVE),
 =WORDS(D5) for an amount in words), ```chart blocks holding JSON, $$ equations $$ {#eq-id}, figure and table
 captions with ids and {ref:id} references, [@key] citations with a BibTeX file, :::warning callouts,
-[TOC], and suggested edits ({++added++} {--removed--} {>>comment<<}) that become tracked changes in Word.
+quotes (> text, > — Name; > [!pullquote]), ```signature blocks holding JSON, a header and footer preset
+in the front matter (header: modern, logo: logo.png, company: ...), [TOC], and suggested edits ({++added++} {--removed--} {>>comment<<}) that become tracked changes in Word.
 
 Work in a loop: `render` the document, `review` it (each issue comes with its page and what to change, and
 page images are saved for you to look at), fix the Markdown, review again. `variants` tries several designs
 and recommends one; `explain` says why the design is as it is; `lint` checks the content (totals, shares,
 references). `kit` makes a ready-made document from data: invoice, quote, letter, cv, feasibility,
 statements, certificate. Call `guide` for the full syntax with examples, or `guide` with a topic:
-markdown, charts, tables, academic, review-and-changes, design, kits, output, arabic, limits."""
+markdown, charts, tables, academic, review-and-changes, design, headers, kits, output, arabic, limits."""
 
 
 class InputError(ValueError):
@@ -108,7 +109,7 @@ def _inside(out_dir: str, name: str, field: str) -> str:
 
 def guide(topic: Optional[str] = None) -> str:
     """What the library does and how to write for it, with examples. Without a topic, the whole guide;
-    topics: overview, quickstart, markdown, charts, tables, academic, review-and-changes, design, kits,
+    topics: overview, quickstart, markdown, charts, tables, academic, review-and-changes, design, headers, kits,
     output, python-api, arabic, safety-and-settings, limits."""
     from ..guide import guide as text
     try:

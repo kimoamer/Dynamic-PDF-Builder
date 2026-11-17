@@ -1553,6 +1553,14 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
   references and lists of figures and tables are Word fields.
 
 **New**
+- Headers and footers: presets (`letterhead`, `modern`, `banner`, `report`, `minimal`) placed by reading
+  edge with the logo, title, running section, company and page number, in PDF and Word, from
+  `page_system("modern", logo=..., company=...)` or the front matter (`header:`, `logo:`, `company:` ...);
+  band colours may name a theme colour.
+- Signatures: a picture of the signature over the line, start/center/end alignment, up to four side by
+  side (`signatures([...])`, a ```` ```signature ```` fence in Markdown).
+- Quotes in three looks: blockquote with a bar along its start edge, pullquote, epigraph; in Markdown
+  `> [!pullquote]`, `> [!epigraph]`, and `> — Name` for the attribution.
 - Ready-made documents: `kit(name, data)` (CLI `kit`, MCP `kit`) in English or Arabic. `invoice` and
   `quote`: seller and buyer, dates, the lines with computed amounts, discount, VAT, total and the amount
   in words, each figure rounded where computed so the printed figures add up. `letter`: a formal letter
@@ -1601,6 +1609,13 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
   Word: figures and years no longer vote on a table's direction.
 - `rich_text` with a large `font_size` ran into the next line; its line height now follows its size.
 - A signature line in a right-to-left column sits with the name, at the right.
+- Header styles: the banner and the centred logo no longer run into the body; logo_left and logo_right
+  keep the title clear of the logo in Arabic. Footers mirror in Arabic as Word sets them; a footer logo
+  sits level with the text; the company is not printed twice.
+- Bands: a slot sized to its text no longer wraps it on a rounding error; in Arabic the logo leads at the
+  right; in Word the first text follows the logo on its line, a two-slot row gives each side room, and
+  page numbers are sized as their text.
+- Columns give the blocks inside them their own width.
 - Lint no longer reports a section of one line under its own total as a mismatch.
 - Word: `rich_text` with `alignment="left"` was set by its style (possibly justified); it is left-aligned.
 - Word: a phone number in Arabic text ("+966 11 000 0000") read with its groups reversed; it is now

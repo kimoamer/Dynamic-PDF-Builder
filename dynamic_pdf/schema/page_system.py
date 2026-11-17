@@ -91,6 +91,67 @@ class PageSystem(BaseModel):
         return [b for b in out if b], [b for b in foot if b]
 
 
+_COLOUR_KEYS = ("fill", "color", "rule_color", "accent_color")
+
+
+def themed(system: PageSystem, colors) -> PageSystem:
+    """The system with colours given by name ("primary", "accent", "text_muted" ...) taken from the
+    theme, so a band follows the design it is used with."""
+    def walk(x):
+        if isinstance(x, dict):
+            return {k: (getattr(colors, v, v) if k in _COLOUR_KEYS and isinstance(v, str) and not v.startswith("#")
+                        else walk(v)) for k, v in x.items()}
+        return [walk(v) for v in x] if isinstance(x, list) else x
+    return PageSystem.model_validate(walk(system.model_dump()))
+
+
+def _page(language: str) -> str:
+    from ..i18n import page_format
+    return page_format("Page {n} of {total}", language).replace("{n}", "{page}").replace("{total}", "{pages}")
+
+
+def preset(name: str, logo: Optional[str] = None, language: str = "en", **values: str) -> PageSystem:
+    """A ready-made header and footer, placed by reading edge so it mirrors in Arabic:
+
+    - ``letterhead``: the logo and the company at the head of page one, the contact details under a
+      rule; later pages carry a light running head.
+    - ``modern``: a strip of the accent colour along the page edge, the logo and title at the start,
+      the section at the end; the page number in the footer's end.
+    - ``banner``: the logo and title on a band of the primary colour.
+    - ``report``: the title and the running section over a rule; company, confidentiality and page below.
+    - ``minimal``: the page number only.
+
+    ``values`` fill the fields: company, website, email, phone, department, confidentiality, code ..."""
+    mark = [Logo(src=logo, max_height=30, max_width=140)] if logo else []
+    page = _page(language)
+    contact = "{website} · {email} · {phone}"
+    systems = {
+        "letterhead": dict(
+            first_page="custom",
+            first_header=Band(rows=[BandRow(start=mark, end=["{company}"], bold=True, size=11),
+                                    BandRow(end=[contact], size=8, rule_below=True, rule_color="primary", rule_width=1.2)]),
+            header=Band(rows=[BandRow(start=["{company}"], end=["{title}"], size=8, rule_below=True)]),
+            footer=Band(rows=[BandRow(start=["{department}"], end=[page], size=8)])),
+        "modern": dict(
+            header=Band(accent_color="accent", accent_height=4, bleed=True,
+                        rows=[BandRow(start=mark + ["{title}"], end=["{section}"], size=8.5)]),
+            footer=Band(rows=[BandRow(start=["{confidentiality} · {company}"], end=["{page} / {pages}"], size=8)])),
+        "banner": dict(
+            header=Band(bleed=True, padding=7, rows=[BandRow(fill="primary", start=mark, end=["{title}"], bold=True, size=10)]),
+            footer=Band(rows=[BandRow(start=["{company}"], end=[page], size=8, color="text_muted")])),
+        "report": dict(
+            header=Band(rows=[BandRow(start=["{title}"], end=["{section}"], size=8, rule_below=True)]),
+            footer=Band(rows=[BandRow(start=["{company}"], center=["{confidentiality}"], end=[page], size=8)])),
+        "minimal": dict(footer=Band(rows=[BandRow(center=["{page}"], size=8)])),
+    }
+    if name not in systems:
+        raise ValueError(f"no header and footer preset {name!r}; presets: {', '.join(PRESETS)}")
+    return PageSystem(values={k: str(v) for k, v in values.items() if v not in (None, "")}, **systems[name])
+
+
+PRESETS = ("letterhead", "modern", "banner", "report", "minimal")
+
+
 def settled(system: PageSystem, blocks) -> PageSystem:
     """``auto`` leaves a cover clean and treats any other first page like the rest."""
     if system.first_page != "auto":
