@@ -46,6 +46,7 @@ PLANTED = {
     "date_format": "# Plan\n\nThe pilot starts on 2025-03-04 and ends on 31/05/2025.\n",
     "missing_alt_text": "# Site\n\nText.\n\n![](photo.png)\n",
     "empty_section": "# Overview\n\n# Details\n\nText.\n",
+    "unresolved_citation": "# Method\n\nAs shown [@smith2024].\n",
     "formula_error": "# Costs\n\nText.\n\n| Item | Amount |\n|---|---|\n| Rent | 1,200 |\n| Twice | =A2*2 |\n",
 }
 

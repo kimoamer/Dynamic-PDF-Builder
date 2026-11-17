@@ -114,6 +114,8 @@ class DocumentBuilder:
         self._fonts: dict = {}
         self._meta = Meta()
         self._blocks: list = []
+        self._library: Dict[str, Dict[str, str]] = {}   # BibTeX entries that [@key] citations read
+        self._citation_style = "apa"
         self._policy = policy or RenderPolicy()
         self.last_render = None   # LayoutEngine of the most recent render (diagnostics, page_count)
         self._design_mode: Optional[str] = None   # None = classic theme rendering (v0.3)
@@ -843,6 +845,22 @@ class DocumentBuilder:
         self._blocks.append(BibliographyBlock(entries=be, style=style))
         return self
 
+    def bibtex(self, source: str, style: Optional[str] = None) -> 'DocumentBuilder':
+        """A BibTeX library for ``[@key]`` citations in the text: BibTeX text, or the path of a
+        ``.bib`` file (read under the asset policy, as images are). ``style``: ``"apa"``
+        (author and year, the default) or ``"ieee"`` (numbers). The reference list holds the works
+        cited; it fills a reference list without entries (Markdown ``[REFERENCES]``) or is added
+        at the end."""
+        from .core.citations import parse_bibtex
+        text = source
+        if "\n" not in source and source.strip().lower().endswith(".bib"):
+            from .assets import load_asset_bytes
+            text = load_asset_bytes(source, self._policy.assets).decode("utf-8-sig")
+        self._library.update(parse_bibtex(text))
+        if style:
+            self._citation_style = style.lower()
+        return self
+
     def citation(self, key: str, style: str = "numeric") -> 'DocumentBuilder':
         self._blocks.append(CitationBlock(key=key, style=style))
         return self
@@ -993,8 +1011,13 @@ class DocumentBuilder:
         from .core.formulas import compute_blocks
         meta = self._meta
         arabic = (meta.language or "").lower().startswith("ar") or meta.rtl or meta.direction == "rtl"
+        from .core.numbering import number_equations
         blocks = compute_blocks(self._blocks, "ar" if arabic else "en",
                                 strict=self._policy.strict if strict is None else strict)
+        blocks = number_equations(blocks)
+        if self._library:
+            from .core.citations import apply_citations
+            blocks = apply_citations(blocks, self._library, self._citation_style)
         return Document(meta=self._meta, theme=self._theme, blocks=blocks)
 
     def _engine(self) -> LayoutEngine:
@@ -1232,6 +1255,11 @@ class DocumentBuilder:
             builder.direction(fm["direction"])
         if str(fm.get("numbering", "")).lower() in ("true", "yes", "1"):
             builder._meta.exhibit_numbering = True
+        style = fm.get("citation-style") or fm.get("citation_style")
+        for source in ([fm["bibliography"]] if isinstance(fm.get("bibliography"), str) else fm.get("bibliography") or []):
+            builder.bibtex(str(source), style if isinstance(style, str) else None)
+        if isinstance(style, str) and style:
+            builder._citation_style = style.lower()
         builder.front_matter = fm
         builder._source_kind = "markdown"
         builder._source_text = markdown

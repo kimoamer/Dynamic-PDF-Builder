@@ -27,7 +27,8 @@ from ..core.numbering import REF as _REF
 from ..core.table_types import ascii_digits, infer_table, read_cell
 
 RULES = ("total_mismatch", "percent_sum", "repeated_heading", "unresolved_ref", "mixed_digits",
-         "number_format", "date_format", "missing_alt_text", "empty_section", "formula_error")
+         "number_format", "date_format", "missing_alt_text", "empty_section", "formula_error",
+         "unresolved_citation")
 _NOT_PROSE = {"code", "mermaid", "math", "diagram", "qrcode", "shape", "spacer", "divider", "page_break",
               "watermark", "page_media", "table_of_contents"}
 _NOT_ADDITIVE = re.compile(r"average|mean|median|avg|rate|ratio|per\b|price|متوسط|معدل|نسبة|سعر", re.I)
@@ -320,6 +321,16 @@ def _alt(sem, warn):
             warn("missing_alt_text", f"image {image.src!r} has no alt text for readers who cannot see it", i)
 
 
+def _citations(sem, warn):
+    from ..core.citations import unresolved
+    for i, b in _walk(sem.blocks):
+        if b.type in _NOT_PROSE:
+            continue
+        for s in block_text(b):
+            for key in unresolved(s):
+                warn("unresolved_citation", f"[@{key}] has no entry in the bibliography (BibTeX)", i)
+
+
 def lint(sem: SemanticDocument, rules: Optional[Iterable[str]] = None) -> List[LintWarning]:
     """Warnings about ``sem``'s content, in document order. ``rules`` limits the rules run."""
     wanted = set(rules) if rules is not None else set(RULES)
@@ -349,6 +360,7 @@ def lint(sem: SemanticDocument, rules: Optional[Iterable[str]] = None) -> List[L
             if len(vals) >= 2 and all(0 <= v <= 100 for v in vals) and 90 <= s <= 110 and abs(s - 100) > 0.5 * len(vals):
                 warn("percent_sum", f"pie slices add up to {s:g}; as shares they should make 100", b_i, "chart")
     _refs(sem, warn)
+    _citations(sem, warn)
     _digits(sem, warn)
     _dates(sem, warn)
     _headings(sem, warn)

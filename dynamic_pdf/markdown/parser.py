@@ -142,6 +142,11 @@ def _parse_body(md_text: str) -> list:
 
             # [TOC], [LOF], [LOT]: a contents page, a list of figures, a list of tables
             listing = {"[TOC]": "contents", "[LOF]": "figures", "[LOT]": "tables"}.get(content.strip())
+            if content.strip() in ("[REFERENCES]", "[BIBLIOGRAPHY]"):      # where the cited works are listed
+                from ..schema.blocks import BibliographyBlock
+                blocks.append(BibliographyBlock(entries=[]))
+                idx += 2
+                continue
             if listing:
                 blocks.append(TOCBlock(kind=listing))
                 idx += 2
@@ -169,12 +174,13 @@ def _parse_body(md_text: str) -> list:
 
         # ─── Code Fences ───
         elif t.type == "fence":
-            lang = (t.info or "").strip() or "text"
+            info, fence_id = _attr_id((t.info or "").strip())
+            lang = info.split()[0] if info.split() else "text"
             code = (t.content or "").rstrip("\n")
             if lang == "mermaid":
                 blocks.append(MermaidBlock(diagram=code))
             elif lang in ("math", "latex"):
-                blocks.append(MathBlock(latex=code))
+                blocks.append(MathBlock(latex=code, id=fence_id))
             else:
                 blocks.append(CodeBlock(language=lang, code=code))
 

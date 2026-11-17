@@ -683,6 +683,41 @@ builder.bibliography(
 )
 ```
 
+#### Citations from BibTeX
+
+Cite works in the text as Pandoc does and give the library as BibTeX; the reference list is built
+from what is cited:
+
+```markdown
+---
+bibliography: refs.bib        # or several: [refs.bib, more.bib]
+citation-style: ieee          # apa (author and year, the default) or ieee (numbers)
+---
+Relocation works when communities move together [@abara2023, p. 50].
+Markets respond to floods [@kim2021; @lund2022].
+
+# References
+
+[REFERENCES]
+```
+
+APA writes "(Abara & Halvorsen, 2023, p. 50)" and "(Kim et al., 2021; Lund, 2022)" and lists by
+author; IEEE writes "[1, p. 50]" and "[2], [3]" and lists in order of first citation. Only works cited
+are listed, where `[REFERENCES]` stands or else at the end. In Python: `builder.bibtex("refs.bib",
+style="apa")` (a path, read under the asset policy as images are, or BibTeX text). A key the library
+does not have stays as written and `lint()` reports it (`unresolved_citation`).
+
+#### Numbered equations
+
+A displayed equation with an id is numbered, as captioned tables and figures are, and `{ref:id}`
+reads "Equation (2)" (المعادلة (2) in Arabic). The number sits at the far edge in the PDF and in Word.
+
+```markdown
+The energy follows {ref:eq-energy}.
+
+$$ E = mc^2 $$ {#eq-energy}
+```
+
 ### Signature
 
 ```python
@@ -1473,6 +1508,8 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
   references and lists of figures and tables are Word fields.
 
 **New**
+- Citations from BibTeX (`[@key]`, `bibliography: refs.bib`, `builder.bibtex()`), written in APA or
+  IEEE with the list of works cited; numbered equations with `{ref:id}` references, in PDF and Word.
 - Computed tables: spreadsheet formulas in cells (`=B2*C2`, `=SUM(ABOVE)`), computed in decimals and
   written as their column writes numbers; amounts in words in Arabic and English (`=WORDS(D5)`,
   `amount_in_words`, the template filter `words`); every table as a workbook with working formulas

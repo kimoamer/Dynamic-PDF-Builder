@@ -13,7 +13,7 @@ import html as html_mod
 import contextvars
 from functools import lru_cache
 from typing import Optional
-from reportlab.lib.enums import TA_JUSTIFY, TA_LEFT
+from reportlab.lib.enums import TA_JUSTIFY, TA_LEFT, TA_RIGHT
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.platypus import (
     Paragraph as _RLParagraph, ListFlowable, ListItem, Spacer, PageBreak,
@@ -1393,7 +1393,10 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
 
     # ─── Math ───
     if btype == "math":
-        return _cached_figure(ctx, block, theme, lambda: _render_math(block, theme))
+        drawn = _cached_figure(ctx, block, theme, lambda: _render_math(block, theme))
+        if block.equation_number and drawn and not isinstance(drawn[0], Paragraph):
+            return _numbered_equation(drawn, block.equation_number, theme, ctx.available_width)
+        return drawn
 
     # ─── Callout ───
     if btype == "callout":
@@ -2053,6 +2056,20 @@ def _render_chart(block, theme):
 def _render_diagram(block, theme):
     from ..renderers.diagram import render_diagram
     return render_diagram(block, theme)
+
+
+def _numbered_equation(drawn: list, number: int, theme, width: float) -> list:
+    """A displayed equation centred, its number at the far edge, as papers set it."""
+    side = 40.0
+    style = ParagraphStyle("EqNo", fontName=get_font_name(theme.typography.body_family),
+                           fontSize=theme.typography.base_size, alignment=TA_RIGHT,
+                           textColor=_safe_color(theme.colors.text_primary))
+    rtl = getattr(_diag.current(), "language", "en") == "ar"
+    cells = [Paragraph(f"({number})", style), drawn[0], ""] if rtl else ["", drawn[0], Paragraph(f"({number})", style)]
+    t = Table([cells], colWidths=[side, max(width - 2 * side, 10), side])
+    t.setStyle(TableStyle([("ALIGN", (1, 0), (1, 0), "CENTER"), ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                           ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0)]))
+    return [t] + drawn[1:]
 
 
 def _render_math(block, theme):

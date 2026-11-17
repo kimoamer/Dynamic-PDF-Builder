@@ -109,6 +109,9 @@ def number_document(doc) -> Numbering:
             if hid and hid not in out.refs:
                 out.refs[hid] = (shown, b.id)        # only a heading with an id carries a bookmark
             continue
+        if b.type == "math" and b.equation_number and b.id:
+            out.refs[b.id] = (f"{label('equation', lang)} ({b.equation_number})", None)
+            continue
         kind = {"table": "table", "image": "figure", "chart": "figure"}.get(b.type)
         if kind is None:
             continue
@@ -130,6 +133,20 @@ def number_document(doc) -> Numbering:
         if b.id:
             out.refs[b.id] = (f"{label(kind, lang)} {n}", anchor)
     return out
+
+
+def number_equations(blocks: list) -> list:
+    """Displayed equations with an id get numbers in document order, as captions do; one the
+    author numbered keeps its number and the count goes on from it. The list itself when none."""
+    out, n, changed = [], 0, False
+    for b in blocks:
+        if getattr(b, "type", None) == "math" and not b.inline and (b.id or b.equation_number):
+            n = b.equation_number or n + 1
+            if b.equation_number != n:
+                b = b.model_copy(update={"equation_number": n})
+                changed = True
+        out.append(b)
+    return out if changed else blocks
 
 
 def current() -> Optional[Numbering]:
