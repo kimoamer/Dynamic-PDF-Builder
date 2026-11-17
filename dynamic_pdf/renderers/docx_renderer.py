@@ -73,6 +73,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         self.page_sys = None
         self.doc = new_docx()
         self.bm = F.BookmarkCounter()
+        self._seq: dict = {}                   # SEQ fields written so far, by sequence
         self.lists = None
         self.heading_counters = [0] * 6
         self.figure_no = 0
@@ -415,7 +416,10 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
 
             if tr.footnote_ref and self.notes and self.notes.reference(paragraph, tr.footnote_ref, self._note_text):
                 continue
-            if tr.link:
+            if tr.link and tr.link.startswith("#") and tr.link[1:] in self._exhibit_refs():
+                # a reference to a table or figure: a REF field to its caption's label, which updates with it
+                F.add_field(paragraph, f"REF {F.bookmark_name(tr.link[1:])} \\h", tr.text, run_props=fmt, dirty=False)
+            elif tr.link:
                 F.add_hyperlink(paragraph, tr.link, tr.text, fmt)
             else:
                 fmt(paragraph.add_run(tr.text))
@@ -453,23 +457,77 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         p.paragraph_format.keep_with_next = True
         return p
 
-    def _caption(self, container, label: str, text: Optional[str]):
+    def _caption(self, container, label: str, text: Optional[str], anchor: Optional[str] = None):
         full = f"{label}: {text}" if text and label else (text or label)
         if not full:
             return
         p = self._para(container, "Caption", full)
         if not (self.rtl_doc or is_rtl_text(full)):
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        return self._caption_runs(p, label, text, anchor)
+
+    def _caption_runs(self, p, label: Optional[str], text: Optional[str], anchor: Optional[str] = None):
+        """A caption's words: its label, numbered by a field when the document numbers it, then its text."""
         if self.paper:
-            return self._paper_caption(p, label, text)
-        self._runs(p, full)
+            return self._paper_caption(p, label or None, text, anchor)
+        if anchor and label:
+            self._exhibit_label(p, label, anchor)
+            if text:
+                self._runs(p, f": {text}")
+        else:
+            self._runs(p, f"{label}: {text}" if text and label else (text or label))
         return p
 
-    def _paper_caption(self, p, label: Optional[str], text: Optional[str]):
+    def _exhibit_label(self, p, label: str, anchor: str, *, bold=None, size=None, color=None) -> None:
+        """"Table 2" as Word writes a caption: the word, then a SEQ field that holds the number,
+        inside the bookmark references point at. Inserting a table in Word and updating fields
+        renumbers the captions and every reference to them."""
+        from ..core.numbering import current
+        num = current()
+        ex = next((e for e in num.exhibits.values() if e.anchor == anchor), None) if num else None
+        word, _, number = label.rpartition(" ")
+        if ex is None or not word:
+            self._runs(p, label, bold=bold, size=size, color=color)
+            F.add_bookmark(p, F.bookmark_name(anchor), self.bm)
+            return
+        seq = "Table" if ex.kind == "table" else "Figure"
+        self._seq[seq] = self._seq.get(seq, 0) + 1
+        restart = "" if self._seq[seq] == ex.number else f" \\r {ex.number}"     # an author's own number holds
+        self._seq[seq] = ex.number
+        bid = str(self.bm.next())
+        start, end = F.OxmlElement("w:bookmarkStart"), F.OxmlElement("w:bookmarkEnd")
+        start.set(F.qn("w:id"), bid)
+        start.set(F.qn("w:name"), F.bookmark_name(anchor))
+        end.set(F.qn("w:id"), bid)
+        p._p.append(start)
+        self._runs(p, f"{word} ", bold=bold, size=size, color=color)
+
+        def look(r):
+            if bold is not None:
+                r.font.bold = bold
+            if size:
+                r.font.size = Pt(size)
+            if color:
+                r.font.color.rgb = rgb(color)
+        F.add_field(p, f"SEQ {seq} \\* ARABIC{restart}", number, run_props=look, dirty=False)
+        p._p.append(end)
+
+    @staticmethod
+    def _exhibit_refs() -> set:
+        """Anchors of the numbered tables and figures; a reference may come before its caption."""
+        from ..core.numbering import current
+        num = current()
+        return {e.anchor for e in num.exhibits.values()} if num else set()
+
+    def _paper_caption(self, p, label: Optional[str], text: Optional[str], anchor: Optional[str] = None):
         """A paper's caption: "Table 1:" in bold, then the caption, in the text colour, centred."""
         size, ink = self.tokens.body_size * 0.9, self.tokens.colors["text_primary"]
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        if label:
+        if label and anchor:
+            self._exhibit_label(p, label, anchor, bold=True, size=size, color=ink)
+            if text:
+                self._runs(p, ":", bold=True, size=size, color=ink)
+        elif label:
             self._runs(p, f"{label}:" if text else label, bold=True, size=size, color=ink)
         if text:
             self._runs(p, f" {text}" if label else text, size=size, color=ink, italic=False)
@@ -736,15 +794,10 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             label = label or ""
             full = f"{label}: {b.caption}" if (label and b.caption) else (b.caption or label)
             p = self._para(c, "Caption", full)
-            if anchor:
-                F.add_bookmark(p, F.bookmark_name(anchor), self.bm)
             p.alignment = None if (self.rtl_doc or is_rtl_text(full)) else WD_ALIGN_PARAGRAPH.LEFT
             p.paragraph_format.keep_with_next = True
             p.paragraph_format.space_after = Pt(3)
-            if self.paper:
-                self._paper_caption(p, label or None, b.caption)
-            else:
-                self._runs(p, full)
+            self._caption_runs(p, label, b.caption, anchor)
         # a paper rules its tables (top, under the header, bottom) and fills nothing
         design = hints.get("design") or ("booktabs" if self.paper and not b.header_bg else None)
         headers = list(b.headers or [])
@@ -982,9 +1035,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         from ..core.numbering import exhibit_label
         label, anchor = exhibit_label(b)
         if b.caption or label:
-            p = self._caption(c, label or "", b.caption)
-            if anchor and p is not None:
-                F.add_bookmark(p, F.bookmark_name(anchor), self.bm)
+            self._caption(c, label or "", b.caption, anchor)
         if b.source:
             self._caption(c, "", f"{_i18n('source', lang)}: {b.source}")
 
@@ -1082,9 +1133,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         self._picture(c, png, f"{alt}. Data: {data_txt}" if data_txt else alt,
                       max_width_pt=min(self.content_width_pt, 6.3 * 72))
         if label:
-            p = self._caption(c, label, b.title)
-            if anchor and p is not None:
-                F.add_bookmark(p, F.bookmark_name(anchor), self.bm)
+            self._caption(c, label, b.title, anchor)
         self._spacer_after(c)
 
     def _b_diagram(self, c, b):
@@ -1590,8 +1639,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         self._page_break(c)
 
     def _exhibit_list(self, c, b):
-        """A list of figures or tables: each caption, linked to it. Word cannot rebuild it
-        from these captions, so it is written out rather than as a field."""
+        """A list of figures or tables: each caption, linked to it, inside a ``TOC \\c`` field
+        that Word rebuilds from the captions' SEQ fields, with page numbers, when it updates."""
         from ..core.numbering import current
         from ..i18n import label as _i18n
         kind = "figure" if b.kind == "figures" else "table"
@@ -1599,10 +1648,15 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         p = self._para(c, "TOC Heading", title)
         self._runs(p, title)
         num = current()
-        for ex in (num.listed(kind) if num else []):
+        entries = num.listed(kind) if num else []
+        for i, ex in enumerate(entries):
             text = f"{_i18n(kind, num.language)} {ex.number}" + (f": {ex.caption}" if ex.caption else "")
             p = self._para(c, "Normal", text)
+            if i == 0:
+                F.begin_field(p, f'TOC \\h \\z \\c "{"Figure" if kind == "figure" else "Table"}"')
             F.add_hyperlink(p, f"#{ex.anchor}", text)
+        if entries:
+            F.end_field(p)
         self._page_break(c)
 
     def _b_page_break(self, c, b):

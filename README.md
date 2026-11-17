@@ -1241,6 +1241,9 @@ repeating header rows and right-aligned numeric columns, hyperlinks and bookmark
 field (refreshed when Word opens the file), header/footer with `PAGE`/`NUMPAGES` fields,
 core properties, Arabic bidi paragraphs/runs with complex-script fonts, and per-table
 column order for bilingual documents. Equations are native Word equations (Office Math).
+Numbered captions ("Table 2", "Figure 3") hold their number in a `SEQ` field, references to them
+(`{ref:id}`) are `REF` fields, and lists of tables and figures are `TOC \c` fields, so inserting a
+table in Word and updating fields (F9) renumbers captions, references and lists together.
 Charts, diagrams and QR codes are embedded as images with alt text. Known differences: page breaks are
 computed by Word, so page counts can differ from the PDF; footnotes are rendered as notes
 paragraphs; text watermarks use VML (shown by Word, not by every viewer).
