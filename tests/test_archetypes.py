@@ -429,7 +429,10 @@ def test_arabic_chart_title_is_shaped_and_set_in_an_arabic_face():
     fig = chart._RENDERERS["bar"](chart._sized(block), THEME)
     chart._shape_arabic(fig, block)
     text = fig.axes[0].get_title()
-    assert text != title and any("ﭐ" <= c <= "ﻼ" for c in text)
+    if chart._shapes_itself():                   # Matplotlib joins and orders the letters: it gets them as written
+        assert text == title
+    else:
+        assert text != title and any("ﭐ" <= c <= "ﻼ" for c in text)
     assert "Amiri" in fig.axes[0].title.get_fontfamily()
 
 

@@ -198,6 +198,15 @@ def _is_number(s: str) -> bool:
 
 # ─────────────────────────── main entry ───────────────────────────
 
+def titled_by(blocks, i: int) -> bool:
+    """A reference list right under the author's own "References" heading: it needs no title of its own."""
+    from ..i18n import LABELS
+    if getattr(blocks[i], "type", None) != "bibliography" or not i or getattr(blocks[i - 1], "type", None) != "heading":
+        return False
+    names = {v["references"].casefold() for v in LABELS.values()} | {"bibliography", "works cited", "sources", "المصادر"}
+    return plain_text(blocks[i - 1].text).strip().rstrip(":").casefold() in names
+
+
 def normalize(document: Document, *, source_kind: str = "api",
               source_text: Optional[str] = None,
               front_matter: Optional[Dict[str, Any]] = None) -> SemanticDocument:
@@ -211,6 +220,8 @@ def normalize(document: Document, *, source_kind: str = "api",
 
     for i, b in enumerate(blocks):
         t = b.type
+        if titled_by(blocks, i):
+            b.hints = {**(b.hints or {}), "titled": True}
         texts = block_text(b)
         for s in texts:
             p = plain_text(s) if "\n" not in s or t != "code" else s

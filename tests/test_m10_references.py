@@ -146,3 +146,18 @@ def test_fluent_lists():
          .table(["A"], [["1"]], caption="Only table"))
     pages, _ = pdf_text(b.render())
     assert "List of Tables" in pages[0] and "Table 1: Only table" in " ".join(pages[0].split())
+
+
+@pytest.mark.parametrize("heading", ["References", "Sources", "المراجع", None])
+def test_a_reference_list_under_the_authors_heading_has_no_second_title(heading):
+    entries = [{"key": "a", "authors": "Abara, T.", "title": "Retreat", "source": "J. Coastal Policy", "year": "2023"}]
+    b = DocumentBuilder().heading("Intro").paragraph("Text.")
+    if heading:
+        b.heading(heading)
+    b.bibliography(entries)
+    pdf = " ".join(pdf_text(b.render())[0][0].split())
+    words = [p.text for p in docx.Document(io.BytesIO(b.render_docx())).paragraphs if p.text.strip()]
+    titles = (1 if heading else 0) + (0 if heading else 1)            # the author's heading, or the list's own title
+    assert sum(w in ("References", "Sources", "المراجع") for w in words) == titles
+    if heading != "المراجع":                    # extracted Arabic comes out in visual order; Word holds it as written
+        assert pdf.count("References") + pdf.count("Sources") == titles

@@ -1505,8 +1505,9 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
     def _b_bibliography(self, c, b):
         # a paper sets "References" as it sets its sections; entries keyed by number carry it,
         # because the text cites [1], [2]
-        self._runs(self._para(c, "Heading 1" if self.paper else "Heading 2", self._label("references")),
-                   self._label("references"))
+        if not (b.hints or {}).get("titled"):
+            self._runs(self._para(c, "Heading 1" if self.paper else "Heading 2", self._label("references")),
+                       self._label("references"))
         keyed = self.paper and b.style != "ieee" and all((e.key or "").strip().isdigit() for e in b.entries)
         for i, e in enumerate(b.entries, 1):
             p = self._para(c, "Normal", e.title)

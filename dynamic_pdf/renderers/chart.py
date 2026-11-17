@@ -225,8 +225,18 @@ def _arabic_face() -> str:
     return name
 
 
+def _shapes_itself() -> bool:
+    """Matplotlib built with libraqm (3.11 and later) joins Arabic letters and orders mixed text
+    itself; text shaped beforehand would be reversed a second time."""
+    from matplotlib import ft2font
+    return bool(getattr(ft2font, "__libraqm_version__", None))
+
+
 def _visual(text: str) -> str:
-    """Matplotlib has no shaping or bidi: give it joined letters in visual order, line by line."""
+    """Older Matplotlib has no shaping or bidi: give it joined letters in visual order, line by
+    line. A Matplotlib that shapes text itself is given the text as written."""
+    if _shapes_itself():
+        return text
     from ..layout.factory import _apply_rtl, _is_rtl
     return "\n".join(_apply_rtl(line, "R" if _is_rtl(line) else "L") if _ARABIC_TEXT.search(line) else line
                      for line in text.split("\n"))
@@ -509,10 +519,27 @@ def _donut(block, theme):
     for t in texts:
         t.set_fontsize(9)
     if block.title:
-        ax.text(0, 0, block.title, ha="center", va="center",
-                fontsize=10, fontweight="bold", color="#222222")
+        _title_in_hole(fig, ax, block.title, hole=0.5)
     fig.tight_layout()
     return fig
+
+
+def _title_in_hole(fig, ax, title: str, hole: float) -> None:
+    """The title in the doughnut's hole when it fits there, on two lines at most; otherwise
+    above the chart, so it never runs over the ring."""
+    import textwrap
+    lines = textwrap.wrap(title, width=max(8, len(title) // 2 + 1)) if len(title) > 12 else [title]
+    if len(lines) <= 2:
+        t = ax.text(0, 0, "\n".join(lines), ha="center", va="center", fontsize=10, fontweight="bold",
+                    color="#222222", linespacing=1.15)
+        fig.canvas.draw()
+        box = t.get_window_extent(fig.canvas.get_renderer())
+        (x0, y0), (x1, y1) = ax.transData.transform([(-hole, -hole), (hole, hole)])
+        span = min(abs(x1 - x0), abs(y1 - y0)) * 0.86            # the widest line a circle of the hole holds, with air
+        if box.width <= span and box.height <= span:
+            return
+        t.remove()
+    ax.set_title(title, fontsize=11, fontweight="bold", color="#222222", pad=10)
 
 
 def _scatter(block, theme):

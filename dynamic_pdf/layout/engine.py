@@ -1292,6 +1292,9 @@ class LayoutEngine:
                     flowables.append(region[0])
                     skip_to = i + region[1]
                     continue
+                from ..core.normalize import titled_by
+                if titled_by(self.document.blocks, i):
+                    block = block.model_copy(update={"hints": {**(block.hints or {}), "titled": True}})
                 result = create_flowables(block, theme, ctx)
                 if result:
                     if self.geometry is not None or tagged:

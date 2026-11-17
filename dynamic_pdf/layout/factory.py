@@ -2494,8 +2494,9 @@ def _render_bibliography(block, theme, bs):
                                    textColor=_safe_color(theme.colors.text_primary),
                                    spaceBefore=theme.spacing.heading_spacing_before[0],
                                    spaceAfter=theme.spacing.heading_spacing_after[0])
-    flowables.append(Paragraph(_md_inline(_label("references")), title_sty))
-    flowables[-1].keepWithNext = 1
+    if not (block.hints or {}).get("titled"):
+        flowables.append(Paragraph(_md_inline(_label("references")), title_sty))
+        flowables[-1].keepWithNext = 1
     ref_sty = ParagraphStyle('BibEntry', parent=bs, firstLineIndent=-24,
                              leftIndent=24,
                              fontSize=theme.typography.base_size * 0.9,
