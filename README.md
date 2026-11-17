@@ -59,7 +59,8 @@ pip install "dynamic-pdf-builder[all]"        # every extra above except qa (AGP
 pip install -e ".[dev]"                       # from a clone: testing and linting tools
 ```
 
-The code is MIT; the bundled fonts are OFL-1.1 (`License-Expression: MIT AND OFL-1.1`), with each
+The code is MIT; the bundled fonts are OFL-1.1, and the symbol fallback (a subset of DejaVu Sans) is
+under the Bitstream Vera licence (`License-Expression: MIT AND OFL-1.1 AND Bitstream-Vera`), with each
 font's licence shipped in the package.
 
 ---
@@ -1542,6 +1543,9 @@ SOURCE_DATE_EPOCH=1700000000 dynamic-pdf render report.md --format both
 Work since v0.3.0, in brief. Design records for each step are under `docs/`.
 
 **Changes that can affect existing users**
+- `encrypt()` with a Word file or a workbook is refused (`EncryptionError`): only the PDF can carry
+  the password, and those files used to be written unprotected without a word.
+- Every cover page is a designed, bare page (no page number, a larger title, a rule over it).
 - `render()`, `render_bytes()` and `render_from_json()` design the document, as `export()` always has.
   For the classic theme look of v0.3, call `design(None)` first. `theme()` now counts as choosing a
   theme, so the design starts from it, as `DocumentBuilder(theme=...)` does.
@@ -1553,6 +1557,30 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
   references and lists of figures and tables are Word fields.
 
 **New**
+- Coloured words and letters: `[word]{red}`, `[text]{bg=yellow}`, `[text]{color=#C00 bg=yellow}`, with
+  English and Arabic colour names or any hex colour, wherever text goes, in PDF and Word. A letter
+  coloured inside an Arabic word stays joined to its neighbours.
+- `page_border: thin | double | thick` (front matter, or `meta.page_border`) frames every page, in PDF
+  and Word. Check boxes in a Word checklist can be ticked.
+- Maps, location sketches and mind maps as chart types (`map` from your own GeoJSON with values and
+  points, `sketch` with roads, blocks, places and a north arrow, `mindmap`), in PDF and Word, from the
+  ```` ```chart ```` fence, with Arabic labels.
+- Covers: every cover is a designed, bare page with the largest type in the document, a rule over the
+  title and the logo on a light plate when the ground is dark; `split` sets a panel of colour beside
+  the text; `cover:`, `cover_color:` and `cover_image:` in the front matter build one from the title,
+  subject, author, date and logo.
+- A preface and a conclusion on pages of their own: `preface_page()`, `conclusion_page()`, and
+  `:::preface` / `:::conclusion` in Markdown, titled in the document's language; Arabic is shaped and
+  set from the right.
+- Symbols and emoji draw in the PDF instead of boxes: ★ ☐ ₹ ☎ and the rest from a bundled symbol face
+  (a subset of DejaVu Sans), emoji from Noto Emoji, in any text, bold or Arabic. An emoji copies out of
+  the PDF as itself (ReportLab's ToUnicode entry for characters beyond U+FFFF is corrected). A character
+  no bundled font draws is reported as `missing_glyph`.
+- The certificate is set in a frame (a border, a hairline and gold corners) with its signatures centred,
+  on one page in English and Arabic.
+- A logo in any kit's data (`"logo": "logo.png"`) heads the document: a letterhead on a letter, a logo
+  header on an invoice or quotation, a report header on studies and statements, the logo over a
+  certificate's title. `logo:` alone in the front matter brings a header to carry it.
 - Headers and footers: presets (`letterhead`, `modern`, `banner`, `report`, `minimal`) placed by reading
   edge with the logo, title, running section, company and page number, in PDF and Word, from
   `page_system("modern", logo=..., company=...)` or the front matter (`header:`, `logo:`, `company:` ...);
@@ -1597,11 +1625,16 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
 - License expression `MIT AND OFL-1.1` with every font licence in the package; `py.typed`.
 
 **Fixed**
+- Shapes in Word were all rectangles as wide as the page: a circle, an arrow or a polygon is now a
+  picture of the shape the PDF draws. A shape's Arabic label drew as boxes; its colour reads on the
+  fill; `#fff` (three-digit hex) was read as blue.
 - A justified line before a long e-mail address or URL no longer stretches its words far apart: such a
   line keeps its natural spacing, and the address stays whole, so it copies intact.
 - Right-to-left text: lines ending in a line break (an address, Label: value lines) sat on the left in
   justified paragraphs; two columns now read from the right, as in Word.
 - A column of amounts with an "in words" row under it was read as text and lost its right alignment.
+- A long document that opens with its title, given a cover by the design, no longer repeats the title at
+  the head of the page after the cover.
 - A report whose sections are numbered no longer numbers its title ("1 Annual review", "1.1 Results").
 - The page number reads in the document's language ("صفحة 2 من 3"), in PDF and Word.
 - A negative bar's label no longer runs into the axis names.

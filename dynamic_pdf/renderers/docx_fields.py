@@ -38,6 +38,38 @@ def _get_or_add(parent, tag: str, before: Optional[tuple] = None):
     return el
 
 
+def set_page_border(section, val: str, size_eighths: int, color: str, space_pt: int = 18) -> None:
+    """A border round the page, measured from the page's edge."""
+    sect = section._sectPr
+    old = sect.find(qn("w:pgBorders"))
+    if old is not None:
+        sect.remove(old)
+    box = OxmlElement("w:pgBorders")
+    box.set(qn("w:offsetFrom"), "page")
+    for side in ("top", "left", "bottom", "right"):
+        el = OxmlElement(f"w:{side}")
+        for key, v in (("val", val), ("sz", str(size_eighths)), ("space", str(space_pt)), ("color", color.lstrip("#").upper())):
+            el.set(qn(f"w:{key}"), v)
+        box.append(el)
+    margins = sect.find(qn("w:pgMar"))             # the schema wants it straight after the margins
+    (margins.addnext(box) if margins is not None else sect.append(box))
+
+
+def add_checkbox(paragraph, checked: bool) -> None:
+    """A check box the reader can tick in Word (a content control), followed by a space."""
+    from docx.oxml import parse_xml
+    w14 = "http://schemas.microsoft.com/office/word/2010/wordml"
+    w = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+    glyph = "\u2611" if checked else "\u2610"
+    paragraph._p.append(parse_xml(
+        f'<w:sdt xmlns:w="{w}" xmlns:w14="{w14}"><w:sdtPr><w14:checkbox><w14:checked w14:val="{int(bool(checked))}"/>'
+        '<w14:checkedState w14:val="2611" w14:font="Segoe UI Symbol"/>'
+        '<w14:uncheckedState w14:val="2610" w14:font="Segoe UI Symbol"/></w14:checkbox></w:sdtPr>'
+        '<w:sdtContent><w:r><w:rPr><w:rFonts w:ascii="Segoe UI Symbol" w:hAnsi="Segoe UI Symbol" w:cs="Segoe UI Symbol"/>'
+        f'</w:rPr><w:t>{glyph}</w:t></w:r></w:sdtContent></w:sdt>'))
+    paragraph.add_run("  ")
+
+
 def set_cell_shading(cell, fill_hex: str) -> None:
     tcPr = cell._tc.get_or_add_tcPr()
     shd = _get_or_add(tcPr, "w:shd")

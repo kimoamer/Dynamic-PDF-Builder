@@ -68,10 +68,20 @@ bibliography: refs.bib             # BibTeX for [@key] citations
 citation-style: apa                # apa (author and year) or ieee (numbers)
 reviewer: Policy AI                # name on suggested edits and comments
 header: modern                     # header and footer: letterhead, modern, banner, report, minimal
-logo: logo.png                     # with header: the logo in it
-company: Nile Co.                  # with header: also website, email, phone, department, confidentiality ...
+logo: logo.png                     # the logo; without header, a letterhead (letters, invoices) or modern
+company: Nile Co.                  # for the header: also address, website, email, phone, confidentiality ...
+page_border: double                # a frame round every page: thin, double or thick
+cover: split                       # a cover page: true, centered, left_aligned or split (from title, subject, author, date, logo)
+cover_color: "#1B365D"             # the cover's ground (a panel beside the text on split); cover_image: photo.jpg
 ---
 ```
+
+Colour: `[word]{red}` colours a word or a single letter, `[text]{bg=yellow}` puts a colour behind it,
+and both combine: `[text]{color=#C00 bg=yellow}`. Names: red, green, blue, orange, purple, teal, pink,
+brown, gray, black, white, yellow, gold, navy (and أحمر، أخضر، أزرق، برتقالي، بنفسجي، وردي، بني، رمادي،
+أسود، أبيض، أصفر، ذهبي، كحلي), or any hex colour. It works wherever text does (headings, table cells,
+lists), in PDF and Word; a letter coloured inside an Arabic word stays joined. Put emphasis outside
+the span: `**[word]{red}**`.
 
 Text: `**bold**`, `*italic*`, `~~struck~~`, `` `code` ``, `==highlight==`, `x^2^`, `H<sub>2</sub>O`,
 `[link](https://example.com)`, footnotes `text[^1]` with `[^1]: the note` anywhere below.
@@ -90,6 +100,7 @@ Blocks:
 | `> [!pullquote]` or `> [!epigraph]` as the quote's first line | a statement set large, or a short epigraph toward the end edge |
 | ```` ```signature ```` with `{"name": ..., "title": ..., "image": "sig.png"}`, or a list of them | a signature, or up to four side by side |
 | `:::warning` ... `:::` (also info, tip, success, danger, caution, important, example) | a callout box |
+| `:::preface` ... `:::` (or `:::introduction`), `:::conclusion` ... `:::`; a title may follow the word | a preface before the text, or a conclusion after it, each on a page of its own |
 | ```` ```python ```` ... ```` ``` ```` | code, highlighted |
 | `$$ E = mc^2 $$ {#eq-energy}` or ```` ```math ```` | an equation (numbered when it has an id) |
 | ```` ```chart ```` with a JSON object | a chart (see Charts) |
@@ -123,6 +134,22 @@ a whole: no negative values. Data a chart cannot draw truthfully is refused with
 
 In Word, bar, line, area, pie and doughnut charts are native Word charts whose data can be edited; the
 other types are pictures.
+
+Maps, location sketches and mind maps are chart types too:
+
+- `map`: regions from GeoJSON you supply (nothing is downloaded), shaded by a value each, with named
+  points: `{"type": "map", "data": {"geojson": {...} or "regions.geojson", "label": "name", "values":
+  {"Cairo": 9.5}, "points": [{"name": "Port", "lon": 32.3, "lat": 31.2}], "highlight": ["Giza"]}}`.
+- `sketch`: a location sketch (a croquis), not to scale, in any units: `{"roads": [{"name": "Tahrir St",
+  "points": [[0, 5], [10, 5]], "width": 2}], "blocks": [{"name": "Park", "box": [1, 6, 4, 9]}], "places":
+  [{"name": "Our office", "at": [6, 4], "kind": "site"}, {"name": "Mosque", "at": [3, 6]}], "north": 0,
+  "note": "Not to scale"}`. `north` is degrees clockwise from the top of the page.
+- `mindmap`: one topic and its branches: `{"Strategy": {"Growth": ["New markets", "Pricing"], "Costs":
+  ["Suppliers"]}}`.
+
+Shapes (`b.shape("rounded_rect", width=250, height=60, fill_color="#F7FAFC", label="Status: active")`: rect,
+rounded_rect, circle, ellipse, line, arrow, polygon, arc, wedge) are vector in the PDF and a picture of
+the same drawing in Word; a label may be Arabic or carry symbols.
 
 ## Tables
 
@@ -239,7 +266,10 @@ kit("invoice", data).export("invoice.pdf")   # or .docx, or .xlsx for the lines 
 Terminal: `dynamic-pdf kit invoice --example > invoice.json`, then `dynamic-pdf kit invoice invoice.json -o
 invoice.pdf`. MCP: the `kit` tool (without `data` it returns the example).
 
-Every kit reads `language`: `en` or `ar`. A missing or malformed field is refused with its name and the fix.
+Every kit reads `language`: `en` or `ar`, and `logo` (a PNG, JPEG or SVG path): the letter gets a
+letterhead with the sender's name, address and contacts; the invoice and quotation a logo header; the
+feasibility study and statements a report header; the certificate the logo over its title. A CV takes
+none, for applicant tracking systems. A missing or malformed field is refused with its name and the fix.
 
 - `invoice` reads `number`, `date`, `due`, `currency` (SAR, EGP, USD ... for the amount in words), `seller`
   and `buyer` (each `name`, `address`, `tax_id`, `email`, `phone`), `items` (each `description`,
@@ -272,7 +302,8 @@ Every kit reads `language`: `en` or `ar`. A missing or malformed field is refuse
   the difference.
 - `certificate`: a landscape certificate. `organisation`, `title` (default "Certificate of Completion"),
   `recipient`, `gender` (`f` for the Arabic feminine), `achievement`, `details`, `date`, `number` and
-  `signatures` (one or two, each `name` and `title`).
+  `signatures` (one or two, each `name` and `title`), set in a frame (`"frame": false` leaves it out),
+  always on one page.
 
 ## Output
 
@@ -305,6 +336,11 @@ makes the whole document right-to-left. Tables, lists, captions, page numbers, c
 follow. Arabic-Indic digits stay as written, and computed cells keep them. Amounts in words and
 references ("المعادلة (1)", "جدول 2") are written in Arabic in an Arabic document.
 
+Fonts: 45 bundled families (`dynamic_pdf.fonts.list_font_families()`, 23 of them Arabic) set with
+`b.fonts(heading=..., body=..., arabic=...)`; your own with `register_custom_font(name, path)`. Symbols
+(→ ✓ ★ ☐ ₹ ☎ ...) and emoji (😀 🚀 ✅ ...) draw from bundled fallback faces wherever they appear, and
+Word draws them with its own. Tashkeel, Persian and Urdu letters and ligatures such as ﷺ are shaped.
+
 ## Safety and settings
 
 - Remote images are refused unless `AssetPolicy(allow_remote=True)`; local files can be confined to a
@@ -322,3 +358,11 @@ references ("المعادلة (1)", "جدول 2") are written in Arabic in an Ar
 - Emphasis inside a suggested edit should open and close inside it.
 - Word lays out its own pages, so its page count can differ from the PDF's.
 - A long unbreakable word (an e-mail address, a long URL) can leave the justified line before it widely spaced.
+- In Word the library writes: styles and an outline, real numbered and bulleted lists, tables with
+  repeating header rows, footnotes, a contents field, caption and reference fields, native equations and
+  charts, tracked changes and comments, headers and footers with live fields, sections (landscape pages,
+  columns), page borders, check boxes the reader can tick, watermarks, document properties and embedded
+  fonts. It does not write endnotes, an index, line numbers, text boxes in the text, SmartArt, drop
+  caps or a password: `encrypt()` protects the PDF only, and a Word file or workbook is refused then.
+- Emoji in the PDF are drawn in one colour, each on its own: a flag shows its two letters, a family its
+  members, and skin tones are left out. Running headers and footers and chart labels draw text faces only.

@@ -448,3 +448,189 @@ def test_bands_share_the_text_columns_edges(tmp_path):
     title_x = tp.get_charbox(tp.search("Review").get_next()[0])[0]
     body_x = min(tp.get_charbox(k)[0] for k in range(tp.count_chars()) if tp.get_text_range(k, 1).strip())
     assert abs(title_x - body_x) < 1.5
+
+
+def test_a_kit_logo_goes_where_the_document_wants_it(tmp_path):
+    logo = _logo(tmp_path)
+    letter = kit("letter", {**kit_example("letter"), "logo": logo})
+    ps = letter._meta.page_system
+    assert ps.first_header.rows[0].start[0].src == logo and ps.values["company"] == "Nile Office Supplies"
+    assert ps.values["address"] == "King Fahd Road, Riyadh 12271"
+    assert not any("King Fahd" in (getattr(b, "text", "") or "") for b in letter._blocks)   # not twice
+    assert kit("invoice", {**kit_example("invoice"), "logo": logo})._meta.page_system is not None
+    assert kit("cv", {**kit_example("cv"), "logo": logo})._meta.page_system.header is None   # ATS: no header
+    cert = kit("certificate", {**kit_example("certificate"), "logo": logo})
+    assert any(b.type == "image" and b.src == logo for b in cert._blocks)
+
+
+def test_a_front_matter_logo_alone_brings_a_header(tmp_path):
+    logo = _logo(tmp_path)
+    b = DocumentBuilder.from_markdown(f"---\ntitle: T\nlogo: {logo}\n---\n\n# T\n\nText.\n")
+    assert b._meta.page_system is not None and b._meta.page_system.first_page == "custom"
+    letter = DocumentBuilder.from_markdown(f"---\ntitle: T\nlogo: {logo}\ndocument_type: letter\n---\n\nDear Sir,\n")
+    assert len(letter._meta.page_system.first_header.rows) == 3                # the letterhead
+
+
+def test_a_certificate_has_a_frame_and_stays_on_one_page(tmp_path):
+    import pypdfium2 as pdfium
+    ar = {**kit_example("certificate"), "language": "ar", "logo": _logo(tmp_path), "recipient": "ليلى منصور",
+          "organisation": "أكاديمية النيل للتدريب", "achievement": "النمذجة المالية للمديرين",
+          "signatures": [{"name": "عمر حسن", "title": "مدير البرنامج"}, {"name": "سارة أحمد", "title": "العميدة"}]}
+    for data in (kit_example("certificate"), ar):
+        b = kit("certificate", data)
+        assert b._blocks[0].type == "page_media" and b._blocks[0].src.startswith("data:image/png")
+        assert len(pdfium.PdfDocument(b.render())) == 1
+    assert kit("certificate", {**kit_example("certificate"), "frame": False})._blocks[0].type != "page_media"
+
+
+def test_a_built_cover_takes_the_title_off_the_next_page():
+    md = "---\ntitle: Annual review\n---\n\n# Annual review\n\n## Results\n\n" + "Revenue rose in every region. " * 600
+    b = DocumentBuilder.from_markdown(md).design("executive_report")
+    blocks = b._prepared()[0].blocks
+    assert blocks[0].type == "cover_page"
+    assert [x.text for x in blocks if x.type == "heading"][0] == "Results"       # the title is on the cover only
+
+
+def test_symbols_and_emoji_draw_and_copy_out_intact():
+    import pypdfium2 as pdfium
+    b = DocumentBuilder().heading("Launch 🚀 done ✅").paragraph(
+        "Stars ★☆ ☐ ₹ and **bold 😀 🎉** thumbs 👍🏽 heart ❤️ family 👨‍👩‍👧.").paragraph("علامة ™ ونجمة ★ و 😀 في نص عربي")
+    text = pdfium.PdfDocument(b.render())[0].get_textpage().get_text_range()
+    for ch in "🚀✅★☆☐₹😀🎉👍❤👨👩👧":
+        assert ch in text, ch                                   # drawn by a font that has it, and extracted as itself
+    assert "️" not in text and "\U0001F3FD" not in text      # what would draw as a box is left out
+    from dynamic_pdf.layout.factory import _glyph_fallback
+    assert "‍" in _glyph_fallback("می‍خواهم")           # a joiner in Persian text is kept
+
+
+def test_a_character_no_font_draws_is_reported(tmp_path):
+    r = DocumentBuilder().paragraph("Hieroglyph 𓀀 here.").review(str(tmp_path / "r"), dpi=30)
+    assert not r["passed"] and any(i["code"] == "missing_glyph" for i in r["issues"])
+
+
+def test_a_cover_from_the_front_matter_is_a_bare_designed_page(tmp_path):
+    import pypdfium2 as pdfium
+    md = (f"---\ntitle: Annual Report 2026\nsubject: Growth\nauthor: Finance\ndate: November 2026\nlogo: {_logo(tmp_path)}\n"
+          "cover: split\ncover_color: \"#1B365D\"\n---\n\n# Results\n\nText.\n")
+    b = DocumentBuilder.from_markdown(md)
+    cover = b._blocks[0]
+    assert (cover.type, cover.layout, cover.background_color, cover.date) == ("cover_page", "split", "#1B365D", "November 2026")
+    pdf = pdfium.PdfDocument(b.render())
+    text = pdf[0].get_textpage().get_text_range()
+    assert "Annual" in text and "Page" not in text and "/" not in text            # no header or footer on the cover
+    tp = pdf[0].get_textpage()
+    title_h = tp.get_charbox(tp.search("Annual").get_next()[0])
+    assert title_h[3] - title_h[1] > 18                                           # the largest type in the document
+    assert b.render_docx()
+    plain = DocumentBuilder().cover_page("Plain cover").paragraph("x")
+    assert "Page" not in pdfium.PdfDocument(plain.render())[0].get_textpage().get_text_range()
+
+
+def test_preface_and_conclusion_pages_in_both_languages():
+    import pypdfium2 as pdfium
+    md = "---\nlanguage: ar\n---\n\n:::preface\nنص التمهيد هنا.\n:::\n\n# النتائج\n\nنص.\n\n:::conclusion خلاصة القول\nنص الخاتمة.\n:::\n"
+    b = DocumentBuilder.from_markdown(md)
+    pages = [x for x in b._blocks if x.type == "introduction_page"]
+    assert [(x.title, x.position) for x in pages] == [("تمهيد", "front"), ("خلاصة القول", "back")]
+    pdf = pdfium.PdfDocument(b.render())
+    assert len(pdf) == 3                                                          # each on a page of its own
+    lines = _lines(b.render())
+    assert max(r for _, _, r in lines[1:3]) > 400                                 # set from the right
+    en = DocumentBuilder().preface_page("Why this report.").heading("Body").conclusion_page("What next.")
+    assert [x.title for x in en._blocks if x.type == "introduction_page"] == ["Preface", "Conclusion"]
+    assert en.render_docx()
+
+
+def test_maps_sketches_and_mind_maps_draw_in_pdf_and_word():
+    import pypdfium2 as pdfium
+    square = [[30, 30], [31, 30], [31, 31], [30, 31], [30, 30]]
+    gj = {"type": "FeatureCollection", "features": [
+        {"type": "Feature", "properties": {"name": "North"}, "geometry": {"type": "Polygon", "coordinates": [square]}},
+        {"type": "Feature", "properties": {"name": "South"},
+         "geometry": {"type": "Polygon", "coordinates": [[[x, y - 1] for x, y in square]]}}]}
+    b = DocumentBuilder()
+    b.chart("map", {"geojson": gj, "values": {"North": 3, "South": 9}, "points": [{"name": "Depot", "lon": 30.5, "lat": 30.2}]},
+            title="Sales by region")
+    b.chart("sketch", {"roads": [{"name": "شارع التحرير", "points": [[0, 5], [10, 5]]}],
+                       "places": [{"name": "مكتبنا", "at": [6, 4], "kind": "site"}], "north": 0}, title="كروكي الموقع")
+    b.chart("mindmap", {"Strategy": {"Growth": ["Markets", "Pricing"], "Costs": ["Suppliers"]}})
+    pdf = pdfium.PdfDocument(b.render())                                 # chart text is drawn as outlines
+    inked = sum(1 for pg in pdf for px in pg.render(scale=0.3).to_pil().convert("L").getdata() if px < 200)
+    assert len(pdf) <= 3 and inked > 1500                                # three drawings, each within its page
+    from docx import Document
+    assert len(Document(io.BytesIO(b.render_docx())).inline_shapes) == 3 and not b.lint()
+    md = '```chart\n{"type": "mindmap", "data": {"Plan": {"A": ["x"], "B": []}}}\n```\n'
+    assert DocumentBuilder.from_markdown(md)._blocks[0].chart_type == "mindmap"
+    for bad, say in (({"geojson": {"type": "FeatureCollection", "features": []}}, "nothing to draw"),):
+        with pytest.raises(Exception, match=say):
+            DocumentBuilder().chart("map", bad).render()
+    with pytest.raises(Exception, match="one topic"):
+        DocumentBuilder().chart("mindmap", {"A": {}, "B": {}}).render()
+
+
+def test_shapes_are_shapes_in_word_and_labels_read():
+    import pypdfium2 as pdfium
+    from docx import Document
+    from dynamic_pdf.layout.factory import _safe_color
+    assert _safe_color("#fff").hexval() == "0xffffff"                    # not 0x000fff
+    b = DocumentBuilder().shape("circle", width=60, height=60, fill_color="#E53E3E", label="A").shape(
+        "rounded_rect", width=250, height=60, fill_color="#F7FAFC", label="حالة: نشط ✓")
+    assert "A" in pdfium.PdfDocument(b.render())[0].get_textpage().get_text_range()
+    docx = Document(io.BytesIO(b.render_docx()))
+    assert len(docx.inline_shapes) == 2 and not docx.tables               # pictures of the shapes, not table cells
+
+
+def test_a_page_border_frames_every_page_in_pdf_and_word():
+    import zipfile
+    import pypdfium2 as pdfium
+    md = "---\ntitle: T\npage_border: double\n---\n\n# T\n\n" + "Body text. " * 900
+    b = DocumentBuilder.from_markdown(md)
+    assert b._meta.page_border == "double"
+    pdf = pdfium.PdfDocument(b.render())
+    assert len(pdf) >= 2
+    for i in (0, len(pdf) - 1):                       # a dark line 18 points in from the left edge, half-way down
+        im = pdf[i].render(scale=2).to_pil().convert("L")
+        assert min(im.getpixel((x, im.height // 2)) for x in range(30, 42)) < 140
+    plain = pdfium.PdfDocument(DocumentBuilder().paragraph("x").render())[0].render(scale=2).to_pil().convert("L")
+    assert min(plain.getpixel((x, plain.height // 2)) for x in range(30, 42)) > 240
+    xml = zipfile.ZipFile(io.BytesIO(b.render_docx())).read("word/document.xml").decode()
+    assert 'w:pgBorders w:offsetFrom="page"' in xml and 'w:val="double"' in xml
+
+
+def test_word_check_boxes_can_be_ticked():
+    import zipfile
+    from docx import Document
+    data = DocumentBuilder.from_markdown("- [x] done\n- [ ] to do\n").render_docx()
+    xml = zipfile.ZipFile(io.BytesIO(data)).read("word/document.xml").decode()
+    assert xml.count("<w14:checkbox>") == 2 and '<w14:checked w14:val="1"/>' in xml and '<w14:checked w14:val="0"/>' in xml
+    assert [p.text.strip() for p in Document(io.BytesIO(data)).paragraphs if p.text.strip()] == ["done", "to do"]
+
+
+def test_encryption_never_leaves_a_word_file_or_workbook_in_the_clear(tmp_path):
+    from dynamic_pdf.utils.errors import EncryptionError
+    b = DocumentBuilder().table(["A"], [["1"]]).paragraph("secret").encrypt("owner", "user")
+    for call in (b.render_docx, b.render_xlsx, lambda: b.export(str(tmp_path / "x.docx"))):
+        with pytest.raises(EncryptionError, match="protects the PDF only"):
+            call()
+    assert not (tmp_path / "x.docx").exists()
+
+
+def test_coloured_words_and_letters_in_pdf_and_word():
+    import zipfile
+    import pypdfium2 as pdfium
+    from dynamic_pdf.core.inline import parse_inline, plain_text, span_style
+    assert span_style("red") == ("#C62828", None) and span_style("color=#c00 bg=yellow") == ("#CC0000", "#FFF2A8")
+    assert span_style("أحمر") == ("#C62828", None) and span_style("#anchor") is None and span_style("onclick=x") is None
+    runs = parse_inline("A [red]{red} word, ال[ع]{red}ربية and [kept]{unknown}.")
+    assert [(r.text, r.color) for r in runs if r.color] == [("red", "#C62828"), ("ع", "#C62828")]
+    assert plain_text("A [red]{red} word and [kept]{unknown}.") == "A red word and [kept]{unknown}."
+    md = "# [Title]{blue}\n\nA [red]{red} word on [yellow]{bg=yellow}; نص [أحمر]{أحمر}.\n\n| A |\n|---|\n| [ok]{green} |\n"
+    b = DocumentBuilder.from_markdown(md)
+    page = pdfium.PdfDocument(b.render())[0]
+    text = page.get_textpage().get_text_range()
+    assert "A red word on yellow" in text and "{" not in text                   # the markup is gone, the words stay
+    pixels = set(page.render(scale=1).to_pil().convert("RGB").getdata())
+    assert any(r > 170 and g < 80 and bl < 80 for r, g, bl in pixels)           # something is red
+    xml = zipfile.ZipFile(io.BytesIO(b.render_docx())).read("word/document.xml").decode()
+    assert 'w:color w:val="C62828"' in xml and 'w:fill="FFF2A8"' in xml and 'w:color w:val="2E7D32"' in xml
+    assert not b.lint()

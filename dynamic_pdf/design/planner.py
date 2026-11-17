@@ -239,6 +239,8 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
         cover = CoverPageBlock(title=sem.meta.title,
                                subtitle=sem.meta.subject or sem.meta.description,
                                author=sem.meta.author)
+        if _opens_with_title(sem):              # the cover says the title: the page after it does not repeat it
+            sem.blocks.remove(next(b for b in sem.blocks if b.type == "heading"))
         sem.blocks.insert(0, cover)
         lp.log("cover", f"~{lp.estimated_pages:.1f} pages with a title: cover built from metadata")
     # ── a short document whose design has no header band still shows its title (a letter does not) ──

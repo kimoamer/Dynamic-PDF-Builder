@@ -4,7 +4,7 @@ kept as live text over it. The legacy cover in ``factory`` stays for plain cover
 from __future__ import annotations
 
 from reportlab.lib.styles import ParagraphStyle
-from reportlab.platypus import Indenter, PageBreak, Spacer
+from reportlab.platypus import Flowable, Indenter, PageBreak, Spacer
 
 from .. import policy as _diag
 from ..fonts import get_font_name
@@ -52,11 +52,15 @@ def cover_plan(block, geo: PageGeometry, rtl: bool, collector):
     """What a designed cover draws, for both renderers: the layout, the layers and
     the text colour."""
     layout = block.layout or "left_aligned"
-    split = layout == "split" and bool(block.background_image)
+    split = layout == "split"
     top = image_top(block)
     layers = []
     fill = block.background_color
-    if fill:
+    if fill and split and not block.background_image:
+        # a panel of colour down the end side; the text stands on the paper beside it
+        x, y, w, h = _panel(geo, True, rtl)
+        layers.append(PageItem(None, None, x, y, ImageTreatment(), True, -2, fill=fill, w=w, h=h))
+    elif fill:
         layers.append(PageItem(None, None, 0, 0, ImageTreatment(), True, -2, fill=fill,
                                w=geo.width, h=geo.height))
     asset = _load(block.background_image, "Cover background", collector) if block.background_image else None
@@ -108,6 +112,25 @@ def title_block(block, theme) -> list:
     return story
 
 
+class _Plated(Flowable):
+    """A logo on a rounded white plate, 6 points wide all round."""
+
+    def __init__(self, logo, side: str):
+        super().__init__()
+        self.logo, self.hAlign, self.pad = logo, side, 6.0
+        w, h = logo.wrap(10000, 10000)
+        self.width, self.height = w + 2 * self.pad, h + 2 * self.pad
+        self.outer_h = self.height + 4
+
+    def wrap(self, aw, ah):
+        return self.width, self.height
+
+    def draw(self):
+        self.canv.setFillColorRGB(1, 1, 1)
+        self.canv.roundRect(0, 0, self.width, self.height, 4, fill=1, stroke=0)
+        self.logo.drawOn(self.canv, self.pad, self.pad)
+
+
 def designed_cover(block, theme, ctx) -> list:
     from .factory import Paragraph, _is_rtl, _md_inline, _safe_color, _label
     geo = ctx.page_geometry
@@ -120,8 +143,11 @@ def designed_cover(block, theme, ctx) -> list:
     primary = _safe_color(ink or theme.colors.text_primary)
     secondary = _safe_color(ink or theme.colors.text_secondary)
     align = 1 if layout == "centered" else (2 if rtl else 0)
-    size = (theme.typography.title_size or
-            theme.typography.base_size * theme.typography.heading_scale[0] * float(hints.get("title_scale", 1.4)))
+    # a cover's title is the largest type in the document: about three times the text unless the design says
+    size = (theme.typography.base_size * theme.typography.heading_scale[0] * float(hints["title_scale"])
+            if "title_scale" in hints else max(theme.typography.title_size or 0, theme.typography.base_size * 3.1))
+    # a short rule over the title: the design's colour, or the accent (the text colour on a dark ground)
+    rule = hints.get("rule") or (ink if ink and ink.upper() in ("#FFFFFF", "#FFF") else theme.colors.accent)
     arabic = get_font_name(theme.typography.arabic_family or "Amiri", bold=True)
     arabic_body = get_font_name(theme.typography.arabic_family or "Amiri")
 
@@ -138,17 +164,19 @@ def designed_cover(block, theme, ctx) -> list:
         asset = _load(block.logo, "Cover logo", _diag.current())
         if asset is not None:
             w = min(170.0, 58 * asset.aspect)
-            logo = MediaFlowable(asset, w, w / asset.aspect, ImageTreatment(),
-                                 {0: "RIGHT" if rtl else "LEFT", 1: "CENTER", 2: "RIGHT"}[align])
+            side = {0: "RIGHT" if rtl else "LEFT", 1: "CENTER", 2: "RIGHT"}[align]
+            logo = MediaFlowable(asset, w, w / asset.aspect, ImageTreatment(), side)
             check_resolution(asset, logo.fitted, _diag.current(), "Cover logo", LOGO_RESOLUTION_DPI)
+            if ink and ink.upper() in ("#FFFFFF", "#FFF"):      # on a dark ground a logo keeps its colours on a light plate
+                logo = _Plated(logo, side)
             story.append(logo)
             used += logo.outer_h
     drop = title_drop(block, layout, frame_h, geo.height, geo.top)
     story.append(Spacer(1, max(24, drop - used)))
-    if hints.get("rule"):
+    if rule:
         from reportlab.lib.colors import HexColor
         from reportlab.platypus import HRFlowable
-        story.append(HRFlowable(width="16%", thickness=3, color=HexColor(hints["rule"]), spaceAfter=size * 0.5,
+        story.append(HRFlowable(width="16%", thickness=3, color=HexColor(rule), spaceAfter=size * 0.5,
                                 hAlign={0: "RIGHT" if rtl else "LEFT", 1: "CENTER", 2: "RIGHT"}[align]))
     title = ParagraphStyle(
         "CoverTitle", fontName=face(block.title, get_font_name(theme.typography.heading_family, bold=True), True),

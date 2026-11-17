@@ -36,6 +36,10 @@ import math
 
 # ═══════════════════════ Page-count + TOC aware doc template ═══════════════════════
 
+# a page border's lines: (distance from the page edge, line width), in points
+BORDERS = {"thin": ((18, 0.8),), "thick": ((18, 2.2),), "double": ((18, 1.4), (22, 0.5))}
+
+
 class NumberedCanvas(Canvas):
     """Kept for backward compatibility (import path). Page totals are now
     resolved by ``_PageCounter`` + ``multiBuild``; this canvas adds nothing."""
@@ -985,6 +989,15 @@ class LayoutEngine:
             return
         self._on_page(canvas, doc)
 
+    def _page_border(self, canvas, lines) -> None:
+        w, h = self._page_wh(canvas)
+        canvas.saveState()
+        canvas.setStrokeColor(_hc(self.theme.colors.primary))
+        for inset, width in lines:
+            canvas.setLineWidth(width)
+            canvas.rect(inset, inset, w - 2 * inset, h - 2 * inset, fill=0, stroke=1)
+        canvas.restoreState()
+
     def _page_begin(self, canvas, doc):
         canvas._dpb_mark = len(canvas._code)
         canvas._dpb_items = []
@@ -1198,9 +1211,16 @@ class LayoutEngine:
         hooks = {"onPage": self._on_page}
         if any(getattr(b, "type", None) == "section_opener" for b in self.document.blocks):
             hooks = {"onPageEnd": self._on_page_end}
-        if self.page_system is not None or _uses_page_layers(self.document.blocks):
+        # a cover is a bare page: its header and footer are decided once the page's content is known
+        cover = any(getattr(b, "type", None) == "cover_page" and not (b.hints or {}).get("title_block")
+                    for b in self.document.blocks)
+        if self.page_system is not None or cover or _uses_page_layers(self.document.blocks):
             hooks = {"onPage": self._page_begin, "onPageEnd": self._page_finish}
         tagged = bool(getattr(self.document.meta, "tagged", False))
+        border = BORDERS.get(str(getattr(self.document.meta, "page_border", None) or "").lower())
+        if border:                                  # a frame round every page, under whatever else the page draws
+            first = next(iter(hooks))
+            hooks[first] = (lambda canv, doc, fn=hooks[first]: (self._page_border(canv, border), fn(canv, doc))[1])
         if tagged:
             from .tagging import artifact
             # running heads, feet and page layers are artifacts, not text

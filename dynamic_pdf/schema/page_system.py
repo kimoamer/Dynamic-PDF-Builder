@@ -13,7 +13,7 @@ from typing import Dict, List, Literal, Optional, Union
 from pydantic import BaseModel, Field
 
 FIELDS = ("title", "subtitle", "section", "chapter", "date", "period", "author", "department",
-          "confidentiality", "code", "website", "email", "phone", "company", "page", "pages")
+          "confidentiality", "code", "website", "email", "phone", "company", "address", "page", "pages")
 
 
 class Logo(BaseModel):
@@ -137,6 +137,7 @@ def preset(name: str, logo: Optional[str] = None, language: str = "en", **values
             first_page="custom",
             first_header=Band(row_gap=1, rows=[
                 BandRow(start=mark(40), end=["{company}"], bold=True, size=11, color="primary"),
+                BandRow(end=["{address}"], **muted),
                 BandRow(end=[contact], rule_below=True, rule_color="accent", rule_width=1.6, **muted)]),
             header=Band(rows=[BandRow(start=mark(16), end=["{title}"], rule_below=True, **muted)]),
             first_footer=Band(**foot, rows=[BandRow(start=["{department}"], end=[page], **muted)]),

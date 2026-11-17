@@ -1004,6 +1004,18 @@ class DocumentBuilder:
         ))
         return self
 
+    def preface_page(self, content: str, title: Optional[str] = None, subtitle: Optional[str] = None) -> 'DocumentBuilder':
+        """A preface on a page of its own before the text; the title defaults to "Preface" in the document's language."""
+        from .i18n import label
+        return self.introduction_page(title or label("preface", self._meta.language), content, subtitle)
+
+    def conclusion_page(self, content: str, title: Optional[str] = None, subtitle: Optional[str] = None) -> 'DocumentBuilder':
+        """A conclusion on a page of its own after the text; the title defaults to "Conclusion" in the document's language."""
+        from .i18n import label
+        self._blocks.append(IntroductionPageBlock(title=title or label("conclusion", self._meta.language),
+                                                  content=content, subtitle=subtitle, position="back"))
+        return self
+
     def two_column(self, left: List[Any], right: List[Any],
                    ratio: float = 0.5) -> 'DocumentBuilder':
         """Two-column layout."""
@@ -1084,6 +1096,7 @@ class DocumentBuilder:
         from .core.normalize import normalize
         from .renderers.docx_renderer import render_docx
         from .themes import get_theme as _get_theme
+        self._refuse_unprotected("Word document")
         doc, theme = self._prepared()
         if self._compose_active() and self._composed()[4].docx_source is not None:
             doc, theme = self._composed()[4].docx_source    # a plan made for the PDF only
@@ -1146,11 +1159,20 @@ class DocumentBuilder:
         finally:
             self._policy = kept
 
+    def _refuse_unprotected(self, what: str) -> None:
+        """Password protection was asked for, and only the PDF can carry it: nothing is written in the clear."""
+        if self._meta.encrypt:
+            from .utils.errors import EncryptionError
+            raise EncryptionError(
+                f"encrypt() protects the PDF only: this library cannot password-protect a {what}, and it will "
+                "not write one unprotected. Export the PDF, or build this file without encrypt().")
+
     def render_xlsx(self, output=None) -> Optional[bytes]:
         """Every table as a sheet of a workbook, its numbers as numbers and its formulas as
         spreadsheet formulas (needs openpyxl, the ``xlsx`` extra). Returns the bytes, or writes
         them to ``output`` (a path or a file object)."""
         from .renderers.xlsx_renderer import render_xlsx
+        self._refuse_unprotected("workbook")
         doc = self.build()
         data = render_xlsx(self._blocks, doc.blocks, doc.meta)
         if output is None:
@@ -1275,9 +1297,15 @@ class DocumentBuilder:
             builder.document_type(fm["document_type"])
         if fm.get("direction") in ("ltr", "rtl"):
             builder.direction(fm["direction"])
-        if isinstance(fm.get("header"), str) and fm["header"].strip():
+        if str(fm.get("page_border", "")).lower() in ("thin", "double", "thick"):
+            builder._meta.page_border = str(fm["page_border"]).lower()
+        header = fm.get("header") if isinstance(fm.get("header"), str) and fm["header"].strip() else None
+        if header is None and isinstance(fm.get("logo"), str) and fm["logo"].strip():
+            # a logo alone asks for a header to carry it: a letterhead on a letter or invoice, else modern
+            header = "letterhead" if str(fm.get("document_type", "")).lower() in ("letter", "invoice") else "modern"
+        if header:
             from .schema.page_system import FIELDS
-            builder.page_system(fm["header"].strip(), logo=fm.get("logo") or None,
+            builder.page_system(header.strip(), logo=fm.get("logo") or None,
                                 **{k: fm[k] for k in FIELDS if isinstance(fm.get(k), str) and k not in ("title", "page", "pages")})
         if str(fm.get("numbering", "")).lower() in ("true", "yes", "1"):
             builder._meta.exhibit_numbering = True
@@ -1286,6 +1314,14 @@ class DocumentBuilder:
             builder.bibtex(str(source), style if isinstance(style, str) else None)
         if isinstance(style, str) and style:
             builder._citation_style = style.lower()
+        if fm.get("cover") not in (None, "", "false", "no", False) and isinstance(fm.get("title"), str):
+            # cover: true, or a layout (centered, left_aligned, split); cover_color and cover_image set its ground
+            layout = str(fm["cover"]).strip().lower()
+            builder._blocks.insert(0, CoverPageBlock(
+                title=fm["title"], subtitle=fm.get("subject") or None, author=fm.get("author") or None,
+                date=fm.get("date") or None, logo=fm.get("logo") or None,
+                layout=layout if layout in ("centered", "left_aligned", "split") else None,
+                background_color=fm.get("cover_color") or None, background_image=fm.get("cover_image") or None))
         builder.front_matter = fm
         builder._source_kind = "markdown"
         builder._source_text = markdown

@@ -101,7 +101,7 @@ def test_missing_glyphs_fail_strict_and_report_permissive():
     with pytest.raises(QualityError) as ei:
         DocumentBuilder().paragraph("Stars ★ and 你好").qa("pdf")
     assert "missing_glyph" in str(ei.value) or "no installed font" in str(ei.value)
-    data, rep = DocumentBuilder().quality("permissive").paragraph("Stars ★").qa("pdf")
+    data, rep = DocumentBuilder().quality("permissive").paragraph("Greeting 你好").qa("pdf")   # ★ now has a face
     assert not rep.passed and rep.errors[0].code == "missing_glyph"
 
 

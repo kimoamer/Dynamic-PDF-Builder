@@ -134,7 +134,7 @@ class ImageBlock(BaseBlock):
 
 class ChartBlock(BaseBlock):
     type: Literal["chart"] = "chart"
-    chart_type: str                                 # bar, vertical_bar, horizontal_bar, grouped_bar, stacked_bar, line, area, pie, donut, scatter, bubble, histogram, heatmap, waterfall, funnel, gauge, sparkline, treemap
+    chart_type: str                                 # bar, vertical_bar, horizontal_bar, grouped_bar, stacked_bar, line, area, pie, donut, scatter, bubble, histogram, heatmap, waterfall, funnel, gauge, sparkline, treemap, map, sketch, mindmap
     data: Any
     title: Optional[str] = None
     colors: Optional[List[str]] = None
@@ -448,9 +448,10 @@ class IntroductionPageBlock(BaseBlock):
     type: Literal["introduction_page"] = "introduction_page"
     title: str = "Introduction"
     subtitle: Optional[str] = None
-    content: str = ""
+    content: str = ""                               # Markdown; a blank line parts paragraphs
     background_color: Optional[str] = None
     accent_color: Optional[str] = None
+    position: Literal["front", "back"] = "front"    # front: a preface, the text starts on the next page; back: a conclusion, on a new page
 
 # ─────────────────────── Layout Archetypes ───────────────────────
 # Opt-in page compositions. Each one fits itself to its content and, when it

@@ -91,5 +91,5 @@ def test_a_plain_install_can_check_its_pages_and_pulls_no_agpl_package():
     assert "pypdfium2" in core and "pymupdf" not in core
     extras = project["optional-dependencies"]
     assert "qa" not in extras["all"][0].split("[")[1] and "pymupdf" in " ".join(extras["qa"])
-    assert project["license"] == "MIT AND OFL-1.1"
+    assert project["license"] == "MIT AND OFL-1.1 AND Bitstream-Vera"
     assert (ROOT / "dynamic_pdf" / "py.typed").is_file()

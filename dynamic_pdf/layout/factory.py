@@ -357,11 +357,18 @@ def _label(key):
     return _i18n_label(key, getattr(_p.current(), "language", "en"))
 
 
+# what joins or styles an emoji in a font that shapes sequences; here each would draw as a box or a swatch:
+# the variation selectors, the skin tones, and a joiner between two pictographs (never one in Arabic text)
+_EMOJI_GLUE = re.compile("[\ufe0e\ufe0f\U0001F3FB-\U0001F3FF]|(?<=[\u2190-\u2bff\U0001F000-\U0001FAFF\ufe0f])\u200d"
+                         "(?=[\u2190-\u2bff\U0001F000-\U0001FAFF])")
+
+
 def _glyph_fallback(text: str) -> str:
     from ..qa.glyphs import needs_fallback
     out, run_font, buf = [], None, []
     in_tag = False
-    for ch in text:
+    arabic = bool(_ARABIC_RE.search(text))
+    for ch in _EMOJI_GLUE.sub("", text):
         if ch == "<":
             in_tag = True
         if in_tag or ch.isascii():
@@ -371,7 +378,8 @@ def _glyph_fallback(text: str) -> str:
         elif unicodedata.bidirectional(ch) in ("R", "AL", "AN"):
             font = None
         else:
-            font = needs_fallback(ch)
+            # a sign the Latin face has may be missing from the Arabic face of a right-to-left paragraph (™)
+            font = needs_fallback(ch) or (needs_fallback(ch, current_arabic_face()) if arabic else None)
         if ch == ">":
             in_tag = False
         if font != run_font:
@@ -436,6 +444,16 @@ def _md_inline(text: str) -> str:
     text = re.sub(r'~~(.+?)~~', r'<strike>\1</strike>', text)
     # Links: [text](url)  (footnote refs [^N] are handled below)
     text = re.sub(r'\[([^\]^][^\]]*)\]\(([^)\s]+)(?:\s+&quot;[^&]*&quot;)?\)', _link_sub, text)
+    # Coloured text: [text]{red}, [text]{color=#C00 bg=yellow}; anything else in braces stays text
+    def _span(m):
+        from ..core.inline import span_style
+        look = span_style(m.group("a"))
+        if look is None:
+            return m.group(0)
+        attrs = (f' color="{look[0]}"' if look[0] else "") + (f' backColor="{look[1]}"' if look[1] else "")
+        return f'<font{attrs}>{m.group("t")}</font>'
+    from ..core.inline import SPAN
+    text = SPAN.sub(_span, text)
     # Highlight: ==text==
     text = re.sub(r'==(.+?)==', r'<font backColor="#FEF3CD">\1</font>', text)
     # Superscript: <sup>text</sup> or ^text^
@@ -516,6 +534,8 @@ def _nest(markup: str) -> str:
 
 def _safe_color(h: str, fallback: str = "#000000") -> HexColor:
     try:
+        if isinstance(h, str) and re.fullmatch(r"#[0-9a-fA-F]{3}", h):
+            h = "#" + "".join(ch * 2 for ch in h[1:])       # #fff is white: HexColor would read it as 0x000fff
         return HexColor(h)
     except Exception:
         return HexColor(fallback)
@@ -996,12 +1016,37 @@ class ShapeFlowable(Flowable):
                     b.end_angle - b.start_angle, fill=do_fill, stroke=1)
 
         if b.label:
-            lc = _safe_color(b.label_color or "#ffffff")
-            c.setFillColor(lc)
-            c.setFont("Helvetica-Bold", 10)
-            c.drawCentredString(x + b.width / 2, y + b.height / 2 - 5, b.label)
+            # a paragraph, so Arabic is shaped, symbols find a face and a long label wraps; its colour
+            # reads on the fill unless one is given
+            from .page_system import readable_on
+            rtl = _is_rtl(b.label)
+            ink = b.label_color or (readable_on(b.fill_color) if b.fill_color else self.theme.colors.text_primary)
+            font = _arabic_font(self.theme, bold=True) if rtl else get_font_name(self.theme.typography.body_family, bold=True)
+            para = Paragraph(_plain_markup(b.label), ParagraphStyle(
+                "ShapeLabel", fontName=font, fontSize=10, leading=16 if rtl else 13, alignment=1, textColor=_safe_color(ink)))
+            _, ph = para.wrap(max(b.width - 12, 20), b.height)
+            para.drawOn(c, x + 6, y + (b.height - ph) / 2)
 
         c.restoreState()
+
+
+def shape_png(block, theme, scale: float = 3.0) -> bytes:
+    """The shape exactly as the PDF draws it, as a PNG on a clear ground (for Word, which has no
+    flowing vector shapes)."""
+    import io
+    import pypdfium2 as pdfium
+    from reportlab.pdfgen.canvas import Canvas
+    flow = ShapeFlowable(block.model_copy(update={"alignment": "left"}), theme)
+    edge = (block.stroke_width or 1) + 1              # room for the outline, which straddles the shape's edge
+    w, h = flow.wrap(block.width, 10000)
+    buf = io.BytesIO()
+    canv = Canvas(buf, pagesize=(w + 2 * edge, h))
+    flow.drawOn(canv, edge, 0)
+    canv.save()
+    image = pdfium.PdfDocument(buf.getvalue())[0].render(scale=scale, fill_color=(255, 255, 255, 0)).to_pil()
+    out = io.BytesIO()
+    image.save(out, "PNG", dpi=(72 * scale, 72 * scale))
+    return out.getvalue()
 
 
 class LegendFlowable(Flowable):
@@ -1585,7 +1630,7 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
 
     # ─── Introduction Page ───
     if btype == "introduction_page":
-        return _render_introduction_page(block, theme)
+        return _render_introduction_page(block, theme, ctx)
 
     return [Paragraph(f"[Unsupported: {btype}]", bs_no_indent)]
 
@@ -2351,8 +2396,7 @@ def _render_cover(block, theme, ctx=None):
     if (block.hints or {}).get("title_block"):
         from .cover import title_block
         return title_block(block, theme)
-    if (block.background_image or block.background_color or block.layout) and ctx is not None \
-            and getattr(ctx, "page_geometry", None) is not None:
+    if ctx is not None and getattr(ctx, "page_geometry", None) is not None:        # every cover is a designed page
         from .cover import designed_cover
         return designed_cover(block, theme, ctx)
     flowables = [Spacer(1, 80)]
@@ -2954,47 +2998,38 @@ def _render_toc_placeholder(block, theme, ctx):
     return flowables
 
 
-def _render_introduction_page(block, theme):
-    """Render a styled introduction / preface page."""
-    flowables = [Spacer(1, 40)]
-    accent = _safe_color(block.accent_color or theme.colors.accent)
+def _render_introduction_page(block, theme, ctx=None):
+    """A preface or a conclusion on a page of its own: a rule of the accent colour, the title, an
+    optional line under it, then the text. It reads from the right when its title does."""
+    ty = theme.typography
+    rtl = _is_rtl(block.title + " " + (block.content or ""))
+    align = 2 if rtl else 0
 
-    # Accent bar
-    flowables.append(DividerFlowable(color=block.accent_color or theme.colors.accent,
-                                     thickness=3.0))
-    flowables.append(Spacer(1, 16))
-
-    # Title
-    title_sty = ParagraphStyle('IntroTitle',
-                               fontName=get_font_name(theme.typography.heading_family, bold=True),
-                               fontSize=theme.typography.base_size * theme.typography.heading_scale[0] * 1.2,
-                               leading=theme.typography.base_size * theme.typography.heading_scale[0] * 1.5,
-                               textColor=_safe_color(theme.colors.text_primary),
-                               spaceAfter=8)
-    flowables.append(Paragraph(block.title, title_sty))
-
-    # Subtitle
+    def face(bold=False, italic=False, heading=False):
+        return _arabic_font(theme, bold=bold) if rtl else get_font_name(
+            ty.heading_family if heading else ty.body_family, bold=bold, italic=italic)
+    size = ty.base_size * ty.heading_scale[0] * 1.2
+    from reportlab.platypus.flowables import PageBreakIfNotEmpty
+    back = block.position == "back"
+    flowables = ([PageBreakIfNotEmpty()] if back and not getattr(ctx, "first_block", False) else []) + [
+        Spacer(1, 40),
+        DividerFlowable(color=block.accent_color or theme.colors.accent, thickness=3.0, width=64,
+                        align="right" if rtl else "left"),
+        Spacer(1, 10),
+        Paragraph(_md_inline(block.title), ParagraphStyle(
+            'IntroTitle', fontName=face(bold=True, heading=True), fontSize=size, leading=size * (1.6 if rtl else 1.25),
+            textColor=_safe_color(theme.colors.text_primary), spaceAfter=8, alignment=align))]
     if block.subtitle:
-        sub_sty = ParagraphStyle('IntroSub',
-                                 fontName=get_font_name(theme.typography.body_family, italic=True),
-                                 fontSize=theme.typography.base_size * 1.1,
-                                 textColor=_safe_color(theme.colors.text_secondary),
-                                 spaceAfter=16)
-        flowables.append(Paragraph(block.subtitle, sub_sty))
-
+        flowables.append(Paragraph(_md_inline(block.subtitle), ParagraphStyle(
+            'IntroSub', fontName=face(italic=True), fontSize=ty.base_size * 1.15, leading=ty.base_size * 1.15 * ty.line_height,
+            textColor=_safe_color(theme.colors.text_secondary), spaceAfter=16, alignment=align)))
     flowables.append(Spacer(1, 12))
-
-    # Body content
-    if block.content:
-        body_sty = ParagraphStyle('IntroBody',
-                                  fontName=get_font_name(theme.typography.body_family),
-                                  fontSize=theme.typography.base_size,
-                                  leading=theme.typography.base_size * theme.typography.line_height,
-                                  textColor=_safe_color(theme.colors.text_primary),
-                                  spaceAfter=8)
-        for para in block.content.split('\n\n'):
-            if para.strip():
-                flowables.append(Paragraph(_md_inline(para.strip()), body_sty))
-
-    flowables.append(PageBreak())
+    body_sty = ParagraphStyle('IntroBody', fontName=face(), fontSize=ty.base_size * 1.05,
+                              leading=ty.base_size * 1.05 * ty.line_height * (1.1 if rtl else 1.0),
+                              textColor=_safe_color(theme.colors.text_primary), spaceAfter=10, alignment=4)
+    for para in (block.content or "").split('\n\n'):
+        if para.strip():
+            flowables.append(Paragraph(_md_inline(para.strip()), body_sty))
+    if not back and not getattr(ctx, "last_block", False):
+        flowables.append(PageBreak())
     return flowables

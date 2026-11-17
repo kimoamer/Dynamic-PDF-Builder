@@ -10,7 +10,8 @@ from ..fonts import get_font_name, register_fonts
 _STANDARD = {"Helvetica", "Helvetica-Bold", "Helvetica-Oblique", "Helvetica-BoldOblique",
              "Times-Roman", "Times-Bold", "Times-Italic", "Times-BoldItalic",
              "Courier", "Courier-Bold", "Courier-Oblique", "Courier-BoldOblique"}
-FALLBACK_FONTS = ("JetBrains Mono", "Amiri")
+FALLBACK_FONTS = ("JetBrains Mono", "Amiri", "DejaVu Sans", "Noto Emoji")
+_EMOJI_FIRST = ("Noto Emoji", "DejaVu Sans")        # pictographs keep one look: the emoji face before a symbol face
 
 
 @lru_cache(maxsize=64)
@@ -40,8 +41,9 @@ def font_covers(font_name: str, ch: str) -> bool:
 
 def fallback_font_for(ch: str) -> Optional[str]:
     register_fonts()
-    for fam in FALLBACK_FONTS:
-        name = get_font_name(fam)
+    from ..fonts.manager import _available_fonts
+    for fam in (_EMOJI_FIRST if ord(ch) >= 0x1F000 else FALLBACK_FONTS):
+        name = fam if fam in _EMOJI_FIRST and fam in _available_fonts else get_font_name(fam)
         if name not in _STANDARD and font_covers(name, ch):
             return name
     return None
@@ -65,6 +67,7 @@ def uncovered_chars(texts: Iterable[str], family: str) -> Dict[str, int]:
 
 
 def needs_fallback(ch: str, base_font: str = "Helvetica") -> Optional[str]:
+    register_fonts()            # before any coverage is read: an unregistered face would cache as covering all
     if font_covers(base_font, ch):
         return None
     return fallback_font_for(ch)

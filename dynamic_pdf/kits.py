@@ -203,7 +203,9 @@ def _letter(data: dict):
             "document_type: letter", f"author: {json.dumps(sender.get('name') or sign['name'], ensure_ascii=False)}",
             "---", ""]
     letterhead = [f"**{_esc(sender['name'])}**"] if sender.get("name") else []
-    md = ["\\\n".join(letterhead + [_esc(sender[k]) for k in ("address", "email", "phone") if sender.get(k)])]
+    # with a logo the sender is the letterhead at the head of the page, not a block in the text
+    md = [] if data.get("logo") else \
+        ["\\\n".join(letterhead + [_esc(sender[k]) for k in ("address", "email", "phone") if sender.get(k)])]
     meta = [f"{lab['ref']}: {_esc(data['reference'])}" if data.get("reference") else "",
             f"{lab['date']}: {_esc(data['date'])}"]
     md.append("\n".join(x for x in meta if x))
@@ -626,6 +628,24 @@ _CERTIFICATE_EXAMPLE = {
 }
 
 
+def _frame_png(ink=(31, 58, 95), gold=(184, 137, 58)) -> str:
+    """A landscape A4 frame (842 x 595 points, drawn at 3 pixels a point on a clear ground): a border,
+    a hairline inside it, and corner marks. A PNG, since the asset policy refuses SVG data URIs."""
+    import base64
+    import io
+    from PIL import Image, ImageDraw
+    k, w, h, a, b, c = 3, 842, 595, 22, 30, 46
+    im = Image.new("RGBA", (w * k, h * k), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.rectangle((a * k, a * k, (w - a) * k, (h - a) * k), outline=ink + (255,), width=2 * k)
+    d.rectangle(((b + 4) * k, (b + 4) * k, (w - b - 4) * k, (h - b - 4) * k), outline=ink + (255,), width=max(1, round(0.6 * k)))
+    for x, y, dx, dy in ((b, b, 1, 1), (w - b, b, -1, 1), (b, h - b, 1, -1), (w - b, h - b, -1, -1)):
+        d.line([(x * k, (y + dy * c) * k), (x * k, y * k), ((x + dx * c) * k, y * k)], fill=gold + (255,), width=3 * k)
+    buf = io.BytesIO()
+    im.save(buf, "PNG", optimize=True)
+    return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+
+
 def _certificate(data: dict):
     """A landscape page set in the middle: the organisation, the title, the person, what they did,
     the date and number, and one or two signatures side by side."""
@@ -648,9 +668,13 @@ def _certificate(data: dict):
     b._meta.orientation, b._meta.page_system = Orientation.LANDSCAPE, PageSystem()
     b.document_type("general")
     blocks = [SpacerBlock(height=56)]
+    if data.get("logo"):
+        from .schema.blocks import ImageBlock
+        blocks = [SpacerBlock(height=4), ImageBlock(src=data["logo"], height=48, alignment="center",
+                                                     alt_text=data.get("organisation") or "Logo"), SpacerBlock(height=10)]
     if data.get("organisation"):
         blocks.append(line(data["organisation"], 13, True))
-    blocks += [SpacerBlock(height=14), line(title, 32, True, "#1F3A5F"), SpacerBlock(height=22),
+    blocks += [SpacerBlock(height=10), line(title, 32, True, "#1F3A5F"), SpacerBlock(height=16),
                line(lab["certify"], 12), SpacerBlock(height=6), line(who, 28, True), SpacerBlock(height=6),
                line(completed, 12), SpacerBlock(height=4), line(what, 17, True)]
     if data.get("details"):
@@ -659,11 +683,17 @@ def _certificate(data: dict):
              f"{lab['number']}: {data['number']}" if data.get("number") else ""]
     if any(facts):
         blocks += [SpacerBlock(height=10), line(" | ".join(x for x in facts if x), 10, color="#555555")]
-    signs = [SignatureBlock(name=x["name"], title=x.get("title"), line_width=220)
+    signs = [SignatureBlock(name=x["name"], title=x.get("title"), line_width=200, alignment="center")
              for x in (data.get("signatures") or []) if isinstance(x, dict) and x.get("name")]
     if signs:
-        blocks.append(SpacerBlock(height=28))
+        blocks.append(SpacerBlock(height=8))
         blocks.append(TwoColumnBlock(left=[signs[0]], right=signs[1:2]) if len(signs) > 1 else signs[0])
+    if data.get("frame", True):                # a frame round the page, behind the text
+        from .schema.blocks import PageMediaBlock
+        from .schema.media import ImageTreatment, MediaPlacement
+        blocks.insert(0, PageMediaBlock(src=_frame_png(), alt_text="", treatment=ImageTreatment(fit="cover"),
+                                        placement=MediaPlacement(mode="behind_text", relative_to="page",
+                                                                 width_ratio=1.0, height_ratio=1.0)))
     b._blocks = blocks
     return b
 
@@ -696,9 +726,19 @@ def kit(name: str, data: dict, theme: Optional[str] = None):
         b = _find(name)[0](data)
     except ValueError as e:
         raise ValueError(f"{name}: {e}") from None
+    if data.get("logo") and name in _LOGO_HEADER:       # the brand at the head of every page
+        party = data.get("seller") or data.get("sender") or {}
+        values = {"company": party.get("name") or data.get("company") or data.get("prepared_by"),
+                  **{k: party.get(k) for k in ("address", "website", "email", "phone")}}
+        b.page_system(_LOGO_HEADER[name], logo=data["logo"], **{k: str(v) for k, v in values.items() if v})
     if theme:
         b.theme(theme)
     return b
+
+
+# which header carries a kit's logo; a CV keeps none (applicant tracking systems), a certificate sets it on the page
+_LOGO_HEADER = {"invoice": "modern", "quote": "modern", "letter": "letterhead", "feasibility": "report",
+                "statements": "report"}
 
 
 def _find(name: str):

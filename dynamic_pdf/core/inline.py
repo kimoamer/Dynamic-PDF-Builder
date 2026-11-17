@@ -36,6 +36,8 @@ class TextRun(BaseModel):
     inserted: bool = False              # a suggested addition (CriticMarkup {++ ++})
     deleted: bool = False               # a suggested removal (CriticMarkup {-- --})
     comment: Optional[str] = None       # a reviewer's comment on this text (CriticMarkup {>> <<})
+    color: Optional[str] = None         # the text's colour, #RRGGBB ([text]{red})
+    background: Optional[str] = None    # the colour behind it, #RRGGBB ([text]{bg=yellow})
 
     def same_style(self, other: "TextRun") -> bool:
         a = self.model_dump(exclude={"text"})
@@ -54,6 +56,53 @@ def safe_href(url: str) -> Optional[str]:
     return u if u.lower().startswith(_SAFE_LINK) else None
 
 
+# ── coloured text: [text]{red}, [text]{color=#C00 bg=yellow}, [text]{أحمر} (Pandoc's bracketed span) ──
+COLORS = {"red": "#C62828", "green": "#2E7D32", "blue": "#1565C0", "orange": "#EF6C00", "purple": "#6A1B9A",
+          "teal": "#00796B", "pink": "#C2185B", "brown": "#5D4037", "gray": "#616161", "grey": "#616161",
+          "black": "#000000", "white": "#FFFFFF", "yellow": "#F9A825", "gold": "#B8893A", "navy": "#1F3A5F",
+          "أحمر": "#C62828", "أخضر": "#2E7D32", "أزرق": "#1565C0", "برتقالي": "#EF6C00", "بنفسجي": "#6A1B9A",
+          "وردي": "#C2185B", "بني": "#5D4037", "رمادي": "#616161", "أسود": "#000000", "أبيض": "#FFFFFF",
+          "أصفر": "#F9A825", "ذهبي": "#B8893A", "كحلي": "#1F3A5F"}
+# behind text a named colour is its pale tint, as a highlighter lays it
+BACKGROUNDS = {"red": "#FFD9D9", "green": "#D7F5DD", "blue": "#DCEBFF", "orange": "#FFE4C7", "purple": "#EBDDFB",
+               "teal": "#D3F1EC", "pink": "#FFD9EC", "gray": "#E8E8E8", "grey": "#E8E8E8", "yellow": "#FFF2A8",
+               "أحمر": "#FFD9D9", "أخضر": "#D7F5DD", "أزرق": "#DCEBFF", "برتقالي": "#FFE4C7", "بنفسجي": "#EBDDFB",
+               "وردي": "#FFD9EC", "رمادي": "#E8E8E8", "أصفر": "#FFF2A8"}
+SPAN = re.compile(r"\[(?P<t>[^\[\]]+)\]\{(?P<a>[^{}\n]{1,80})\}")
+_HEX = re.compile(r"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
+
+
+def _colour(value: str, table: dict) -> Optional[str]:
+    import unicodedata
+    v = unicodedata.normalize("NFKC", value).strip().lstrip(".").lower()     # NFKC: Arabic shaped for the PDF reads as written
+    if _HEX.match(v):
+        return ("#" + "".join(c * 2 for c in v[1:]) if len(v) == 4 else v).upper()
+    return table.get(v) or (COLORS.get(v) if table is BACKGROUNDS else None)
+
+
+def span_style(attrs: str):
+    """(colour, background) of a span's ``{...}``, or None when it names neither: then the brackets
+    are ordinary text. A value is a name from ``COLORS`` or a hex colour; nothing else passes."""
+    color = background = None
+    for token in attrs.replace("&quot;", "").replace('"', "").split():
+        key, _, value = token.partition("=")
+        if not value:
+            color = _colour(key, COLORS) or color
+            if _colour(key, COLORS) is None:
+                return None
+        elif key.lower() in ("color", "colour"):
+            color = _colour(value, COLORS)
+            if color is None:
+                return None
+        elif key.lower() in ("bg", "background"):
+            background = _colour(value, BACKGROUNDS)
+            if background is None:
+                return None
+        else:
+            return None
+    return (color, background) if color or background else None
+
+
 _BLANK_LINE = re.compile(r"\n[ \t]*\n\s*")      # a paragraph boundary inside one block
 
 _EXT = re.compile(
@@ -65,6 +114,7 @@ _EXT = re.compile(
     r"|(?P<b><b>(?P<bt>.+?)</b>)"
     r"|(?P<i><i>(?P<it>.+?)</i>)"
     r"|(?P<u><u>(?P<ut>.+?)</u>)"
+    r"|(?P<span>\[(?P<spant>[^\[\]]+)\]\{(?P<spana>[^{}\n]{1,80})\})"
 )
 
 
@@ -91,6 +141,14 @@ def _split_extensions(text: str, style: dict) -> List[TextRun]:
             runs.extend(_split_extensions(m.group("it"), {**style, "italic": True}))
         elif m.group("u"):
             runs.extend(_split_extensions(m.group("ut"), {**style, "underline": True}))
+        elif m.group("span"):
+            # shortcut: emphasis goes outside the span (**[word]{red}**), since Markdown is parsed before it
+            look = span_style(m.group("spana"))
+            if look is None:
+                runs.append(TextRun(text=m.group("span"), **style))
+            else:
+                extra = {k: v for k, v in zip(("color", "background"), look) if v}
+                runs.extend(_split_extensions(m.group("spant"), {**style, **extra}))
         pos = m.end()
     if pos < len(text):
         runs.append(TextRun(text=text[pos:], **style))

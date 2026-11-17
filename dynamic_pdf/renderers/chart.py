@@ -147,7 +147,7 @@ def _is_num(v) -> bool:
 
 def _check_data(key: str, data) -> None:
     """Refuse data that the chart type cannot draw truthfully, saying what it needs."""
-    if key in ("gauge", "scatter", "bubble", "heatmap"):
+    if key in ("gauge", "scatter", "bubble", "heatmap", "map", "sketch", "mindmap"):
         return                                        # these check their own shapes
     if data is None or (hasattr(data, "__len__") and len(data) == 0):
         raise ValueError(f"{key} chart has no data")
@@ -949,6 +949,9 @@ _RENDERERS = {
     "gauge":          _gauge,
     "sparkline":      _sparkline,
     "treemap":        _treemap,
+    "map":            lambda block, theme: __import__("dynamic_pdf.renderers.maps", fromlist=["x"]).render_map(block, theme),
+    "sketch":         lambda block, theme: __import__("dynamic_pdf.renderers.maps", fromlist=["x"]).render_sketch(block, theme),
+    "mindmap":        lambda block, theme: __import__("dynamic_pdf.renderers.maps", fromlist=["x"]).render_mindmap(block, theme),
 }
 
 

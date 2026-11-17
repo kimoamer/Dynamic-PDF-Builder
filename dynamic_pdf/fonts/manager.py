@@ -25,16 +25,19 @@ def _is_presentation_form(cp: int) -> bool:
 def _base_letters_cmap(fontname, subset, _plain=_ttfonts.makeToUnicodeCMap):
     """ToUnicode CMap in which reshaped Arabic glyphs (presentation forms) extract as the base
     letters the author wrote (NFKC, so lam-alef gives two letters): a verbatim search of the
-    PDF then finds the source text. Every other code keeps ReportLab's own mapping.
+    PDF then finds the source text. A character beyond U+FFFF is written as its UTF-16 pair. Every
+    other code keeps ReportLab's own mapping.
 
     A ligature's letters are listed in visual order, as its glyph is drawn: bidi-aware
     extractors (MuPDF, PDFium) reverse the line and read them logically, and raw extractors
     (pdfminer) give the exact mirror of the source."""
     cmap = _plain(fontname, subset)
-    if not any(_is_presentation_form(v) for v in subset):
-        return cmap
     for i, v in enumerate(subset):
-        if _is_presentation_form(v):
+        if v > 0xFFFF:
+            # ReportLab writes five hex digits, which is invalid: an emoji would copy out as another
+            # character. The map wants UTF-16, the surrogate pair.
+            cmap = cmap.replace("<%02X> <%04X>" % (i, v), "<%02X> <%s>" % (i, chr(v).encode("utf-16-be").hex().upper()), 1)
+        elif _is_presentation_form(v):
             base = (unicodedata.normalize("NFKC", chr(v)).strip() or chr(v))[::-1]
             cmap = cmap.replace("<%02X> <%04X>" % (i, v),
                                 "<%02X> <%s>" % (i, base.encode("utf-16-be").hex().upper()), 1)
@@ -205,8 +208,17 @@ def register_fonts():
             addMapping("Amiri-Bold", 0, 1, "Amiri")
             addMapping("Amiri-Bold", 1, 1, "Amiri-Bold")
 
+        # Symbols and emoji no text face draws: fallbacks, chosen a character at a time
+        from reportlab.lib.fonts import addMapping
+        for name, fname in (("DejaVu Sans", "DejaVuSans.ttf"), ("Noto Emoji", "NotoEmoji-Regular.ttf")):
+            if _try_register(name, fname):
+                for bold in (0, 1):                 # one cut: bold and italic text keep the same glyph
+                    for italic in (0, 1):
+                        addMapping(name, bold, italic, name)
+
         # Auto-register any manually placed fonts in the bundled dir
-        catalogued = {n for v in font_catalog().values() for n in v["files"].values()}
+        catalogued = {n for v in font_catalog().values() for n in v["files"].values()} | {
+            "DejaVuSans.ttf", "NotoEmoji-Regular.ttf"}
         for fname in os.listdir(BUNDLED_DIR):
             if fname.endswith(".ttf") and fname not in catalogued:
                 name = fname.replace(".ttf", "")
