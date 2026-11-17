@@ -851,14 +851,15 @@ class ScoreDisplay(Flowable):
 
 
 class DividerFlowable(Flowable):
-    def __init__(self, color="#CBD5E0", thickness=1.0, style="solid"):
+    def __init__(self, color="#CBD5E0", thickness=1.0, style="solid", width=None):
         super().__init__()
         self.color_str = color
         self.thickness = thickness
         self.style = style
+        self.fixed_width = width
 
     def wrap(self, availWidth, availHeight):
-        self.width = availWidth
+        self.width = min(availWidth, self.fixed_width) if self.fixed_width else availWidth
         self.height = self.thickness + 16
         return (self.width, self.height)
 
@@ -2597,27 +2598,28 @@ def _render_signature(block, theme):
     """Signature: line + name + title + date."""
     flowables = []
     flowables.append(Spacer(1, 30))
+    rtl = _is_rtl(" ".join(x for x in (block.name, block.title, block.date) if x))
+    font = (lambda bold=False: _arabic_font(theme, bold=bold)) if rtl else \
+        (lambda bold=False: get_font_name(theme.typography.body_family, bold=bold))
     if block.show_line:
-        flowables.append(DividerFlowable(color=theme.colors.text_primary, thickness=1.0))
-    name_sty = ParagraphStyle('SigName',
-                              fontName=get_font_name(theme.typography.body_family, bold=True),
-                              fontSize=theme.typography.base_size,
-                              spaceBefore=4, spaceAfter=2)
-    flowables.append(Paragraph(block.name, name_sty))
+        line = DividerFlowable(color=theme.colors.text_primary, thickness=1.0, width=block.line_width)
+        line.hAlign = "RIGHT" if rtl else "LEFT"            # the signature sits at the start edge
+        flowables.append(line)
+    # names are literal text: shaped, escaped, never read as markup
+    size, lh = theme.typography.base_size, theme.typography.line_height
+    name_sty = ParagraphStyle('SigName', fontName=font(True), fontSize=size, leading=size * lh,
+                              spaceBefore=4, spaceAfter=2, alignment=2 if rtl else 0)
+    flowables.append(Paragraph(_plain_markup(block.name), name_sty))
     if block.title:
-        title_sty = ParagraphStyle('SigTitle',
-                                   fontName=get_font_name(theme.typography.body_family),
-                                   fontSize=theme.typography.base_size * 0.9,
-                                   textColor=_safe_color(theme.colors.text_secondary),
-                                   spaceAfter=2)
-        flowables.append(Paragraph(block.title, title_sty))
+        title_sty = ParagraphStyle('SigTitle', fontName=font(), fontSize=size * 0.9, leading=size * 0.9 * lh,
+                                   textColor=_safe_color(theme.colors.text_secondary), spaceAfter=2,
+                                   alignment=2 if rtl else 0)
+        flowables.append(Paragraph(_plain_markup(block.title), title_sty))
     if block.date:
-        date_sty = ParagraphStyle('SigDate',
-                                  fontName=get_font_name(theme.typography.body_family),
-                                  fontSize=theme.typography.base_size * 0.85,
-                                  textColor=_safe_color(theme.colors.text_muted),
-                                  spaceAfter=2)
-        flowables.append(Paragraph(block.date, date_sty))
+        date_sty = ParagraphStyle('SigDate', fontName=font(), fontSize=size * 0.85, leading=size * 0.85 * lh,
+                                  textColor=_safe_color(theme.colors.text_muted), spaceAfter=2,
+                                  alignment=2 if rtl else 0)
+        flowables.append(Paragraph(_plain_markup(block.date), date_sty))
     flowables.append(Spacer(1, theme.spacing.block_gap))
     return flowables
 

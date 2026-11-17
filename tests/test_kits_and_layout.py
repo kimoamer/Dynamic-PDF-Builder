@@ -135,3 +135,53 @@ def test_a_theme_logo_is_drawn_once_and_kept_by_the_design(tmp_path):
         return sum(o.type == raw.FPDF_PAGEOBJ_IMAGE for o in pdfium.PdfDocument(pdf)[0].get_objects())
     assert images(DocumentBuilder(theme=t.name).paragraph("x").design(None).render()) == 1
     assert images(DocumentBuilder(theme=t.name).paragraph("x").render()) == 1   # the design keeps it on page one
+
+
+def _figures(name, data):
+    from decimal import Decimal
+    table = [b for b in kit(name, data).build().blocks if b.type == "table"][0]
+    return [r[-1] for r in table.rows], [Decimal(r[-1].replace(",", "")) for r in table.rows[:-1]]
+
+
+def test_a_quotation_with_a_discount_adds_up_as_printed():
+    assert {"invoice", "quote", "letter"} <= set(kits())
+    shown, vals = _figures("quote", kit_example("quote"))
+    assert shown[2:6] == ["2,657.50", "-132.88", "378.69", "2,903.31"]
+    assert vals[0] + vals[1] == vals[2] and sum(vals[2:5]) == vals[5]       # each figure rounded where computed
+    d = kit_example("invoice")
+    d["discount"] = 150
+    assert _figures("invoice", d)[0][3] == "-150.00"
+    d["discount"] = "-5%"
+    with pytest.raises(ValueError, match="invoice: discount"):
+        kit("invoice", d)
+
+
+def test_a_unit_price_keeps_its_decimals():
+    d = kit_example("invoice")
+    d["items"] = [{"description": "Fuel", "quantity": 3, "price": "0.333"}]
+    table = [b for b in kit("invoice", d).build().blocks if b.type == "table"][0]
+    assert table.rows[0][2] == "0.333" and table.rows[0][3].startswith("1.0")
+
+
+def test_the_letter_kit():
+    b = kit("letter", kit_example("letter"))
+    doc = b.build()
+    kinds = [x.type for x in doc.blocks]
+    assert kinds[-2:] == ["signature", "paragraph"] and doc.meta.title == "Renewal of the supply agreement"
+    text = " ".join(getattr(x, "text", "") or "" for x in doc.blocks)
+    assert "Dear Ms Sara Ahmed," in text and "Yours sincerely," in text and "Enclosures: Quotation" in text
+    b.render()
+    assert b.last_design.decision.profile.value == "letter"
+    assert not any(getattr(x, "hints", None) and x.hints.get("title_block") for x in b._prepared()[0].blocks)
+    with pytest.raises(ValueError, match="letter: 'signature.name' is missing"):
+        kit("letter", {**kit_example("letter"), "signature": {}})
+
+
+def test_a_signature_is_literal_text_and_reads_from_the_right_in_arabic():
+    import pypdfium2 as pdfium
+    pdf = DocumentBuilder().signature("Smith & Jones <Partners>", title="R&D").design(None).render()
+    assert "Smith & Jones <Partners>" in pdfium.PdfDocument(pdf)[0].get_textpage().get_text_range()
+    lines = _lines(DocumentBuilder().paragraph("نص عربي قصير").signature("عمر حسن", title="مدير المبيعات")
+                   .design(None).render())[:3]                    # the paragraph, the name, the title
+    rights = [r for _, _, r in lines]
+    assert max(rights) - min(rights) < 2, lines                    # all at the right margin

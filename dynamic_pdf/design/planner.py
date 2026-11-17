@@ -237,8 +237,9 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
                                author=sem.meta.author)
         sem.blocks.insert(0, cover)
         lp.log("cover", f"~{lp.estimated_pages:.1f} pages with a title: cover built from metadata")
-    # ── a short document whose design has no header band still shows its title ──
-    elif not plan.recipe.header_enabled and not st.has_cover and sem.meta.title and not _opens_with_title(sem):
+    # ── a short document whose design has no header band still shows its title (a letter does not) ──
+    elif (not plan.recipe.header_enabled and not st.has_cover and sem.meta.title and not _opens_with_title(sem)
+            and profile != Profile.LETTER):
         sem.blocks.insert(0, CoverPageBlock(title=sem.meta.title, subtitle=sem.meta.subject or sem.meta.description,
                                             author=sem.meta.author, hints={"title_block": True}))
         lp.log("title", "no header band: the title set at the head of page one")

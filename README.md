@@ -1553,8 +1553,10 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
   references and lists of figures and tables are Word fields.
 
 **New**
-- Ready-made documents: `kit("invoice", data)` (CLI `kit`, MCP `kit`) writes a whole invoice in English or
-  Arabic: seller and buyer, dates, the lines with computed amounts, VAT, total and the amount in words.
+- Ready-made documents: `kit(name, data)` (CLI `kit`, MCP `kit`) in English or Arabic. `invoice` and
+  `quote`: seller and buyer, dates, the lines with computed amounts, discount, VAT, total and the amount
+  in words, each figure rounded where computed so the printed figures add up. `letter`: a formal letter
+  with letterhead, reference, recipient, subject, body and signature.
 - The library explains itself to agents and people: a guide in the package (`guide()`, CLI `guide`,
   MCP `guide`), MCP instructions sent on connect, Markdown input for every MCP tool, field
   descriptions in the JSON Schema, ```` ```chart ```` blocks holding JSON in Markdown, and `llms.txt`.
@@ -1586,6 +1588,8 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
 - Right-to-left text: lines ending in a line break (an address, Label: value lines) sat on the left in
   justified paragraphs; two columns now read from the right, as in Word.
 - A column of amounts with an "in words" row under it was read as text and lost its right alignment.
+- Signatures: Arabic names are shaped and set from the right; a name is literal text (`&` or `<` no
+  longer break the PDF), and `line_width` is honoured. A letter no longer gets a title block above it.
 - Line and area charts in the PDF read `{"categories": [...], "series": {...}}` as the bar charts do.
 - The `logo_left` and `logo_right` headers drew the logo twice. A logo in the chosen theme stays in the
   designed header, from page one, as a letterhead.

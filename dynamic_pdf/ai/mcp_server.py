@@ -39,7 +39,7 @@ captions with ids and {ref:id} references, [@key] citations with a BibTeX file, 
 Work in a loop: `render` the document, `review` it (each issue comes with its page and what to change, and
 page images are saved for you to look at), fix the Markdown, review again. `variants` tries several designs
 and recommends one; `explain` says why the design is as it is; `lint` checks the content (totals, shares,
-references). `kit` makes a ready-made document (an invoice) from data. Call `guide` for the full syntax with examples, or `guide` with a topic: markdown, charts,
+references). `kit` makes a ready-made document (invoice, quote, letter) from data. Call `guide` for the full syntax with examples, or `guide` with a topic: markdown, charts,
 tables, academic, review-and-changes, design, output, arabic, limits."""
 
 
@@ -173,9 +173,10 @@ def lint(document: Optional[dict] = None, markdown: Optional[str] = None) -> lis
 
 
 def kit(name: str, data: Optional[dict] = None, filename: str = "", out_dir: str = ".") -> dict:
-    """A ready-made document from data, with every part it needs: kit 'invoice' (seller, buyer, dates,
-    lines with computed totals, VAT and the amount in words, in English or Arabic). Without `data`, returns
-    example data to fill in; with it, writes `filename` (.pdf, .docx or .xlsx) like `render`."""
+    """A ready-made document from data, with every part it needs, in English or Arabic: 'invoice' (seller,
+    buyer, dates, lines with computed totals, discount, VAT and the amount in words), 'quote' (the same as
+    a quotation) or 'letter' (a formal letter with letterhead, recipient, subject, body and signature).
+    Without `data`, returns example data to fill in; with it, writes `filename` (.pdf, .docx or .xlsx)."""
     from ..kits import kit as make, kit_example
     try:
         if data is None:

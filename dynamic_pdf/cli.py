@@ -115,8 +115,8 @@ def main():
     guide_p.add_argument("topic", nargs="?", default=None, help="One section: markdown, charts, tables, academic ...")
 
     # ─── kit ───
-    kit_p = sub.add_parser("kit", help="A ready-made document (an invoice ...) from your data")
-    kit_p.add_argument("name", help="The kit: invoice")
+    kit_p = sub.add_parser("kit", help="A ready-made document (invoice, quote, letter) from your data")
+    kit_p.add_argument("name", help="The kit: invoice, quote or letter")
     kit_p.add_argument("data", nargs="?", default=None, help="The data, as a JSON file")
     kit_p.add_argument("-o", "--output", default=None, help="Output .pdf, .docx or .xlsx")
     kit_p.add_argument("--example", action="store_true", help="Print example data to start from")

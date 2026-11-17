@@ -201,11 +201,19 @@ kit("invoice", data).export("invoice.pdf")   # or .docx, or .xlsx for the lines 
 Terminal: `dynamic-pdf kit invoice --example > invoice.json`, then `dynamic-pdf kit invoice invoice.json -o
 invoice.pdf`. MCP: the `kit` tool (without `data` it returns the example).
 
-`invoice` reads: `number`, `date`, `due`, `currency` (SAR, EGP, USD ... for the amount in words), `seller` and
-`buyer` (each `name`, `address`, `tax_id`, `email`, `phone`), `items` (each `description`, `quantity`,
-`price`), `tax_rate` (percent, optional), `payment` (label: value pairs) and `notes`, and `language`: `en`
-or `ar`. It writes the seller and buyer side by side, the lines with each amount, the subtotal, VAT, total
-due and the amount in words as formulas. A missing or malformed field is refused with its name and the fix.
+Every kit reads `language`: `en` or `ar`. A missing or malformed field is refused with its name and the fix.
+
+- `invoice` reads `number`, `date`, `due`, `currency` (SAR, EGP, USD ... for the amount in words), `seller`
+  and `buyer` (each `name`, `address`, `tax_id`, `email`, `phone`), `items` (each `description`,
+  `quantity`, `price`), `discount` (an amount, or a percent as `"10%"`), `tax_rate` (percent), `payment`
+  (label: value pairs) and `notes`. It writes the seller and buyer side by side, then the lines, subtotal,
+  discount, VAT, total and the amount in words as formulas, each rounded to cents where it is computed, so
+  the printed figures add up to the printed total. A unit price keeps its own decimals.
+- `quote`: a quotation, with the same fields as `invoice`; `due` reads "Valid until" and `payment` "Terms".
+- `letter`: a formal letter. `sender` (the letterhead: `name`, `address`, `email`, `phone`), `date`,
+  `reference`, `recipient` (`name`, `title`, `organisation`, `address`), `subject`, `body` (Markdown, or a
+  list of paragraphs), `salutation` and `closing` (defaults in the letter's language), `signature`
+  (`name`, `title`), `enclosures` and `cc`.
 
 ## Output
 
