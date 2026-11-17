@@ -251,7 +251,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         geo = M.page_geometry(self, sec)
         system = self.page_sys
         cover = next((b for b in self.sem.blocks[:1] if b.type == "cover_page"
-                      and (b.background_image or b.background_color or b.layout)), None)
+                      and not (b.hints or {}).get("title_block")), None)
         if first and cover is not None:
             sec.different_first_page_header_footer = True
         if system is None:
@@ -274,9 +274,9 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                                 or system.even_header or head, geo, True, layers)
             self._band_or_blank(sec.even_page_footer, (over.footer if over else None)
                                 or system.even_footer or foot, geo, False)
-        if first and system.first_page != "same":
+        if first and (system.first_page != "same" or cover is not None):
             sec.different_first_page_header_footer = True
-            custom = system.first_page == "custom"
+            custom = system.first_page == "custom" and cover is None      # a cover is a bare page, as in the PDF
             self._band_or_blank(sec.first_page_header, system.first_header if custom else None,
                                 geo, True, layers)
             self._band_or_blank(sec.first_page_footer, system.first_footer if custom else None, geo, False)
@@ -711,13 +711,19 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         self._runs(self._para(c, "Note", b.text), b.text)
 
     def _b_introduction_page(self, c, b):
-        self._runs(self._para(c, "Heading 1", b.title), b.title)
+        back = getattr(b, "position", "front") == "back"
+        head = self._para(c, "Heading 1", b.title)
+        if back:
+            head.paragraph_format.page_break_before = True
+        F.set_paragraph_border(head, "top", b.accent_color or self.tokens.colors["accent"], 24, 12)
+        self._runs(head, b.title)
         if b.subtitle:
             self._subtitle(c, b.subtitle)
         for para in (b.content or "").split("\n\n") if isinstance(b.content, str) else (b.content or []):
             if str(para).strip():
                 self._runs(self._para(c, "Body Text", str(para)), str(para))
-        self._page_break(c)
+        if not back:
+            self._page_break(c)
 
     # ─── lists ───
 
@@ -1656,6 +1662,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             try:
                 asset = ingest(b.logo, self.col.policy.assets)
                 w = min(170.0, 58 * asset.aspect)
+                if ink and ink.upper() in ("#FFFFFF", "#FFF"):     # on a dark ground: its own colours, on a light plate
+                    asset = M.plated(asset, w / asset.aspect)
                 f = fit_image(asset, w, w / asset.aspect)
                 M.add_drawing(setup(self._para(c)).add_run(), asset, f, None, "logo", self.next_shape())
                 used = f.height + 4
@@ -1663,14 +1671,12 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                 self.col.fail("asset_failed", f"Cover logo: {e}", e)
         title = setup(self._para(c, "Title", b.title))
         title.paragraph_format.space_before = Pt(max(24, title_drop(b, layout, frame_h, geo.height, geo.top) - used))
-        if hints.get("rule"):
-            F.set_paragraph_border(title, "top", hints["rule"], 24, 14)
-        if hints.get("title_scale"):
-            size = (self.tokens.title_size if self.theme.typography.title_size else
-                    self.tokens.body_size * self.tokens_h1_ratio() * float(hints["title_scale"]))
-            self._runs(title, b.title, color=ink, size=size)
-        else:
-            self._runs(title, b.title, color=ink)
+        # as the PDF: a rule over the title, and the largest type in the document
+        rule = hints.get("rule") or (ink if ink and ink.upper() in ("#FFFFFF", "#FFF") else self.tokens.colors["accent"])
+        F.set_paragraph_border(title, "top", rule, 24, 14)
+        size = (self.tokens.body_size * self.tokens_h1_ratio() * float(hints["title_scale"]) if "title_scale" in hints
+                else max(self.tokens.title_size if self.theme.typography.title_size else 0, self.tokens.body_size * 3.1))
+        self._runs(title, b.title, color=ink, size=size)
         if b.subtitle:
             sub = setup(self._subtitle(c, b.subtitle, color=ink))
             sub.paragraph_format.space_after = Pt(18)
@@ -1707,25 +1713,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
     def _b_cover_page(self, c, b):
         if (b.hints or {}).get("title_block"):
             return self._title_block(c, b)
-        if b.background_image or b.background_color or b.layout:
-            return self._designed_cover(c, b)
-        sp = self._para(c, "Normal")
-        sp.paragraph_format.space_before = Pt(96)
-        if b.logo:
-            try:
-                buf, _ = load_image(b.logo, self.col.policy.assets)
-                self._picture(c, buf.getvalue(), "logo", width_pt=150, align="left")
-            except DynamicPDFError as e:
-                self.col.fail("asset_failed", f"Cover logo: {e}", e)
-        self._runs(self._para(c, "Title", b.title), b.title)
-        if b.subtitle:
-            self._subtitle(c, b.subtitle)
-        for txt in ((f"{self._label('prepared_by')} {b.author}" if b.author else None), b.date):
-            if txt:
-                p = self._para(c, "Normal", txt)
-                p.paragraph_format.space_before = Pt(18)
-                self._runs(p, txt, color=self.tokens.colors["text_muted"])
-        self._page_break(c)
+        return self._designed_cover(c, b)          # every cover is a designed, bare page
 
     def _b_table_of_contents(self, c, b):
         if getattr(b, "kind", "contents") != "contents":

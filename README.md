@@ -1554,6 +1554,13 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
   references and lists of figures and tables are Word fields.
 
 **New**
+- Covers: every cover is a designed, bare page with the largest type in the document, a rule over the
+  title and the logo on a light plate when the ground is dark; `split` sets a panel of colour beside
+  the text; `cover:`, `cover_color:` and `cover_image:` in the front matter build one from the title,
+  subject, author, date and logo.
+- A preface and a conclusion on pages of their own: `preface_page()`, `conclusion_page()`, and
+  `:::preface` / `:::conclusion` in Markdown, titled in the document's language; Arabic is shaped and
+  set from the right.
 - Symbols and emoji draw in the PDF instead of boxes: ★ ☐ ₹ ☎ and the rest from a bundled symbol face
   (a subset of DejaVu Sans), emoji from Noto Emoji, in any text, bold or Arabic. An emoji copies out of
   the PDF as itself (ReportLab's ToUnicode entry for characters beyond U+FFFF is corrected). A character

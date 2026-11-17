@@ -96,7 +96,7 @@ def _uses_page_layers(blocks) -> bool:
         t = getattr(b, "type", None)
         if t in ("page_media", "page_section"):
             return True
-        if t == "cover_page" and (b.background_image or b.background_color or b.layout):
+        if t == "cover_page" and not (b.hints or {}).get("title_block"):     # a cover is a bare page
             return True
         if t == "image" and b.placement and b.placement.mode not in ("inline", "floating"):
             return True

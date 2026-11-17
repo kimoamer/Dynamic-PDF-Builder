@@ -52,6 +52,11 @@ def parse_markdown(md_text: str) -> Tuple[Dict[str, object], list]:
     for b in blocks:
         if b.type == "table" and b.hints and b.hints.pop("table_caption", None):
             numbered, b.hints = True, b.hints or None
+        if b.type == "introduction_page" and b.hints and "kind" in b.hints:
+            # a preface or conclusion without a title of its own is named in the document's language
+            from ..i18n import label
+            kind, b.hints = b.hints.pop("kind"), None
+            b.title = b.title or label(kind, str(front_matter.get("language") or front_matter.get("lang") or "en"))
     if numbered:
         front_matter.setdefault("numbering", "true")     # "Table: ..." asks for numbered tables
     return front_matter, blocks
@@ -127,6 +132,14 @@ def _parse_body(md_text: str) -> list:
                 body = "\n\n".join(body_parts).rstrip()
                 if body.endswith(":::"):
                     body = body[:-3].rstrip()
+                kind, _, own_title = variant.partition(" ")
+                if kind.lower() in ("preface", "introduction", "conclusion"):
+                    # :::preface [title] ... ::: is a page of its own, before the text; :::conclusion, after it
+                    from ..schema.blocks import IntroductionPageBlock
+                    blocks.append(IntroductionPageBlock(
+                        title=own_title.strip(), content=body, hints={"kind": kind.lower()},
+                        position="back" if kind.lower() == "conclusion" else "front"))
+                    continue
                 blocks.append(CalloutBlock(text=body, variant=variant))
                 continue
 

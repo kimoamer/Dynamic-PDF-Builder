@@ -1004,6 +1004,18 @@ class DocumentBuilder:
         ))
         return self
 
+    def preface_page(self, content: str, title: Optional[str] = None, subtitle: Optional[str] = None) -> 'DocumentBuilder':
+        """A preface on a page of its own before the text; the title defaults to "Preface" in the document's language."""
+        from .i18n import label
+        return self.introduction_page(title or label("preface", self._meta.language), content, subtitle)
+
+    def conclusion_page(self, content: str, title: Optional[str] = None, subtitle: Optional[str] = None) -> 'DocumentBuilder':
+        """A conclusion on a page of its own after the text; the title defaults to "Conclusion" in the document's language."""
+        from .i18n import label
+        self._blocks.append(IntroductionPageBlock(title=title or label("conclusion", self._meta.language),
+                                                  content=content, subtitle=subtitle, position="back"))
+        return self
+
     def two_column(self, left: List[Any], right: List[Any],
                    ratio: float = 0.5) -> 'DocumentBuilder':
         """Two-column layout."""
@@ -1290,6 +1302,14 @@ class DocumentBuilder:
             builder.bibtex(str(source), style if isinstance(style, str) else None)
         if isinstance(style, str) and style:
             builder._citation_style = style.lower()
+        if fm.get("cover") not in (None, "", "false", "no", False) and isinstance(fm.get("title"), str):
+            # cover: true, or a layout (centered, left_aligned, split); cover_color and cover_image set its ground
+            layout = str(fm["cover"]).strip().lower()
+            builder._blocks.insert(0, CoverPageBlock(
+                title=fm["title"], subtitle=fm.get("subject") or None, author=fm.get("author") or None,
+                date=fm.get("date") or None, logo=fm.get("logo") or None,
+                layout=layout if layout in ("centered", "left_aligned", "split") else None,
+                background_color=fm.get("cover_color") or None, background_image=fm.get("cover_image") or None))
         builder.front_matter = fm
         builder._source_kind = "markdown"
         builder._source_text = markdown

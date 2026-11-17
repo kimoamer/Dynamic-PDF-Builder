@@ -506,3 +506,36 @@ def test_symbols_and_emoji_draw_and_copy_out_intact():
 def test_a_character_no_font_draws_is_reported(tmp_path):
     r = DocumentBuilder().paragraph("Hieroglyph 𓀀 here.").review(str(tmp_path / "r"), dpi=30)
     assert not r["passed"] and any(i["code"] == "missing_glyph" for i in r["issues"])
+
+
+def test_a_cover_from_the_front_matter_is_a_bare_designed_page(tmp_path):
+    import pypdfium2 as pdfium
+    md = (f"---\ntitle: Annual Report 2026\nsubject: Growth\nauthor: Finance\ndate: November 2026\nlogo: {_logo(tmp_path)}\n"
+          "cover: split\ncover_color: \"#1B365D\"\n---\n\n# Results\n\nText.\n")
+    b = DocumentBuilder.from_markdown(md)
+    cover = b._blocks[0]
+    assert (cover.type, cover.layout, cover.background_color, cover.date) == ("cover_page", "split", "#1B365D", "November 2026")
+    pdf = pdfium.PdfDocument(b.render())
+    text = pdf[0].get_textpage().get_text_range()
+    assert "Annual" in text and "Page" not in text and "/" not in text            # no header or footer on the cover
+    tp = pdf[0].get_textpage()
+    title_h = tp.get_charbox(tp.search("Annual").get_next()[0])
+    assert title_h[3] - title_h[1] > 18                                           # the largest type in the document
+    assert b.render_docx()
+    plain = DocumentBuilder().cover_page("Plain cover").paragraph("x")
+    assert "Page" not in pdfium.PdfDocument(plain.render())[0].get_textpage().get_text_range()
+
+
+def test_preface_and_conclusion_pages_in_both_languages():
+    import pypdfium2 as pdfium
+    md = "---\nlanguage: ar\n---\n\n:::preface\nنص التمهيد هنا.\n:::\n\n# النتائج\n\nنص.\n\n:::conclusion خلاصة القول\nنص الخاتمة.\n:::\n"
+    b = DocumentBuilder.from_markdown(md)
+    pages = [x for x in b._blocks if x.type == "introduction_page"]
+    assert [(x.title, x.position) for x in pages] == [("تمهيد", "front"), ("خلاصة القول", "back")]
+    pdf = pdfium.PdfDocument(b.render())
+    assert len(pdf) == 3                                                          # each on a page of its own
+    lines = _lines(b.render())
+    assert max(r for _, _, r in lines[1:3]) > 400                                 # set from the right
+    en = DocumentBuilder().preface_page("Why this report.").heading("Body").conclusion_page("What next.")
+    assert [x.title for x in en._blocks if x.type == "introduction_page"] == ["Preface", "Conclusion"]
+    assert en.render_docx()

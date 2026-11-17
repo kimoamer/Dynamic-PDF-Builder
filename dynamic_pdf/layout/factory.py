@@ -1593,7 +1593,7 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
 
     # ─── Introduction Page ───
     if btype == "introduction_page":
-        return _render_introduction_page(block, theme)
+        return _render_introduction_page(block, theme, ctx)
 
     return [Paragraph(f"[Unsupported: {btype}]", bs_no_indent)]
 
@@ -2359,8 +2359,7 @@ def _render_cover(block, theme, ctx=None):
     if (block.hints or {}).get("title_block"):
         from .cover import title_block
         return title_block(block, theme)
-    if (block.background_image or block.background_color or block.layout) and ctx is not None \
-            and getattr(ctx, "page_geometry", None) is not None:
+    if ctx is not None and getattr(ctx, "page_geometry", None) is not None:        # every cover is a designed page
         from .cover import designed_cover
         return designed_cover(block, theme, ctx)
     flowables = [Spacer(1, 80)]
@@ -2962,47 +2961,38 @@ def _render_toc_placeholder(block, theme, ctx):
     return flowables
 
 
-def _render_introduction_page(block, theme):
-    """Render a styled introduction / preface page."""
-    flowables = [Spacer(1, 40)]
-    accent = _safe_color(block.accent_color or theme.colors.accent)
+def _render_introduction_page(block, theme, ctx=None):
+    """A preface or a conclusion on a page of its own: a rule of the accent colour, the title, an
+    optional line under it, then the text. It reads from the right when its title does."""
+    ty = theme.typography
+    rtl = _is_rtl(block.title + " " + (block.content or ""))
+    align = 2 if rtl else 0
 
-    # Accent bar
-    flowables.append(DividerFlowable(color=block.accent_color or theme.colors.accent,
-                                     thickness=3.0))
-    flowables.append(Spacer(1, 16))
-
-    # Title
-    title_sty = ParagraphStyle('IntroTitle',
-                               fontName=get_font_name(theme.typography.heading_family, bold=True),
-                               fontSize=theme.typography.base_size * theme.typography.heading_scale[0] * 1.2,
-                               leading=theme.typography.base_size * theme.typography.heading_scale[0] * 1.5,
-                               textColor=_safe_color(theme.colors.text_primary),
-                               spaceAfter=8)
-    flowables.append(Paragraph(block.title, title_sty))
-
-    # Subtitle
+    def face(bold=False, italic=False, heading=False):
+        return _arabic_font(theme, bold=bold) if rtl else get_font_name(
+            ty.heading_family if heading else ty.body_family, bold=bold, italic=italic)
+    size = ty.base_size * ty.heading_scale[0] * 1.2
+    from reportlab.platypus.flowables import PageBreakIfNotEmpty
+    back = block.position == "back"
+    flowables = ([PageBreakIfNotEmpty()] if back and not getattr(ctx, "first_block", False) else []) + [
+        Spacer(1, 40),
+        DividerFlowable(color=block.accent_color or theme.colors.accent, thickness=3.0, width=64,
+                        align="right" if rtl else "left"),
+        Spacer(1, 10),
+        Paragraph(_md_inline(block.title), ParagraphStyle(
+            'IntroTitle', fontName=face(bold=True, heading=True), fontSize=size, leading=size * (1.6 if rtl else 1.25),
+            textColor=_safe_color(theme.colors.text_primary), spaceAfter=8, alignment=align))]
     if block.subtitle:
-        sub_sty = ParagraphStyle('IntroSub',
-                                 fontName=get_font_name(theme.typography.body_family, italic=True),
-                                 fontSize=theme.typography.base_size * 1.1,
-                                 textColor=_safe_color(theme.colors.text_secondary),
-                                 spaceAfter=16)
-        flowables.append(Paragraph(block.subtitle, sub_sty))
-
+        flowables.append(Paragraph(_md_inline(block.subtitle), ParagraphStyle(
+            'IntroSub', fontName=face(italic=True), fontSize=ty.base_size * 1.15, leading=ty.base_size * 1.15 * ty.line_height,
+            textColor=_safe_color(theme.colors.text_secondary), spaceAfter=16, alignment=align)))
     flowables.append(Spacer(1, 12))
-
-    # Body content
-    if block.content:
-        body_sty = ParagraphStyle('IntroBody',
-                                  fontName=get_font_name(theme.typography.body_family),
-                                  fontSize=theme.typography.base_size,
-                                  leading=theme.typography.base_size * theme.typography.line_height,
-                                  textColor=_safe_color(theme.colors.text_primary),
-                                  spaceAfter=8)
-        for para in block.content.split('\n\n'):
-            if para.strip():
-                flowables.append(Paragraph(_md_inline(para.strip()), body_sty))
-
-    flowables.append(PageBreak())
+    body_sty = ParagraphStyle('IntroBody', fontName=face(), fontSize=ty.base_size * 1.05,
+                              leading=ty.base_size * 1.05 * ty.line_height * (1.1 if rtl else 1.0),
+                              textColor=_safe_color(theme.colors.text_primary), spaceAfter=10, alignment=4)
+    for para in (block.content or "").split('\n\n'):
+        if para.strip():
+            flowables.append(Paragraph(_md_inline(para.strip()), body_sty))
+    if not back and not getattr(ctx, "last_block", False):
+        flowables.append(PageBreak())
     return flowables

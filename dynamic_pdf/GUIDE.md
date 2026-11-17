@@ -70,6 +70,8 @@ reviewer: Policy AI                # name on suggested edits and comments
 header: modern                     # header and footer: letterhead, modern, banner, report, minimal
 logo: logo.png                     # the logo; without header, a letterhead (letters, invoices) or modern
 company: Nile Co.                  # for the header: also address, website, email, phone, confidentiality ...
+cover: split                       # a cover page: true, centered, left_aligned or split (from title, subject, author, date, logo)
+cover_color: "#1B365D"             # the cover's ground (a panel beside the text on split); cover_image: photo.jpg
 ---
 ```
 
@@ -90,6 +92,7 @@ Blocks:
 | `> [!pullquote]` or `> [!epigraph]` as the quote's first line | a statement set large, or a short epigraph toward the end edge |
 | ```` ```signature ```` with `{"name": ..., "title": ..., "image": "sig.png"}`, or a list of them | a signature, or up to four side by side |
 | `:::warning` ... `:::` (also info, tip, success, danger, caution, important, example) | a callout box |
+| `:::preface` ... `:::` (or `:::introduction`), `:::conclusion` ... `:::`; a title may follow the word | a preface before the text, or a conclusion after it, each on a page of its own |
 | ```` ```python ```` ... ```` ``` ```` | code, highlighted |
 | `$$ E = mc^2 $$ {#eq-energy}` or ```` ```math ```` | an equation (numbered when it has an id) |
 | ```` ```chart ```` with a JSON object | a chart (see Charts) |
