@@ -80,3 +80,16 @@ def test_wheel_size_budget(tmp_path):
     assert not [n for n in names if n.endswith(".pyc") or n.startswith("tests/")]
     assert "dynamic_pdf/design/approved_grammar.json" in names
     assert any(n.startswith("dynamic_pdf/fonts/bundled/") and n.endswith(".ttf") for n in names)
+
+
+def test_a_plain_install_can_check_its_pages_and_pulls_no_agpl_package():
+    """Design variants and QA read the rendered pages, so the reader they need is a core
+    dependency; PyMuPDF (AGPL) stays something a user asks for by name, never through [all]."""
+    tomllib = pytest.importorskip("tomllib", reason="tomllib needs Python 3.11")
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
+    core = " ".join(project["dependencies"]).lower()
+    assert "pypdfium2" in core and "pymupdf" not in core
+    extras = project["optional-dependencies"]
+    assert "qa" not in extras["all"][0].split("[")[1] and "pymupdf" in " ".join(extras["qa"])
+    assert project["license"] == "MIT AND OFL-1.1"
+    assert (ROOT / "dynamic_pdf" / "py.typed").is_file()

@@ -1,0 +1,548 @@
+{
+ "format": "dynamic-pdf-builder/approved-design-grammar",
+ "version": "1.0.0",
+ "status": "approved",
+ "approval": {
+  "reviewer_type": "ai",
+  "model": "claude-opus-5-5",
+  "reviewer": null,
+  "date": "2026-11-05",
+  "human_approved": false
+ },
+ "rules": [
+  {
+   "id": "cover.photo_over_panel",
+   "name": "Photograph over a colour panel",
+   "slot": "cover",
+   "page_roles": [
+    "cover"
+   ],
+   "required_elements": [
+    "title",
+    "a photograph from the document"
+   ],
+   "layout_constraints": [
+    {
+     "statement": "On the evidence page the photograph runs edge to edge from the top to y=0.73.",
+     "source": "measured"
+    },
+    {
+     "statement": "The title sits inside the panel, centred, in reversed type; the seam is the only strong edge on the page.",
+     "source": "ai_observation"
+    },
+    {
+     "statement": "The photograph is never placed under the title, so no scrim is needed.",
+     "source": "ai_observation"
+    }
+   ],
+   "rtl_behavior": "Centred text needs no mirroring; the title uses the Arabic face and its own line height.",
+   "confidence": "medium",
+   "failure_conditions": [
+    "no usable photograph",
+    "a title long enough to overflow the panel",
+    "a photograph whose subject sits at the bottom edge and is cut by the panel"
+   ],
+   "safe_fallback": "cover.low_title_field, then the direction's own cover",
+   "when": {
+    "min_photos": 1,
+    "min_pages": 3,
+    "directions": [
+     "corporate_conservative",
+     "arabic_institutional",
+     "financial_data"
+    ]
+   },
+   "engine": {
+    "direction": {
+     "cover": "image_top"
+    },
+    "extras": {
+     "cover_image_top": 0.62,
+     "cover_panel": 1,
+     "cover_centred": 1,
+     "cover_title_scale": 1.15
+    }
+   }
+  },
+  {
+   "id": "cover.low_title_field",
+   "name": "Very large title low on a colour field",
+   "slot": "cover",
+   "page_roles": [
+    "cover"
+   ],
+   "required_elements": [
+    "title",
+    "brand or direction colour"
+   ],
+   "layout_constraints": [
+    {
+     "statement": "On the evidence page the title starts at y=0.56 at 72 pt, from x=0.07.",
+     "source": "measured"
+    },
+    {
+     "statement": "Cover display ratio (largest type to body type) has a median of 2.86 across cover_image pages.",
+     "source": "measured"
+    },
+    {
+     "statement": "Everything hangs from the start edge; the upper half stays empty.",
+     "source": "ai_observation"
+    }
+   ],
+   "rtl_behavior": "Title and rule hang from the right edge; the Arabic title takes the taller line height.",
+   "confidence": "medium",
+   "failure_conditions": [
+    "titles over about 32 characters at this scale: at 37 to 50 characters blind review found the title cut, a word broken and the rest of the cover pushed onto a blank page",
+    "brand colour too light for reversed type"
+   ],
+   "safe_fallback": "the direction's own cover",
+   "when": {
+    "min_pages": 3,
+    "max_title_chars": 32,
+    "directions": [
+     "executive_premium",
+     "editorial_modern",
+     "corporate_conservative",
+     "arabic_institutional",
+     "financial_data"
+    ]
+   },
+   "engine": {
+    "direction": {
+     "cover": "colour_panel"
+    },
+    "extras": {
+     "cover_title_drop": 0.56,
+     "cover_title_scale": 1.9
+    }
+   }
+  },
+  {
+   "id": "opener.edge_strip_page",
+   "name": "Section opening page with an edge strip",
+   "slot": "opener",
+   "page_roles": [
+    "section opener"
+   ],
+   "required_elements": [
+    "section title",
+    "at least three sections so the strip means something"
+   ],
+   "layout_constraints": [
+    {
+     "statement": "Strip on the evidence pages occupies the outer third of the page: x from 0.673 to 1.0 in page terms.",
+     "source": "measured"
+    },
+    {
+     "statement": "Section opener pages have a median text share of 0.10 and a display ratio of 4.2.",
+     "source": "measured"
+    },
+    {
+     "statement": "Text hangs from the strip; the rest of the page stays quiet.",
+     "source": "ai_observation"
+    },
+    {
+     "statement": "Opening pages never follow one another.",
+     "source": "ai_observation"
+    }
+   ],
+   "rtl_behavior": "The strip sits on the reading-start edge, so it moves to the right in Arabic. Seen on an Arabic document.",
+   "confidence": "high",
+   "failure_conditions": [
+    "short documents, where opening pages inflate length",
+    "sections under the major threshold"
+   ],
+   "safe_fallback": "A rule above the heading, which the engine already applies after an opening page.",
+   "when": {
+    "min_pages": 5,
+    "min_sections": 3,
+    "directions": [
+     "corporate_conservative",
+     "arabic_institutional",
+     "financial_data"
+    ]
+   },
+   "engine": {
+    "direction": {
+     "opener": "page"
+    },
+    "extras": {}
+   }
+  },
+  {
+   "id": "kpi.hero_and_grid",
+   "name": "One leading figure and a ruled grid of the rest",
+   "slot": "kpi",
+   "page_roles": [
+    "highlights",
+    "executive summary",
+    "performance"
+   ],
+   "required_elements": [
+    "metric row of at least three figures",
+    "section title"
+   ],
+   "layout_constraints": [
+    {
+     "statement": "Largest figure median 70 pt on kpi_dashboard pages, a display ratio near 8.7.",
+     "source": "measured"
+    },
+    {
+     "statement": "One figure leads. The others sit in a ruled grid at a clearly lower level.",
+     "source": "ai_observation"
+    },
+    {
+     "statement": "Figures stay in the author's order and none is added.",
+     "source": "ai_observation"
+    }
+   ],
+   "rtl_behavior": "Grid order runs from the right; digits keep their own left-to-right order inside each cell.",
+   "confidence": "medium",
+   "failure_conditions": [
+    "two metric rows in one section",
+    "figures that need their own context paragraph",
+    "only two documents show this family, so it may be a house style"
+   ],
+   "safe_fallback": "kpi.ruled_strip",
+   "when": {
+    "min_metrics": 1,
+    "min_pages": 5
+   },
+   "engine": {
+    "direction": {
+     "kpi": "hero_page"
+    },
+    "extras": {}
+   }
+  },
+  {
+   "id": "kpi.ruled_strip",
+   "name": "Ruled figures in the text flow",
+   "slot": "kpi",
+   "page_roles": [
+    "summary inside running text"
+   ],
+   "required_elements": [
+    "metric row"
+   ],
+   "layout_constraints": [
+    {
+     "statement": "No tile backgrounds: rules separate the figures, so the page stays light.",
+     "source": "ai_observation"
+    }
+   ],
+   "rtl_behavior": "Order runs from the right.",
+   "confidence": "medium",
+   "failure_conditions": [
+    "more than five figures in a row"
+   ],
+   "safe_fallback": "the direction's own figures",
+   "when": {
+    "min_metrics": 1,
+    "max_pages": 4.99
+   },
+   "engine": {
+    "direction": {
+     "kpi": "ruled"
+    },
+    "extras": {}
+   }
+  },
+  {
+   "id": "table.current_period_ledger",
+   "name": "Statement with the current period carried by tone",
+   "slot": "table",
+   "page_roles": [
+    "financial statement",
+    "comparative table"
+   ],
+   "required_elements": [
+    "at least two numeric columns"
+   ],
+   "layout_constraints": [
+    {
+     "statement": "financial_table pages have a median table share of 0.59 across 101 pages in 7 documents.",
+     "source": "measured"
+    },
+    {
+     "statement": "Hairline row rules, no zebra; one period column carries a tint; totals take heavier rules.",
+     "source": "ai_observation"
+    },
+    {
+     "statement": "Line items may indent; numbers align on the end edge of their column.",
+     "source": "ai_observation"
+    }
+   ],
+   "rtl_behavior": "Labels start at the right and period columns run leftwards; digits are not reversed.",
+   "confidence": "high",
+   "failure_conditions": [
+    "a table with one numeric column",
+    "the author's own table style, which is kept",
+    "very wide equity statements, which need landscape pages"
+   ],
+   "safe_fallback": "The direction's own table style.",
+   "when": {
+    "min_tables": 1
+   },
+   "engine": {
+    "direction": {
+     "table": "ledger"
+    },
+    "extras": {}
+   }
+  },
+  {
+   "id": "bands.dense_filled_head_foot",
+   "name": "Filled head and foot bands that alternate",
+   "slot": "bands",
+   "page_roles": [
+    "running pages of long institutional documents"
+   ],
+   "required_elements": [
+    "title",
+    "page number"
+   ],
+   "layout_constraints": [
+    {
+     "statement": "On the evidence pages the head occupies y 0.007 to 0.024 and the foot y 0.976 to 0.993: both touch the page edge.",
+     "source": "measured"
+    },
+    {
+     "statement": "The head carries the document and the foot the section and folio; the folio moves to the outer edge on facing pages.",
+     "source": "ai_observation"
+    }
+   ],
+   "rtl_behavior": "Start and end swap, so the title sits at the right. Numbering stays in Arabic reading order.",
+   "confidence": "medium",
+   "failure_conditions": [
+    "documents under four pages, where bands outweigh the content",
+    "printers that cannot print to the edge"
+   ],
+   "safe_fallback": "The direction's own bands.",
+   "when": {
+    "min_pages": 4,
+    "directions": [
+     "financial_data",
+     "corporate_conservative"
+    ]
+   },
+   "engine": {
+    "direction": {
+     "bands": "dual_filled"
+    },
+    "extras": {}
+   }
+  },
+  {
+   "id": "image.alternating_inset",
+   "name": "Contained photographs alternating sides",
+   "slot": "image",
+   "page_roles": [
+    "narrative pages with several photographs"
+   ],
+   "required_elements": [
+    "two or more photographs",
+    "at least two paragraphs after each photograph"
+   ],
+   "layout_constraints": [
+    {
+     "statement": "image_inset pages: median largest image 0.08 of the page, text share 0.43, in 7 documents.",
+     "source": "measured"
+    },
+    {
+     "statement": "Images stay inside the text frame, and sides alternate so the page does not lean one way.",
+     "source": "ai_observation"
+    }
+   ],
+   "rtl_behavior": "Sides are logical. The first photograph goes to the reading-end edge, which is the left in Arabic.",
+   "confidence": "medium",
+   "failure_conditions": [
+    "photographs that must be read at full width",
+    "short paragraphs that cannot wrap"
+   ],
+   "safe_fallback": "The direction's own image placement, which the refinement step also falls back to.",
+   "when": {
+    "min_photos": 2,
+    "directions": [
+     "corporate_conservative",
+     "financial_data",
+     "arabic_institutional"
+    ]
+   },
+   "engine": {
+    "direction": {
+     "side_image": 0.4,
+     "side_alternates": true
+    },
+    "extras": {}
+   }
+  },
+  {
+   "id": "closing.image_band",
+   "name": "Closing photograph as a full-width band",
+   "slot": "closing",
+   "page_roles": [
+    "last section"
+   ],
+   "required_elements": [
+    "photograph as the last block of the last section, crop allowed"
+   ],
+   "layout_constraints": [
+    {
+     "statement": "The evidence page keeps its text above y=0.57 and gives the lower part to a photograph.",
+     "source": "measured"
+    },
+    {
+     "statement": "The band reaches both page edges and closes the document without any added content.",
+     "source": "ai_observation"
+    },
+    {
+     "statement": "The references anchor the band to the page foot. The engine sets it in the flow; see foot_anchored_media.",
+     "source": "ai_observation"
+    }
+   ],
+   "rtl_behavior": "No mirroring needed: the band is symmetric.",
+   "confidence": "low",
+   "failure_conditions": [
+    "one template is the only close evidence",
+    "a photograph that is not the last block",
+    "crop not allowed by the author"
+   ],
+   "safe_fallback": "The image stays where the direction placed it.",
+   "when": {
+    "min_photos": 1,
+    "min_pages": 3
+   },
+   "engine": {
+    "direction": {},
+    "extras": {
+     "closing_band": 0.34
+    }
+   }
+  },
+  {
+   "id": "chart.small_multiples",
+   "name": "Matrix of small charts",
+   "slot": "chart",
+   "page_roles": [
+    "data pages"
+   ],
+   "required_elements": [
+    "several charts of one kind"
+   ],
+   "layout_constraints": [
+    {
+     "statement": "Equal cells, shared scale, each with its own short title.",
+     "source": "ai_observation"
+    }
+   ],
+   "rtl_behavior": "Reading order of the cells runs from the right.",
+   "confidence": "medium",
+   "failure_conditions": [
+    "charts of different kinds"
+   ],
+   "safe_fallback": "Charts one after another.",
+   "when": {},
+   "engine": {
+    "direction": {},
+    "extras": {
+     "chart_matrix": 1
+    }
+   }
+  },
+  {
+   "id": "editorial.overlaid_panel",
+   "name": "Text panel with a photograph",
+   "slot": "panel",
+   "page_roles": [
+    "feature openings"
+   ],
+   "required_elements": [
+    "large photograph",
+    "short text"
+   ],
+   "layout_constraints": [
+    {
+     "statement": "The panel covers a quiet part of the photograph; never a face.",
+     "source": "ai_observation"
+    }
+   ],
+   "rtl_behavior": "Panel moves to the reading-start side.",
+   "confidence": "medium",
+   "failure_conditions": [
+    "text too long for the panel"
+   ],
+   "safe_fallback": "Text under the image.",
+   "when": {
+    "min_photos": 2
+   },
+   "engine": {
+    "direction": {},
+    "extras": {
+     "image_panel": 1
+    }
+   }
+  },
+  {
+   "id": "bilingual.parallel_columns",
+   "name": "Parallel language columns",
+   "slot": "bilingual",
+   "page_roles": [
+    "bilingual body text"
+   ],
+   "required_elements": [
+    "paired paragraphs in two languages"
+   ],
+   "layout_constraints": [
+    {
+     "statement": "Paired paragraphs start on the same line; each column aligns to its own direction.",
+     "source": "ai_observation"
+    }
+   ],
+   "rtl_behavior": "Arabic takes the right column and aligns right; English takes the left and aligns left.",
+   "confidence": "high",
+   "failure_conditions": [
+    "unpaired text"
+   ],
+   "safe_fallback": "One language after the other.",
+   "when": {},
+   "engine": {
+    "direction": {},
+    "extras": {
+     "paired_columns": 1
+    }
+   }
+  },
+  {
+   "id": "bilingual.parallel_ledger",
+   "name": "Figures once, labels from each language's edge",
+   "slot": "bilingual_table",
+   "page_roles": [
+    "bilingual financial tables"
+   ],
+   "required_elements": [
+    "labels in both languages"
+   ],
+   "layout_constraints": [
+    {
+     "statement": "Figures sit in the centre; each language labels from its own outer edge.",
+     "source": "ai_observation"
+    }
+   ],
+   "rtl_behavior": "Both directions on one row.",
+   "confidence": "high",
+   "failure_conditions": [
+    "more than four periods",
+    "labels in one language only"
+   ],
+   "safe_fallback": "The table as written.",
+   "when": {},
+   "engine": {
+    "direction": {},
+    "extras": {
+     "ledger_tables": 1
+    }
+   }
+  }
+ ]
+}

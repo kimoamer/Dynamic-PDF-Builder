@@ -36,20 +36,30 @@
 ## Installation
 
 ```bash
-pip install -e .
+pip install dynamic-pdf-builder        # from PyPI, once a release is published
+pip install -e .                        # from a clone of this repository
 ```
 
-Core dependencies install automatically. Optional feature sets:
+Python 3.10 or newer. Core dependencies install automatically, including the fonts (45 families
+under the SIL Open Font License) and a PDF reader (PDFium) that design variants and QA use to
+check the rendered pages. No system fonts, browser or LibreOffice are needed for PDF and DOCX.
+Optional feature sets:
 
 ```bash
-pip install -e ".[diagrams]"   # Mermaid diagrams via Playwright
-pip install -e ".[plotly]"     # Plotly charts
-pip install -e ".[pdf]"        # PDF merge / encrypt via pikepdf
-pip install -e ".[qrcode]"     # QR code blocks
-pip install -e ".[rtl]"        # Arabic & Hebrew RTL support
-pip install -e ".[all]"        # Everything
-pip install -e ".[dev]"        # Testing + linting tools
+pip install "dynamic-pdf-builder[diagrams]"   # Mermaid diagrams via Playwright
+pip install "dynamic-pdf-builder[plotly]"     # Plotly charts
+pip install "dynamic-pdf-builder[pdf]"        # PDF merge / encrypt via pikepdf
+pip install "dynamic-pdf-builder[qrcode]"     # QR code blocks
+pip install "dynamic-pdf-builder[xlsx]"       # XLSX data sources for templates
+pip install "dynamic-pdf-builder[qa]"         # PyMuPDF for QA (AGPL): faster and used when installed
+pip install "dynamic-pdf-builder[ai]"         # optional AI layer (needs an API key, only when asked)
+pip install "dynamic-pdf-builder[mcp]"        # MCP server for agents
+pip install "dynamic-pdf-builder[all]"        # every extra above except qa (AGPL), ai and mcp
+pip install -e ".[dev]"                       # from a clone: testing and linting tools
 ```
+
+The code is MIT; the bundled fonts are OFL-1.1 (`License-Expression: MIT AND OFL-1.1`), with each
+font's licence shipped in the package.
 
 ---
 
