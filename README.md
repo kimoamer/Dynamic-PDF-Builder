@@ -1248,8 +1248,9 @@ Bar, column, grouped and stacked bar, line, area, pie and doughnut charts are na
 charts in the library's colours: their data and formatting can be edited in Word, and with the
 `xlsx` extra (openpyxl) a workbook is embedded so Word's "Edit Data" opens it. Other chart types,
 diagrams and QR codes are embedded as images with alt text. Known differences: page breaks are
-computed by Word, so page counts can differ from the PDF; footnotes are rendered as notes
-paragraphs; text watermarks use VML (shown by Word, not by every viewer).
+computed by Word, so page counts can differ from the PDF; text watermarks use VML (shown by
+Word, not by every viewer); LibreOffice shows equations only with its Math module installed.
+Footnotes are real Word footnotes.
 
 `export()`, `export_both()` and the CLI apply intelligent design by default (opt out with
 `design(None)` or `--design none`); an explicitly chosen theme becomes the design's base. The
@@ -1425,6 +1426,43 @@ SOURCE_DATE_EPOCH=1700000000 dynamic-pdf render report.md --format both
 ### Unreleased
 
 Work since v0.3.0, in brief. Design records for each step are under `docs/`.
+
+**Changes that can affect existing users**
+- `pypdfium2` (BSD-3/Apache-2.0) is a core dependency: design variants and QA read the rendered
+  pages, and a plain install could not. `[qa-permissive]` stays, empty in effect.
+- `[all]` no longer installs PyMuPDF (AGPL); ask for it with `[qa]`.
+- `VariantSet.accept()` writes only where it is told: `root=` or `DYNAMIC_PDF_PREFERENCES_DIR`.
+- DOCX: equations are Office Math and common charts are Word charts, not pictures; caption numbers,
+  references and lists of figures and tables are Word fields.
+
+**New**
+- Word: native equations (Office Math), native bar/line/area/pie/doughnut charts with an embedded
+  workbook when openpyxl is installed, `SEQ`/`REF`/`TOC \c` fields that renumber in Word, and
+  suggested edits and comments in CriticMarkup as tracked changes and Word comments (a review copy
+  in the PDF), signed by `meta(reviewer=...)`.
+- `review()`, CLI `review` and an MCP `review` tool: every issue with its page and what to change,
+  and one PNG a page.
+- `dynamic_pdf.settings`: every `DYNAMIC_PDF_*` variable in one place, read when needed; what the
+  caller passes wins. `docs/CONFIGURATION.md` lists them and what the library does to its host.
+- An academic document is set as a paper (title block, abstract, booktabs tables, numbered
+  references, greys for figures), in PDF and DOCX.
+- A learned selector slot (`ranker=`): a model file whose training gate passed may reorder the valid
+  designs; none is packaged. Training data and tools for it are under `training/` and `tools/`.
+- License expression `MIT AND OFL-1.1` with every font licence in the package; `py.typed`.
+
+**Fixed**
+- Arabic in charts read backwards with Matplotlib 3.11, which shapes Arabic itself.
+- A compound word lost its hyphen when its paragraph ran onto the next page.
+- Crossed emphasis (`**a *b** c*`) stopped the whole PDF; a JPEG without a JFIF or Exif header
+  stopped the DOCX; a quote wrapped over source lines split into several Word paragraphs.
+- A reference list under the author's own "References" heading printed a second title; a long
+  doughnut title ran over the ring.
+- False alarms that rejected good designs: a chapter's opening page read as a stranded heading,
+  contents leader dots counted as words, a Western and an Arabic-Indic number in one table read
+  as one number.
+- ReportLab's hyphen correction and Matplotlib's backend no longer change the host process.
+
+**Earlier in this cycle**
 
 - Editable DOCX from the same semantic document as the PDF; `export()`, `export_both()`, CLI `--format`.
 - Intelligent design: `design("auto")` profiles, recipes, a layout planner, `design_explain()`.

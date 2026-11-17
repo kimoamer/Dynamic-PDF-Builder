@@ -56,7 +56,8 @@ class AnthropicProvider:
         except ImportError as e:
             raise ImportError('the AI layer needs the anthropic SDK: pip install "dynamic-pdf-builder[ai]"') from e
         from ..settings import get
-        self.model, self.effort, self.max_tokens = model or get("AI_MODEL", DEFAULT_MODEL), effort, max_tokens
+        self.model: str = model or get("AI_MODEL") or DEFAULT_MODEL
+        self.effort, self.max_tokens = effort, max_tokens
         self.cache_dir = default_cache_dir() if cache_dir is None else cache_dir
         self._client = client
 
