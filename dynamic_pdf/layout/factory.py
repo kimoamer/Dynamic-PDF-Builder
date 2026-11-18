@@ -2329,7 +2329,8 @@ def _render_metrics(block, theme, available_width=460):
     cells = []
     for m in block.metrics:
         lbl_sty = ParagraphStyle('ML', fontName=face(m.label), fontSize=base * theme.typography.caption_size_ratio,
-                                 leading=base * theme.typography.caption_size_ratio * 1.5,
+                                 # Arabic faces (a Kufi above all) reach well above and below the line
+                                 leading=base * theme.typography.caption_size_ratio * (2.0 if _ARABIC_RE.search(m.label) else 1.5),
                                  textColor=_safe_color(theme.colors.text_muted),
                                  alignment=2 if _diag.current().language == "ar" else 0)
         vsize = base * 2.2

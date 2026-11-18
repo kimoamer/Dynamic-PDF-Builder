@@ -156,7 +156,17 @@ def add_drawing(run, asset: MediaAsset, fitted: Fitted, treatment: Optional[Imag
     if anchor is not None:
         element = _anchor_element(inline, anchor)
         inline.getparent().replace(inline, element)
+    else:
+        single_line(run._parent)
     return shape
+
+
+def single_line(paragraph) -> None:
+    """A paragraph that holds an inline picture is set single: LibreOffice scales the picture's line
+    by a body text's spacing below single, and the picture rises over the text above it."""
+    pf = getattr(paragraph, "paragraph_format", None)
+    if pf is not None:
+        pf.line_spacing = 1.0
 
 
 def tiny_paragraph(container):
@@ -275,9 +285,8 @@ class BandWriter:
             if part in _LIVE:
                 F.add_field(p, _LIVE[part], "1", lambda r: style(r))
             elif part in ("section", "chapter"):
-                level = self.r.band_heading_level(part)
                 sample = self.sample.get(part, "")
-                F.add_field(p, f'STYLEREF "Heading {level}"', sample, lambda r, s=sample: style(r, s))
+                F.add_field(p, f'STYLEREF "{self.r.band_heading_style(part)}"', sample, lambda r, s=sample: style(r, s))
             elif part:
                 style(p.add_run(part), part)
 

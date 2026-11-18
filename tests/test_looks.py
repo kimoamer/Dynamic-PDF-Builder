@@ -8,7 +8,7 @@ import pytest
 from dynamic_pdf import DocumentBuilder
 from dynamic_pdf.design.art_direction import _section_level
 from dynamic_pdf.design.looks import LOOKS
-from dynamic_pdf.fonts import list_font_families
+from dynamic_pdf.fonts import font_catalog
 from dynamic_pdf.schema.blocks import HeadingBlock, ParagraphBlock
 from dynamic_pdf.utils.color import contrast_ratio, hex_to_rgb
 
@@ -107,10 +107,10 @@ def test_no_two_looks_share_a_hue_or_a_face():
         assert min(d, 360 - d) >= 30, (a.id, b.id)
     for part in ("heading_family", "arabic_family"):
         assert len({getattr(x.direction, part) for x in looks}) == len(looks), part
-    bundled = set(list_font_families()) | {"Amiri"}
+    embeddable = set(font_catalog())                       # the faces Word gets inside the file
     for x in looks:
         d = x.direction
-        assert {d.heading_family, d.body_family, d.arabic_family} <= bundled, x.id
+        assert {d.heading_family, d.body_family, d.arabic_family} <= embeddable, x.id
         assert contrast_ratio(x.primary, "#FFFFFF") >= 4.5, x.id       # white type reads on the colour
 
 
@@ -157,3 +157,41 @@ def test_heading_is_kept_with_the_list_under_it():
         pages = [pdf[i].get_textpage().get_text_range() for i in range(len(pdf))]
         head = next(i for i, t in enumerate(pages) if "Tail heading" in t)
         assert "entry 0 under the heading" in pages[head], gap
+
+
+def _docx(name, source=EN):
+    import io
+    import docx
+    return docx.Document(io.BytesIO(DocumentBuilder.from_markdown(source).theme(name).render_docx()))
+
+
+@pytest.mark.parametrize("name", ["civic", "magazine", "executive", "ledger"])
+def test_word_running_title_names_a_style_its_headings_use(name):
+    import re
+    d = _docx(name)
+    used = {p.style.name for p in d.paragraphs}
+    for s in d.sections:
+        for part in (s.header, s.footer, s.even_page_header, s.even_page_footer, s.first_page_header):
+            for ref in re.findall(r'STYLEREF "([^"]+)"', part._element.xml):
+                assert ref in used, (name, ref)      # otherwise Word prints "Reference source not found"
+
+
+def test_word_hang_and_rule_live_in_the_heading_style():
+    d = _docx("magazine")
+    head = next(p for p in d.paragraphs if p.text == "Highlights")
+    assert head.style.paragraph_format.left_indent.pt < -20           # LibreOffice drops a paragraph's own
+    assert "w:pBdr" in head.style.element.xml
+
+
+def test_word_pictures_and_charts_sit_on_single_lines():
+    chart = '\n```chart\n{"type": "bar", "data": {"North": 18.4, "East": 12.1}}\n```\n'
+    d = _docx("magazine", EN.replace("## Outlook", chart + "\n## Outlook"))
+    holders = [p for p in d.paragraphs if p._p.xpath(".//w:drawing")]
+    assert holders and all(p.paragraph_format.line_spacing == 1.0 for p in holders)
+
+
+def test_word_chart_axis_reaches_above_the_tallest_bar():
+    from dynamic_pdf.renderers.docx_chart import _ceiling
+    assert _ceiling({"": [18.4, 12.1, 9.6, 8.1]}, False) == 20
+    assert _ceiling({"a": [3, 4], "b": [2, 2]}, True) == 7
+    assert _ceiling({"": [-3.0]}, False) is None
