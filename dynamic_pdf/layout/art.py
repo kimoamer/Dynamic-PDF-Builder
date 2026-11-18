@@ -50,8 +50,9 @@ class DesignedHeading(Flowable):
 
     def __init__(self, para, *, fill=None, rule=None, rule_width=2.5, pad_x=0.0, pad_y=0.0,
                  bleed=False, reach_left=0.0, reach_right=0.0, text_left=0.0, text_right=0.0, before=0.0,
-                 after=0.0):
+                 after=0.0, side="top", rtl=False):
         super().__init__()
+        self.side, self.rtl = side, rtl             # where the rule goes: top, bottom, or the start edge
         self.para, self.fill, self.rule, self.rule_width = para, fill, rule, rule_width
         self.pad_x, self.pad_y, self.bleed = pad_x, pad_y, bleed
         self.reach_left, self.reach_right = reach_left, reach_right      # fill and rule go this far past the frame
@@ -61,10 +62,12 @@ class DesignedHeading(Flowable):
 
     def wrap(self, aW, aH):
         self.w = aW
-        inner = aW + self.text_left + self.text_right - 2 * self.pad_x
+        self.bar = (self.rule_width + 9) if self.rule and self.side == "start" else 0.0
+        inner = aW + self.text_left + self.text_right - 2 * self.pad_x - self.bar
         self.text_h = self.para.wrap(inner, aH)[1]
-        self.top_gap = (self.rule_width + 9) if self.rule else 0.0
-        self.h = self.text_h + 2 * self.pad_y + self.top_gap
+        self.top_gap = (self.rule_width + 9) if self.rule and self.side == "top" else 0.0
+        self.low_gap = (self.rule_width + 6) if self.rule and self.side == "bottom" else 0.0
+        self.h = self.text_h + 2 * self.pad_y + self.top_gap + self.low_gap
         return aW, self.h
 
     def getSpaceBefore(self):
@@ -85,9 +88,14 @@ class DesignedHeading(Flowable):
         if self.rule:
             c.setStrokeColor(HexColor(self.rule))
             c.setLineWidth(self.rule_width)
-            y = self.h - self.rule_width / 2
-            c.line(x0, y, x1, y)
-        self.para.drawOn(c, self.pad_x - self.text_left, self.pad_y)
+            if self.side == "start":
+                x = x1 - self.rule_width / 2 if self.rtl else x0 + self.rule_width / 2
+                c.line(x, 0, x, self.h)
+            else:
+                y = self.h - self.rule_width / 2 if self.side == "top" else self.rule_width / 2
+                short = (x1 - x0) * 0.78 if self.side == "bottom" else 0.0     # under the words, a short rule
+                c.line(x0 + (short if self.rtl else 0), y, x1 - (0 if self.rtl else short), y)
+        self.para.drawOn(c, self.pad_x - self.text_left + (0 if self.rtl else self.bar), self.pad_y + self.low_gap)
 
 
 def designed_heading(block, display: str, theme, fs: float, color: str, rtl: bool, before: float,
@@ -105,6 +113,9 @@ def designed_heading(block, display: str, theme, fs: float, color: str, rtl: boo
         return DesignedHeading(para, fill=fill, pad_x=0.0 if bleed else 12.0, pad_y=size * 0.62, bleed=bleed,
                                before=before, after=after + 6)
     para = _para(theme, display, size, color, align, bold=bold, ratio=1.18)
+    if kind in ("bar", "under"):                 # a bar down the start edge, or a short rule under the words
+        return DesignedHeading(para, rule=hints.get("rule") or A.ink(theme), rule_width=3.5 if kind == "bar" else 2.0,
+                               side="start" if kind == "bar" else "bottom", rtl=rtl, before=before, after=after + 2)
     hang = float(hints.get("hang", 0.0))
     left, right = (0.0, hang) if rtl else (hang, 0.0)
     return DesignedHeading(para, rule=hints.get("rule") or (A.ink(theme) if kind == "rule" else None),
@@ -148,9 +159,10 @@ def metric_strip(block, theme, width: float, style: str) -> list:
     rtl = any(A.is_rtl(m.label) for m in block.metrics)
     base = theme.typography.base_size
     dark = A.ink(theme)
-    band = style == "band"
-    value_ink = "#ffffff" if band else dark
-    label_ink = "#ffffff" if band else theme.colors.text_secondary
+    filled = style == "band"
+    band = style in ("band", "tint", "boxed")     # the figures stand in from the edge of a box
+    value_ink = "#ffffff" if filled else dark
+    label_ink = "#ffffff" if filled else theme.colors.text_secondary
     align = 2 if rtl else 0
     n = max(1, len(block.metrics))
     vsize = base * float((block.hints or {}).get("value_scale", 2.5 if n <= 3 else 2.1))
@@ -183,8 +195,12 @@ def metric_strip(block, theme, width: float, style: str) -> list:
     cmds = [("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 8 if band else 0),
             ("RIGHTPADDING", (0, 0), (-1, -1), 8 if band else 0),
             ("TOPPADDING", (0, 0), (-1, -1), 10), ("BOTTOMPADDING", (0, 0), (-1, -1), 10)]
-    if band:
-        cmds.append(("BACKGROUND", (0, 0), (-1, -1), HexColor(dark)))
+    if style in ("band", "tint"):
+        cmds.append(("BACKGROUND", (0, 0), (-1, -1), HexColor(dark if filled else A.tint(theme, 0.9))))
+    elif style == "boxed":
+        for i in range(0, 2 * n - 1, 2):
+            cmds += [("BOX", (i, 0), (i, 0), 0.6, HexColor(theme.colors.border)),
+                     ("LINEABOVE", (i, 0), (i, 0), 2.4, HexColor(theme.colors.accent))]
     else:
         for i in range(0, 2 * n - 1, 2):
             cmds.append(("LINEABOVE", (i, 0), (i, 0), 2.0, HexColor(dark)))
@@ -225,6 +241,8 @@ def table_commands(design: str, theme, rows: int, columns: int, has_header: bool
     else:                                    # "open": one line under the header, nothing else heavy
         if has_header:
             cmds.append(("LINEBELOW", (0, 0), (-1, 0), 1.1, dark))
+            if design == "tinted":
+                cmds.append(("BACKGROUND", (0, 0), (-1, 0), tone))
     if has_footer:
         cmds.append(("LINEABOVE", (0, last), (-1, last), 0.9, dark))
     if current is not None and 0 <= current < columns:
@@ -237,14 +255,17 @@ class Masthead(Flowable):
     """A title block in a band of colour running to the page edges: a short document's
     opening, in place of a cover page."""
 
-    def __init__(self, paras, fill: str, pad: float, after: float):
+    def __init__(self, paras, fill: Optional[str], pad: float, after: float, edges=None, rtl=False):
         super().__init__()
         self.paras, self.fill, self.pad, self.after = paras, fill, pad, after
+        self.edges, self.rtl = edges or {}, rtl     # {top | bottom | start | end: (colour, width)}
 
     def wrap(self, aW, aH):
         self.w = aW
-        self.heights = [p.wrap(aW, aH)[1] + p.style.spaceAfter for p in self.paras]
-        self.h = sum(self.heights) + self.pad
+        self.inset = 16.0 if "start" in self.edges else 0.0
+        self.top = 0.0 if self.fill else (self.pad if "top" in self.edges else 0.0)
+        self.heights = [p.wrap(aW - 2 * self.inset, aH)[1] + p.style.spaceAfter for p in self.paras]
+        self.h = sum(self.heights) + self.pad + self.top
         return aW, self.h
 
     def getSpaceAfter(self):
@@ -252,26 +273,54 @@ class Masthead(Flowable):
 
     def draw(self):
         c = self.canv
-        c.setFillColor(HexColor(self.fill))
         x, y0 = c.absolutePosition(0, 0)
         width, height = c._pagesize
-        c.rect(-x, 0, width, height - y0, fill=1, stroke=0)
-        y = self.h
+        if self.fill:                               # a band to the page edges, with a strip along its foot
+            c.setFillColor(HexColor(self.fill))
+            c.rect(-x, 0, width, height - y0, fill=1, stroke=0)
+            if "bottom" in self.edges:
+                color, weight = self.edges["bottom"]
+                c.setFillColor(HexColor(color))
+                c.rect(-x, 0, width, weight, fill=1, stroke=0)
+        else:                                       # on the paper: rules round the title
+            lines = {"top": (0, self.h, self.w, self.h), "bottom": (0, 0, self.w, 0),
+                     "start": (self.w, 0, self.w, self.h) if self.rtl else (0, 0, 0, self.h),
+                     "end": (0, 0, 0, self.h) if self.rtl else (self.w, 0, self.w, self.h)}
+            for side, (color, weight) in self.edges.items():
+                c.setStrokeColor(HexColor(color))
+                c.setLineWidth(weight)
+                c.line(*lines[side])
+        y = self.h - self.top
         for p, h in zip(self.paras, self.heights):
             y -= h
-            p.drawOn(c, 0, y + p.style.spaceAfter)
+            p.drawOn(c, self.inset, y + p.style.spaceAfter)
+
+
+def masthead_spec(block, theme):
+    """(fill or None, ink, centred, edges) of the masthead a design asked for, for both renderers."""
+    hints = block.hints or {}
+    style = hints.get("masthead")
+    main = block.background_color or A.ink(theme)
+    accent = hints.get("rule") or theme.colors.accent
+    return {
+        "strip": (main, "#ffffff", False, {"bottom": (accent, 5.0)}),
+        "tint": (A.mix(main, "#ffffff", 0.88), main, False, {"bottom": (main, 2.5)}),
+        "rule": (None, main, False, {"top": (main, 4.0)}),
+        "centred": (None, main, True, {"top": (main, 0.8), "bottom": (main, 0.8)}),
+        "bar": (None, main, False, {"start": (main, 7.0)}),
+        "framed": (None, main, True, {side: (main, 1.2) for side in ("top", "bottom", "start", "end")}),
+    }.get(style, (main, block.text_color or "#ffffff", False, {}))
 
 
 def masthead(block, theme, ctx) -> list:
     rtl = A.is_rtl(block.title) or ctx.page_geometry.rtl
     base = theme.typography.base_size
-    fill = block.background_color or A.ink(theme)
-    ink = block.text_color or "#ffffff"
-    align = 2 if rtl else 0
+    fill, ink, centred, edges = masthead_spec(block, theme)
+    align = 1 if centred else 2 if rtl else 0
     size = base * float((block.hints or {}).get("title_scale", 2.5))
     paras = [_para(theme, block.title, size, ink, align, bold=True, ratio=1.15, after=size * 0.3)]
     if block.subtitle:
         paras.append(_para(theme, block.subtitle, base * 1.15, ink, align, heading=False, ratio=1.35, after=4))
     if block.author:
         paras.append(_para(theme, block.author, base * 0.9, ink, align, heading=False, ratio=1.4, after=0))
-    return [Masthead(paras, fill, 18.0, theme.spacing.block_gap * 2)]
+    return [Masthead(paras, fill, 18.0, theme.spacing.block_gap * 2, edges, rtl)]

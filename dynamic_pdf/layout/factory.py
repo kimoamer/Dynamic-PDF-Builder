@@ -2229,6 +2229,11 @@ def _render_callout(block, theme, bs):
     bg_map = {"info": "#EBF5FF", "warning": "#FFF8E1", "error": "#FFF0F0",
               "success": "#F0FFF4", "tip": "#F5F0FF"}
     bg_color = _safe_color(bg_map.get(block.variant, "#F7F9FC"))
+    from ..schema.theme import ColorPalette
+    own = variant_colors.get(block.variant)
+    if own and own != getattr(ColorPalette(), block.variant):     # a design's own colour tints its own ground
+        from ..design.archetypes import mix
+        bg_color = _safe_color(mix(own, "#FFFFFF", 0.92))
 
     is_rtl = _is_rtl(block.text) or (block.title and _is_rtl(block.title))
     body_font = _arabic_font(theme) if is_rtl else get_font_name(theme.typography.body_family)
@@ -2330,7 +2335,8 @@ def _render_metrics(block, theme, available_width=460):
         vsize = base * 2.2
         val_sty = ParagraphStyle('MV', fontName=face(m.value, bold=True, heading=True), fontSize=vsize,
                                  textColor=_safe_color(theme.colors.text_primary),
-                                 leading=vsize * (1.85 if face(m.value).startswith("Amiri") else 1.2),
+                                 leading=vsize * (1.85 if face(m.value).startswith("Amiri") else       # Arabic letters
+                                                  1.6 if _ARABIC_RE.search(m.value or "") else 1.2),   # reach below the line
                                  spaceBefore=2, spaceAfter=2,
                                  alignment=2 if _diag.current().language == "ar" else 0)
         label = m.label if _ARABIC_RE.search(m.label) else m.label.upper()

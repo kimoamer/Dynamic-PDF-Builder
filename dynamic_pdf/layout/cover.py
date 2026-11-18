@@ -35,8 +35,18 @@ def _panel(geo: PageGeometry, split: bool, rtl: bool, top: float = 0.0):
 
 
 def image_top(block) -> float:
-    """Share of the page an image takes across the top of the cover; 0 for other covers."""
-    return float((block.hints or {}).get("image_top", 0.0)) if block.background_image else 0.0
+    """Share of the page an image, or a band of colour, takes across the top of the cover; 0 for
+    other covers."""
+    hints = block.hints or {}
+    return float(hints.get("image_top", 0.0)) if block.background_image else float(hints.get("colour_top", 0.0))
+
+
+def _frame(geo: PageGeometry, color: str, inset: float, weight: float):
+    """Four rules round the page, as filled strips, so both renderers draw them the same way."""
+    w, h = geo.width - 2 * inset, geo.height - 2 * inset
+    for x, y, rw, rh in ((inset, inset, w, weight), (inset, geo.height - inset - weight, w, weight),
+                         (inset, inset, weight, h), (geo.width - inset - weight, inset, weight, h)):
+        yield PageItem(None, None, x, y, ImageTreatment(), True, -2, fill=color, w=rw, h=rh)
 
 
 def title_drop(block, layout: str, frame_h: float, page_h: float, margin_top: float) -> float:
@@ -60,9 +70,13 @@ def cover_plan(block, geo: PageGeometry, rtl: bool, collector):
         # a panel of colour down the end side; the text stands on the paper beside it
         x, y, w, h = _panel(geo, True, rtl)
         layers.append(PageItem(None, None, x, y, ImageTreatment(), True, -2, fill=fill, w=w, h=h))
-    elif fill:
-        layers.append(PageItem(None, None, 0, 0, ImageTreatment(), True, -2, fill=fill,
-                               w=geo.width, h=geo.height))
+    elif fill:                               # the whole page, or a band across its head
+        h = geo.height * top if top and not block.background_image else geo.height
+        layers.append(PageItem(None, None, 0, geo.height - h, ImageTreatment(), True, -2, fill=fill,
+                               w=geo.width, h=h))
+    hints = block.hints or {}
+    if hints.get("frame"):
+        layers += [*_frame(geo, hints["frame"], 30, 2.2), *_frame(geo, hints.get("frame_inner") or hints["frame"], 36, 0.7)]
     asset = _load(block.background_image, "Cover background", collector) if block.background_image else None
     overlay, opacity = block.overlay_color, block.overlay_opacity
     ink = block.text_color
@@ -82,7 +96,7 @@ def cover_plan(block, geo: PageGeometry, rtl: bool, collector):
         if overlay and opacity:
             layers.append(PageItem(None, None, x, y, t, True, 0, fill=overlay, fill_opacity=opacity,
                                    w=w, h=h))
-    if not ink and fill and not split:
+    if not ink and fill and not split and not top:
         ink = readable_on(fill)
     return layout, split, layers, ink
 

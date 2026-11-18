@@ -427,7 +427,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                     F.set_run_shading(run, "EEF0F3")
                 else:
                     F.set_run_fonts(run, None, arabic, rtl=rtl, bidi_lang="ar-SA" if rtl else None)
-                    if F.has_complex_script(tr.text):
+                    # LibreOffice sets figures and signs in a right-to-left paragraph as complex script too
+                    if F.has_complex_script(tr.text) or self.rtl_doc:
                         F.set_complex_script_format(run, size, bool(f.bold))
 
             if tr.footnote_ref and self.notes and self.notes.reference(paragraph, tr.footnote_ref, self._note_text):
@@ -651,6 +652,9 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             F.set_paragraph_shading(p, hints.get("fill") or dark)
             color = "#FFFFFF"
             p.paragraph_format.space_after = Pt(self.tokens.paragraph_after + 8)
+        elif kind in ("bar", "under"):           # a bar down the start edge, or a rule under the words
+            side = "bottom" if kind == "under" else "right" if self.rtl_doc else "left"
+            F.set_paragraph_border(p, side, hints.get("rule") or dark, 28 if kind == "bar" else 16, 6 if kind == "bar" else 3)
         elif kind == "rule" or hints.get("rule"):
             F.set_paragraph_border(p, "top", hints.get("rule") or dark, int(float(hints.get("rule_width", 2.5)) * 8), 8)
         if hints.get("hang"):
@@ -971,6 +975,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                 if (has_footer and ri == last) or ri in total_rows:
                     sides["top"] = ("single", 8, dark)
                 F.set_cell_borders(cell, **sides)
+                if head and hints["design"] == "tinted":
+                    F.set_cell_shading(cell, _mix(dark, "#FFFFFF", 0.9))
                 if current == ci:
                     F.set_cell_shading(cell, _mix(dark, "#FFFFFF", 0.9))
 
@@ -1323,7 +1329,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
     # ─── data display ───
 
     def _art_metrics(self, c, b, style):
-        band = style == "band"
+        filled = style == "band"
+        band = style in ("band", "tint", "boxed")
         dark = _ink(self.theme) if self.theme is not None else self.tokens.colors["primary"]
         n = max(1, len(b.metrics))
         t = c.add_table(rows=1, cols=n)
@@ -1333,8 +1340,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         F.set_cant_split(t.rows[0])
         if self.rtl_doc:
             F.set_table_bidi(t)
-        fg = "#FFFFFF" if band else dark
-        muted = "#FFFFFF" if band else self.tokens.colors["text_secondary"]
+        fg = "#FFFFFF" if filled else dark
+        muted = "#FFFFFF" if filled else self.tokens.colors["text_secondary"]
         scale = float((b.hints or {}).get("value_scale", 2.5 if n <= 3 else 2.1))
         section = self.doc.sections[-1]
         room = (section.page_width - section.left_margin - section.right_margin) / 12700 / n - 14
@@ -1342,8 +1349,12 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         scale = max(1.3, min(scale, room / (longest * 0.56 * self.tokens.body_size)))
         for i, m in enumerate(b.metrics):
             cell = t.rows[0].cells[i]
-            if band:
-                F.set_cell_shading(cell, dark)
+            if style in ("band", "tint"):
+                F.set_cell_shading(cell, dark if filled else _mix(dark, "#FFFFFF", 0.9))
+            elif style == "boxed":
+                hair = ("single", 4, self.tokens.colors["border"])
+                F.set_cell_borders(cell, top=("single", 20, self.tokens.colors["accent"]), left=hair, right=hair,
+                                   bottom=hair)
             else:
                 F.set_cell_borders(cell, top=("single", 16, dark))
             for text, size, color, bold in ((m.value, self.tokens.body_size * scale, fg, True),
@@ -1605,17 +1616,25 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
 
     def _masthead(self, c, b):
         """A short document's title block: a shaded cell, with live text."""
-        dark = b.background_color or (_ink(self.theme) if self.theme is not None else self.tokens.colors["primary"])
-        ink = b.text_color or "#FFFFFF"
-        cell = self._boxed(c, dark)
+        from ..layout.art import masthead_spec
+        fill, ink, centred, edges = masthead_spec(b, self.theme)
+        cell = self._boxed(c, fill or "#FFFFFF")
+        sides = {"start": "right" if self.rtl_doc else "left", "end": "left" if self.rtl_doc else "right"}
+        if edges:
+            F.set_cell_borders(cell, **{sides.get(side, side): ("single", max(2, int(weight * 8)), color)
+                                        for side, (color, weight) in edges.items()})
         scale = float((b.hints or {}).get("title_scale", 2.5))
         p = self._para(cell, "Title", b.title)
+        if centred:
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         size = self.tokens.title_size if self.theme.typography.title_size else self.tokens.body_size * scale
         self._runs(p, b.title, size=size, color=ink)
         for text, size in ((b.subtitle, 1.15), (b.author, 0.9)):
             if text:
                 q = self._para(cell, "Normal", text)
                 q.paragraph_format.space_after = Pt(2)
+                if centred:
+                    q.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 self._runs(q, text, size=self.tokens.body_size * size, color=ink)
 
     def _designed_cover(self, c, b):

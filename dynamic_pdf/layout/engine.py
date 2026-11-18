@@ -289,15 +289,16 @@ class _EngineDocTemplate(BaseDocTemplate):
 
     def handle_keepWithNext(self, flowables):
         """As ReportLab's, but a heading may also be kept with a following
-        KeepTogether group (figure + caption, short table) — ReportLab skips
+        KeepTogether group (figure + caption, short table) or a list — ReportLab skips
         containers there, which left such headings stranded at page bottoms."""
+        from reportlab.platypus import ListFlowable
         from reportlab.platypus.doctemplate import _ktAllow
         i, n = 0, len(flowables)
         while i < n and flowables[i].getKeepWithNext() and _ktAllow(flowables[i]):
             i += 1
         if not i:
             return
-        if i < n and (_ktAllow(flowables[i]) or isinstance(flowables[i], KeepTogether)):
+        if i < n and (_ktAllow(flowables[i]) or isinstance(flowables[i], (KeepTogether, ListFlowable))):
             i += 1
         K = self.keepTogetherClass(flowables[:i])
         mbe = getattr(self, '_multiBuildEdits', None)

@@ -218,7 +218,12 @@ Table: Invoice lines {#invoice}
   editorial_modern, executive_premium, financial_data, arabic_institutional, academic_paper.
 - `b.design_variants(n=3)` (CLI `variants`) renders several directions, checks each, and recommends one.
 - `b.design_explain()` (MCP `explain`) says why each decision was made.
-- Themes (the design starts from the one you choose; with `design(None)` it is the whole look): claude, chatgpt, corporate_dark, academic, modern_minimal,
+- Themes that are complete looks: executive, magazine, luxe, ledger, civic, scholar, tech, warm. Each has its
+  own cover, short-document masthead, section headings, key figures, tables, running bands, colours and
+  Latin and Arabic faces; no two share a cover, a band or a hue. `DocumentBuilder(theme="ledger")`,
+  `b.theme("ledger")` or `theme: ledger` in the front matter. A brand kit keeps the look's structure and
+  replaces its colours.
+- Classic themes (the design starts from the one you choose; with `design(None)` it is the whole look): claude, chatgpt, corporate_dark, academic, modern_minimal,
   government, data_report. A brand kit (colours, fonts, logo) goes in `b.design(brand=BrandKit(...))`.
 
 ## Headers, footers, logos and signatures

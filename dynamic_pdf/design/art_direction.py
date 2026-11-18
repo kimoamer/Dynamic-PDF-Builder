@@ -157,13 +157,23 @@ def _words(text: Optional[str]) -> int:
     return len((text or "").split())
 
 
+def _section_level(blocks) -> int:
+    """The heading level the sections are written at: the top one, or the next when the only
+    heading above it is the document's title ("# Title" over "## Section")."""
+    levels = [b.level for b in blocks if b.type == "heading"]
+    top = min(levels, default=1)
+    deeper = [n for n in levels if n > top]
+    return min(deeper) if deeper and levels[0] == top and levels.count(top) == 1 else top
+
+
 def _sections(blocks) -> List[Tuple[Optional[int], list]]:
-    """(index of the H1, indices of what follows it), in document order."""
+    """(index of the section heading, indices of what follows it), in document order."""
     out: List[Tuple[Optional[int], list]] = []
     current: list = []
     head: Optional[int] = None
+    level = _section_level(blocks)
     for i, b in enumerate(blocks):
-        if b.type == "heading" and b.level == 1:
+        if b.type == "heading" and b.level == level:
             if head is not None or current:
                 out.append((head, current))
             head, current = i, []
@@ -293,10 +303,12 @@ def _cover(sem, d: Direction, brief: DocumentBrief, primary: str, accent: str, l
         sem.blocks.pop(0)
     short = brief.estimated_pages < 3
     kind = d.cover if d.cover == "title_block" else "masthead" if short else d.cover
-    if kind in ("masthead", "title_block") and _opens_with_title(sem):
+    if kind == "title_block" and _opens_with_title(sem):
         plan.cover = "none"
-        plan.decisions.append("cover: the document opens with its own title, so no masthead repeats it")
+        plan.decisions.append("cover: the document opens with its own title, so no title block repeats it")
         return
+    if kind == "masthead" and _opens_with_title(sem):     # the masthead says the title: the heading does not repeat it
+        sem.blocks.remove(next(b for b in sem.blocks if b.type == "heading"))
     photo = _first_photo(sem.blocks)
     if kind in ("image_top", "split") and photo is None:
         kind = "type_left" if kind == "image_top" else "colour_panel"
@@ -306,8 +318,8 @@ def _cover(sem, d: Direction, brief: DocumentBrief, primary: str, accent: str, l
         c.hints = {"title_block": True}
     elif kind == "masthead":
         c.background_color, c.layout = primary, "left_aligned"
-        c.hints = {"masthead": True, "title_scale": 2.3 if d.base_size >= 10 else 2.7}
-        if d.id == "editorial_modern":
+        c.hints = {"masthead": d.masthead, "rule": accent, "title_scale": 2.3 if d.base_size >= 10 else 2.7}
+        if d.id == "editorial_modern" and d.masthead == "band":
             c.background_color = accent
     elif kind == "type_centered":
         c.layout = "centered"
@@ -328,6 +340,15 @@ def _cover(sem, d: Direction, brief: DocumentBrief, primary: str, accent: str, l
         c.layout, c.background_image, c.logo = "split", photo.src, logo
         c.background_treatment = _cover_crop(photo.src)
         c.hints = {"title_scale": 1.25, "rule": accent, "drop": 0.34}
+    elif kind == "frame":                      # a ruled frame round the page, the title centred in it
+        c.layout, c.logo = "centered", logo
+        c.hints = {"frame": primary, "frame_inner": accent, "title_scale": 1.5, "rule": accent, "drop": 0.34}
+    elif kind == "side_panel":                 # a panel of colour down the end side, the title on the paper
+        c.layout, c.background_color, c.logo = "split", primary, logo
+        c.hints = {"title_scale": 1.45, "rule": accent, "drop": 0.4}
+    elif kind == "band_top":                   # colour across the head of the page, the title under it
+        c.layout, c.background_color = "left_aligned", primary
+        c.hints = {"colour_top": 0.4, "title_scale": 1.6, "rule": accent}
     elif kind == "colour_panel":
         c.layout, c.background_color, c.text_color = "left_aligned", primary, "#FFFFFF"
         c.hints = {"title_scale": d.extras.get("cover_title_scale", 1.3), "rule": accent,
@@ -511,10 +532,12 @@ def _apply_sections(sem, d: Direction, brief: DocumentBrief, primary: str, accen
                     why.append("after an opening page, or short: a rule keeps the rhythm from repeating")
             elif opener == "hang":
                 _hint(heading, opener="hang", hang=d.hang, rule=primary, rule_width=0.8)
-                if adjust.major_breaks and major and brief.estimated_pages >= 4 and number:
+                if adjust.major_breaks and d.break_major and major and brief.estimated_pages >= 4 and number:
                     if s.role in ("image", "narrative"):
                         _hint(heading, drop=0.09 if not s.photos else 0.0, break_before="if_not_empty")
                     why.append("large section opens a page, with room left above it")
+            elif opener in ("bar", "under"):
+                _hint(heading, opener=opener, rule=accent)
             elif opener == "slab":
                 bleed = d.id == "arabic_institutional"
                 _hint(heading, opener="slab", fill=primary, bleed=bleed)
@@ -550,7 +573,7 @@ def _apply_sections(sem, d: Direction, brief: DocumentBrief, primary: str, accen
                         _chart(cell.chart, d, primary, mix(primary, "#FFFFFF", 0.62), adjust)
             elif b.type == "table":
                 _table(b, d)
-            elif b.type == "metric_row" and d.kpi in ("ruled", "band"):
+            elif b.type == "metric_row" and d.kpi in ("ruled", "band", "boxed", "tint"):
                 _hint(b, style=d.kpi)
             elif b.type == "metric_row" and d.kpi == "hero_page":
                 _hint(b, style="ruled")
@@ -721,6 +744,8 @@ def direct(sem: SemanticDocument, direction: Direction, *, brand: Optional[Brand
     theme.colors.accent = accent
     theme.decorations.heading_accent_bar = False
     theme.decorations.table_row_alternating = d.table == "default"
+    if brand and brand.primary:                # a note or a tip is in the document's colours; a warning stays a warning
+        theme.colors.info, theme.colors.tip = primary, accent
     if rtl or sem.stats.bilingual:
         if theme.typography.arabic_family in (None, "Amiri"):
             theme.typography.arabic_family = covering_face(d.arabic_family, _arabic_chars(sem))

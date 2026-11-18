@@ -34,15 +34,16 @@ class Direction:
     margins: Tuple[float, float, float, float]      # top, bottom, start, end
     primary: str
     accent: str
-    cover: str                 # type_centered | image_top | full | split | masthead | title_block
-    opener: str                # none | rule | hang | slab | page
-    kpi: str                   # tiles | ruled | band | hero_page
-    table: str                 # open | ledger | default
+    cover: str                 # type_centered | image_top | full | split | masthead | title_block | frame |
+                               # side_panel | band_top
+    opener: str                # none | rule | hang | slab | page | bar | under
+    kpi: str                   # tiles | ruled | band | hero_page | boxed | tint
+    table: str                 # open | ledger | default | tinted
     hero_image: str            # inline | bleed | band
     side_image: float          # width share of a side image; 0 keeps images in the column
     side_alternates: bool
     statement: str             # plain | inline | page
-    bands: str                 # line | folio | quiet | filled | institutional | page_number
+    bands: str                 # line | folio | quiet | filled | institutional | page_number | foot_bar | centred
     numbered: bool = False
     drop_cap: bool = False
     lead: bool = False
@@ -50,6 +51,7 @@ class Direction:
     hang: float = 0.0          # how far headings hang into the start margin
     break_major: bool = False  # large sections open a page
     paper: bool = False        # a scholarly paper's conventions (DecorationConfig.paper)
+    masthead: str = "band"     # a short document's opening: band | strip | tint | rule | centred | bar | framed
     extras: Dict[str, float] = field(default_factory=dict)
 
     def margins_for(self, rtl: bool) -> Tuple[float, float, float, float]:
@@ -166,6 +168,14 @@ def page_system(direction: Direction, *, company: Optional[str], logo: Optional[
                           footer=Band(rows=[BandRow(start=[label], end=[numbers], size=7.5, color=muted,
                                                     rule_below=False)]),
                           values=values, edge_distance=0, body_gap=16)
+    if kind == "foot_bar":                        # nothing above the text; a filled bar under it
+        return PageSystem(footer=Band(rows=[BandRow(start=[title], end=[numbers], size=7.5, bold=True, color="#FFFFFF",
+                                                    fill=primary)], bleed=True, padding=6),
+                          values=values, edge_distance=0, body_gap=16)
+    if kind == "centred":                         # the title centred above, the page number centred below
+        return PageSystem(header=Band(rows=[BandRow(center=[title], size=8, color=muted)]),
+                          footer=Band(rows=[BandRow(center=["– {page} –"], size=8.5, color=accent)]),
+                          values=values, body_gap=16)
     if kind == "dual_filled":                     # only a grammar rule asks for this
         def bar(start, end):
             return Band(rows=[BandRow(start=start, end=end, size=7.5, bold=True, color="#FFFFFF", fill=primary)],

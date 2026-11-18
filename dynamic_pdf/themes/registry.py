@@ -35,4 +35,8 @@ def _load_defaults():
               GOVERNMENT_THEME, DATA_REPORT_THEME):
         if t.name not in _THEMES:
             _THEMES[t.name] = t
-    _loaded = True
+    _loaded = True                            # before the looks, which are built on the themes above
+    from ..design.looks import LOOKS
+    for look in LOOKS.values():               # the complete looks, usable as plain themes too
+        if look.id not in _THEMES:
+            _THEMES[look.id] = look.theme()
