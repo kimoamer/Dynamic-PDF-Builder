@@ -441,6 +441,25 @@ def _table(b, d: Direction) -> None:
     b.hints = hints
 
 
+def _exhibit(b, d: Direction, primary: str, adjust: Adjust) -> bool:
+    """Dress a chart, a table or a row of key figures the direction's way."""
+    if b.type == "chart":
+        _chart(b, d, primary, mix(primary, "#FFFFFF", 0.62), adjust)
+    elif b.type == "figure_matrix":
+        for cell in b.figures:
+            if cell.chart is not None:
+                _chart(cell.chart, d, primary, mix(primary, "#FFFFFF", 0.62), adjust)
+    elif b.type == "table":
+        _table(b, d)
+    elif b.type == "metric_row" and d.kpi in ("ruled", "band", "boxed", "tint"):
+        _hint(b, style=d.kpi)
+    elif b.type == "metric_row" and d.kpi == "hero_page":
+        _hint(b, style="ruled")
+    else:
+        return False
+    return True
+
+
 def _opener_block(heading, chapters: List[str], current: int, blocks, follow: List[int], d: Direction):
     """A section opening page. A short first paragraph moves in as the standfirst: same
     words, same order."""
@@ -478,6 +497,10 @@ def _apply_sections(sem, d: Direction, brief: DocumentBrief, primary: str, accen
                     adjust: Adjust, plan: ArtDirectionPlan, rtl: bool) -> None:
     blocks = sem.blocks
     secs = [(h, idx) for h, idx in _sections(blocks) if h is not None]
+    for h, idx in _sections(blocks):
+        if h is None:                            # what stands before the first section is dressed like the rest
+            for i in idx:
+                _exhibit(blocks[i], d, primary, adjust)
     titles = [blocks[h].text for h, _ in secs]
     briefs = {t.title: t for t in brief.sections}
     pages_enough = brief.estimated_pages >= 5 and len(secs) <= MAX_CHAPTERS
@@ -565,18 +588,8 @@ def _apply_sections(sem, d: Direction, brief: DocumentBrief, primary: str, accen
                 composition = f"{composition}: {_photo(b, d, s, side, adjust, room, plan, heading.text in adjust.no_break)}"
                 side_flip = not side_flip
                 side = "end" if not (d.side_alternates and side_flip) else "start"
-            elif b.type == "chart":
-                _chart(b, d, primary, mix(primary, "#FFFFFF", 0.62), adjust)
-            elif b.type == "figure_matrix":
-                for cell in b.figures:
-                    if cell.chart is not None:
-                        _chart(cell.chart, d, primary, mix(primary, "#FFFFFF", 0.62), adjust)
-            elif b.type == "table":
-                _table(b, d)
-            elif b.type == "metric_row" and d.kpi in ("ruled", "band", "boxed", "tint"):
-                _hint(b, style=d.kpi)
-            elif b.type == "metric_row" and d.kpi == "hero_page":
-                _hint(b, style="ruled")
+            elif _exhibit(b, d, primary, adjust):
+                pass
             elif b.type == "quote" and b.style == "blockquote" and d.statement != "plain":
                 last = not any(blocks[j].type == "paragraph" for j in idx[pos + 1:])
                 page = (d.statement == "page" and adjust.statement_pages and adjust.openers and pages_enough and
