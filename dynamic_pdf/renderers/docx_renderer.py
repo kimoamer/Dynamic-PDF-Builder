@@ -652,9 +652,24 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             F.set_paragraph_shading(p, hints.get("fill") or dark)
             color = "#FFFFFF"
             p.paragraph_format.space_after = Pt(self.tokens.paragraph_after + 8)
-        elif kind in ("bar", "under"):           # a bar down the start edge, or a rule under the words
-            side = "bottom" if kind == "under" else "right" if self.rtl_doc else "left"
-            F.set_paragraph_border(p, side, hints.get("rule") or dark, 28 if kind == "bar" else 16, 6 if kind == "bar" else 3)
+        elif kind == "bar":                      # a bar down the start edge
+            F.set_paragraph_border(p, "right" if self.rtl_doc else "left", hints.get("rule") or dark, 28, 6)
+        elif kind == "under":                    # a short rule under the words: its own two-point line, as in the PDF
+            from docx.oxml import OxmlElement
+            from docx.text.paragraph import Paragraph as _P
+            line = OxmlElement("w:p")
+            p._p.addnext(line)
+            rule = _P(line, p._parent)
+            pf = rule.paragraph_format
+            pf.space_before, pf.space_after, pf.line_spacing = Pt(0), Pt(self.tokens.paragraph_after), Pt(2)
+            short = Pt(self.content_width_pt * 0.78)
+            if self.rtl_doc:
+                pf.left_indent = short
+            else:
+                pf.right_indent = short
+            F.set_paragraph_border(rule, "bottom", hints.get("rule") or dark, 16, 0)
+            p.paragraph_format.keep_with_next = True
+            p.paragraph_format.space_after = Pt(2)
         elif kind == "rule" or hints.get("rule"):
             F.set_paragraph_border(p, "top", hints.get("rule") or dark, int(float(hints.get("rule_width", 2.5)) * 8), 8)
         if hints.get("hang"):
