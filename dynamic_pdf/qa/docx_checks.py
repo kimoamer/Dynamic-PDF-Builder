@@ -115,6 +115,16 @@ def _text_margins(d) -> dict:
         x0 = int(x.text) + int(body.get("lIns", 91440))
         x1 = int(x.text) + int(anchor.find(WP + "extent").get("cx")) - int(body.get("rIns", 91440))
         left, right = min(left, x0 / 12700), min(right, page_w - x1 / 12700)
+    # a heading the design hangs into the margin (a style with a negative start indent); w:left is the
+    # start side, which a right-to-left paragraph puts on the right
+    base_left, base_right = left, right
+    for par in d.paragraphs:
+        indent = par.style.paragraph_format.left_indent if par.style is not None else None
+        if indent is not None and indent.pt < 0:
+            if par._p.pPr is not None and par._p.pPr.find(W + "bidi") is not None:
+                right = min(right, base_right + indent.pt)
+            else:
+                left = min(left, base_left + indent.pt)
     return {"left": left, "right": right}
 
 

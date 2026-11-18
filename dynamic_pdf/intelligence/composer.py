@@ -421,6 +421,9 @@ class Composer:
     def _select(self, eligible, base_entry):
         """The best of ``eligible`` and the baseline, by the deterministic policy and any ranker."""
         best = max(eligible, key=lambda e: e[0].metrics["adjusted"], default=base_entry)
+        if eligible:        # within a point of the best, the layout that wastes less paper wins (a last page of two lines)
+            near = [e for e in eligible if e[0].metrics["adjusted"] >= best[0].metrics["adjusted"] - 1.0]
+            best = min(near, key=lambda e: (e[0].metrics.get("wasted", 0.0), -e[0].metrics["adjusted"]))
         return self._apply_ranker(best, eligible, base_entry)
 
     def _settle(self, entry, base_entry) -> "_Layout":

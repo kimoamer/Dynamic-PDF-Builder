@@ -59,6 +59,20 @@ def _nums(values, ref: Optional[str]) -> str:
     return f"<c:numRef><c:f>{ref}</c:f><c:numCache>{body}</c:numCache></c:numRef>" if ref else f"<c:numLit>{body}</c:numLit>"
 
 
+def _ceiling(series: Dict[str, List[float]], stacked: bool) -> Optional[float]:
+    """A round top for the value axis, above the tallest bar and its label: LibreOffice's own
+    can sit under the tallest bar and cut it off."""
+    cols = list(zip(*series.values())) if series else []
+    tops = [sum(v for v in col if v > 0) if stacked else max(col) for col in cols]
+    top = max(tops, default=0.0)
+    if top <= 0:
+        return None
+    import math
+    unit = 10 ** math.floor(math.log10(top))
+    step = next(unit * k for k in (0.2, 0.25, 0.5, 1, 2, 2.5, 5, 10) if top / (unit * k) <= 6)
+    return math.ceil(top * 1.08 / step) * step
+
+
 def _fill(hex_colour: str) -> str:
     return f'<c:spPr><a:solidFill><a:srgbClr val="{hex_colour.lstrip("#").upper()}"/></a:solidFill></c:spPr>'
 
@@ -129,12 +143,14 @@ def chart_xml(key: str, cats: List[str], series: Dict[str, List[float]], colours
     if kind not in ("pie", "doughnut"):
         cat_pos, val_pos = ("l", "b") if direction == "bar" else ("b", "l")
         grey = '<c:spPr><a:ln w="6350"><a:solidFill><a:srgbClr val="D0D0D0"/></a:solidFill></a:ln></c:spPr>'
+        ceiling = _ceiling(series, grouping in ("stacked", "percentStacked"))
+        top = f'<c:max val="{ceiling:g}"/>' if ceiling is not None and grouping != "percentStacked" else ""
         body += (f'<c:catAx><c:axId val="500"/><c:scaling><c:orientation val="{"maxMin" if direction == "bar" else "minMax"}"/></c:scaling>'
                  f'<c:delete val="0"/><c:axPos val="{cat_pos}"/>' + (_title(x_label, 900) if x_label else "")
                  + f'<c:numFmt formatCode="General" sourceLinked="1"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/>'
                  f'<c:tickLblPos val="nextTo"/>{grey}<c:crossAx val="501"/><c:crosses val="autoZero"/><c:auto val="1"/>'
                  '<c:lblAlgn val="ctr"/><c:lblOffset val="100"/><c:noMultiLvlLbl val="0"/></c:catAx>'
-                 f'<c:valAx><c:axId val="501"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/>'
+                 f'<c:valAx><c:axId val="501"/><c:scaling><c:orientation val="minMax"/>{top}</c:scaling><c:delete val="0"/>'
                  f'<c:axPos val="{val_pos}"/><c:majorGridlines><c:spPr><a:ln w="6350"><a:solidFill><a:srgbClr val="EEEEEE"/>'
                  '</a:solidFill></a:ln></c:spPr></c:majorGridlines>' + (_title(y_label, 900) if y_label else "")
                  + '<c:numFmt formatCode="General" sourceLinked="1"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/>'

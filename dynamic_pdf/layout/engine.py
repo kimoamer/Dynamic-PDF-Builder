@@ -7,7 +7,7 @@ decoration is individually overridable from the theme configuration.
 """
 from io import BytesIO
 from datetime import datetime
-from reportlab.platypus import (SimpleDocTemplate, PageBreak, Spacer,
+from reportlab.platypus import (ListFlowable, SimpleDocTemplate, PageBreak, Spacer,
                                 Frame, PageTemplate, BaseDocTemplate)
 from reportlab.lib.pagesizes import A4, LETTER, LEGAL, landscape
 from reportlab.lib.colors import HexColor, Color
@@ -228,7 +228,10 @@ class _FlowKeep(KeepTogether):
             lead_h += f.wrapOn(self.canv, aW, aH)[1] + f.getSpaceBefore() + f.getSpaceAfter()
         rest = aH - lead_h - last.getSpaceBefore()
         fits_part = False
-        if rest > 24:
+        if isinstance(last, ListFlowable):       # a list "splits" into all its entries, whatever the room:
+            first = last.splitOn(self.canv, aW, rest)[:1]          # the first of them must fit under the heading
+            fits_part = bool(first) and first[0].wrapOn(self.canv, aW, rest)[1] + first[0].getSpaceBefore() <= rest
+        elif rest > 24:
             try:
                 parts = last.splitOn(self.canv, aW, rest)
             except Exception:
@@ -289,7 +292,7 @@ class _EngineDocTemplate(BaseDocTemplate):
 
     def handle_keepWithNext(self, flowables):
         """As ReportLab's, but a heading may also be kept with a following
-        KeepTogether group (figure + caption, short table) — ReportLab skips
+        KeepTogether group (figure + caption, short table) or a list — ReportLab skips
         containers there, which left such headings stranded at page bottoms."""
         from reportlab.platypus.doctemplate import _ktAllow
         i, n = 0, len(flowables)
@@ -297,7 +300,7 @@ class _EngineDocTemplate(BaseDocTemplate):
             i += 1
         if not i:
             return
-        if i < n and (_ktAllow(flowables[i]) or isinstance(flowables[i], KeepTogether)):
+        if i < n and (_ktAllow(flowables[i]) or isinstance(flowables[i], (KeepTogether, ListFlowable))):
             i += 1
         K = self.keepTogetherClass(flowables[:i])
         mbe = getattr(self, '_multiBuildEdits', None)

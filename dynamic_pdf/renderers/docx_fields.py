@@ -115,7 +115,8 @@ def set_run_shading(run, fill_hex: str) -> None:
 
 def set_paragraph_border(paragraph, side: str = "bottom", color: str = "DDE2E8",
                          size_eighths: int = 6, space: int = 1) -> None:
-    pPr = paragraph._p.get_or_add_pPr()
+    """``paragraph`` may also be a paragraph style."""
+    pPr = paragraph._p.get_or_add_pPr() if hasattr(paragraph, "_p") else paragraph.element.get_or_add_pPr()
     pbdr = _get_or_add(pPr, "w:pBdr")
     el = _get_or_add(pbdr, f"w:{side}")
     el.set(qn("w:val"), "single")

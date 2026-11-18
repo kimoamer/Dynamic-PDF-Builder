@@ -239,6 +239,32 @@ one image a page), fix, `review` again.
 
 ## Themes
 
+### Complete looks
+
+Eight themes that differ in design as well as colour: each has its own cover, short-document masthead,
+section headings, key figures, tables, running header and footer, palette, and Latin and Arabic faces.
+No two share a cover, a running band or a hue, and the tests hold them to that.
+
+| Theme | Cover | Sections | Bands | Colour | Faces (Latin / Arabic) |
+|-------|-------|----------|-------|--------|------------------------|
+| `executive` | Centred type on white | Numbered, plain | Title over a hairline | Navy and gold | Libre Franklin, Source Serif 4 / IBM Plex Sans Arabic |
+| `magazine` | Large title under a heavy rule | Hung into a wide margin | Folio at the foot | Ink and red | Oswald, Spectral / Markazi Text |
+| `luxe` | Dark full page | Light headings over fine rules | Gold strip at the head | Aubergine and gold | EB Garamond / El Messiri |
+| `ledger` | Filled masthead, no cover page | Rules, figures in a band | Filled header | Teal and orange | Barlow / Tajawal |
+| `civic` | Ruled frame, centred | Full-width slabs | Organisation on every page | Deep green and gold | Noto Serif / Noto Kufi Arabic |
+| `scholar` | Title and authors on page one | Numbered, serif | Page number only | Black | Crimson Pro / Noto Naskh Arabic |
+| `tech` | Side panel of colour | A bar beside the heading | Filled bar at the foot | Violet and cyan | Manrope / Noto Sans Arabic |
+| `warm` | Colour across the head | A short rule under the heading | Centred title and page | Amber and olive | Nunito, PT Serif / Cairo |
+
+```python
+DocumentBuilder(theme="ledger")          # or .theme("ledger"), or "theme: ledger" in the front matter
+```
+
+A look is rendered, checked and refined like any designed document. A brand kit keeps the look's
+structure and replaces its colours.
+
+### Classic themes
+
 Every document is designed by default and the design starts from the theme you choose. For a theme's
 classic look exactly as below, call `design(None)` before rendering.
 

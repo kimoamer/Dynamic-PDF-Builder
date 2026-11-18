@@ -251,7 +251,7 @@ class DocumentBuilder:
         from .core.normalize import normalize
         from .intelligence import Composer
         from .themes import get_theme as _gt
-        if self._variant_request:
+        if self._request():
             raise ValueError("compose() cannot yet be combined with design(direction=/variants=/grammar=)")
         doc, theme = self._prepared_base()
         theme = theme or _gt(doc.theme)
@@ -329,21 +329,37 @@ class DocumentBuilder:
         if self._compose_active():
             d, t, _, _, _ = self._composed()
             return d, t
-        if self._variant_request and self._design_mode is not None:
+        if self._request() and self._design_mode is not None:
             chosen = self._variant_set().recommended
             if chosen is not None:
                 return chosen.document, chosen.theme
         return self._prepared_base()
 
+    def _look(self):
+        """The complete look the chosen theme names, if it names one."""
+        from .design.looks import LOOKS
+        return LOOKS.get(self._theme) if self._theme_explicit else None
+
+    def _request(self):
+        """The design search asked for: by ``design(direction=/variants=/grammar=)``, or by a theme
+        that is a complete look, whose structure is then the one design drawn."""
+        if self._variant_request or self._look() is None:
+            return self._variant_request
+        return {"families": [self._look().direction], "n": 1, "grammar": None, "ranker": None}
+
+    def _kit(self):
+        """The brand in force: the caller's, or the colours of the chosen look."""
+        return self._brand or (self._look().brand if self._look() else None)
+
     def _variant_set(self):
         """The variant search ``design(direction=/variants=/grammar=)`` asked for (cached)."""
         import hashlib
-        key = hashlib.sha256((self.build().model_dump_json() + repr(sorted(self._variant_request.items()))
+        key = hashlib.sha256((self.build().model_dump_json() + repr(sorted(self._request().items()))
                               + str(self._theme_explicit)
                               + (self._brand.model_dump_json() if self._brand else "") + self._theme
                               + repr(self._policy)).encode()).hexdigest()
         if self._variant_result is None or self._variant_result[0] != key:
-            r = self._variant_request
+            r = self._request()
             self._variant_result = (key, self.design_variants(n=r["n"], families=r["families"], grammar=r["grammar"],
                                                               ranker=r.get("ranker")))
         self.last_variants = self._variant_result[1]
@@ -374,7 +390,7 @@ class DocumentBuilder:
         base_sem = sem = self.semantic()
         from .themes import get_theme as _gt
         plan = plan_design(sem, None if self._design_mode in (None, "auto") else self._design_mode,
-                           self._brand, base_theme=_gt(self._theme) if self._theme_explicit else None)
+                           self._kit(), base_theme=_gt(self._theme) if self._theme_explicit else None)
         sem = apply_plan(sem, plan)
         from .design.planner import plan_layout, fit_pages
         plan.layout = plan_layout(sem, plan)
@@ -436,7 +452,7 @@ class DocumentBuilder:
         from .intelligence.variants import generate_variants
         from .themes import get_theme as _gt
         kit = brand if brand is None or isinstance(brand, BrandKit) else BrandKit(**brand)
-        return generate_variants(self.build(), policy=self._policy, brand=kit or self._brand,
+        return generate_variants(self.build(), policy=self._policy, brand=kit or self._kit(),
                                  base_theme=_gt(self._theme) if self._theme_explicit else None, n=n,
                                  families=families, budget=budget, office=office, grammar=grammar,
                                  grammar_rules=grammar_rules, ranker_model=ranker_model, ranker=ranker,
@@ -448,7 +464,7 @@ class DocumentBuilder:
         if self._design_mode is None and self._brand is None:
             return {"profile": None, "reasons": ["design() not enabled; using theme "
                                                  f"'{self._theme}' as-is"]}
-        if self._variant_request and self._design_mode is not None:
+        if self._request() and self._design_mode is not None:
             vs = self._variant_set()
             if vs.recommended is not None:
                 return {**vs.recommended.plan.explain(), "variants": vs.choice().to_dict()}
@@ -1229,7 +1245,7 @@ class DocumentBuilder:
 
     def _note_design(self, result: 'ExportResult') -> 'ExportResult':
         """Say which variant was delivered, when design() asked for a variant search."""
-        if self._variant_request and self._design_mode is not None:
+        if self._request() and self._design_mode is not None:
             vs = self._variant_set()
             result.design = vs.choice()
             if vs.recommended is not None:

@@ -201,7 +201,11 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
             # captions are set smaller than body text: a body-size line that shares words with a
             # caption is the end of a paragraph
             small = body_size is None or last[2] < body_size - 0.25
-            if small and any(_matches(lt, c) or (_key(lt) and _key(lt) <= c and len(_key(lt)) >= 2) for c in caps):
+            # a caption set under its figure (a paper's convention) ends the page with the figure just above it
+            under = any(0 <= last[0][1] - r[3] <= 26 for r in page.drawings()) or \
+                0 <= last[0][1] - image_bottoms.get(pno, -1e9) <= 26
+            if small and not under and any(
+                    _matches(lt, c) or (_key(lt) and _key(lt) <= c and len(_key(lt)) >= 2) for c in caps):
                 rep.findings.append(Finding(severity=ERROR, code="detached_caption", page=pno, bbox=last[0],
                                             text=lt, format=fmt,
                                             message=f"caption {lt[:40]!r} is separated from its table/figure"))

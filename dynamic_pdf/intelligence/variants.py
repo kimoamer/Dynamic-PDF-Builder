@@ -538,7 +538,7 @@ def generate_variants(source, *, policy=None, brand: Optional[BrandKit] = None, 
     if not 1 <= n <= len(DIRECTIONS):
         raise ValueError(f"n must be between 1 and {len(DIRECTIONS)}")
     for f in families or ():
-        if f not in DIRECTIONS:
+        if not isinstance(f, Direction) and f not in DIRECTIONS:
             raise ValueError(f"unknown design family {f!r}; choose from {sorted(DIRECTIONS)}")
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -552,7 +552,9 @@ def generate_variants(source, *, policy=None, brand: Optional[BrandKit] = None, 
             order, run.start_adjust, director = ai.choose(run.sem, brief, ranked, request=request, plain_pdf=run.plain_pdf)
             if order:
                 ranked = sorted(ranked, key=lambda r: order.index(r[0].id))
-        if families:
+        if families and all(isinstance(f, Direction) for f in families):
+            chosen = [(f, 0.0, ["the chosen theme"]) for f in families]       # a theme's own structure, as given
+        elif families:
             chosen = [r for f in families for r in ranked if r[0].id == f]
             chosen += [(DIRECTIONS[f], 0.0, ["requested by the caller"]) for f in families
                        if f not in {r[0].id for r in ranked}]
