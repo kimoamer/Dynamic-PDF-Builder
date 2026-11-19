@@ -3,6 +3,7 @@ less repeated work, a calibrated page forecast and one scoreboard."""
 import io
 import json
 import os
+import shutil
 import subprocess
 import sys
 
@@ -207,6 +208,7 @@ def test_the_forecast_takes_real_content_widths(tmp_path):
 
 # ── reach: design(direction=, variants=, grammar=) and the CLI ─────────────────────────
 
+@pytest.mark.skipif(not (shutil.which("soffice") or shutil.which("libreoffice")), reason="needs LibreOffice")
 def test_export_delivers_the_recommended_design(tmp_path, monkeypatch):
     monkeypatch.setenv("SOURCE_DATE_EPOCH", "1700000000")
     b = DocumentBuilder.from_markdown(fixture_text("proposal.md")).design(direction="auto", variants=2)

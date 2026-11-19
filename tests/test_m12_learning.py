@@ -67,6 +67,7 @@ JUDGES = ["judge-one", "judge-two"]
 
 class TestAIReview:
     def test_whole_pages_are_sent_one_image_a_page_and_recorded_at_their_size(self, tmp_path):
+        pytest.importorskip("anthropic")
         import pymupdf
         d = write_batch(tmp_path)
         (d / "renders" / "doc").mkdir(parents=True)
@@ -91,6 +92,7 @@ class TestAIReview:
         assert all("every PDF page" in r["evaluation_method"] for r in rows)
 
     def test_two_judges_are_asked_blind_and_recorded_as_ai_with_their_prompt(self, tmp_path):
+        pytest.importorskip("anthropic")
         d = write_batch(tmp_path)
         dataset = tmp_path / "ai-preferences.jsonl"
         c = client({"j0-cmp-001": answer("A"), "j0-cmp-002": answer("B"), "j1-cmp-001": answer("A"),
@@ -118,6 +120,7 @@ class TestAIReview:
             ai_review.run(str(d), str(dataset), JUDGES, client=c)
 
     def test_it_can_submit_and_collect_later(self, tmp_path):
+        pytest.importorskip("anthropic")
         d = write_batch(tmp_path)
         c = client({}, statuses=("in_progress",))
         out = ai_review.run(str(d), str(tmp_path / "x.jsonl"), JUDGES, client=c, wait=False)
