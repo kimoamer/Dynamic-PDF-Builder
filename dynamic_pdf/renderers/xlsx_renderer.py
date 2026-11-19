@@ -26,9 +26,9 @@ def _number_format(text: str) -> Optional[str]:
     if cell.kind not in ("number", "currency", "percent") or cell.value is None:
         return None
     core = ("#,##0" if cell.grouped is not False else "0") + ("." + "0" * cell.decimals if cell.decimals else "")
-    if cell.kind == "percent":
-        return core + "%"
     plain = plain_text(text).strip()
+    if cell.kind == "percent":           # a change written with its sign keeps it: +16%, -3%, 0%
+        return f"+{core}%;-{core}%;{core}%" if plain.startswith("+") else core + "%"
     fmt = core
     if cell.kind == "currency" and cell.unit:
         unit = cell.unit
@@ -130,6 +130,11 @@ def render_xlsx(source_blocks, computed_blocks, meta) -> bytes:
         for c, w in enumerate(widths):
             ws.column_dimensions[col_letter(c)].width = max(8, w + 2)
         ws.freeze_panes = "A2"
+        # printed, the sheet is one page wide: a wide table turns the page rather than losing columns
+        ws.sheet_properties.pageSetUpPr.fitToPage = True
+        ws.page_setup.fitToWidth, ws.page_setup.fitToHeight = 1, 0
+        if sum(max(8, w + 2) for w in widths) > 95:
+            ws.page_setup.orientation = "landscape"
     wb.properties.title = meta.title or None
     buf = io.BytesIO()
     wb.save(buf)
