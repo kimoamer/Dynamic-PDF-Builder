@@ -5,7 +5,7 @@
   "formulas": 16,
   "mismatches": [],
   "route": "export",
-  "seconds": 5.3,
+  "seconds": 5.2,
   "pdf": true
  },
  {
@@ -14,7 +14,7 @@
   "formulas": 5,
   "mismatches": [],
   "route": "export",
-  "seconds": 3.7,
+  "seconds": 3.3,
   "pdf": true
  },
  {
@@ -23,7 +23,7 @@
   "formulas": 6,
   "mismatches": [],
   "route": "export",
-  "seconds": 3.5,
+  "seconds": 3.3,
   "pdf": true
  },
  {
@@ -32,7 +32,7 @@
   "formulas": 24,
   "mismatches": [],
   "route": "export",
-  "seconds": 3.8,
+  "seconds": 3.4,
   "pdf": true
  },
  {
@@ -41,7 +41,7 @@
   "formulas": 0,
   "mismatches": [],
   "route": "export",
-  "seconds": 4.9,
+  "seconds": 3.4,
   "pdf": true
  },
  {
@@ -50,7 +50,7 @@
   "formulas": 0,
   "mismatches": [],
   "route": "export",
-  "seconds": 3.7,
+  "seconds": 3.1,
   "pdf": true
  }
 ]
