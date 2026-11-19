@@ -103,7 +103,7 @@ def test_keyword_lists_are_data_with_arabic_coverage():
 
 
 def test_keywords_ship_with_the_package():
-    import tomllib
+    tomllib = pytest.importorskip("tomllib", reason="tomllib needs Python 3.11")
     data = tomllib.loads((Path(__file__).parents[1] / "pyproject.toml").read_text())
     assert "data/*.json" in data["tool"]["setuptools"]["package-data"]["dynamic_pdf"]
 

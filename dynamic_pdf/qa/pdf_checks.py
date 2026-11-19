@@ -89,6 +89,15 @@ def _separate_lines(a, b) -> bool:
     return abs(centre(a) - centre(b)) >= 0.8 * min(a[2], b[2])
 
 
+def _runs_of_one_line(a, b) -> bool:
+    """Whether two boxes are runs of one line: LibreOffice splits a right-to-left line into runs (its
+    end, a stretch justified with kashida), each box as tall as its own marks (Arabic vowel signs),
+    so runs of one line share a top or a bottom edge, the one inside the other."""
+    (ax0, ay0, ax1, ay1), (bx0, by0, bx1, by1) = a[0], b[0]
+    inside = (bx0 >= ax0 - 1 and bx1 <= ax1 + 1) or (ax0 >= bx0 - 1 and ax1 <= bx1 + 1)
+    return inside and (abs(ay1 - by1) < 1.0 or abs(ay0 - by0) < 1.0)
+
+
 def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Optional[List[str]] = None,
               tolerance: float = 2.0, fmt: str = "pdf", captions: Optional[List[str]] = None,
               major_headings: Optional[List[str]] = None, body_size: Optional[float] = None,
@@ -173,7 +182,7 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
                 a, b = lines[i][0], lines[j][0]
                 if abs(a[1] - b[1]) < 0.5 and abs(a[0] - b[0]) < 0.5:
                     continue          # same line split into two dict lines
-                if fmt == "docx" and _separate_lines(lines[i], lines[j]):
+                if fmt == "docx" and (_separate_lines(lines[i], lines[j]) or _runs_of_one_line(lines[i], lines[j])):
                     continue
                 if _overlap(a, b) > 0.35:
                     rep.findings.append(Finding(

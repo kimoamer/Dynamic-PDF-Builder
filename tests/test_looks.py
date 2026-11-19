@@ -203,3 +203,14 @@ def test_word_keeps_a_short_list_on_one_page():
     d = docx.Document(io.BytesIO(DocumentBuilder().numbered_list(["one", "two", "three"]).render_docx()))
     items = [p for p in d.paragraphs if p.text in ("one", "two", "three")]
     assert [bool(p.paragraph_format.keep_with_next) for p in items] == [True, True, False]
+
+
+def test_runs_of_one_arabic_line_are_not_an_overlap():
+    from dynamic_pdf.qa.pdf_checks import _runs_of_one_line
+    line = ((63.8, 247.7, 310.4, 263.4), "واستبدلت", 10.0)
+    end = ((68.1, 247.7, 167.5, 264.7), "البالية", 10.0)        # same top, marks reach lower
+    tail = ((68.0, 106.0, 89.0, 124.0), "مرسى.", 10.0)
+    whole = ((64.0, 100.0, 527.0, 124.0), "أنجزت", 10.0)         # same bottom, marks reach higher
+    assert _runs_of_one_line(line, end) and _runs_of_one_line(tail, whole)
+    below = ((64.0, 112.0, 527.0, 136.0), "سطر آخر", 10.0)       # a different line half a line down
+    assert not _runs_of_one_line(whole, below)

@@ -103,7 +103,11 @@ def _worker(config: dict, request: dict) -> dict:
         return {"id": rid, "status": res.status, "format": fmt, "content_base64": content,
                 "page_count": res.page_count, "diagnostics": res.diagnostics}
     except Exception as e:              # every failure becomes a response, never a traceback
-        return {"id": rid, "status": "error", "error": f"{type(e).__name__}: {e}"}
+        import errno
+        # out of memory under the limit surfaces as MemoryError, or as ENOMEM from the system
+        starved = isinstance(e, MemoryError) or getattr(e, "errno", None) == errno.ENOMEM
+        hint = f"; memory limit is {limits.max_memory_mb} MB" if starved and limits.max_memory_mb else ""
+        return {"id": rid, "status": "error", "error": f"{type(e).__name__}: {e}{hint}"}
 
 
 def main(argv=None) -> None:
