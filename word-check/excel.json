@@ -1,0 +1,56 @@
+[
+ {
+  "file": "kit_feasibility.xlsx",
+  "excel": "16.0 build 20625.0",
+  "formulas": 16,
+  "mismatches": [],
+  "route": "export",
+  "seconds": 5.3,
+  "pdf": true
+ },
+ {
+  "file": "kit_invoice.xlsx",
+  "excel": "16.0 build 20625.0",
+  "formulas": 5,
+  "mismatches": [],
+  "route": "export",
+  "seconds": 3.7,
+  "pdf": true
+ },
+ {
+  "file": "kit_quote.xlsx",
+  "excel": "16.0 build 20625.0",
+  "formulas": 6,
+  "mismatches": [],
+  "route": "export",
+  "seconds": 3.5,
+  "pdf": true
+ },
+ {
+  "file": "kit_statements.xlsx",
+  "excel": "16.0 build 20625.0",
+  "formulas": 24,
+  "mismatches": [],
+  "route": "export",
+  "seconds": 3.8,
+  "pdf": true
+ },
+ {
+  "file": "report_ar.xlsx",
+  "excel": "16.0 build 20625.0",
+  "formulas": 0,
+  "mismatches": [],
+  "route": "export",
+  "seconds": 4.9,
+  "pdf": true
+ },
+ {
+  "file": "report_en.xlsx",
+  "excel": "16.0 build 20625.0",
+  "formulas": 0,
+  "mismatches": [],
+  "route": "export",
+  "seconds": 3.7,
+  "pdf": true
+ }
+]
