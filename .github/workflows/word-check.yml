@@ -1,0 +1,59 @@
+name: Word check
+
+# Every theme as Microsoft Word itself lays it out, on a Windows runner with Microsoft 365 Apps.
+# The contact sheets and report are committed to word-check/ on the branch that ran it.
+on:
+  workflow_dispatch:
+  push:
+    branches: ["claude/**"]
+    paths: [".github/workflows/word-check.yml", "benchmarks/word/**"]
+
+permissions:
+  contents: write
+
+jobs:
+  word:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install the library and pywin32
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e . pywin32
+      - name: Install Microsoft 365 Apps (Word only), from Microsoft's own installer
+        run: |
+          choco install office365business -y --no-progress --params "'/exclude:Access Excel Groove Lync OneDrive OneNote Outlook PowerPoint Publisher Teams'"
+          # no first-run screens or licence prompts for a document opened by a program
+          reg add "HKCU\Software\Microsoft\Office\16.0\Registration" /v AcceptAllEulas /t REG_DWORD /d 1 /f
+          reg add "HKCU\Software\Microsoft\Office\16.0\Common\General" /v ShownFirstRunOptin /t REG_DWORD /d 1 /f
+          reg add "HKCU\Software\Microsoft\Office\16.0\Common\General" /v FirstRunCompleted /t REG_DWORD /d 1 /f
+          reg add "HKCU\Software\Microsoft\Office\16.0\Word\Options" /v DisableBootToOfficeStart /t REG_DWORD /d 1 /f
+          reg add "HKCU\Software\Microsoft\Office\16.0\Common\Privacy" /v DisconnectedState /t REG_DWORD /d 2 /f
+      - name: Build every theme (DOCX and our PDF)
+        run: python -m benchmarks.word.check build word-check
+      - name: Word lays out each document and saves it as PDF
+        run: python -m benchmarks.word.check word word-check
+      - name: Contact sheets and report
+        run: python -m benchmarks.word.check sheets word-check
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: word-check
+          path: word-check
+      - name: Commit the sheets and report to the branch
+        if: always()
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f word-check/*.png word-check/report.json word-check/word.json || true
+          git commit -m "word-check: Word's own layout of every theme" || exit 0
+          git pull --rebase origin "${{ github.ref_name }}"
+          git push origin "HEAD:${{ github.ref_name }}"
