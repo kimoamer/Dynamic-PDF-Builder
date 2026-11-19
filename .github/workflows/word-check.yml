@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   push:
     branches: ["claude/**"]
-    paths: [".github/workflows/word-check.yml", "benchmarks/word/**"]
+    paths: [".github/workflows/word-check.yml", "benchmarks/word/**", "dynamic_pdf/renderers/docx*.py"]
 
 permissions:
   contents: write

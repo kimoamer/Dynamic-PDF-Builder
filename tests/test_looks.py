@@ -195,3 +195,11 @@ def test_word_chart_axis_reaches_above_the_tallest_bar():
     assert _ceiling({"": [18.4, 12.1, 9.6, 8.1]}, False) == 20
     assert _ceiling({"a": [3, 4], "b": [2, 2]}, True) == 7
     assert _ceiling({"": [-3.0]}, False) is None
+
+
+def test_word_keeps_a_short_list_on_one_page():
+    import io
+    import docx
+    d = docx.Document(io.BytesIO(DocumentBuilder().numbered_list(["one", "two", "three"]).render_docx()))
+    items = [p for p in d.paragraphs if p.text in ("one", "two", "three")]
+    assert [bool(p.paragraph_format.keep_with_next) for p in items] == [True, True, False]

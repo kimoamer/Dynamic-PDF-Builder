@@ -814,10 +814,14 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         if num_id is None:
             num_id = self.lists.new_instance(ordered, start)
         child_ids = {}
-        for it in items:
+        # a short flat list stays on one page: Word would leave its last entry alone on the next
+        whole = level == 0 and len(items) <= 6 and all(isinstance(it, str) or not it.children for it in items)
+        for n, it in enumerate(items):
             text = it if isinstance(it, str) else it.text
             checked = None if isinstance(it, str) else it.checked
             p = self._para(c, "List Paragraph", text)
+            if whole and n < len(items) - 1:
+                p.paragraph_format.keep_with_next = True
             F.ListNumbering.apply(p, num_id, level)
             if is_rtl_text(text):
                 self.lists.keep_label_inside(p, level, ordered)
