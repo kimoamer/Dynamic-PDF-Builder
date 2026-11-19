@@ -51,7 +51,7 @@ def convert_one(src: Path, dst: Path) -> dict:
     pythoncom.CoInitialize()
     word = win32com.client.DispatchEx("Word.Application")
     word.Visible, word.DisplayAlerts = False, 0
-    info: dict = {"file": src.name}
+    info: dict = {"file": src.name, "word": f"{word.Version} build {word.Build}"}
     try:
         doc = word.Documents.Open(str(src), ConfirmConversions=False, ReadOnly=True, AddToRecentFiles=False,
                                   Visible=False)
