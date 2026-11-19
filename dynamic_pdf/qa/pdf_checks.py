@@ -92,10 +92,13 @@ def _separate_lines(a, b) -> bool:
 def _runs_of_one_line(a, b) -> bool:
     """Whether two boxes are runs of one line: LibreOffice splits a right-to-left line into runs (its
     end, a stretch justified with kashida), each box as tall as its own marks (Arabic vowel signs),
-    so runs of one line share a top or a bottom edge, the one inside the other."""
-    (ax0, ay0, ax1, ay1), (bx0, by0, bx1, by1) = a[0], b[0]
-    inside = (bx0 >= ax0 - 1 and bx1 <= ax1 + 1) or (ax0 >= bx0 - 1 and ax1 <= bx1 + 1)
-    return inside and (abs(ay1 - by1) < 1.0 or abs(ay0 - by0) < 1.0)
+    so the boxes of one line's runs sit inside one another, their centres within a fifth of a line
+    of each other. Runs fall anywhere along the line (a word heavy with vowel signs is one).
+    shortcut: Word's check only; a line drawn over another on the very same baseline passes it."""
+    outer, inner = sorted((a[0], b[0]), key=lambda box: box[2] - box[0], reverse=True)
+    inside = inner[0] >= outer[0] - 1 and inner[2] <= outer[2] + 1
+    height = min(outer[3] - outer[1], inner[3] - inner[1])
+    return inside and abs((outer[1] + outer[3]) - (inner[1] + inner[3])) / 2 < 0.2 * height
 
 
 def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Optional[List[str]] = None,
@@ -171,7 +174,8 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
                                             message=f"text runs off the page: {txt.strip()[:40]!r}"))
             elif margins and (x1 > right or x0 < left) and 40 < y0 < H - 40:
                 over = _ink_beyond(page, (x0, y0, x1, y1), left, right)
-                if over > 0:
+                # in Word's layout an Arabic line's vowel signs may reach a point past its edge
+                if over > (2.0 if fmt == "docx" else 0):
                     rep.findings.append(Finding(severity=ERROR, code="overflow", page=pno, bbox=bbox,
                                                 text=txt.strip()[:120], format=fmt, fixable=True,
                                                 message=f"text overflows into the margin by "

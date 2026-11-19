@@ -214,3 +214,9 @@ def test_runs_of_one_arabic_line_are_not_an_overlap():
     assert _runs_of_one_line(line, end) and _runs_of_one_line(tail, whole)
     below = ((64.0, 112.0, 527.0, 136.0), "سطر آخر", 10.0)       # a different line half a line down
     assert not _runs_of_one_line(whole, below)
+    word = ((100.3, 103.3, 242.3, 124.9), "مركز", 10.0)           # a voweled word mid-line: its own run
+    assert _runs_of_one_line(word, whole)
+    offset = ((68.2, 61.1, 193.2, 82.7), "أنجزت", 10.0)          # its box shifted by the marks
+    assert _runs_of_one_line(offset, ((63.8, 58.1, 527.4, 81.0), "سطر", 10.0))
+    half = ((64.0, 111.0, 300.0, 135.0), "سطر", 10.0)            # half a line lower: an overlap
+    assert not _runs_of_one_line(half, whole)
