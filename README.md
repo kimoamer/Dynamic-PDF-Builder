@@ -1278,9 +1278,26 @@ pip install -e ".[dev]"
 python -m pytest -q
 ```
 
-CI (`.github/workflows/ci.yml`) runs the suite on Python 3.10–3.13 for every push
-and pull request; the CI badge above reflects the actual latest result. Tests
-inspect the generated PDFs (text, outline, links, page totals via PyMuPDF), not
+CI (`.github/workflows/ci.yml`) runs the suite on Python 3.10–3.13 on Linux and 3.12 on Windows for
+every push and pull request, then, on Python 3.12, the golden fixtures, the comparison benchmarks and the
+scoreboard against its committed budgets (`benchmarks/scoreboard_baseline.json`); the CI badge above
+reflects the actual latest result.
+
+The Word and Excel check (`.github/workflows/word-check.yml`) runs on a Windows runner with
+Microsoft 365 Apps installed. Word opens every theme's DOCX, in English and Arabic, and saves it as PDF;
+Excel opens every kit's workbook, recalculates each formula and compares it with the value the
+document shows. Contact sheets of the pages and a report (pages, fonts, formula results) are the run's
+artifact. On a Windows machine with Office:
+
+```bash
+pip install -e ".[xlsx]" pywin32
+python -m benchmarks.word.check build out     # each theme's DOCX and our PDF; the workbooks
+python -m benchmarks.word.check word out      # Word saves each DOCX as PDF
+python -m benchmarks.word.check excel out     # Excel recalculates and compares each workbook
+python -m benchmarks.word.check sheets out    # contact sheets and out/report.json
+```
+
+Tests inspect the generated PDFs (text, outline, links, page totals via PyMuPDF), not
 just that a file was produced:
 
 | File | What's verified |
@@ -1303,6 +1320,7 @@ just that a file was produced:
 | `test_stress_documents.py` | 20–50 page Arabic report, bilingual report, proposal, multi-page financial tables, academic paper, manual: page QA + word preservation in PDF and DOCX |
 | `test_m6_composer.py` | Geometry capture, simulation accuracy, hard constraints, selection, budgets, determinism, thread isolation, no network, hints, API/CLI, ranker fallback |
 | `test_pdf_docx_parity.py` | Same words and heading structure in AST, PDF and DOCX; LibreOffice conversion |
+| `test_looks.py` | The eight complete themes differ in structure, hue and faces; each passes the gates in English and Arabic; Word keeps their headings, rules, running titles, pictures and short lists |
 
 ## Editable Word (DOCX) export & intelligent design
 
@@ -1400,7 +1418,10 @@ table: "The total due is `{=invoice!D5}`" shows what D5 shows (Markdown gives th
 `export("tables.xlsx")` (or `render_xlsx()`, CLI `render -o tables.xlsx`) writes every table as a
 sheet of a workbook, with the `xlsx` extra: numbers as numbers in the formats the document uses,
 and formulas as working spreadsheet formulas (`ABOVE` becomes the range it covers; `WORDS`, which
-no spreadsheet has, its text). Sheets read right to left in an Arabic document.
+no spreadsheet has, its text). Sheets read right to left in an Arabic document, print one page wide
+(turned to landscape when the columns need it), and a change written with its sign (`+16%`) keeps it.
+Microsoft Excel computes every formula of the kits' workbooks to the value the document shows,
+`NPV` and `IRR` included (see [Testing](#testing)).
 
 ### Comparing two versions
 
@@ -1583,6 +1604,14 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
   references and lists of figures and tables are Word fields.
 
 **New**
+- Eight themes that are complete looks, distinct in design and colour: `executive`, `magazine`, `luxe`,
+  `ledger`, `civic`, `scholar`, `tech`, `warm` (see [Themes](#themes)), in PDF and Word, English and
+  Arabic. Each has its own cover, short-document masthead, section headings, key figures, tables,
+  running bands, palette and embeddable Latin and Arabic faces; a brand kit keeps the structure and
+  replaces the colours. Checked in Microsoft Word on Windows as well as in LibreOffice.
+- A Word and Excel check on a Windows runner with Microsoft 365 Apps (`benchmarks/word/`): Word lays
+  out every theme, Excel recalculates every workbook against the document's figures.
+- Workbooks print one page wide, in landscape when their columns need it; `+16%` keeps its sign.
 - Coloured words and letters: `[word]{red}`, `[text]{bg=yellow}`, `[text]{color=#C00 bg=yellow}`, with
   English and Arabic colour names or any hex colour, wherever text goes, in PDF and Word. A letter
   coloured inside an Arabic word stays joined to its neighbours.
@@ -1651,6 +1680,18 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
 - License expression `MIT AND OFL-1.1` with every font licence in the package; `py.typed`.
 
 **Fixed**
+- The command line crashed on a Windows console as it printed its ✓ or ⚠ (the console's code page has
+  neither); it now writes a replacement character instead.
+- Word: a running title over slab headings read "Reference source not found"; a heading's rule and hang
+  into the margin, which LibreOffice dropped once a running title named the heading's style, live in a
+  style of their own; a picture or chart no longer rises over the text above it; a chart's value axis
+  reaches above its tallest bar; a short list keeps to one page; figures in a right-to-left paragraph
+  keep their size.
+- A heading is kept with the list under it, and sections written as `## Section` under a `# Title` are
+  read as sections, so a design's openers and chart colours reach them.
+- The page forecast keeps an intro with its figure, as the engine does; it is exact again on the
+  scoreboard's corpus, so the composer chooses layouts it can predict (the chart report: 6 pages for 9).
+- The service names its memory limit when Python reports it as `OSError` (Python 3.10).
 - Shapes in Word were all rectangles as wide as the page: a circle, an arrow or a polygon is now a
   picture of the shape the PDF draws. A shape's Arabic label drew as boxes; its colour reads on the
   fill; `#fff` (three-digit hex) was read as blue.
