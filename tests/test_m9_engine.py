@@ -325,3 +325,23 @@ def test_each_refinement_is_chosen_from_the_last_kept_render(monkeypatch):
     monkeypatch.setattr(vmod._Runner, "_trial", trial)
     stress_docs.academic_paper().design_variants(families=["executive_premium"])
     assert len(seen) >= 2 and all(s is k for s, k in zip(seen[1:], kept))
+
+
+def test_the_forecast_keeps_an_intro_with_its_figure_as_the_engine_does(tmp_path):
+    import stress_docs
+    b = stress_docs.STRESS["chart_report"](str(tmp_path))
+    doc, theme = b._prepared_base()
+    theme = theme or get_theme(doc.theme)
+    ms, fg = measure_blocks(doc, theme, b._policy, {})
+    assert any(m.keep_with_next and m.type == "paragraph" for m in ms)    # an intro kept with its chart
+    pred = simulate(ms, fg)
+    geo = Geometry()
+    LayoutEngine(doc, policy=b._policy, theme=theme, geometry=geo).render(io.BytesIO())
+
+    def pages(g):
+        out = {}
+        for r in g.regions:
+            out.setdefault(r.block, r.page)
+        return out
+    assert len(pred.pages) == len(geo.pages)
+    assert pages(pred) == {k: v for k, v in pages(geo).items() if k in pages(pred)}    # every block on its page

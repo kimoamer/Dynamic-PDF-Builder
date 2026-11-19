@@ -276,10 +276,13 @@ def simulate(measures: List[BlockMeasure], fg: FrameGeometry) -> Geometry:
             forced_next = True
             i += 1
             continue
-        # keep-with-next group: this block (+ following kept blocks) + first piece of the next
+        # keep-with-next group: this block (+ following kept blocks) + first piece of the next. As the
+        # engine's, the chain takes any kept block (a heading, an intro kept with its figure); an intro
+        # that keeps only its last lines is the keep-tail case below
         group_h = 0.0
         j = i
-        while j < n - 1 and measures[j].keep_with_next and measures[j].type == "heading":
+        while (j < n - 1 and measures[j].keep_with_next
+               and (measures[j].type == "heading" or not (measures[j].tail or measures[j].splittable))):
             group_h += measures[j].height
             j += 1
         need = (group_h + measures[j].min_piece) if j > i else (m.min_piece if m.splittable else m.height)
@@ -299,10 +302,10 @@ def simulate(measures: List[BlockMeasure], fg: FrameGeometry) -> Geometry:
             geo.regions.append(Region(page, "sim", top_of(lo), top_of(hi), *_span(mm, fg, land), mm.index,
                                       role or mm.role, mm.level))
 
-        for k in range(i, j):          # the kept headings
+        for k in range(i, j):          # the kept blocks
             mk = measures[k]
             used -= mk.skip if used == 0 else 0.0     # a frame drops the space before at its top
-            place(mk, used, used + mk.height, role="heading")
+            place(mk, used, used + mk.height, role="heading" if mk.type == "heading" else None)
             used += mk.height
         mj = measures[j]
         remaining = mj.height

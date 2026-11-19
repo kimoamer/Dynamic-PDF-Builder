@@ -17,8 +17,8 @@
   "docx_page_parity": 0.862,
   "docx_page_mismatches": 13,
   "docx_designs_compared": 94,
-  "forecast_page_exact": 0.944,
-  "forecast_score_mae": 0.91,
+  "forecast_page_exact": 1.0,
+  "forecast_score_mae": 0.54,
   "forecast_score_max_error": 8.79,
   "forecast_utilization_over": 5,
   "variants3_median_s": 0.95,
@@ -55,10 +55,10 @@
    "min": 0.842
   },
   "forecast_page_exact": {
-   "min": 0.944
+   "min": 1.0
   },
   "forecast_score_mae": {
-   "max": 1.16
+   "max": 0.79
   },
   "variants3_median_s": {
    "max": 1.9
