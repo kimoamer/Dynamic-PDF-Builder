@@ -4,7 +4,7 @@
   "word": "16.0 build 16.0.20625",
   "word_pages": 2,
   "route": "export",
-  "seconds": 3.6,
+  "seconds": 4.0,
   "pdf": true
  },
  {
@@ -12,7 +12,7 @@
   "word": "16.0 build 16.0.20625",
   "word_pages": 3,
   "route": "export",
-  "seconds": 2.3,
+  "seconds": 2.5,
   "pdf": true
  },
  {
@@ -20,7 +20,7 @@
   "word": "16.0 build 16.0.20625",
   "word_pages": 3,
   "route": "export",
-  "seconds": 4.3,
+  "seconds": 2.7,
   "pdf": true
  },
  {
@@ -28,7 +28,7 @@
   "word": "16.0 build 16.0.20625",
   "word_pages": 3,
   "route": "export",
-  "seconds": 4.1,
+  "seconds": 5.5,
   "pdf": true
  },
  {
@@ -36,7 +36,7 @@
   "word": "16.0 build 16.0.20625",
   "word_pages": 2,
   "route": "export",
-  "seconds": 4.2,
+  "seconds": 4.3,
   "pdf": true
  },
  {
@@ -44,7 +44,7 @@
   "word": "16.0 build 16.0.20625",
   "word_pages": 2,
   "route": "export",
-  "seconds": 4.1,
+  "seconds": 5.6,
   "pdf": true
  },
  {
@@ -52,7 +52,7 @@
   "word": "16.0 build 16.0.20625",
   "word_pages": 2,
   "route": "export",
-  "seconds": 5.5,
+  "seconds": 4.2,
   "pdf": true
  },
  {
@@ -60,7 +60,7 @@
   "word": "16.0 build 16.0.20625",
   "word_pages": 3,
   "route": "export",
-  "seconds": 4.1,
+  "seconds": 5.6,
   "pdf": true
  },
  {
@@ -68,7 +68,7 @@
   "word": "16.0 build 16.0.20625",
   "word_pages": 2,
   "route": "export",
-  "seconds": 4.2,
+  "seconds": 5.6,
   "pdf": true
  },
  {
@@ -76,7 +76,7 @@
   "word": "16.0 build 16.0.20625",
   "word_pages": 2,
   "route": "export",
-  "seconds": 4.1,
+  "seconds": 5.5,
   "pdf": true
  },
  {
@@ -84,7 +84,7 @@
   "word": "16.0 build 16.0.20625",
   "word_pages": 2,
   "route": "export",
-  "seconds": 4.1,
+  "seconds": 4.2,
   "pdf": true
  },
  {
@@ -92,7 +92,7 @@
   "word": "16.0 build 16.0.20625",
   "word_pages": 2,
   "route": "export",
-  "seconds": 4.1,
+  "seconds": 5.5,
   "pdf": true
  },
  {
@@ -108,7 +108,7 @@
   "word": "16.0 build 16.0.20625",
   "word_pages": 3,
   "route": "export",
-  "seconds": 4.0,
+  "seconds": 5.5,
   "pdf": true
  },
  {
@@ -116,7 +116,7 @@
   "word": "16.0 build 16.0.20625",
   "word_pages": 3,
   "route": "export",
-  "seconds": 4.1,
+  "seconds": 5.6,
   "pdf": true
  },
  {
@@ -124,7 +124,7 @@
   "word": "16.0 build 16.0.20625",
   "word_pages": 3,
   "route": "export",
-  "seconds": 4.1,
+  "seconds": 4.2,
   "pdf": true
  }
 ]
