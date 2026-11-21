@@ -316,7 +316,16 @@ class _EngineDocTemplate(BaseDocTemplate):
 
     def handle_flowable(self, flowables):
         self._expand_float(flowables)
+        from .footnotes import FootnoteAnchor
+        if flowables and isinstance(flowables[0], FootnoteAnchor):
+            flowables[0].frame = self.frame          # it reserves its notes' room in this frame
         super().handle_flowable(flowables)
+
+    def handle_pageEnd(self):
+        from .footnotes import draw_notes
+        rule, rtl = getattr(self, "_dpb_notes_style", ("#9CA3AF", False))
+        draw_notes(self.canv, self.pageTemplate.frames, rule, rtl)
+        super().handle_pageEnd()
 
     def _expand_float(self, flowables):
         """A float is laid out now that the room left on the page is known. Headings
@@ -1299,6 +1308,7 @@ class LayoutEngine:
         ctx.page_geometry = self._geometry
         self.diagnostics.language = ctx.language
         doc_template._dpb_geometry = self.geometry
+        doc_template._dpb_notes_style = (theme.colors.border, ctx.language == "ar")
 
         from ..core.numbering import number_document
         self.diagnostics.numbering = number_document(self.document)     # table and figure numbers, {ref:id}
@@ -1314,9 +1324,19 @@ class LayoutEngine:
             from reportlab.platypus import NextPageTemplate
             from reportlab.platypus.flowables import PageBreakIfNotEmpty
             skip_to = -1
+            # a footnote is set at the foot of the page its first reference falls on; one defined before
+            # any reference, or referred to only from text laid out another way, stays where it is defined
+            from ..core.normalize import block_text
+            from .footnotes import REF, FootnoteAnchor
+            notes = {b.marker: (k, b) for k, b in enumerate(self.document.blocks) if getattr(b, "type", None) == "footnote"}
+            placed: set = set()
             for i, block in enumerate(self.document.blocks):
                 if i <= skip_to:
                     continue
+                if getattr(block, "type", None) == "footnote":
+                    if block.marker in placed:
+                        continue
+                    placed.add(block.marker)
                 if (i in land) != in_land:
                     in_land = i in land
                     flowables += [NextPageTemplate('Landscape' if in_land else 'AllPages'),
@@ -1348,6 +1368,14 @@ class LayoutEngine:
                 if titled_by(self.document.blocks, i):
                     block = block.model_copy(update={"hints": {**(block.hints or {}), "titled": True}})
                 result = create_flowables(block, theme, ctx)
+                fresh = [k for k in dict.fromkeys(m for t in block_text(block) for m in REF.findall(t))
+                         if k in notes and k not in placed]
+                if fresh and result:
+                    placed.update(fresh)
+                    anchor = FootnoteAnchor(p for k in fresh for p in create_flowables(notes[k][1], theme, ctx))
+                    # the notes' blocks are laid out where the anchor is, for the gates that count every block
+                    anchor._dpb_extra_blocks, anchor._dpb_role = tuple(notes[k][0] for k in fresh), "decorative"
+                    result = list(result) + [anchor]
                 if result:
                     if self.geometry is not None or tagged:
                         from ..intelligence.geometry import tag

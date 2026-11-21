@@ -177,6 +177,13 @@ def _fonts(pdf: Path) -> list:
     return sorted({n.decode(errors="replace").split("+")[-1] for n in names})
 
 
+def _percents(pdf: Path) -> list:
+    """Each Arabic percent sign the PDF draws to the right of its number."""
+    import pymupdf
+    from dynamic_pdf.qa.percent_geometry import misplaced_arabic_percent
+    return [text for page in pymupdf.open(str(pdf)) for _, text in misplaced_arabic_percent(page.get_text("rawdict"))]
+
+
 def _sheet(rows, path: Path) -> None:
     from PIL import Image
     sheet = Image.new("RGB", (max(r.width for r in rows), sum(r.height + 6 for r in rows)), "#555555")
@@ -218,6 +225,8 @@ def sheets(out: Path) -> None:
                     info["word_pdf_pages"] = len(pdfium.PdfDocument(str(src)))
                     info["ours_pages"] = len(pdfium.PdfDocument(str(out / f"{name}_{lang}.ours.pdf")))
                     info["fonts"] = _fonts(src)
+                    if lang == "ar":              # Word set each percent sign after its number (to its left)
+                        info["percent_misplaced"] = _percents(src)
                 rows.append(_row(src, f"{name} {lang} - Word {info.get('route', 'FAILED')}", 3))
             _sheet(rows, out / f"word_{lang}_{part}.png")
     books = sorted(out.glob("*.xlsx"))

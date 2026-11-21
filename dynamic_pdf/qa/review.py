@@ -43,15 +43,22 @@ def _issue(page, severity, code, message, fix=None):
     return {"page": page, "severity": severity, "code": code, "message": message, "fix": fix or FIXES.get(code, "")}
 
 
-def collect(builder, data: bytes, report, folder: Optional[str] = None, dpi: int = 60) -> dict:
-    """The review of one rendered PDF (``data``) and its QA ``report``."""
+def collect(builder, data: Optional[bytes], report, folder: Optional[str] = None, dpi: int = 60,
+            critique: bool = True) -> dict:
+    """The review of one rendered PDF (``data``) and its QA ``report``. ``critique`` False: the PDF is a
+    Word file's layout, whose page checks are already in ``report``; None: there is no such layout."""
     from ..intelligence.facts import read_pdf
     from ..intelligence.variants import _intended
     from .visual_critique import critique_facts
     issues: List[dict] = [_issue(f.page, f.severity, f.code, f.message) for f in report.findings]
-    doc = builder.last_render.document
-    facts = read_pdf(data)
-    if facts.available:
+    facts = read_pdf(data) if data and critique else None
+    if data is None:
+        issues.append(_issue(None, "warning", "unreviewed", "LibreOffice is not installed, so the Word file's pages "
+                             "were not laid out or seen", "Install LibreOffice (soffice) to review the Word file."))
+    elif facts is None:
+        pass
+    elif facts.available:
+        doc = builder.last_render.document
         from ..i18n import LABELS
         titles = [b.title for b in doc.blocks if b.type == "section_opener"]
         if any(b.type == "table_of_contents" for b in doc.blocks):
@@ -70,7 +77,7 @@ def collect(builder, data: bytes, report, folder: Optional[str] = None, dpi: int
         issues.append(_issue(None, "warning", f"content:{w.rule}", str(w), "Correct the content the message names."))
     issues.sort(key=lambda i: (i["severity"] != "error", i["page"] is None, i["page"] or 0))
     images: List[str] = []
-    if folder:
+    if folder and data:
         from .pdf_backend import open_pdf
         os.makedirs(folder, exist_ok=True)
         pdf = open_pdf(data)
