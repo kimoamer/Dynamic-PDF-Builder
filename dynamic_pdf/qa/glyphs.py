@@ -42,7 +42,11 @@ def font_covers(font_name: str, ch: str) -> bool:
 def fallback_font_for(ch: str) -> Optional[str]:
     register_fonts()
     from ..fonts.manager import _available_fonts
-    for fam in (_EMOJI_FIRST if ord(ch) >= 0x1F000 else FALLBACK_FONTS):
+    import unicodedata
+    # a minus, a multiplication sign or a dash sits in running text: a proportional face, not a monospace one
+    order = (_EMOJI_FIRST if ord(ch) >= 0x1F000 else
+             ("DejaVu Sans",) + FALLBACK_FONTS if unicodedata.category(ch) in ("Sm", "Pd") else FALLBACK_FONTS)
+    for fam in order:
         name = fam if fam in _EMOJI_FIRST and fam in _available_fonts else get_font_name(fam)
         if name not in _STANDARD and font_covers(name, ch):
             return name

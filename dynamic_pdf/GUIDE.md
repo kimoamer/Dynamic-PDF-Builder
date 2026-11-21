@@ -207,6 +207,8 @@ Table: Invoice lines {#invoice}
 
 - `b.review("pages/")` (CLI `review`, MCP `review`): each issue with its page, severity, code, message
   and `fix`, what to change in words; one PNG a page. Nothing is changed. Fix the source and review again.
+  `b.review("pages/", format="docx")` (MCP `format: "docx"`) reviews the Word file as LibreOffice lays it
+  out, its pages as the images; without LibreOffice it says so.
 - `b.lint()` (CLI `lint`): content warnings: totals that do not add up, shares that do not make 100,
   references and citations to nothing, mixed digits or date formats, images without alt text, empty
   sections, formulas that cannot be computed.

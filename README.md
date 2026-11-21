@@ -1286,11 +1286,13 @@ reflects the actual latest result.
 The Word and Excel check (`.github/workflows/word-check.yml`) runs on a Windows runner with
 Microsoft 365 Apps installed. Word opens every theme's DOCX, in English and Arabic, and saves it as PDF;
 Excel opens every kit's workbook, recalculates each formula and compares it with the value the
-document shows. Contact sheets of the pages and a report (pages, fonts, formula results) are the run's
-artifact. On a Windows machine with Office:
+document shows, and the Arabic sample's percent signs are checked where Word set them. Contact sheets of
+the pages and a report (pages, fonts, formula results, misplaced percent signs) are the run's artifact
+and are committed to the branch `word-check/<the branch that ran it>`, leaving that branch's pull request
+with only the work. On a Windows machine with Office:
 
 ```bash
-pip install -e ".[xlsx]" pywin32
+pip install -e ".[xlsx]" pywin32 pymupdf
 python -m benchmarks.word.check build out     # each theme's DOCX and our PDF; the workbooks
 python -m benchmarks.word.check word out      # Word saves each DOCX as PDF
 python -m benchmarks.word.check excel out     # Excel recalculates and compares each workbook
@@ -1706,6 +1708,11 @@ each page in the PDF and in Word)
   number's right, in the PDF and in Word, so an agent had to write "في المائة" to quiet the check; and
   chart colours skip a brand accent that is only a lighter shade of the primary; and every chart's value
   axis writes thousands as 80,000, not 80000.
+- `review(format="docx")` (MCP `format: "docx"`) reviews the Word file as LibreOffice lays it out and returns
+  its pages: the agents could see only the PDF. A minus sign, a multiplication sign or a dash the body face
+  lacks is drawn from a proportional face, not the monospace one (`−1.2` had a gap). The Word check on Windows
+  puts a percent sign at the start of an Arabic line before Word and reports where Word set it, and commits
+  its results to `word-check/<branch>` rather than to the branch itself.
 - PDF footnotes sit at the foot of the page their first reference falls on, under a short rule, as Word
   sets them (they were printed where they were defined). The text above stops short of them; a note with
   no room left goes to the next page with the text after its reference.
