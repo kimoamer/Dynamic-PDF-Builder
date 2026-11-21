@@ -1713,6 +1713,9 @@ each page in the PDF and in Word)
   lacks is drawn from a proportional face, not the monospace one (`−1.2` had a gap). The Word check on Windows
   puts a percent sign at the start of an Arabic line before Word and reports where Word set it, and commits
   its results to `word-check/<branch>` rather than to the branch itself.
+- A list that breaks across pages leaves at least two items on each side, in the PDF: its last item no
+  longer starts a page alone, nor its first ends one; three items or fewer move whole. The page forecast
+  lets the space after one block and before the next overlap, as the frame does, rather than adding both.
 - PDF footnotes sit at the foot of the page their first reference falls on, under a short rule, as Word
   sets them (they were printed where they were defined). The text above stops short of them; a note with
   no room left goes to the next page with the text after its reference.

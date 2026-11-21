@@ -164,3 +164,26 @@ def test_a_footnote_at_the_foot_of_the_page_counts_as_laid_out_for_the_gates():
     md = "# Paper\n\nWe study recall.[^1]\n\n[^1]: Data available on request.\n\n## Methods\n\nTwo groups.\n"
     variants = DocumentBuilder.from_markdown(md).design_variants(n=3).variants
     assert variants and all(v.valid for v in variants), [v.report.hard_failures for v in variants]
+
+
+def test_a_list_breaks_with_two_items_on_each_side_at_least():
+    para = "Revenue grew in every region this year, led by the north, while costs held below plan. " * 6
+    for items in (3, 5, 20):
+        for lead in range(6, 14):
+            lst = "\n".join(f"{k + 1}. Item number {k + 1} of the plan." for k in range(items))
+            md = "\n\n".join([para] * lead) + "\n\n" + lst + "\n\nAfter the list.\n"
+            pages = [p.get_text() for p in fitz.open(stream=DocumentBuilder.from_markdown(md).render(), filetype="pdf")]
+            where = [next(i for i, t in enumerate(pages) if f"Item number {k + 1} " in t) for k in range(items)]
+            assert min(where.count(p) for p in set(where)) >= 2, (items, lead, where)
+
+
+def test_the_forecast_lets_two_spaces_between_blocks_overlap_as_the_frame_does():
+    from dynamic_pdf.intelligence.analysis import measure_blocks, simulate
+    b = DocumentBuilder.from_markdown("# A\n\nText.\n\n## B\n\n1. One\n2. Two\n3. Three\n\nMore text.\n")
+    doc, theme = b._prepared_base()
+    ms, fg = measure_blocks(doc, theme, b._policy, {})
+    geo = simulate(ms, fg)
+    tops = {r.block: r.top for r in geo.regions}
+    i = next(k for k, blk in enumerate(doc.blocks) if blk.type == "numbered_list")
+    gap = tops[i - 1] - tops[i] - (ms[i - 1].height - ms[i - 1].space_after)
+    assert gap <= max(ms[i - 1].space_after, ms[i].space_before) + 0.5

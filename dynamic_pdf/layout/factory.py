@@ -2922,7 +2922,22 @@ def _build_list_flowable(items, bullet_type, theme, bs, sp, start=1, depth=0):
         kwargs['bulletType'] = 'bullet'
         kwargs['start'] = bullet_char
 
-    return ListFlowable(li_list, **kwargs)
+    return (_ListKeepsPairs if depth == 0 else ListFlowable)(li_list, **kwargs)
+
+
+class _ListKeepsPairs(ListFlowable):
+    """A list that breaks across pages leaves at least two items on each side: its first item never
+    ends a page alone, its last never starts one alone. Three items or fewer move whole."""
+
+    def split(self, aW, aH):
+        items = super().split(aW, aH)
+        if len(items) < 4:
+            return []
+        head = sum(f.wrap(aW, aH)[1] + f.getSpaceBefore() + f.getSpaceAfter() for f in items[:2])
+        if head > aH:                     # not even its first two items fit here: the list moves on whole
+            return []
+        items[0].keepWithNext = items[-2].keepWithNext = 1
+        return items
 
 
 class DocumentTOC(_RLTableOfContents):
