@@ -122,7 +122,11 @@ def _min_piece(f, canv, width: float, full: float) -> Tuple[bool, float]:
         except Exception:
             parts = []
         if parts and len(parts) > 1:
-            return True, _flowable_height(parts[0], canv, width, full)
+            # a first piece kept with the next (a list's first two items) is only placed with it
+            head = _flowable_height(parts[0], canv, width, full)
+            if parts[0].getKeepWithNext():
+                head += _flowable_height(parts[1], canv, width, full)
+            return True, head
     return False, full
 
 
@@ -250,6 +254,12 @@ def simulate(measures: List[BlockMeasure], fg: FrameGeometry) -> Geometry:
     open_page(page, land)
     used = 0.0
     forced_next = False
+    after = [0.0]                 # space after the last block placed on this page
+
+    def joined(mm):
+        """The space a frame does not add between two blocks: it keeps the larger of the space after
+        the one and the space before the next (overlapAttachedSpace), not both."""
+        return min(after[0], mm.space_before) if used > 0 else 0.0
 
     def _tail_moves(mj, j, used, remaining, H):
         """Mirror of the engine's keep-tail split: the whole intro fits here but the
@@ -287,7 +297,7 @@ def simulate(measures: List[BlockMeasure], fg: FrameGeometry) -> Geometry:
             j += 1
         need = (group_h + measures[j].min_piece) if j > i else (m.min_piece if m.splittable else m.height)
         H = frame_h()
-        if used > 0 and used + need > H:
+        if used > 0 and used - joined(m) + need > H:
             page += 1
             used = 0.0
             open_page(page, land)
@@ -304,13 +314,15 @@ def simulate(measures: List[BlockMeasure], fg: FrameGeometry) -> Geometry:
 
         for k in range(i, j):          # the kept blocks
             mk = measures[k]
-            used -= mk.skip if used == 0 else 0.0     # a frame drops the space before at its top
+            used -= mk.skip if used == 0 else joined(mk)     # a frame drops the space before at its top
             place(mk, used, used + mk.height, role="heading" if mk.type == "heading" else None)
             used += mk.height
+            after[0] = mk.space_after
         mj = measures[j]
         remaining = mj.height
         row_at = 0
-        used -= mj.skip if used == 0 else 0.0
+        used -= mj.skip if used == 0 else joined(mj)
+        after[0] = mj.space_after
         while remaining > 0:
             first = remaining == mj.height and row_at == 0
             H = frame_h()
