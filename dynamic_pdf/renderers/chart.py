@@ -74,10 +74,20 @@ def _paper_rc(theme):
     return plt.rc_context({"font.family": "STIXGeneral", "mathtext.fontset": "stix"})
 
 
+def _alike(a, b) -> bool:
+    """Two colours a reader would take for one series: within 30 degrees of hue (or both nearly grey)
+    and within 0.3 of lightness. Navy beside royal blue is alike; navy beside gold is not."""
+    import colorsys
+    ha, la, sa = colorsys.rgb_to_hls(*a)
+    hb, lb, sb = colorsys.rgb_to_hls(*b)
+    turn = min(abs(ha - hb), 1 - abs(ha - hb)) * 360
+    return (turn < 30 or min(sa, sb) < 0.15) and abs(la - lb) < 0.3
+
+
 def _branded(block, theme):
     """A chart the author gave no colours draws in the theme's (the brand's) own: primary,
-    accent, secondary, then the stock hues, leaving out any too close to one already taken or
-    too pale to see on white. A paper keeps its greys."""
+    accent, secondary, then the stock hues, each one a reader can tell from those before it; those too
+    close come after, and none too pale to see on white. A paper keeps its greys."""
     if block.colors or theme is None or _paper(theme):
         return block
     c = getattr(theme, "colors", None)
@@ -88,9 +98,11 @@ def _branded(block, theme):
         except (ValueError, TypeError):
             continue
         pale = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2] > 0.8
-        near = any(sum((a - b) ** 2 for a, b in zip(rgb, mcolors.to_rgb(q))) < 0.04 for q in picked)
+        near = any(_alike(rgb, mcolors.to_rgb(q)) for q in picked)
         if not (pale or near):
             picked.append(mcolors.to_hex(rgb))
+    # a chart with more series than distinct hues takes the stock hues it skipped before any repeats
+    picked += [h for h in _FALLBACK_COLORS if h not in picked]
     return block.model_copy(update={"colors": picked})
 
 
@@ -218,6 +230,9 @@ def _style_ax(ax, theme=None):
     ax.set_facecolor("#ffffff")
     ax.yaxis.grid(True, color="#eeeeee", linewidth=0.7, zorder=0)
     ax.set_axisbelow(True)
+    from matplotlib.ticker import ScalarFormatter
+    if type(ax.yaxis.get_major_formatter()) is ScalarFormatter:     # a value axis, not categories: 80,000
+        _value_axis(ax.yaxis)
 
 
 def _add_legend(ax, **kwargs):

@@ -67,7 +67,8 @@ def _reshape(text: str) -> str:
         return text
     if _RESHAPER is None:
         _RESHAPER = arabic_reshaper.ArabicReshaper(configuration={"delete_harakat": False})
-    return _RESHAPER.reshape(text)
+    from ..rtl import percent_mark
+    return percent_mark(_RESHAPER.reshape(text))
 
 
 def _apply_rtl(text: str, base_dir: Optional[str] = None) -> str:
@@ -412,6 +413,9 @@ def _md_inline(text: str) -> str:
     # line for display (reordering before line breaking reversed line order)
     if _ARABIC_RE.search(text):
         text = _reshape(text)
+    elif _diag.current().language == "ar":          # a figure alone in an Arabic document's cell
+        from ..rtl import percent_mark
+        text = percent_mark(text)
     text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     # Inline code spans and backslash escapes ("\*" is a literal "*", as in CommonMark and
     # the DOCX) are protected from further inline processing; whichever starts first wins

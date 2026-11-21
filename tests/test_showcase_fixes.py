@@ -103,3 +103,33 @@ def test_a_picture_in_a_word_column_fits_the_column(tmp_path):
     cell = doc.tables[0].rows[0].cells[0]
     pic = cell._tc.xpath(".//wp:extent")[0]
     assert int(pic.get("cx")) <= cell.width
+
+
+# What two real agents, given only the MCP server, ran into.
+
+def test_an_arabic_percent_sign_sits_after_its_number_even_at_line_start():
+    from dynamic_pdf.qa.percent_geometry import misplaced_arabic_percent
+    md = "---\nlanguage: ar\n---\n\n- **40٪** دفعة مقدمة عند توقيع العقد.\n- 30% عند التسليم.\n"
+    b = DocumentBuilder.from_markdown(md)
+    pages = fitz.open(stream=b.render(), filetype="pdf")
+    assert not [t for p in pages for _, t in misplaced_arabic_percent(p.get_text("rawdict"))]
+    xml = zipfile.ZipFile(io.BytesIO(b.render_docx())).read("word/document.xml").decode()
+    assert "40؜٪" in xml and "30؜%" in xml
+
+
+def test_a_quote_is_a_document_type_and_chart_colours_stay_apart():
+    from dynamic_pdf.design.profile import Profile, resolve_profile_name
+    from dynamic_pdf.renderers.chart import _alike
+    assert resolve_profile_name("quote") == resolve_profile_name("quotation") == Profile.INVOICE
+    assert _alike((0.106, 0.212, 0.365), (0.118, 0.251, 0.686))        # navy and royal blue
+    assert not _alike((0.106, 0.212, 0.365), (0.949, 0.663, 0.0))       # navy and gold
+
+
+def test_the_mcp_review_sends_the_pages_and_render_checks_what_it_writes(tmp_path):
+    pytest.importorskip("mcp")
+    import asyncio
+    from dynamic_pdf.ai import mcp_server as M
+    server = M.build_server(str(tmp_path))
+    got = asyncio.run(server.call_tool("review", {"markdown": "# Title\n\nText.\n"}))
+    assert [c.type for c in got.content] == ["text", "image"] and not got.is_error
+    assert M.render(markdown="# Title\n\nText.\n", filename="a.pdf", out_dir=str(tmp_path))["status"] == "ok"

@@ -89,6 +89,8 @@ def _separate_lines(a, b) -> bool:
     return abs(centre(a) - centre(b)) >= 0.8 * min(a[2], b[2])
 
 
+_PERCENT_ONLY = re.compile(r"[\s%\u066a\u061c]+")
+
 def _runs_of_one_line(a, b) -> bool:
     """Whether two boxes are runs of one line: LibreOffice splits a right-to-left line into runs (its
     end, a stretch justified with kashida), each box as tall as its own marks (Arabic vowel signs),
@@ -187,6 +189,10 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
                 if abs(a[1] - b[1]) < 0.5 and abs(a[0] - b[0]) < 0.5:
                     continue          # same line split into two dict lines
                 if fmt == "docx" and (_separate_lines(lines[i], lines[j]) or _runs_of_one_line(lines[i], lines[j])):
+                    continue
+                # a percent sign set against its number (with the zero-width mark that puts it after the
+                # number in Arabic) touches the number; it does not cover it
+                if any(_PERCENT_ONLY.fullmatch(ln[1]) for ln in (lines[i], lines[j])):
                     continue
                 if _overlap(a, b) > 0.35:
                     rep.findings.append(Finding(

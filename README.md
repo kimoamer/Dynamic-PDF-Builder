@@ -1698,6 +1698,14 @@ each page in the PDF and in Word)
   86,000).
 - A footer without a first line sets its company name level with the page number.
 - The PDF check no longer calls a heading stranded when a chart drawn as vectors follows it.
+- Two agents (Claude Code with only the MCP server, one in English and one in Arabic) each made a document
+  from a plain request. What they hit is fixed: `review` now returns the pages as pictures, since an
+  agent without file access could not see them; `render` checks a PDF or DOCX as it writes it, so a clean
+  document reads `ok` rather than `unverified`; `document_type: quote` (and `quotation`, `estimate`,
+  `statements`, `feasibility`) is accepted; an Arabic percent sign at the start of a line was drawn on the
+  number's right, in the PDF and in Word, so an agent had to write "في المائة" to quiet the check; and
+  chart colours skip a brand accent that is only a lighter shade of the primary; and every chart's value
+  axis writes thousands as 80,000, not 80000.
 - Word: a picture, chart or shape in a column fits the column; an image panel's text box stays on the
   page of the photograph under it; a value axis with nothing below zero starts at zero in round steps.
 - The command line crashed on a Windows console as it printed its ✓ or ⚠ (the console's code page has

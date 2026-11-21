@@ -398,6 +398,9 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         arabic = self.tokens.fonts.arabic
         mono = word_font(self.tokens.fonts.mono)
         rtl_para = is_rtl_text(md_text or "")
+        if rtl_para or self.rtl_doc:
+            from ..rtl import percent_mark
+            md_text = percent_mark(md_text)                  # the sign after the number, as in the PDF
         commented: List = []                   # runs of the comment being written, and its text
         for tr in parse_inline(md_text or ""):
             if commented and commented[-1] != tr.comment:

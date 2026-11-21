@@ -37,8 +37,10 @@ captions with ids and {ref:id} references, [@key] citations with a BibTeX file, 
 coloured words ([word]{red}, [text]{bg=yellow}), quotes (> text, > — Name; > [!pullquote]), ```signature blocks holding JSON, a header and footer preset
 in the front matter (header: modern, logo: logo.png, company: ...), [TOC], and suggested edits ({++added++} {--removed--} {>>comment<<}) that become tracked changes in Word.
 
-Work in a loop: `render` the document, `review` it (each issue comes with its page and what to change, and
-page images are saved for you to look at), fix the Markdown, review again. `variants` tries several designs
+Work in a loop: `review` the document (each issue comes with its page and what to change, and the pages come
+back as pictures: look at them, since no check judges white space or whether a chart says what you meant),
+fix the Markdown, review again; then `render` the PDF and the DOCX, which are checked as they are written
+(status `ok`). `variants` tries several designs
 and recommends one; `explain` says why the design is as it is; `lint` checks the content (totals, shares,
 references). `kit` makes a ready-made document from data: invoice, quote, letter, cv, feasibility,
 statements, certificate. Call `guide` for the full syntax with examples, or `guide` with a topic:
@@ -129,14 +131,19 @@ def render(document: Optional[dict] = None, filename: str = "document.pdf", desi
            markdown: Optional[str] = None) -> dict:
     """Write the document as a designed file in the output folder: .pdf, .docx (editable in Word) or .xlsx
     (its tables, with formulas) by the file name's extension. Send the document as `markdown` or as `document`
-    (JSON). Returns the path, the status (ok / unverified / degraded / failed) with reasons, and the pages."""
+    (JSON). A PDF or DOCX is checked page by page as it is written, so the status is `ok` once it passes (a
+    workbook has no pages to check: `unverified`). Returns the path, the status with reasons, and the pages;
+    a document that fails the check is refused with what failed (`review` shows each issue's page and fix)."""
     ext = os.path.splitext(filename)[1].lower()
     if ext not in (".pdf", ".docx", ".xlsx"):
         raise InputError(f"filename: {filename!r} needs a .pdf, .docx or .xlsx extension. Fix: e.g. 'report.pdf'")
     path = _inside(out_dir, filename, "filename")
     os.makedirs(out_dir, exist_ok=True)
+    from ..utils.errors import QualityError
     try:
-        res = _builder(document, design, markdown).export(path)
+        res = _builder(document, design, markdown).export(path, qa=ext != ".xlsx")
+    except QualityError as e:
+        raise InputError(f"{e}. Fix: run `review` for each issue's page and what to change") from None
     except ValueError as e:                  # a formula or a table the document cannot hold, named
         raise InputError(str(e)) from None
     return {"path": path, "status": res.status, "reasons": res.status_reasons, "pages": res.page_count,
@@ -156,7 +163,8 @@ def variants(document: Optional[dict] = None, n: int = 3, folder: str = "variant
 def review(document: Optional[dict] = None, design: str = "auto", folder: str = "review", dpi: int = 60,
            out_dir: str = ".", markdown: Optional[str] = None) -> dict:
     """Render once and list what a reader would notice: each issue with its page, severity, code, message and
-    `fix` (what to change). One PNG a page goes to the folder, so you can look at the pages. Nothing is changed:
+    `fix` (what to change). The pages come back as pictures (the first eight; every page is a PNG in the folder),
+    so look at them: the checks do not judge taste, white space or whether a chart says what you meant. Nothing is changed:
     fix the document and review again until `passed` is true and the warnings are ones you accept."""
     if not 20 <= dpi <= 150:
         raise InputError(f"dpi: {dpi} is out of range. Fix: use 20 to 150 (60 is enough to see the layout)")
@@ -211,36 +219,47 @@ def tools(out_dir: str) -> dict:
 
 def build_server(out_dir: str):
     try:
-        from mcp.server.mcpserver import MCPServer as Server
+        from mcp.server.mcpserver import Image, MCPServer as Server
         from mcp.server.mcpserver.exceptions import ToolError
     except ImportError:
         try:
-            from mcp.server.fastmcp import FastMCP as Server
+            from mcp.server.fastmcp import FastMCP as Server, Image
             from mcp.server.fastmcp.exceptions import ToolError
         except ImportError as e:
             raise ImportError('the MCP server needs the mcp package: pip install "dynamic-pdf-builder[mcp]"') from e
     server = Server("dynamic-pdf-builder", instructions=INSTRUCTIONS)
     for name, fn in tools(out_dir).items():
         target = fn.func if isinstance(fn, functools.partial) else fn
-        server.add_tool(_tool(fn, target, ToolError), name=name, description=target.__doc__)
+        server.add_tool(_tool(fn, target, ToolError, Image if name == "review" else None), name=name,
+                        description=target.__doc__)
     return server
 
 
-def _tool(fn, target, error):
+PAGES_SHOWN = 8
+
+
+def _tool(fn, target, error, image=None):
+    """``fn`` as a server tool; with ``image``, the result's page images go back as pictures as well,
+    for an agent that cannot open files."""
     import inspect
 
     @functools.wraps(target)
     def call(**kwargs):
         try:
-            return fn(**kwargs)
+            out = fn(**kwargs)
         except InputError as e:
             raise error(str(e)) from None
+        if image is not None and isinstance(out, dict) and out.get("images"):
+            return [out] + [image(path=p) for p in out["images"][:PAGES_SHOWN]]
+        return out
     sig, hints = inspect.signature(target), typing.get_type_hints(target)
     # real types, not this module's postponed strings, which the server cannot resolve
     call.__signature__ = sig.replace(parameters=[p.replace(annotation=hints.get(p.name, p.annotation))
                                                  for p in sig.parameters.values() if p.name != "out_dir"],
-                                     return_annotation=hints.get("return", sig.return_annotation))
+                                     return_annotation=list if image is not None else hints.get("return", sig.return_annotation))
     call.__annotations__ = {k: v for k, v in hints.items() if k != "out_dir"}
+    if image is not None:
+        call.__annotations__["return"] = list
     del call.__wrapped__
     return call
 

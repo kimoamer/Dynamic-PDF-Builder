@@ -1,4 +1,7 @@
+import re
 import unicodedata
+
+_PERCENT = re.compile(r"(?<=[0-9\u0660-\u0669])(?=[%\u066a])")
 
 def is_rtl(text: str) -> bool:
     """Detect if a text contains predominantly Arabic/Hebrew (RTL) characters."""
@@ -28,3 +31,10 @@ def apply_rtl_reshaping(text: str) -> str:
     except ImportError:
         # Fallback to pure string if packages are missing
         return text
+
+
+def percent_mark(text: str) -> str:
+    """An Arabic letter mark (U+061C, zero width) between a number and its percent sign, so bidi
+    sets the sign after the number in reading order, to its left, wherever the number stands:
+    "40٪" at the start of a line was drawn with the sign on its right."""
+    return _PERCENT.sub("\u061c", text) if text and ("%" in text or "\u066a" in text) else text
