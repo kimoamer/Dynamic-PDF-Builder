@@ -164,3 +164,12 @@ def test_a_footnote_at_the_foot_of_the_page_counts_as_laid_out_for_the_gates():
     md = "# Paper\n\nWe study recall.[^1]\n\n[^1]: Data available on request.\n\n## Methods\n\nTwo groups.\n"
     variants = DocumentBuilder.from_markdown(md).design_variants(n=3).variants
     assert variants and all(v.valid for v in variants), [v.report.hard_failures for v in variants]
+
+
+def test_a_short_list_is_not_split_across_pages():
+    para = "Revenue grew in every region this year, led by the north, while costs held below plan. " * 6
+    for lead in range(6, 14):         # some length puts the page end inside the list
+        md = "\n\n".join([para] * lead) + "\n\n1. Raise the margin.\n2. Shorten the cash cycle.\n3. Train supervisors.\n"
+        pages = [p.get_text() for p in fitz.open(stream=DocumentBuilder.from_markdown(md).render(), filetype="pdf")]
+        holding = [i for i, t in enumerate(pages) for item in ("Raise the margin", "Train supervisors") if item in t]
+        assert len(set(holding)) == 1, (lead, holding)
