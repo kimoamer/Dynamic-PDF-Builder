@@ -1153,9 +1153,10 @@ class DocumentBuilder:
                 f.message for f in report.errors[:5]), report)
         return data, report
 
-    def review(self, folder: Optional[str] = None, *, dpi: int = 60) -> dict:
+    def review(self, folder: Optional[str] = None, *, dpi: int = 60, format: str = "pdf") -> dict:
         """Render the PDF once and say what a reader would notice, for you or an agent to fix in
-        the document and review again. Nothing is changed and nothing is auto-fixed.
+        the document and review again. Nothing is changed and nothing is auto-fixed. ``format="docx"``
+        reviews the Word file instead, as LibreOffice lays it out (its pages are the images).
 
         Returns ``{"pages", "passed", "issues", "images"}``. Each issue has ``page`` (None for the
         whole document), ``severity`` (``error`` or ``warning``), ``code``, ``message`` and ``fix``,
@@ -1170,6 +1171,12 @@ class DocumentBuilder:
         kept = self._policy
         self._policy = dataclasses.replace(kept, error_mode=PERMISSIVE)   # a failing block is an issue to report, not an exception
         try:
+            if format not in ("pdf", "docx"):
+                raise ValueError(f"format: {format!r} is not one review reads. Fix: use 'pdf' or 'docx'")
+            if format == "docx":
+                from .qa.docx_checks import docx_to_pdf
+                data, report = render_with_qa(self, "docx", max_attempts=1)
+                return collect(self, docx_to_pdf(data), report, folder, dpi, critique=False)
             data, report = render_with_qa(self, "pdf", max_attempts=1)
             return collect(self, data, report, folder, dpi)
         finally:

@@ -39,7 +39,7 @@ in the front matter (header: modern, logo: logo.png, company: ...), [TOC], and s
 
 Work in a loop: `review` the document (each issue comes with its page and what to change, and the pages come
 back as pictures: look at them, since no check judges white space or whether a chart says what you meant),
-fix the Markdown, review again; then `render` the PDF and the DOCX, which are checked as they are written
+fix the Markdown, review again (`format: "docx"` shows the Word file's pages); then `render` the PDF and the DOCX, which are checked as they are written
 (status `ok`). `variants` tries several designs
 and recommends one; `explain` says why the design is as it is; `lint` checks the content (totals, shares,
 references). `kit` makes a ready-made document from data: invoice, quote, letter, cv, feasibility,
@@ -161,14 +161,17 @@ def variants(document: Optional[dict] = None, n: int = 3, folder: str = "variant
 
 
 def review(document: Optional[dict] = None, design: str = "auto", folder: str = "review", dpi: int = 60,
-           out_dir: str = ".", markdown: Optional[str] = None) -> dict:
+           out_dir: str = ".", markdown: Optional[str] = None, format: str = "pdf") -> dict:
     """Render once and list what a reader would notice: each issue with its page, severity, code, message and
     `fix` (what to change). The pages come back as pictures (the first eight; every page is a PNG in the folder),
-    so look at them: the checks do not judge taste, white space or whether a chart says what you meant. Nothing is changed:
+    so look at them: the checks do not judge taste, white space or whether a chart says what you meant.
+    `format: "docx"` reviews the Word file instead, as LibreOffice lays it out. Nothing is changed:
     fix the document and review again until `passed` is true and the warnings are ones you accept."""
     if not 20 <= dpi <= 150:
         raise InputError(f"dpi: {dpi} is out of range. Fix: use 20 to 150 (60 is enough to see the layout)")
-    return _builder(document, design, markdown).review(_inside(out_dir, folder, "folder"), dpi=dpi)
+    if format not in ("pdf", "docx"):
+        raise InputError(f"format: {format!r} is not one review reads. Fix: use 'pdf' or 'docx'")
+    return _builder(document, design, markdown).review(_inside(out_dir, folder, "folder"), dpi=dpi, format=format)
 
 
 def explain(document: Optional[dict] = None, design: str = "auto", markdown: Optional[str] = None) -> dict:

@@ -133,3 +133,28 @@ def test_the_mcp_review_sends_the_pages_and_render_checks_what_it_writes(tmp_pat
     got = asyncio.run(server.call_tool("review", {"markdown": "# Title\n\nText.\n"}))
     assert [c.type for c in got.content] == ["text", "image"] and not got.is_error
     assert M.render(markdown="# Title\n\nText.\n", filename="a.pdf", out_dir=str(tmp_path))["status"] == "ok"
+
+
+def test_a_pdf_footnote_sits_at_the_foot_of_the_page_of_its_reference():
+    para = "Revenue grew in every region this year, led by the north, while costs held below plan. " * 5
+    md = (f"# Review\n\nMargin rose.[^margin]\n\n[^margin]: Margin is revenue less cost, over revenue.\n\n"
+          + "\n\n".join([para] * 4) + "\n")
+    page = fitz.open(stream=DocumentBuilder.from_markdown(md).render(), filetype="pdf")[0]
+    lines = [(ln["bbox"][1], "".join(s["text"] for s in ln["spans"]))
+             for bl in page.get_text("dict")["blocks"] for ln in bl.get("lines", [])]
+    note = next(y for y, t in lines if "Margin is revenue" in t)
+    body = max(y for y, t in lines if "Revenue grew" in t)
+    assert note > body + 20 and note > page.rect.height * 0.75      # below the text, at the foot
+
+
+def test_review_reads_the_word_file_and_a_minus_takes_a_proportional_face(tmp_path):
+    import shutil
+    b = DocumentBuilder.from_markdown("# Review\n\nMargin fell −1.2 points.\n")
+    spans = {c["c"]: s["font"] for page in fitz.open(stream=b.render(), filetype="pdf")
+             for bl in page.get_text("rawdict")["blocks"] for ln in bl.get("lines", [])
+             for s in ln["spans"] for c in s["chars"]}
+    assert "Mono" not in spans["−"]
+    if not (shutil.which("soffice") or shutil.which("libreoffice")):
+        pytest.skip("LibreOffice is not available")
+    got = b.review(str(tmp_path), format="docx")
+    assert got["passed"] and len(got["images"]) == got["pages"] >= 1

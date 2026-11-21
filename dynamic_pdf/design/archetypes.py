@@ -61,7 +61,9 @@ def measure(theme: Theme, text: str, size: float, width: float, bold: bool = Fal
     """Height of ``text`` set at ``size`` in ``width``, with the renderer's own line breaking."""
     from reportlab.lib.styles import ParagraphStyle
 
+    from ..fonts.manager import register_fonts
     from ..layout.factory import Paragraph, _md_inline
+    register_fonts()                    # measured before any render has registered the faces it names
     sty = ParagraphStyle("m", fontName=face(theme, text, bold, heading), fontSize=size,
                          leading=size * leading(text, ratio))
     return Paragraph(_md_inline(text), sty).wrap(width, 1e6)[1]

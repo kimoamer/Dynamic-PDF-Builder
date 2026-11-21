@@ -87,8 +87,9 @@ the span: `**[word]{red}**`.
 Text: `**bold**`, `*italic*`, `~~struck~~`, `` `code` ``, `==highlight==`, `x^2^`, `H<sub>2</sub>O`,
 `[link](https://example.com)`, footnotes `text[^1]` with `[^1]: the note` anywhere below. Notes are
 numbered 1, 2, 3 in the order they are defined, in the PDF and in Word (`[^method]` is a number too); a
-one-character mark such as `*` or `†` is shown as written. Word sets them at the foot of the page; the PDF
-sets each note where it is defined, so define it just below the paragraph that refers to it.
+one-character mark such as `*` or `†` is shown as written. The PDF and Word both set a note at the foot of
+the page its first reference falls on, wherever it is defined; one defined before anything refers to it
+stays where it is written.
 
 Blocks:
 
@@ -206,6 +207,8 @@ Table: Invoice lines {#invoice}
 
 - `b.review("pages/")` (CLI `review`, MCP `review`): each issue with its page, severity, code, message
   and `fix`, what to change in words; one PNG a page. Nothing is changed. Fix the source and review again.
+  `b.review("pages/", format="docx")` (MCP `format: "docx"`) reviews the Word file as LibreOffice lays it
+  out, its pages as the images; without LibreOffice it says so.
 - `b.lint()` (CLI `lint`): content warnings: totals that do not add up, shares that do not make 100,
   references and citations to nothing, mixed digits or date formats, images without alt text, empty
   sections, formulas that cannot be computed.

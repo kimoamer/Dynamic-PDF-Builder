@@ -21,5 +21,5 @@ training/ai_preferences_v2/audit-sheets/
 build/
 dist/
 
-# Word and Excel check results: the Windows workflow commits them to its branch for review; not kept on main
+# Word and Excel check results: the Windows workflow commits them to word-check/<branch>, never here
 word-check/
