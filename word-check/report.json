@@ -1,0 +1,358 @@
+[
+ {
+  "file": "civic_ar.docx",
+  "word": "16.0 build 16.0.20625",
+  "word_pages": 2,
+  "route": "export",
+  "seconds": 3.6,
+  "pdf": true,
+  "word_pdf_pages": 2,
+  "ours_pages": 2,
+  "fonts": [
+   "ArialMT",
+   "TimesNewRomanPSMT",
+   "___WRD_EMBED_SUB_46",
+   "___WRD_EMBED_SUB_46,Bold",
+   "___WRD_EMBED_SUB_49",
+   "___WRD_EMBED_SUB_49,Bold"
+  ]
+ },
+ {
+  "file": "civic_en.docx",
+  "word": "16.0 build 16.0.20625",
+  "word_pages": 3,
+  "route": "export",
+  "seconds": 2.2,
+  "pdf": true,
+  "word_pdf_pages": 3,
+  "ours_pages": 3,
+  "fonts": [
+   "ArialMT",
+   "Calibri",
+   "___WRD_EMBED_SUB_49",
+   "___WRD_EMBED_SUB_49,Bold"
+  ]
+ },
+ {
+  "file": "executive_ar.docx",
+  "word": "16.0 build 16.0.20625",
+  "word_pages": 3,
+  "route": "export",
+  "seconds": 5.7,
+  "pdf": true,
+  "word_pdf_pages": 3,
+  "ours_pages": 3,
+  "fonts": [
+   "Arial-BoldMT",
+   "ArialMT",
+   "Calibri",
+   "Calibri-Bold",
+   "TimesNewRomanPSMT",
+   "___WRD_EMBED_SUB_46",
+   "___WRD_EMBED_SUB_46,Bold",
+   "___WRD_EMBED_SUB_49",
+   "___WRD_EMBED_SUB_49,Bold",
+   "___WRD_EMBED_SUB_53",
+   "___WRD_EMBED_SUB_53,Bold",
+   "___WRD_EMBED_SUB_53,Italic"
+  ]
+ },
+ {
+  "file": "executive_en.docx",
+  "word": "16.0 build 16.0.20625",
+  "word_pages": 3,
+  "route": "export",
+  "seconds": 5.4,
+  "pdf": true,
+  "word_pdf_pages": 3,
+  "ours_pages": 3,
+  "fonts": [
+   "ArialMT",
+   "Calibri",
+   "___WRD_EMBED_SUB_49,Bold",
+   "___WRD_EMBED_SUB_53",
+   "___WRD_EMBED_SUB_53,Bold",
+   "___WRD_EMBED_SUB_53,Italic"
+  ]
+ },
+ {
+  "file": "ledger_ar.docx",
+  "word": "16.0 build 16.0.20625",
+  "word_pages": 2,
+  "route": "export",
+  "seconds": 5.8,
+  "pdf": true,
+  "word_pdf_pages": 2,
+  "ours_pages": 2,
+  "fonts": [
+   "ArialMT",
+   "Calibri",
+   "Calibri-Bold",
+   "Cambria",
+   "Cambria-Bold",
+   "Cambria-Italic",
+   "TimesNewRomanPS-BoldMT",
+   "TimesNewRomanPSMT",
+   "___WRD_EMBED_SUB_46",
+   "___WRD_EMBED_SUB_46,Bold"
+  ]
+ },
+ {
+  "file": "ledger_en.docx",
+  "word": "16.0 build 16.0.20625",
+  "word_pages": 2,
+  "route": "export",
+  "seconds": 5.4,
+  "pdf": true,
+  "word_pdf_pages": 2,
+  "ours_pages": 2,
+  "fonts": [
+   "ArialMT",
+   "Calibri",
+   "___WRD_EMBED_SUB_46",
+   "___WRD_EMBED_SUB_46,Bold",
+   "___WRD_EMBED_SUB_46,Italic"
+  ]
+ },
+ {
+  "file": "luxe_ar.docx",
+  "word": "16.0 build 16.0.20625",
+  "word_pages": 2,
+  "route": "export",
+  "seconds": 5.6,
+  "pdf": true,
+  "word_pdf_pages": 2,
+  "ours_pages": 2,
+  "fonts": [
+   "ArialMT",
+   "Calibri",
+   "Calibri-Bold",
+   "Cambria",
+   "Cambria-Bold",
+   "Cambria-Italic",
+   "TimesNewRomanPS-BoldMT",
+   "TimesNewRomanPSMT",
+   "___WRD_EMBED_SUB_46",
+   "___WRD_EMBED_SUB_46,Bold"
+  ]
+ },
+ {
+  "file": "luxe_en.docx",
+  "word": "16.0 build 16.0.20625",
+  "word_pages": 3,
+  "route": "export",
+  "seconds": 4.1,
+  "pdf": true,
+  "word_pdf_pages": 3,
+  "ours_pages": 3,
+  "fonts": [
+   "ArialMT",
+   "Calibri",
+   "___WRD_EMBED_SUB_46",
+   "___WRD_EMBED_SUB_46,Bold"
+  ]
+ },
+ {
+  "file": "magazine_ar.docx",
+  "word": "16.0 build 16.0.20625",
+  "word_pages": 2,
+  "route": "export",
+  "seconds": 5.5,
+  "pdf": true,
+  "word_pdf_pages": 2,
+  "ours_pages": 2,
+  "fonts": [
+   "ArialMT",
+   "Calibri",
+   "Calibri-Bold",
+   "Cambria",
+   "Cambria-Bold",
+   "Cambria-Italic",
+   "TimesNewRomanPS-BoldMT",
+   "TimesNewRomanPSMT",
+   "___WRD_EMBED_SUB_46",
+   "___WRD_EMBED_SUB_46,Bold"
+  ]
+ },
+ {
+  "file": "magazine_en.docx",
+  "word": "16.0 build 16.0.20625",
+  "word_pages": 2,
+  "route": "export",
+  "seconds": 5.5,
+  "pdf": true,
+  "word_pdf_pages": 2,
+  "ours_pages": 3,
+  "fonts": [
+   "ArialMT",
+   "Calibri",
+   "___WRD_EMBED_SUB_49",
+   "___WRD_EMBED_SUB_49,Bold",
+   "___WRD_EMBED_SUB_52",
+   "___WRD_EMBED_SUB_52,Bold"
+  ]
+ },
+ {
+  "file": "scholar_ar.docx",
+  "word": "16.0 build 16.0.20625",
+  "word_pages": 2,
+  "route": "export",
+  "seconds": 5.5,
+  "pdf": true,
+  "word_pdf_pages": 2,
+  "ours_pages": 2,
+  "fonts": [
+   "ArialMT",
+   "TimesNewRomanPSMT",
+   "___WRD_EMBED_SUB_46",
+   "___WRD_EMBED_SUB_46,Bold",
+   "___WRD_EMBED_SUB_46,Italic",
+   "___WRD_EMBED_SUB_50",
+   "___WRD_EMBED_SUB_50,Bold"
+  ]
+ },
+ {
+  "file": "scholar_en.docx",
+  "word": "16.0 build 16.0.20625",
+  "word_pages": 2,
+  "route": "export",
+  "seconds": 5.4,
+  "pdf": true,
+  "word_pdf_pages": 2,
+  "ours_pages": 2,
+  "fonts": [
+   "ArialMT",
+   "Calibri",
+   "___WRD_EMBED_SUB_46",
+   "___WRD_EMBED_SUB_46,Bold",
+   "___WRD_EMBED_SUB_46,Italic"
+  ]
+ },
+ {
+  "file": "tech_ar.docx",
+  "word": "16.0 build 16.0.20625",
+  "word_pages": 3,
+  "route": "export",
+  "seconds": 5.6,
+  "pdf": true,
+  "word_pdf_pages": 3,
+  "ours_pages": 3,
+  "fonts": [
+   "ArialMT",
+   "TimesNewRomanPSMT",
+   "___WRD_EMBED_SUB_46",
+   "___WRD_EMBED_SUB_46,Bold",
+   "___WRD_EMBED_SUB_49",
+   "___WRD_EMBED_SUB_49,Bold"
+  ]
+ },
+ {
+  "file": "tech_en.docx",
+  "word": "16.0 build 16.0.20625",
+  "word_pages": 3,
+  "route": "export",
+  "seconds": 5.4,
+  "pdf": true,
+  "word_pdf_pages": 3,
+  "ours_pages": 3,
+  "fonts": [
+   "ArialMT",
+   "Calibri",
+   "___WRD_EMBED_SUB_46",
+   "___WRD_EMBED_SUB_46,Bold"
+  ]
+ },
+ {
+  "file": "warm_ar.docx",
+  "word": "16.0 build 16.0.20625",
+  "word_pages": 2,
+  "route": "export",
+  "seconds": 5.5,
+  "pdf": true,
+  "word_pdf_pages": 2,
+  "ours_pages": 2,
+  "fonts": [
+   "ArialMT",
+   "Calibri",
+   "Calibri-Bold",
+   "Cambria",
+   "Cambria-Bold",
+   "Cambria-Italic",
+   "TimesNewRomanPS-BoldMT",
+   "TimesNewRomanPSMT",
+   "___WRD_EMBED_SUB_46",
+   "___WRD_EMBED_SUB_46,Bold"
+  ]
+ },
+ {
+  "file": "warm_en.docx",
+  "word": "16.0 build 16.0.20625",
+  "word_pages": 3,
+  "route": "export",
+  "seconds": 5.5,
+  "pdf": true,
+  "word_pdf_pages": 3,
+  "ours_pages": 3,
+  "fonts": [
+   "ArialMT",
+   "___WRD_EMBED_SUB_49",
+   "___WRD_EMBED_SUB_49,Bold",
+   "___WRD_EMBED_SUB_53",
+   "___WRD_EMBED_SUB_53,Bold"
+  ]
+ },
+ {
+  "file": "kit_feasibility.xlsx",
+  "excel": "16.0 build 20625.0",
+  "formulas": 16,
+  "mismatches": [],
+  "route": "export",
+  "seconds": 5.1,
+  "pdf": true
+ },
+ {
+  "file": "kit_invoice.xlsx",
+  "excel": "16.0 build 20625.0",
+  "formulas": 5,
+  "mismatches": [],
+  "route": "export",
+  "seconds": 3.6,
+  "pdf": true
+ },
+ {
+  "file": "kit_quote.xlsx",
+  "excel": "16.0 build 20625.0",
+  "formulas": 6,
+  "mismatches": [],
+  "route": "export",
+  "seconds": 3.5,
+  "pdf": true
+ },
+ {
+  "file": "kit_statements.xlsx",
+  "excel": "16.0 build 20625.0",
+  "formulas": 24,
+  "mismatches": [],
+  "route": "export",
+  "seconds": 3.6,
+  "pdf": true
+ },
+ {
+  "file": "report_ar.xlsx",
+  "excel": "16.0 build 20625.0",
+  "formulas": 0,
+  "mismatches": [],
+  "route": "export",
+  "seconds": 3.5,
+  "pdf": true
+ },
+ {
+  "file": "report_en.xlsx",
+  "excel": "16.0 build 20625.0",
+  "formulas": 0,
+  "mismatches": [],
+  "route": "export",
+  "seconds": 3.4,
+  "pdf": true
+ }
+]
