@@ -89,6 +89,20 @@ def _separate_lines(a, b) -> bool:
     return abs(centre(a) - centre(b)) >= 0.8 * min(a[2], b[2])
 
 
+_PERCENT_ONLY = re.compile(r"[\s%\u066a\u061c]+")
+
+def _runs_of_one_line(a, b) -> bool:
+    """Whether two boxes are runs of one line: LibreOffice splits a right-to-left line into runs (its
+    end, a stretch justified with kashida), each box as tall as its own marks (Arabic vowel signs),
+    so the boxes of one line's runs sit inside one another, their centres within a fifth of a line
+    of each other. Runs fall anywhere along the line (a word heavy with vowel signs is one).
+    shortcut: Word's check only; a line drawn over another on the very same baseline passes it."""
+    outer, inner = sorted((a[0], b[0]), key=lambda box: box[2] - box[0], reverse=True)
+    inside = inner[0] >= outer[0] - 1 and inner[2] <= outer[2] + 1
+    height = min(outer[3] - outer[1], inner[3] - inner[1])
+    return inside and abs((outer[1] + outer[3]) - (inner[1] + inner[3])) / 2 < 0.2 * height
+
+
 def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Optional[List[str]] = None,
               tolerance: float = 2.0, fmt: str = "pdf", captions: Optional[List[str]] = None,
               major_headings: Optional[List[str]] = None, body_size: Optional[float] = None,
@@ -162,7 +176,8 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
                                             message=f"text runs off the page: {txt.strip()[:40]!r}"))
             elif margins and (x1 > right or x0 < left) and 40 < y0 < H - 40:
                 over = _ink_beyond(page, (x0, y0, x1, y1), left, right)
-                if over > 0:
+                # in Word's layout an Arabic line's vowel signs may reach a point past its edge
+                if over > (2.0 if fmt == "docx" else 0):
                     rep.findings.append(Finding(severity=ERROR, code="overflow", page=pno, bbox=bbox,
                                                 text=txt.strip()[:120], format=fmt, fixable=True,
                                                 message=f"text overflows into the margin by "
@@ -173,7 +188,11 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
                 a, b = lines[i][0], lines[j][0]
                 if abs(a[1] - b[1]) < 0.5 and abs(a[0] - b[0]) < 0.5:
                     continue          # same line split into two dict lines
-                if fmt == "docx" and _separate_lines(lines[i], lines[j]):
+                if fmt == "docx" and (_separate_lines(lines[i], lines[j]) or _runs_of_one_line(lines[i], lines[j])):
+                    continue
+                # a percent sign set against its number (with the zero-width mark that puts it after the
+                # number in Arabic) touches the number; it does not cover it
+                if any(_PERCENT_ONLY.fullmatch(ln[1]) for ln in (lines[i], lines[j])):
                     continue
                 if _overlap(a, b) > 0.35:
                     rep.findings.append(Finding(
@@ -224,7 +243,9 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
             # a line that ends a sentence is the end of a paragraph, unless the heading itself
             # ends that way (extracted right-to-left lines may carry the stop at either end)
             sentence = bool(_SENTENCE_END.search(last[1]))
-            if lk and not contents_page and any((hk == lk or (len(hk) >= 2 and hk <= lk and len(lk) <= len(hk) + 1))
+            # a chart drawn as vectors (its text is paths) or a picture below the heading follows it
+            followed = max(drawn + [image_bottoms.get(pno, 0)], default=0) > last[0][3] + 12
+            if lk and not contents_page and not followed and any((hk == lk or (len(hk) >= 2 and hk <= lk and len(lk) <= len(hk) + 1))
                                                 and (not sentence or ends)
                                                 for hk, ends in head_ends):
                 rep.findings.append(Finding(severity=ERROR, code="stranded_heading", page=pno,

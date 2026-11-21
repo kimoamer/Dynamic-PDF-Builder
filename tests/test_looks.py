@@ -195,3 +195,28 @@ def test_word_chart_axis_reaches_above_the_tallest_bar():
     assert _ceiling({"": [18.4, 12.1, 9.6, 8.1]}, False) == 20
     assert _ceiling({"a": [3, 4], "b": [2, 2]}, True) == 7
     assert _ceiling({"": [-3.0]}, False) is None
+
+
+def test_word_keeps_a_short_list_on_one_page():
+    import io
+    import docx
+    d = docx.Document(io.BytesIO(DocumentBuilder().numbered_list(["one", "two", "three"]).render_docx()))
+    items = [p for p in d.paragraphs if p.text in ("one", "two", "three")]
+    assert [bool(p.paragraph_format.keep_with_next) for p in items] == [True, True, False]
+
+
+def test_runs_of_one_arabic_line_are_not_an_overlap():
+    from dynamic_pdf.qa.pdf_checks import _runs_of_one_line
+    line = ((63.8, 247.7, 310.4, 263.4), "واستبدلت", 10.0)
+    end = ((68.1, 247.7, 167.5, 264.7), "البالية", 10.0)        # same top, marks reach lower
+    tail = ((68.0, 106.0, 89.0, 124.0), "مرسى.", 10.0)
+    whole = ((64.0, 100.0, 527.0, 124.0), "أنجزت", 10.0)         # same bottom, marks reach higher
+    assert _runs_of_one_line(line, end) and _runs_of_one_line(tail, whole)
+    below = ((64.0, 112.0, 527.0, 136.0), "سطر آخر", 10.0)       # a different line half a line down
+    assert not _runs_of_one_line(whole, below)
+    word = ((100.3, 103.3, 242.3, 124.9), "مركز", 10.0)           # a voweled word mid-line: its own run
+    assert _runs_of_one_line(word, whole)
+    offset = ((68.2, 61.1, 193.2, 82.7), "أنجزت", 10.0)          # its box shifted by the marks
+    assert _runs_of_one_line(offset, ((63.8, 58.1, 527.4, 81.0), "سطر", 10.0))
+    half = ((64.0, 111.0, 300.0, 135.0), "سطر", 10.0)            # half a line lower: an overlap
+    assert not _runs_of_one_line(half, whole)

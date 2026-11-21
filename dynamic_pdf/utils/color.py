@@ -51,3 +51,13 @@ def darken(hex_color: str, factor: float = 0.2) -> str:
     g = max(0, int(g * (1 - factor)))
     b = max(0, int(b * (1 - factor)))
     return rgb_to_hex(r, g, b)
+
+
+def legible(hex_color: str, bg: str = "#ffffff", ratio: float = 4.5) -> str:
+    """``hex_color``, darkened in small steps until it reaches ``ratio`` against ``bg``
+    (a bright semantic green reads as text only once it is deeper)."""
+    for _ in range(20):
+        if contrast_ratio(hex_color, bg) >= ratio:
+            break
+        hex_color = darken(hex_color, 0.08)
+    return hex_color

@@ -20,5 +20,5 @@ The loop that works: write Markdown, `export("x.pdf")` (or `.docx`, `.xlsx`), `r
 
 ## Agents
 
-- MCP server: `python -m dynamic_pdf.ai.mcp_server --out-dir ./out`. It introduces itself on connect. Tools: `guide`, `render`, `review`, `variants`, `explain`, `lint`, `kit`, `schema`. Each document tool takes `markdown` (a string) or `document` (JSON), and writes only inside the output folder.
+- MCP server: `python -m dynamic_pdf.ai.mcp_server --out-dir ./out`. It introduces itself on connect. Tools: `guide`, `render`, `review`, `variants`, `explain`, `lint`, `kit`, `schema`. Each document tool takes `markdown` (a string) or `document` (JSON), and writes only inside the output folder. `review` returns the issues and the pages as pictures, so an agent without file access can see them; `render` checks a PDF or DOCX as it writes it.
 - JSON Schema of a document, with a description of each field: `dynamic-pdf schema` or the `schema` tool.

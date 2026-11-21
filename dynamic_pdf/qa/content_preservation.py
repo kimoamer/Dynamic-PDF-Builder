@@ -82,6 +82,10 @@ def _as_set(text: str, ledger: ContentLedger) -> str:
         from ..core.numbering import REF
         labels = dict(ledger.refs)
         text = REF.sub(lambda m: labels.get(m.group(1), m.group(0)), text)
+    if "[^" in text and ledger.refs:
+        import re
+        labels = dict(ledger.refs)
+        text = re.sub(r"\[\^([\w-]+)\]", lambda m: f"[^{labels.get('^' + m.group(1), m.group(1))}]", text)
     return plain_text(text)
 
 
@@ -141,7 +145,7 @@ def _paragraphs(root) -> List[str]:
 
     def piece(e) -> str:
         if e.tag in (_W + "t", _W + "delText"):        # a suggested removal is still on the page
-            return e.text or ""
+            return (e.text or "").replace("\u061c", "")   # the mark that seats an Arabic % is layout, not text
         return numbers.get(e, "") if e.tag == _W + "footnoteReference" else " "
 
     def text(p) -> str:              # a line break or tab between runs separates words

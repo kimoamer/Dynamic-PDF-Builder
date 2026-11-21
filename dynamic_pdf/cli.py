@@ -24,6 +24,9 @@ import os
 
 
 def main():
+    for stream in (sys.stdout, sys.stderr):    # a Windows console's code page has no ✓ or ⚠: never crash on one
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(errors="replace")
     parser = argparse.ArgumentParser(
         prog="dynamic-pdf",
         description="Dynamic PDF Builder — generate beautiful PDFs from Markdown or JSON.",

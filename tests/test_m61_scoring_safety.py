@@ -229,8 +229,9 @@ def test_chart_report_packs_two_charts_per_page_legibly(tmp_path):
     assert r.candidates[0].metrics["separated_figures"] == 0   # design() already keeps intros with exhibits
     chosen = next(c for c in r.candidates if c.name == r.strategy)
     assert chosen.metrics["separated_figures"] == 0
-    # at the reviewed 11.5pt body one page ends at 58% (threshold 62%); the baseline wastes 0.44
-    assert chosen.metrics["wasted"] <= 0.06 < r.candidates[0].metrics["wasted"]
+    # at the reviewed 11.5pt body one page ends at 58% (threshold 62%); the baseline wastes 0.44. Since the
+    # forecast keeps an intro with its chart the composer reaches the compact layout: 6 pages for 9, at 0.061
+    assert chosen.metrics["wasted"] <= 0.07 < r.candidates[0].metrics["wasted"]
     sizes = [s["size"] for p in doc for bl in p.get_text("dict")["blocks"] for ln in bl.get("lines", [])
              for s in ln["spans"] if s["text"].strip()]
     assert min(sizes) >= 6.0                            # chart text redrawn natively, not shrunk

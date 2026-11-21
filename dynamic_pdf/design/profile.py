@@ -37,6 +37,9 @@ ALIASES = {
     "technical": Profile.TECHNICAL_MANUAL, "data": Profile.DATA_REPORT,
     "financial": Profile.FINANCIAL_REPORT, "finance": Profile.FINANCIAL_REPORT,
     "rtl_report": Profile.EXECUTIVE_REPORT,
+    # the names the kits go by, as an author writes them
+    "quote": Profile.INVOICE, "quotation": Profile.INVOICE, "estimate": Profile.INVOICE,
+    "statements": Profile.FINANCIAL_REPORT, "feasibility": Profile.FINANCIAL_REPORT,
 }
 
 

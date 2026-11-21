@@ -4,32 +4,40 @@
   "docs": 18,
   "gate_pass_rate": 1.0,
   "gate_pass_by_direction": {
+   "academic_paper": "2/2",
    "arabic_institutional": "4/4",
-   "corporate_conservative": "18/18",
-   "editorial_modern": "18/18",
+   "corporate_conservative": "17/17",
+   "editorial_modern": "17/17",
    "executive_premium": "18/18",
    "financial_data": "18/18"
   },
-  "near_empty_last_pages": 7,
-  "page_growth_mean": 0.959,
+  "near_empty_last_pages": 5,
+  "page_growth_mean": 1.013,
   "page_growth_max": 2.0,
-  "docx_page_parity": 0.766,
-  "docx_page_mismatches": 22,
+  "docx_page_parity": 0.862,
+  "docx_page_mismatches": 13,
   "docx_designs_compared": 94,
   "forecast_page_exact": 1.0,
-  "forecast_score_mae": 0.37,
-  "forecast_score_max_error": 2.38,
+  "forecast_score_mae": 0.54,
+  "forecast_score_max_error": 8.79,
   "forecast_utilization_over": 5,
-  "variants3_median_s": 0.8,
-  "variants3_max_s": 14.13,
-  "peak_mb_max": 29.8,
+  "variants3_median_s": 0.95,
+  "variants3_max_s": 22.55,
+  "selector": {
+   "learned": 0,
+   "overrode": 0,
+   "abstained": 0,
+   "refused": 0
+  },
+  "peak_mb_max": 30.9,
   "valid_variants_mean": 4.22,
-  "diversity_mean": 0.102,
+  "diversity_mean": 0.095,
   "export_status": {
    "ok": 18
   },
   "variant_status": {
-   "valid": 76
+   "valid": 76,
+   "not_rendered": 2
   },
   "office": true
  },
@@ -38,31 +46,64 @@
    "min": 1.0
   },
   "near_empty_last_pages": {
-   "max": 7
+   "max": 5
   },
   "page_growth_max": {
    "max": 2.1
   },
   "docx_page_parity": {
-   "min": 0.746
+   "min": 0.842
   },
   "forecast_page_exact": {
    "min": 1.0
   },
   "forecast_score_mae": {
-   "max": 0.62
+   "max": 0.79
   },
   "variants3_median_s": {
-   "max": 1.6
+   "max": 1.9
   },
   "peak_mb_max": {
-   "max": 44.7
+   "max": 46.35
   },
   "valid_variants_mean": {
    "min": 4.02
   }
  },
  "history": {
+  "m9 (2070b63), the budgets CI could not check while Actions was blocked": {
+   "docs": 18,
+   "gate_pass_rate": 1.0,
+   "gate_pass_by_direction": {
+    "arabic_institutional": "4/4",
+    "corporate_conservative": "18/18",
+    "editorial_modern": "18/18",
+    "executive_premium": "18/18",
+    "financial_data": "18/18"
+   },
+   "near_empty_last_pages": 7,
+   "page_growth_mean": 0.959,
+   "page_growth_max": 2.0,
+   "docx_page_parity": 0.766,
+   "docx_page_mismatches": 22,
+   "docx_designs_compared": 94,
+   "forecast_page_exact": 1.0,
+   "forecast_score_mae": 0.37,
+   "forecast_score_max_error": 2.38,
+   "forecast_utilization_over": 5,
+   "variants3_median_s": 0.8,
+   "variants3_max_s": 14.13,
+   "peak_mb_max": 29.8,
+   "valid_variants_mean": 4.22,
+   "diversity_mean": 0.102,
+   "export_status": {
+    "ok": 18
+   },
+   "variant_status": {
+    "valid": 76
+   },
+   "office": true
+  },
   "m8 (main at 4890d03, before M9)": {
    "docs": 18,
    "gate_pass_rate": 1.0,

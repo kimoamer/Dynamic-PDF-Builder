@@ -48,8 +48,9 @@ dynamic-pdf lint report.md
 AI agents over MCP (`pip install "dynamic-pdf-builder[mcp]"`, then
 `python -m dynamic_pdf.ai.mcp_server --out-dir ./out`): tools `guide`, `render`, `review`, `variants`,
 `explain`, `lint`, `kit` and `schema`. `render`, `review`, `variants`, `explain` and `lint` take `markdown` (a
-string) or `document` (JSON). The loop that works: write Markdown, `render`, `review`, fix what it lists,
-`review` again.
+string) or `document` (JSON). The loop that works: write Markdown, `review` (it returns the issues and the
+pages as pictures to look at), fix what it lists, `review` again, then `render` the PDF and DOCX; `render`
+checks each as it writes it and refuses one that fails, naming what failed.
 
 ## Markdown
 
@@ -84,7 +85,10 @@ lists), in PDF and Word; a letter coloured inside an Arabic word stays joined. P
 the span: `**[word]{red}**`.
 
 Text: `**bold**`, `*italic*`, `~~struck~~`, `` `code` ``, `==highlight==`, `x^2^`, `H<sub>2</sub>O`,
-`[link](https://example.com)`, footnotes `text[^1]` with `[^1]: the note` anywhere below.
+`[link](https://example.com)`, footnotes `text[^1]` with `[^1]: the note` anywhere below. Notes are
+numbered 1, 2, 3 in the order they are defined, in the PDF and in Word (`[^method]` is a number too); a
+one-character mark such as `*` or `†` is shown as written. Word sets them at the foot of the page; the PDF
+sets each note where it is defined, so define it just below the paragraph that refers to it.
 
 Blocks:
 
@@ -129,7 +133,9 @@ bubble, histogram, heatmap, waterfall, funnel, gauge, sparkline, treemap.
 
 Data: one series is `{"label": value}`. Several series (grouped_bar, stacked_bar, line, area) are
 `{"categories": ["Q1", "Q2"], "series": {"2025": [3, 4], "2026": [4, 6]}}`. Optional keys: `x_label`,
-`y_label`, `colors` (a list of hex colours), `legend` (true or false). Shares in a pie must be parts of
+`y_label`, `colors` (a list of hex colours; without them a chart takes the theme's or brand's colours, then
+distinct stock hues), `legend` (true or false). A bubble chart takes `[{"x": 412, "y": 14.2, "size": 18,
+"label": "Region"}]`: the bubble's area stands for `size`. Shares in a pie must be parts of
 a whole: no negative values. Data a chart cannot draw truthfully is refused with the reason.
 
 In Word, bar, line, area, pie and doughnut charts are native Word charts whose data can be edited; the
@@ -149,7 +155,9 @@ Maps, location sketches and mind maps are chart types too:
 
 Shapes (`b.shape("rounded_rect", width=250, height=60, fill_color="#F7FAFC", label="Status: active")`: rect,
 rounded_rect, circle, ellipse, line, arrow, polygon, arc, wedge) are vector in the PDF and a picture of
-the same drawing in Word; a label may be Arabic or carry symbols.
+the same drawing in Word; a label may be Arabic, carry symbols and inline Markdown, and a label of several
+lines (`"**12.4M**\nchildren in school"`) sets its first line as a headline sized to the shape. The label
+takes white or dark ink, whichever reads on the fill.
 
 ## Tables
 
@@ -339,7 +347,9 @@ MCP `schema` tool) prints the JSON Schema with a description of every field.
 Write Arabic as it is; direction is detected per paragraph, and `language: ar` (or `direction: rtl`)
 makes the whole document right-to-left. Tables, lists, captions, page numbers, charts and the Word file
 follow. Arabic-Indic digits stay as written, and computed cells keep them. Amounts in words and
-references ("المعادلة (1)", "جدول 2") are written in Arabic in an Arabic document.
+references ("المعادلة (1)", "جدول 2") are written in Arabic in an Arabic document. Write a percentage as
+`40٪` or `40%`: the sign is set after the number in reading order (to its left), in the PDF and in Word,
+even where the number starts the line.
 
 Fonts: 45 bundled families (`dynamic_pdf.fonts.list_font_families()`, 23 of them Arabic) set with
 `b.fonts(heading=..., body=..., arabic=...)`; your own with `register_custom_font(name, path)`. Symbols

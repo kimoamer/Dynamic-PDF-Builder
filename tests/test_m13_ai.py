@@ -211,6 +211,7 @@ class TestAssist:
 
 class TestAnthropicProvider:
     def test_requests_use_structured_outputs_and_the_model_setting(self):
+        pytest.importorskip("anthropic")
         from dynamic_pdf.ai import DEFAULT_MODEL, AnthropicProvider
         sent = {}
 

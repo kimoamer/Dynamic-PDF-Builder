@@ -223,7 +223,8 @@ def test_referenced_footnotes_are_word_footnotes():
     assert "footnotes+xml" in parts["[Content_Types].xml"]
     assert "relationships/footnotes" in parts["word/_rels/document.xml.rels"]
     assert body.count("<w:footnoteReference") == 2                   # one per note; a repeat stays a marker
-    assert 'w:customMarkFollows="1"' in body and '<w:t xml:space="preserve">dagger</w:t>' in body
+    # a label is numbered, as Markdown numbers it: [^dagger] is note 2, not the word "dagger"
+    assert 'w:customMarkFollows="1"' not in body and ">dagger<" not in body
     assert "Data available on" in notes and "Two participants withdrew." in notes and "<w:footnoteRef/>" in notes
     assert "https://example.com/data" in parts["word/_rels/footnotes.xml.rels"]   # the link works in the note
     assert "Data available" not in body and "Two participants" not in body         # not also in the flow

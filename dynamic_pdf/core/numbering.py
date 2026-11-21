@@ -32,6 +32,12 @@ class Numbering:
     exhibits: Dict[object, Exhibit] = field(default_factory=dict)
     refs: Dict[str, Tuple[str, Optional[str]]] = field(default_factory=dict)   # id -> (label, anchor)
     language: str = "en"
+    notes: Dict[str, int] = field(default_factory=dict)          # footnote key -> its number
+
+    def note(self, key: str) -> str:
+        """A footnote's number, 1, 2, 3 in document order as Word numbers it; the key itself
+        for a symbol mark ("*", "†") or one no footnote defines."""
+        return str(self.notes.get(key, key))
 
     def of(self, block) -> Optional[Exhibit]:
         return self.exhibits.get(id(block)) or self.exhibits.get(_content_key(block))
@@ -58,6 +64,12 @@ def _content_key(block):
     if t == "chart":
         return ("chart", block.chart_type, block.title, block.id, str(block.data)[:200])
     return None
+
+
+def numbered_note(marker: str) -> bool:
+    """A footnote key Markdown numbers (``[^1]``, ``[^method]``); a one-character mark that
+    is not a digit ("*", "†", "a") is shown as written."""
+    return bool(re.fullmatch(r"\w+", marker or "")) and (marker.isdigit() or len(marker) > 1)
 
 
 def _walk(blocks):
@@ -97,6 +109,10 @@ def number_document(doc) -> Numbering:
     heads = [0] * 6
     used = set()
     for b in _walk(doc.blocks):
+        if b.type == "footnote":
+            if numbered_note(b.marker):
+                out.notes.setdefault(b.marker, len(out.notes) + 1)
+            continue
         if b.type == "heading":
             text = plain_text(b.text)
             counted = (doc.meta.section_numbering or b.numbered) and not (b.hints or {}).get("unnumbered")
@@ -149,6 +165,34 @@ def number_equations(blocks: list) -> list:
     return out if changed else blocks
 
 
+def _signing(b) -> bool:
+    kids = [k for name in ("left", "right") for k in (getattr(b, name, None) or [])]
+    return getattr(b, "type", None) == "signature" or (
+        getattr(b, "type", None) == "two_column" and kids and all(getattr(k, "type", None) == "signature"
+                                                                  for k in kids))
+
+
+def sign_introductions(blocks: list) -> list:
+    """A preface signed by the signatures that follow it keeps them on its page: its page break
+    moves to after them. The list itself when none is signed."""
+    from ..schema.blocks import PageBreakBlock
+    out, i, changed = [], 0, False
+    while i < len(blocks):
+        b = blocks[i]
+        out.append(b)
+        i += 1
+        if (getattr(b, "type", None) == "introduction_page" and getattr(b, "position", "front") != "back"
+                and i < len(blocks) and _signing(blocks[i])):
+            out[-1] = b.model_copy(update={"hints": {**(b.hints or {}), "signed": True}})
+            while i < len(blocks) and _signing(blocks[i]):
+                out.append(blocks[i])
+                i += 1
+            if i < len(blocks):
+                out.append(PageBreakBlock())
+            changed = True
+    return out if changed else blocks
+
+
 def current() -> Optional[Numbering]:
     """The numbering of the document being rendered, or None outside a render."""
     from ..policy import _current
@@ -196,7 +240,9 @@ def ledger_refs(doc) -> Tuple[Tuple[str, str], ...]:
             continue
         for s in block_text(b):
             ids += REF.findall(s)
-    return tuple((i, num.refs[i][0]) for i in dict.fromkeys(ids) if i in num.refs)
+    # a footnote key reads as its number: "^key" -> "2"
+    return (tuple((i, num.refs[i][0]) for i in dict.fromkeys(ids) if i in num.refs)
+            + tuple((f"^{k}", str(n)) for k, n in num.notes.items()))
 
 
 __all__ = ["Exhibit", "Numbering", "REF", "current", "exhibit_label", "ledger_refs", "number_document",

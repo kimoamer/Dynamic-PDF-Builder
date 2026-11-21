@@ -163,7 +163,8 @@ def test_batch_renders_many_documents_with_shared_figures(tmp_path):
                {"id": "c3", "name": "Cy", "total": "30"}]
     results = render_batch(tpl, records, str(tmp_path), name="letter-{{ id }}", formats=("pdf", "docx"),
                            design=None)
-    assert [r.pdf_path.rsplit("/", 1)[-1] for r in results] == ["letter-a1.pdf", "letter-b2.pdf", "letter-c3.pdf"]
+    from pathlib import Path
+    assert [Path(r.pdf_path).name for r in results] == ["letter-a1.pdf", "letter-b2.pdf", "letter-c3.pdf"]
     assert all((tmp_path / f"letter-{r['id']}.docx").exists() for r in records)
     import pymupdf
     assert "your total is 20." in pymupdf.open(str(tmp_path / "letter-b2.pdf"))[0].get_text()

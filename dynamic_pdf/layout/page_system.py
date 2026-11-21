@@ -361,10 +361,10 @@ def pick_bands(sys: PageSystem, page: int, section: Optional[str]):
 
 
 def readable_on(hex_fill: str) -> str:
-    """Dark or light text for a filled row."""
-    c = HexColor(hex_fill)
-    lum = 0.2126 * c.red + 0.7152 * c.green + 0.0722 * c.blue
-    return "#FFFFFF" if lum < 0.55 else "#1F2933"
+    """Dark or light text for a filled row: whichever has the more contrast on it."""
+    from ..utils.color import contrast_ratio
+    fill = HexColor(hex_fill).hexval()[2:]
+    return "#FFFFFF" if contrast_ratio("#FFFFFF", fill) >= contrast_ratio("#1F2933", fill) else "#1F2933"
 
 
 def draw_band(canv, layout: BandLayout, band: Band, theme, x: float, top: float, page_w: float,

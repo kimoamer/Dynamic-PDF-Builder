@@ -100,6 +100,18 @@ def test_the_workbook_keeps_numbers_formats_and_working_formulas(tmp_path):
         DocumentBuilder().paragraph("x").render_xlsx()
 
 
+def test_the_workbook_prints_one_page_wide_and_keeps_a_change_sign(tmp_path):
+    import io
+    openpyxl = pytest.importorskip("openpyxl")
+    wide = [f"Column header {i}" for i in range(9)]
+    b = (DocumentBuilder().table(["Region", "Change"], [["North", "+16%"], ["South", "-3%"]])
+         .table(wide, [[str(i) for i in range(9)]]))
+    first, second = openpyxl.load_workbook(io.BytesIO(b.render_xlsx())).worksheets
+    assert first["B2"].number_format.startswith("+") and first["B2"].value == 0.16
+    assert first.sheet_properties.pageSetUpPr.fitToPage and first.page_setup.fitToWidth == 1
+    assert first.page_setup.orientation != "landscape" and second.page_setup.orientation == "landscape"
+
+
 def test_the_cli_writes_a_workbook(tmp_path, monkeypatch):
     pytest.importorskip("openpyxl")
     from dynamic_pdf import cli

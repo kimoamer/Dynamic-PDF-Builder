@@ -41,6 +41,7 @@ from ..media import (LOW_RESOLUTION_DPI, check_resolution, fit_image, flow_box, 
 from ..schema.enums import Orientation, PageSize
 from ..schema.theme import Theme
 from ..utils.errors import BlockRenderError, DynamicPDFError
+from ..utils.color import legible
 from . import docx_fields as F
 from . import docx_media as M
 from .docx_archetypes import ArchetypeDocx
@@ -397,6 +398,9 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         arabic = self.tokens.fonts.arabic
         mono = word_font(self.tokens.fonts.mono)
         rtl_para = is_rtl_text(md_text or "")
+        if rtl_para or self.rtl_doc:
+            from ..rtl import percent_mark
+            md_text = percent_mark(md_text)                  # the sign after the number, as in the PDF
         commented: List = []                   # runs of the comment being written, and its text
         for tr in parse_inline(md_text or ""):
             if commented and commented[-1] != tr.comment:
@@ -805,7 +809,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         for para in (b.content or "").split("\n\n") if isinstance(b.content, str) else (b.content or []):
             if str(para).strip():
                 self._runs(self._para(c, "Body Text", str(para)), str(para))
-        if not back:
+        if not back and not (b.hints or {}).get("signed"):          # signed: the break follows the signatures
             self._page_break(c)
 
     # ─── lists ───
@@ -814,10 +818,14 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         if num_id is None:
             num_id = self.lists.new_instance(ordered, start)
         child_ids = {}
-        for it in items:
+        # a short flat list stays on one page: Word would leave its last entry alone on the next
+        whole = level == 0 and len(items) <= 6 and all(isinstance(it, str) or not it.children for it in items)
+        for n, it in enumerate(items):
             text = it if isinstance(it, str) else it.text
             checked = None if isinstance(it, str) else it.checked
             p = self._para(c, "List Paragraph", text)
+            if whole and n < len(items) - 1:
+                p.paragraph_format.keep_with_next = True
             F.ListNumbering.apply(p, num_id, level)
             if is_rtl_text(text):
                 self.lists.keep_label_inside(p, level, ordered)
@@ -1303,7 +1311,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         """The chart as a Word chart, when Word has one like it; False leaves it to the picture,
         which also reports data the chart cannot draw."""
         from . import docx_chart as WC
-        from .chart import _colors, _paper, _paper_block, _sized
+        from .chart import _branded, _colors, _paper, _paper_block, _sized
         key = b.chart_type.lower().replace("-", "_").replace(" ", "_")
         if key not in WC.NATIVE:
             return False
@@ -1312,7 +1320,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         except Exception:  # noqa: BLE001 - the picture path raises it under the caller's policy
             return False
         sized = _sized(b)
-        look = _paper_block(sized, key) if _paper(self.theme) else sized
+        look = _paper_block(sized, key) if _paper(self.theme) else _branded(sized, self.theme)
         n = len(cats) if (key in WC.ONE_SERIES) else len(series)
         colours = _colors(look, max(n, 1))
         width = min(self.content_width_pt, 6.3 * 72, look.width * 72)
@@ -1470,7 +1478,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                 neg = m.delta.strip().startswith(("-", "−", "▼"))
                 p = self._para(cell, "Normal", m.delta)
                 self._runs(p, m.delta, size=self.tokens.caption_size + 1,
-                           color=self.tokens.colors["error" if neg else "success"])
+                           color=legible(self.tokens.colors["error" if neg else "success"]))
         self._spacer_after(c)
 
     def _b_progress_bar(self, c, b):
@@ -1504,7 +1512,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                 inner.rows[0].cells[0].width = Pt(bar_w * pct)
                 inner.rows[0].cells[1].width = Pt(bar_w * (1 - pct))
                 F.set_cell_shading(inner.rows[0].cells[1], "#E5E7EB")
-            txt = f"{it.value:g} / {it.max_value:g}" if b.show_value else f"{pct:.0%}"
+            txt = f"{it.value:,g} / {it.max_value:,g}" if b.show_value else f"{pct:.0%}"
             if b.show_delta and it.delta:
                 txt += f"  ({it.delta})"
             p = self._para(val, "Table Text", txt)
@@ -1902,14 +1910,20 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         kids = [[coerce_child(x) for x in blocks] for blocks in cols]
         # signatures side by side stand on one line, whether or not each has a picture over it
         signing = all(getattr(x, "type", None) == "signature" for col in kids for x in col)
-        for i, (blocks, ratio) in enumerate(zip(kids, ratios)):
-            cell = t.rows[0].cells[i]
-            cell.width = Pt(self.content_width_pt * ratio)
-            if signing:
-                from docx.enum.table import WD_ALIGN_VERTICAL
-                cell.vertical_alignment = WD_ALIGN_VERTICAL.BOTTOM
-            for child in blocks:
-                self._block_safe(cell, child)
+        page = self.content_width_pt
+        try:
+            for i, (blocks, ratio) in enumerate(zip(kids, ratios)):
+                cell = t.rows[0].cells[i]
+                cell.width = Pt(page * ratio)
+                if signing:
+                    from docx.enum.table import WD_ALIGN_VERTICAL
+                    cell.vertical_alignment = WD_ALIGN_VERTICAL.BOTTOM
+                # what a picture, chart or shape in this column may use: the column less its gap (160 twips)
+                self.content_width_pt = page * ratio - 8
+                for child in blocks:
+                    self._block_safe(cell, child)
+        finally:
+            self.content_width_pt = page
         self._spacer_after(c)
 
     def _b_two_column(self, c, b):

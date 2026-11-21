@@ -67,7 +67,8 @@ def _reshape(text: str) -> str:
         return text
     if _RESHAPER is None:
         _RESHAPER = arabic_reshaper.ArabicReshaper(configuration={"delete_harakat": False})
-    return _RESHAPER.reshape(text)
+    from ..rtl import percent_mark
+    return percent_mark(_RESHAPER.reshape(text))
 
 
 def _apply_rtl(text: str, base_dir: Optional[str] = None) -> str:
@@ -412,6 +413,9 @@ def _md_inline(text: str) -> str:
     # line for display (reordering before line breaking reversed line order)
     if _ARABIC_RE.search(text):
         text = _reshape(text)
+    elif _diag.current().language == "ar":          # a figure alone in an Arabic document's cell
+        from ..rtl import percent_mark
+        text = percent_mark(text)
     text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     # Inline code spans and backslash escapes ("\*" is a literal "*", as in CommonMark and
     # the DOCX) are protected from further inline processing; whichever starts first wins
@@ -460,7 +464,9 @@ def _md_inline(text: str) -> str:
     text = re.sub(r'<sup>(.+?)</sup>', r'<super>\1</super>', text)
     text = re.sub(r'(?<!\[)\^([^\^\s][^\^]*?)\^', r'<super>\1</super>', text)
     # Footnote ref: [^N]
-    text = re.sub(r'\[\^(\w+)\]', r'<super>\1</super>', text)
+    from ..core.numbering import current as _numbering
+    num = _numbering()
+    text = re.sub(r'\[\^(\w+)\]', lambda m: f"<super>{num.note(m.group(1)) if num else m.group(1)}</super>", text)
     # Characters the standard fonts lack (✓ → ≥ …) are drawn with a bundled
     # face that has them instead of ReportLab's silent wrong-glyph substitution.
     text = _glyph_fallback(text)
@@ -816,11 +822,15 @@ class HorizontalProgressBar(Flowable):
         vx = bar_x + bar_w + 8
         c.setFillColor(_safe_color(self.text_color))
         c.setFont(self.font_name, self.font_size + 1)
-        c.drawRightString(vx + self.value_width - 5, y_mid - 4, str(int(self.value)))
+        v = float(self.value)
+        # as written: 49.2 stays 49.2, 86000 reads 86,000
+        c.drawRightString(vx + self.value_width - 5, y_mid - 4,
+                          f"{v:,.0f}" if v.is_integer() else f"{v:,.{min(len(repr(v).split('.')[1]), 2)}f}")
         if self.delta:
+            from ..utils.color import legible
             dx = vx + self.value_width
             is_pos = self.delta.startswith("+")
-            c.setFillColor(_safe_color("#38A169" if is_pos else "#E53E3E"))
+            c.setFillColor(_safe_color(legible("#38A169" if is_pos else "#E53E3E")))
             c.setFont(self.font_name, self.font_size - 1)
             c.drawString(dx, y_mid - 4, self.delta)
         c.restoreState()
@@ -855,7 +865,7 @@ class ScoreDisplay(Flowable):
         ss = str(int(self.score))
         c.drawString(10, 20, ss)
         sw = c.stringWidth(ss, self.font_name, self.big_size)
-        c.setFillColor(_safe_color("#718096"))
+        c.setFillColor(_safe_color("#5A6577"))
         c.setFont(self.font_name, self.big_size * 0.4)
         c.drawString(10 + sw + 2, 20 + self.big_size * 0.1, f"/{int(self.max_score)}")
         mw = c.stringWidth(f"/{int(self.max_score)}", self.font_name, self.big_size * 0.4)
@@ -1022,8 +1032,18 @@ class ShapeFlowable(Flowable):
             rtl = _is_rtl(b.label)
             ink = b.label_color or (readable_on(b.fill_color) if b.fill_color else self.theme.colors.text_primary)
             font = _arabic_font(self.theme, bold=True) if rtl else get_font_name(self.theme.typography.body_family, bold=True)
-            para = Paragraph(_plain_markup(b.label), ParagraphStyle(
-                "ShapeLabel", fontName=font, fontSize=10, leading=16 if rtl else 13, alignment=1, textColor=_safe_color(ink)))
+            # inline Markdown; several lines set the first as a headline over the rest (a figure over
+            # what it counts), sized to the shape
+            lines = [ln.strip() for ln in re.split(r"\n|<br\s*/?>", b.label) if ln.strip()]
+            markup = "<br/>".join(_md_inline(ln) for ln in lines)
+            if len(lines) > 1:
+                plain = re.sub(r"[*_`]", "", lines[0])
+                lead = max(10.0, min((b.width - 16) / (max(len(plain), 3) * 0.6), b.height * 0.22, 30.0))
+                markup = (f'<font size="{lead:.1f}">{_md_inline(lines[0])}</font><br/>'
+                          + "<br/>".join(_md_inline(ln) for ln in lines[1:]))
+            para = Paragraph(markup, ParagraphStyle(
+                "ShapeLabel", fontName=font, fontSize=10, leading=16 if rtl else 13, alignment=1,
+                textColor=_safe_color(ink), autoLeading="max"))
             _, ph = para.wrap(max(b.width - 12, 20), b.height)
             para.drawOn(c, x + 6, y + (b.height - ph) / 2)
 
@@ -1086,7 +1106,7 @@ class LegendFlowable(Flowable):
                 c.drawString(x + 14, y - 2, item.get("label", ""))
                 desc = item.get("description", "")
                 if desc:
-                    c.setFillColor(_safe_color("#718096"))
+                    c.setFillColor(_safe_color("#5A6577"))
                     c.setFont(self.font_name, self.font_size - 1)
                     c.drawString(x + 14, y - 2 - self.font_size, desc)
                 x += 100
@@ -2344,7 +2364,8 @@ def _render_metrics(block, theme, available_width=460):
         parts = [Paragraph(_md_inline(label), lbl_sty), Paragraph(_md_inline(m.value), val_sty)]
         if m.delta:
             neg = m.delta.strip().startswith(("-", "\u2212", "\u25bc"))
-            dc = theme.colors.error if neg else theme.colors.success
+            from ..utils.color import legible
+            dc = legible(theme.colors.error if neg else theme.colors.success, theme.colors.background)
             d_sty = ParagraphStyle('MD', fontName=face(m.delta, bold=True), textColor=_safe_color(dc),
                                    fontSize=base * 0.8, leading=base * 1.2,
                                    alignment=2 if _diag.current().language == "ar" else 0)
@@ -2378,7 +2399,7 @@ def _render_progress(block, theme):
     for item in block.items:
         flowables.append(HorizontalProgressBar(
             label=item.label, value=item.value, max_value=item.max_value,
-            bar_color=item.color or theme.colors.success, benchmark=item.benchmark,
+            bar_color=item.color or theme.colors.primary, benchmark=item.benchmark,     # as Word draws it
             delta=item.delta, text_color=theme.colors.text_primary,
             bg_color=theme.colors.surface,
             font_name=get_font_name(theme.typography.body_family),
@@ -2480,7 +2501,9 @@ def _render_columns(block, theme, count, ctx=None):
             inner.available_width = cw - 8                  # what a block in this column may use
         cf = []
         for b in col:
-            cf.extend(create_flowables(b, theme, inner))
+            # a cell never splits, and KeepTogether reports a huge height to force a split
+            cf.extend(x for f in create_flowables(b, theme, inner)
+                      for x in (f._content if type(f) is KeepTogether else [f]))
         rendered.append(cf)
     # signatures side by side stand on one line, whether or not each has a picture over it
     signing = all(getattr(b, "type", None) == "signature" for col in col_lists for b in col)
@@ -2547,7 +2570,9 @@ def _render_footnote(block, theme, bs):
                          textColor=_safe_color(theme.colors.text_secondary),
                          leftIndent=theme.spacing.list_indent,
                          spaceBefore=2, spaceAfter=2)
-    marker = block.marker
+    from ..core.numbering import current as _numbering
+    num = _numbering()
+    marker = num.note(block.marker) if num else block.marker
     return [Paragraph(f"<super>{marker}</super> {_md_inline(block.text)}", sty)]
 
 
@@ -2746,7 +2771,7 @@ class TimelineDot(Flowable):
         c.setFillColor(_safe_color(self.dot_color))
         c.circle(dot_x, y_top, 5, fill=1, stroke=0)
         # Date
-        c.setFillColor(_safe_color("#718096"))
+        c.setFillColor(_safe_color("#5A6577"))
         c.setFont(self.font_name, self.font_size * 0.85)
         c.drawString(text_x, y_top - 3, self.date_str)
         # Title
@@ -2755,7 +2780,7 @@ class TimelineDot(Flowable):
         c.drawString(text_x, y_top - 3 - self.font_size * 1.3, self.title_str)
         # Description
         if self.desc_str:
-            c.setFillColor(_safe_color("#718096"))
+            c.setFillColor(_safe_color("#5A6577"))
             c.setFont(self.font_name, self.font_size * 0.9)
             c.drawString(text_x, y_top - 3 - self.font_size * 2.5, self.desc_str)
         c.restoreState()
@@ -3037,6 +3062,6 @@ def _render_introduction_page(block, theme, ctx=None):
     for para in (block.content or "").split('\n\n'):
         if para.strip():
             flowables.append(Paragraph(_md_inline(para.strip()), body_sty))
-    if not back and not getattr(ctx, "last_block", False):
+    if not back and not getattr(ctx, "last_block", False) and not (block.hints or {}).get("signed"):
         flowables.append(PageBreak())
     return flowables

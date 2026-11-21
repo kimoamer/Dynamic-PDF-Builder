@@ -60,7 +60,8 @@ def test_an_arabic_invoice_reads_from_the_right(tmp_path):
     top = _lines(pdf)[:3]                       # the title and the two date lines
     rights = [r for _, _, r in top]
     assert max(rights) - min(rights) < 2, top   # every line ends at the right margin
-    for fmt in ("docx", "xlsx"):
+    import importlib.util
+    for fmt in ("docx", "xlsx") if importlib.util.find_spec("openpyxl") else ("docx",):
         assert kit("invoice", _ar_invoice()).export(str(tmp_path / f"a.{fmt}"))
 
 
@@ -354,7 +355,8 @@ def test_signatures_take_a_picture_an_alignment_and_a_row(tmp_path):
     import pypdfium2.raw as raw
     from docx import Document
     sig = _signature_png(tmp_path)
-    md = (f'```signature\n{{"name": "Omar Hassan", "title": "Director", "image": "{sig}"}}\n```\n\n'
+    import json
+    md = (f'```signature\n{{"name": "Omar Hassan", "title": "Director", "image": {json.dumps(str(sig))}}}\n```\n\n'
           '```signatures\n[{"name": "A. One", "alignment": "center"}, {"name": "B. Two"}, {"name": "C. Three"}]\n```\n')
     b = DocumentBuilder.from_markdown(md)
     assert [x.type for x in b._blocks] == ["signature", "three_column"]
