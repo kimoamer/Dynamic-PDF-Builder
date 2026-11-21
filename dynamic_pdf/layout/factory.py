@@ -1452,10 +1452,10 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
         from ..schema.blocks import ListItemModel as LIM
         items = [LIM(text=i) if isinstance(i, str) else i for i in block.items]
         if list_rtl:
-            return _short_list_kept(items, _render_rtl_list(items, 'bullet', theme, bs_no_indent, sp))
+            return _render_rtl_list(items, 'bullet', theme, bs_no_indent, sp)
         if (block.hints or {}).get("columns") == 2:
             return _two_column_list(items, 'bullet', theme, bs_no_indent, sp, ctx, 1)
-        return _short_list_kept(items, [_build_list_flowable(items, 'bullet', theme, bs_no_indent, sp)])
+        return [_build_list_flowable(items, 'bullet', theme, bs_no_indent, sp)]
 
     # ─── Numbered List ───
     if btype == "numbered_list":
@@ -1466,12 +1466,12 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
         from ..schema.blocks import ListItemModel as LIM
         items = [LIM(text=i) if isinstance(i, str) else i for i in block.items]
         if list_rtl:
-            return _short_list_kept(items, _render_rtl_list(items, 'numbered', theme, bs_no_indent, sp,
-                                                            start=block.start))
+            return _render_rtl_list(items, 'numbered', theme, bs_no_indent, sp,
+                                    start=block.start)
         if (block.hints or {}).get("columns") == 2:
             return _two_column_list(items, '1', theme, bs_no_indent, sp, ctx, block.start)
-        return _short_list_kept(items, [_build_list_flowable(items, '1', theme, bs_no_indent, sp,
-                                                             start=block.start)])
+        return [_build_list_flowable(items, '1', theme, bs_no_indent, sp,
+                                     start=block.start)]
 
     # ─── Table ───
     if btype == "table":
@@ -2116,14 +2116,6 @@ def _fit_figure(flowables, block):
             target[k] = FitFigure(f, min_scale, captions)
             break
     return out
-
-
-def _short_list_kept(items, flowables):
-    """A short flat list (six items or fewer, none nested) stays on one page, as Word keeps it: its
-    last item is never left alone at the top of the next page."""
-    if len(items) <= 6 and not any(getattr(i, "children", None) for i in items):
-        return [KeepTogether(flowables)]
-    return flowables
 
 
 def _two_column_list(items, bullet_type, theme, bs, sp, ctx, start=1):

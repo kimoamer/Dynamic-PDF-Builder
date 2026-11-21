@@ -12,7 +12,7 @@ import re
 from reportlab.platypus import Flowable
 
 REF = re.compile(r"\[\^([\w-]+)\]")
-GAP = 6.0              # the rule sits in the middle of twice this, above the first note on a page
+GAP = 4.0              # the rule sits in the middle of twice this, above the first note on a page
 
 
 class FootnoteAnchor(Flowable):
