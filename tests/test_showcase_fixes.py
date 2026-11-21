@@ -158,3 +158,9 @@ def test_review_reads_the_word_file_and_a_minus_takes_a_proportional_face(tmp_pa
         pytest.skip("LibreOffice is not available")
     got = b.review(str(tmp_path), format="docx")
     assert got["passed"] and len(got["images"]) == got["pages"] >= 1
+
+
+def test_a_footnote_at_the_foot_of_the_page_counts_as_laid_out_for_the_gates():
+    md = "# Paper\n\nWe study recall.[^1]\n\n[^1]: Data available on request.\n\n## Methods\n\nTwo groups.\n"
+    variants = DocumentBuilder.from_markdown(md).design_variants(n=3).variants
+    assert variants and all(v.valid for v in variants), [v.report.hard_failures for v in variants]

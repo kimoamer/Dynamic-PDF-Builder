@@ -1328,7 +1328,7 @@ class LayoutEngine:
             # any reference, or referred to only from text laid out another way, stays where it is defined
             from ..core.normalize import block_text
             from .footnotes import REF, FootnoteAnchor
-            notes = {b.marker: b for b in self.document.blocks if getattr(b, "type", None) == "footnote"}
+            notes = {b.marker: (k, b) for k, b in enumerate(self.document.blocks) if getattr(b, "type", None) == "footnote"}
             placed: set = set()
             for i, block in enumerate(self.document.blocks):
                 if i <= skip_to:
@@ -1372,8 +1372,10 @@ class LayoutEngine:
                          if k in notes and k not in placed]
                 if fresh and result:
                     placed.update(fresh)
-                    result = list(result) + [FootnoteAnchor(p for k in fresh
-                                                             for p in create_flowables(notes[k], theme, ctx))]
+                    anchor = FootnoteAnchor(p for k in fresh for p in create_flowables(notes[k][1], theme, ctx))
+                    # the notes' blocks are laid out where the anchor is, for the gates that count every block
+                    anchor._dpb_extra_blocks, anchor._dpb_role = tuple(notes[k][0] for k in fresh), "decorative"
+                    result = list(result) + [anchor]
                 if result:
                     if self.geometry is not None or tagged:
                         from ..intelligence.geometry import tag
