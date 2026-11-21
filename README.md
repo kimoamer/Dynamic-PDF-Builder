@@ -1706,6 +1706,9 @@ each page in the PDF and in Word)
   number's right, in the PDF and in Word, so an agent had to write "في المائة" to quiet the check; and
   chart colours skip a brand accent that is only a lighter shade of the primary; and every chart's value
   axis writes thousands as 80,000, not 80000.
+- PDF footnotes sit at the foot of the page their first reference falls on, under a short rule, as Word
+  sets them (they were printed where they were defined). The text above stops short of them; a note with
+  no room left goes to the next page with the text after its reference.
 - Word: a picture, chart or shape in a column fits the column; an image panel's text box stays on the
   page of the photograph under it; a value axis with nothing below zero starts at zero in round steps.
 - The command line crashed on a Windows console as it printed its ✓ or ⚠ (the console's code page has
