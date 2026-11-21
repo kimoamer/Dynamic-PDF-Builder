@@ -73,6 +73,17 @@ def _ceiling(series: Dict[str, List[float]], stacked: bool) -> Optional[float]:
     return math.ceil(top * 1.08 / step) * step
 
 
+def _step(top: float) -> float:
+    """A round tick step that divides ``top`` exactly into at most eight parts, so the top is a tick."""
+    import math
+    unit = 10 ** math.floor(math.log10(top))
+    for k in (0.1, 0.2, 0.25, 0.5, 1, 2, 2.5, 5, 10):
+        parts = top / (unit * k)
+        if parts <= 8 + 1e-9 and abs(parts - round(parts)) < 1e-6:
+            return unit * k
+    return top / 4
+
+
 def _fill(hex_colour: str) -> str:
     return f'<c:spPr><a:solidFill><a:srgbClr val="{hex_colour.lstrip("#").upper()}"/></a:solidFill></c:spPr>'
 
@@ -85,6 +96,20 @@ def _line(hex_colour: str, width: int = 22225) -> str:
 def _labels(**show) -> str:
     flags = ("showLegendKey", "showVal", "showCatName", "showSerName", "showPercent", "showBubbleSize")
     return "<c:dLbls>" + "".join(f'<c:{f} val="{int(show.get(f, False))}"/>' for f in flags) + "</c:dLbls>"
+
+
+def _slice_labels(colours: List[str], n: int) -> str:
+    """Percent labels for a pie's slices, each in white or near-black, whichever reads on its slice."""
+    from .chart import _ink
+    flags = ("showLegendKey", "showVal", "showCatName", "showSerName", "showPercent", "showBubbleSize")
+    on = "".join(f'<c:{f} val="{int(f == "showPercent")}"/>' for f in flags)
+    each = []
+    for j in range(n):
+        ink = "FFFFFF" if _ink(colours[j % len(colours)]) == "white" else "222222"
+        each.append(f'<c:dLbl><c:idx val="{j}"/><c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="900">'
+                    f'<a:solidFill><a:srgbClr val="{ink}"/></a:solidFill></a:defRPr></a:pPr>'
+                    f'<a:endParaRPr lang="en-US"/></a:p></c:txPr>{on}</c:dLbl>')
+    return "<c:dLbls>" + "".join(each) + on + "</c:dLbls>"
 
 
 def _title(text: str, size: int) -> str:
@@ -115,7 +140,7 @@ def chart_xml(key: str, cats: List[str], series: Dict[str, List[float]], colours
                 sers.append(f'<c:ser>{head}{_fill(colours[0])}<c:invertIfNegative val="0"/>{points}'
                             f'{_labels(showVal=True)}{cat}{val}</c:ser>')
             else:
-                sers.append(f'<c:ser>{head}{points}{_labels(showPercent=True)}{cat}{val}</c:ser>')
+                sers.append(f'<c:ser>{head}{points}{_slice_labels(colours, n)}{cat}{val}</c:ser>')
         elif kind == "bar":
             show = grouping == "clustered"
             sers.append(f'<c:ser>{head}{_fill(colours[i % len(colours)])}<c:invertIfNegative val="0"/>'
@@ -144,7 +169,12 @@ def chart_xml(key: str, cats: List[str], series: Dict[str, List[float]], colours
         cat_pos, val_pos = ("l", "b") if direction == "bar" else ("b", "l")
         grey = '<c:spPr><a:ln w="6350"><a:solidFill><a:srgbClr val="D0D0D0"/></a:solidFill></a:ln></c:spPr>'
         ceiling = _ceiling(series, grouping in ("stacked", "percentStacked"))
-        top = f'<c:max val="{ceiling:g}"/>' if ceiling is not None and grouping != "percentStacked" else ""
+        scaled = ceiling is not None and grouping != "percentStacked"
+        # with no value below zero the axis starts at zero and counts up in round steps: left to
+        # itself LibreOffice steps down from the top and can start below zero (-1, 1, 3 ...)
+        floor = scaled and all(v >= 0 for vals in series.values() for v in vals)
+        top = (f'<c:max val="{ceiling:g}"/>' + ('<c:min val="0"/>' if floor else "")) if scaled else ""
+        unit = f'<c:majorUnit val="{_step(ceiling):g}"/>' if floor else ""
         body += (f'<c:catAx><c:axId val="500"/><c:scaling><c:orientation val="{"maxMin" if direction == "bar" else "minMax"}"/></c:scaling>'
                  f'<c:delete val="0"/><c:axPos val="{cat_pos}"/>' + (_title(x_label, 900) if x_label else "")
                  + f'<c:numFmt formatCode="General" sourceLinked="1"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/>'
@@ -156,7 +186,7 @@ def chart_xml(key: str, cats: List[str], series: Dict[str, List[float]], colours
                  + '<c:numFmt formatCode="General" sourceLinked="1"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/>'
                  '<c:tickLblPos val="nextTo"/><c:spPr><a:ln><a:noFill/></a:ln></c:spPr><c:crossAx val="500"/>'
                  # bars read top-down, so the value axis crosses at the last category: the bottom
-                 f'<c:crosses val="{"max" if direction == "bar" else "autoZero"}"/><c:crossBetween val="between"/></c:valAx>')
+                 f'<c:crosses val="{"max" if direction == "bar" else "autoZero"}"/><c:crossBetween val="between"/>{unit}</c:valAx>')
     keyed = legend and (kind in ("pie", "doughnut") or len(series) > 1)
     text = (f'<c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="900"><a:solidFill><a:srgbClr val="444444"/></a:solidFill>'
             f'<a:latin typeface="{escape(font)}"/><a:cs typeface="{escape(arabic_font)}"/></a:defRPr></a:pPr>'

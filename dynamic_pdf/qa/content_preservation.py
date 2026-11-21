@@ -82,6 +82,10 @@ def _as_set(text: str, ledger: ContentLedger) -> str:
         from ..core.numbering import REF
         labels = dict(ledger.refs)
         text = REF.sub(lambda m: labels.get(m.group(1), m.group(0)), text)
+    if "[^" in text and ledger.refs:
+        import re
+        labels = dict(ledger.refs)
+        text = re.sub(r"\[\^([\w-]+)\]", lambda m: f"[^{labels.get('^' + m.group(1), m.group(1))}]", text)
     return plain_text(text)
 
 

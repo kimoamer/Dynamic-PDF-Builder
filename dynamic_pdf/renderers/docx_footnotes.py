@@ -2,8 +2,8 @@
 
 A footnote the text refers to (``[^1]`` ... ``[^1]: text``) becomes a Word footnote at its
 first reference, so Word sets it at the foot of the page and keeps it numbered while the
-document is edited. A marker that is not the next automatic number ("*", "†", "a") is kept
-as written (``w:customMarkFollows``). A definition reached before any reference to it, and a
+document is edited. A one-character mark that is not a digit ("*", "†", "a") is kept
+as written (``w:customMarkFollows``); a number or a label (``[^method]``) is numbered. A definition reached before any reference to it, and a
 second reference to the same note, keep their earlier rendering (a note paragraph, a
 superscript marker): the author's text is never dropped or doubled.
 """
@@ -95,7 +95,8 @@ class Footnotes:
         if marker not in self.defs or marker in self.emitted or marker in self.in_body:
             return False
         part = self._ensure()
-        custom = marker != str(self.auto + 1)
+        from ..core.numbering import numbered_note
+        custom = not numbered_note(marker)          # a label or number is Word's next number, as in the PDF
         if not custom:
             self.auto += 1
         nid = len(self.emitted) + 1

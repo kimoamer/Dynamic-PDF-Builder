@@ -67,10 +67,14 @@ class CompositionDocx:
             widths = ([inset, plan.panel_w, width - inset - plan.panel_w] if plan.panel_x < width / 2
                       else [width - inset - plan.panel_w, plan.panel_w, inset])
             table = self._grid(c, widths, False, rows=3)
-            for row, height in zip(table.rows, (inset, plan.panel_h, inset)):
+            for r, (row, height) in enumerate(zip(table.rows, (inset, plan.panel_h, inset))):
                 _row_height(row, height, exact=height == inset)
+                F.set_cant_split(row)
                 for each in row.cells:
                     M.squeeze(each.paragraphs[0])
+                    # the panel's rows stay on one page with the photo anchored over them
+                    if r < 2:
+                        each.paragraphs[0].paragraph_format.keep_with_next = True
             cell = table.rows[1].cells[1]
         else:
             image_first = plan.image_x == 0

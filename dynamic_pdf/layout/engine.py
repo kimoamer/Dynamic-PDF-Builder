@@ -920,8 +920,9 @@ class LayoutEngine:
             c.setFont(self._body_font(), fs)
             c.drawCentredString(center_x, row1_y, line1)
 
-        # Row 2: company + address (the company once, when the first row already says it)
-        row2_y = row1_y - 11
+        # Row 2: company + address (the company once, when the first row already says it); rows
+        # close up, so without a first row it stands level with the page number
+        row2_y = row1_y - 11 if line1 else row1_y
         parts2 = [p for p in [hf.company_name, hf.address] if p and p != line1]
         if parts2:
             c.setFont(self._body_font(), ds)

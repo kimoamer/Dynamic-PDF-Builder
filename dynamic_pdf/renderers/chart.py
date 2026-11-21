@@ -74,6 +74,33 @@ def _paper_rc(theme):
     return plt.rc_context({"font.family": "STIXGeneral", "mathtext.fontset": "stix"})
 
 
+def _branded(block, theme):
+    """A chart the author gave no colours draws in the theme's (the brand's) own: primary,
+    accent, secondary, then the stock hues, leaving out any too close to one already taken or
+    too pale to see on white. A paper keeps its greys."""
+    if block.colors or theme is None or _paper(theme):
+        return block
+    c = getattr(theme, "colors", None)
+    picked = []
+    for hex_ in [getattr(c, k, None) for k in ("primary", "accent", "secondary")] + _FALLBACK_COLORS:
+        try:
+            rgb = mcolors.to_rgb(hex_)
+        except (ValueError, TypeError):
+            continue
+        pale = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2] > 0.8
+        near = any(sum((a - b) ** 2 for a, b in zip(rgb, mcolors.to_rgb(q))) < 0.04 for q in picked)
+        if not (pale or near):
+            picked.append(mcolors.to_hex(rgb))
+    return block.model_copy(update={"colors": picked})
+
+
+def _ink(colour) -> str:
+    """White or near-black, whichever reads better on ``colour``."""
+    from ..utils.color import contrast_ratio
+    hex_ = mcolors.to_hex(colour)
+    return "white" if contrast_ratio("#ffffff", hex_) >= contrast_ratio("#222222", hex_) else "#222222"
+
+
 def _colors(block, n: int) -> list:
     """n colours: the author's, repeated as given, or the palette, which never repeats a
     colour: past its end come lighter, then darker, versions of each hue."""
@@ -197,7 +224,16 @@ def _add_legend(ax, **kwargs):
     """Add legend only when the axes contain labeled artists."""
     handles, labels = ax.get_legend_handles_labels()
     if len(handles) > 1:                 # one series is named by the title; a legend would cover data
-        ax.legend(fontsize=8, framealpha=0.7, **kwargs)
+        # in a row over the plot, where it covers no bar, line or value label; the title moves up
+        # over it. It starts where the text reads from.
+        rtl = any(_ARABIC_TEXT.search(str(t)) for t in labels)
+        cols = min(len(handles), 4)
+        ax.legend(fontsize=8, frameon=False, ncol=cols, loc="lower right" if rtl else "lower left",
+                  bbox_to_anchor=(1, 1) if rtl else (0, 1), borderaxespad=0.3, handlelength=1.2,
+                  columnspacing=1.4, **kwargs)
+        if ax.get_title():
+            rows = -(-len(handles) // cols)
+            ax.set_title(ax.get_title(), fontsize=11, fontweight="bold", color="#222222", pad=10 + 13 * rows)
 
 
 def _label_axes(ax, block):
@@ -499,9 +535,9 @@ def _pie(block, theme):
         pctdistance=0.82,
         wedgeprops={"linewidth": 1.5, "edgecolor": "white"},
     )
-    for t in autotexts:
+    for t, col in zip(autotexts, c):
         t.set_fontsize(8)
-        t.set_color("white")
+        t.set_color(_ink(col))
     for t in texts:
         t.set_fontsize(9)
     if block.title:
@@ -521,9 +557,9 @@ def _donut(block, theme):
         pctdistance=0.78,
         wedgeprops={"linewidth": 1.5, "edgecolor": "white", "width": 0.5},
     )
-    for t in autotexts:
+    for t, col in zip(autotexts, c):
         t.set_fontsize(8)
-        t.set_color("#333333")
+        t.set_color(_ink(col))
     for t in texts:
         t.set_fontsize(9)
     if block.title:
@@ -590,26 +626,33 @@ def _bubble(block, theme):
     """data: [{x, y, size, label?}] or {series: [{x,y,size}]}"""
     data = block.data
     fig, ax = _fig(block)
+    pts_all = data if isinstance(data, list) else [p for v in data.values() for p in (v if isinstance(v, list) else [v])]
+    top = max([abs(float(p.get("size", 5))) for p in pts_all] + [1e-9])
+    # area stands for size; the largest bubble is about a sixth of the figure's shorter side across
+    biggest = (min(block.width, block.height) * 72 / 6) ** 2
+
+    def area(p):
+        return max(biggest * abs(float(p.get("size", 5))) / top, 40.0)
+
     if isinstance(data, list):
         c = _colors(block, len(data))
         for i, d in enumerate(data):
-            size = float(d.get("size", 10)) * 20
-            ax.scatter(float(d.get("x", i)), float(d.get("y", 0)),
-                       s=size, color=c[i], alpha=0.6,
-                       edgecolors="white", linewidths=0.5, zorder=3)
-            if "label" in d:
-                ax.annotate(d["label"],
-                            (float(d.get("x", i)), float(d.get("y", 0))),
-                            fontsize=7.5, ha="center", va="center", color="#333")
+            x, y, s = float(d.get("x", i)), float(d.get("y", 0)), area(d)
+            ax.scatter(x, y, s=s, color=c[i], alpha=0.75, edgecolors="white", linewidths=1.2, zorder=3)
+            if "label" in d:          # beside the bubble, clear of it, so the label never sits on a colour
+                ax.annotate(d["label"], (x, y), xytext=(s ** 0.5 / 2 + 3, 0), textcoords="offset points",
+                            fontsize=8, ha="left", va="center", color="#333", zorder=4)
+        ax.margins(0.18)
     elif isinstance(data, dict):
         palette = _colors(block, len(data))
         for i, (name, pts) in enumerate(data.items()):
             pts = pts if isinstance(pts, list) else [pts]
             xs = [float(p.get("x", j)) for j, p in enumerate(pts)]
             ys = [float(p.get("y", 0)) for p in pts]
-            ss = [float(p.get("size", 5)) * 20 for p in pts]
-            ax.scatter(xs, ys, s=ss, color=palette[i], alpha=0.6,
-                       edgecolors="white", linewidths=0.5, label=name, zorder=3)
+            ss = [area(p) for p in pts]
+            ax.scatter(xs, ys, s=ss, color=palette[i], alpha=0.75,
+                       edgecolors="white", linewidths=1.2, label=name, zorder=3)
+        ax.margins(0.18)
         if block.legend:
             _add_legend(ax)
     _style_ax(ax, theme)
@@ -670,7 +713,7 @@ def _heatmap(block, theme):
     for i in range(matrix.shape[0]):
         for j in range(matrix.shape[1]):
             val = matrix[i, j]
-            text_color = "white" if val > (matrix.max() * 0.6) else "#333333"
+            text_color = _ink(cmap(im.norm(val)))
             ax.text(j, i, f"{val:.4g}", ha="center", va="center",
                     fontsize=7.5, color=text_color)
     if block.title:
@@ -757,7 +800,7 @@ def _funnel(block, theme):
         ax.barh(y, val, left=left, height=0.7, color=c[i], edgecolor="white", linewidth=0.8, zorder=3)
         if val / max_val >= share[i] + 0.06:
             ax.text(max_val / 2, y, texts[i], ha="center", va="center", fontsize=9,
-                    color="white", fontweight="bold", zorder=4)
+                    color=_ink(c[i]), fontweight="bold", zorder=4)
         else:                          # too narrow for its label: set beside the stage, readable
             x = left + val + max_val * 0.03
             ax.text(x, y, texts[i], ha="left", va="center", fontsize=9, color="#333333",
@@ -827,8 +870,8 @@ def _gauge(block, theme):
             fontsize=18, fontweight="bold", color="#222222")
     ax.text(0, -0.38, inner_label, ha="center", va="center",
             fontsize=9, color="#666666")
-    ax.text(-1.1, -0.05, _num(vmin, _decimals([vmin])), ha="center", fontsize=8, color="#888888")
-    ax.text(1.1, -0.05, _num(vmax, _decimals([vmax])), ha="center", fontsize=8, color="#888888")
+    ax.text(-1.0, -0.24, _num(vmin, _decimals([vmin])), ha="center", fontsize=8, color="#888888")
+    ax.text(1.0, -0.24, _num(vmax, _decimals([vmax])), ha="center", fontsize=8, color="#888888")
 
     ax.set_xlim(-1.3, 1.3)
     ax.set_ylim(-0.5, 1.15)
@@ -871,6 +914,7 @@ def _treemap(block, theme):
         return _bar(block, theme)
 
     c = _colors(block, len(labels))
+    dec = _decimals(values)
     fig, ax = plt.subplots(figsize=(block.width, block.height))
     ax.set_facecolor("#ffffff")
     ax.set_xlim(0, 1)
@@ -890,10 +934,13 @@ def _treemap(block, theme):
                 facecolor=col, edgecolor="white", linewidth=1.5,
             )
             ax.add_patch(rect)
-            if w > 0.08 and h > 0.05:
-                ax.text(x + w / 2, y + h / 2, f"{label}\n{val * total:.4g}",
-                        ha="center", va="center", fontsize=7.5,
-                        color="white", fontweight="bold", wrap=True)
+            text = f"{label}\n{_num(val * total, dec)}"
+            # about 0.6 em a character across and 2.6 lines of height for two lines
+            size = min(w * block.width * 72 * 0.9 / (max(len(label), 4) * 0.6),
+                       h * block.height * 72 * 0.8 / 2.6, 13)
+            if size >= 6.5:
+                ax.text(x + w / 2, y + h / 2, text, ha="center", va="center", fontsize=size,
+                        color=_ink(col), fontweight="bold", linespacing=1.3)
             return
 
         # Split at midpoint by area
@@ -979,8 +1026,7 @@ def render_chart(block, theme):
                 "chart", f'unsupported type "{block.chart_type}"; supported: {", ".join(_RENDERERS)}')
 
         _check_data(key, block.data)
-        if _paper(theme):
-            block = _paper_block(block, key)
+        block = _paper_block(block, key) if _paper(theme) else _branded(block, theme)
         with _paper_rc(theme):
             fig = renderer(block, theme)
             _shape_arabic(fig, block)
@@ -1013,8 +1059,7 @@ def chart_png(block, theme, dpi: int = 200) -> bytes:
             "chart", f'unsupported type "{block.chart_type}"; supported: {", ".join(_RENDERERS)}')
     try:
         _check_data(key, block.data)
-        if _paper(theme):
-            block = _paper_block(block, key)
+        block = _paper_block(block, key) if _paper(theme) else _branded(block, theme)
         with _paper_rc(theme):
             fig = renderer(block, theme)
             _shape_arabic(fig, block)

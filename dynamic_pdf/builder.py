@@ -1068,11 +1068,11 @@ class DocumentBuilder:
         meta = self._meta
         arabic = (meta.language or "").lower().startswith("ar") or meta.rtl or meta.direction == "rtl"
         from .core.formulas import link_values
-        from .core.numbering import number_equations
+        from .core.numbering import number_equations, sign_introductions
         blocks = compute_blocks(self._blocks, "ar" if arabic else "en",
                                 strict=self._policy.strict if strict is None else strict)
         blocks = link_values(blocks)
-        blocks = number_equations(blocks)
+        blocks = sign_introductions(number_equations(blocks))
         if self._library:
             from .core.citations import apply_citations
             blocks = apply_citations(blocks, self._library, self._citation_style)

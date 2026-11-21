@@ -1679,7 +1679,27 @@ Work since v0.3.0, in brief. Design records for each step are under `docs/`.
   designs; none is packaged. Training data and tools for it are under `training/` and `tools/`.
 - License expression `MIT AND OFL-1.1` with every font licence in the package; `py.typed`.
 
-**Fixed**
+**Fixed** (found by building a full annual report with photographs, bubbles and every chart, and reading
+each page in the PDF and in Word)
+- A photograph with a caption inside a column crashed the layout.
+- Charts the author gives no colours draw in the theme's (the brand's) own: primary, accent, secondary,
+  then distinct stock hues.
+- Bubble charts size bubbles by area to read at page scale and set each label beside its bubble; a
+  chart's legend sits in a row over the plot, clear of bars and value labels.
+- Numbers on a coloured fill (doughnut and pie slices, heatmap cells, treemap tiles, funnel stages, shape
+  labels, and slices of Word's native charts) take whichever of white or near-black reads better; a delta's
+  green or red, and the timeline's grey, are deepened until they pass 4.5:1 on the page.
+- A shape's label reads inline Markdown and line breaks, and a label of several lines sets its first as a
+  headline sized to the shape (a figure over what it counts).
+- Footnotes are numbered 1, 2, 3 in document order in the PDF as in Word; a label (`[^method]`) is a
+  number, not the word, and a one-character mark (`*`, `†`) stays as written.
+- A foreword followed by its signatures keeps them on its page.
+- Progress bars draw in the brand colour in the PDF as in Word, and show a value as written (49.2,
+  86,000).
+- A footer without a first line sets its company name level with the page number.
+- The PDF check no longer calls a heading stranded when a chart drawn as vectors follows it.
+- Word: a picture, chart or shape in a column fits the column; an image panel's text box stays on the
+  page of the photograph under it; a value axis with nothing below zero starts at zero in round steps.
 - The command line crashed on a Windows console as it printed its ✓ or ⚠ (the console's code page has
   neither); it now writes a replacement character instead.
 - Word: a running title over slab headings read "Reference source not found"; a heading's rule and hang

@@ -237,7 +237,9 @@ def check_pdf(data: bytes, *, margins: Optional[dict] = None, heading_texts: Opt
             # a line that ends a sentence is the end of a paragraph, unless the heading itself
             # ends that way (extracted right-to-left lines may carry the stop at either end)
             sentence = bool(_SENTENCE_END.search(last[1]))
-            if lk and not contents_page and any((hk == lk or (len(hk) >= 2 and hk <= lk and len(lk) <= len(hk) + 1))
+            # a chart drawn as vectors (its text is paths) or a picture below the heading follows it
+            followed = max(drawn + [image_bottoms.get(pno, 0)], default=0) > last[0][3] + 12
+            if lk and not contents_page and not followed and any((hk == lk or (len(hk) >= 2 and hk <= lk and len(lk) <= len(hk) + 1))
                                                 and (not sentence or ends)
                                                 for hk, ends in head_ends):
                 rep.findings.append(Finding(severity=ERROR, code="stranded_heading", page=pno,
