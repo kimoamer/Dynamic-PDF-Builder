@@ -210,7 +210,6 @@ Table: Plans compared {#tbl-plans .vertical-headers}
 
 
 def test_vertical_headers_stand_on_their_side_in_pdf_word_and_the_workbook():
-    import openpyxl
     b = DocumentBuilder.from_markdown(VERTICAL_MD)
     table = b.build().blocks[0]
     assert table.vertical_headers and table.caption == "Plans compared" and table.id == "tbl-plans"
@@ -220,6 +219,7 @@ def test_vertical_headers_stand_on_their_side_in_pdf_word_and_the_workbook():
     assert abs(dirs["Starter plan"][1]) > 0.99 and abs(dirs["Feature"][0]) > 0.99   # side-set; the first level
     xml = zipfile.ZipFile(io.BytesIO(b.render_docx())).read("word/document.xml").decode()
     assert xml.count('w:textDirection w:val="tbRl"') == 3
+    openpyxl = pytest.importorskip("openpyxl")       # the workbook is an optional extra
     ws = openpyxl.load_workbook(io.BytesIO(b.render_xlsx())).worksheets[0]
     assert [ws.cell(1, c).alignment.text_rotation for c in range(1, 5)] == [0, 180, 180, 180]
 
@@ -246,7 +246,6 @@ def test_word_gallery_names_are_read_and_unknown_ones_left_alone():
 
 
 def test_a_gallery_style_fills_the_header_with_its_accent_in_pdf_word_and_the_workbook():
-    import openpyxl
     from dynamic_pdf.design.table_looks import accents
     b = DocumentBuilder.from_markdown(GALLERY.format("grid-table-4-accent-1")).theme("executive")
     accent = accents(b._prepared()[1])[1].lstrip("#").upper()
@@ -255,6 +254,7 @@ def test_a_gallery_style_fills_the_header_with_its_accent_in_pdf_word_and_the_wo
     assert accent in fills
     xml = zipfile.ZipFile(io.BytesIO(b.render_docx())).read("word/document.xml").decode()
     assert f'w:fill="{accent}"' in xml and "<w:tcBorders>" in xml
+    openpyxl = pytest.importorskip("openpyxl")
     ws = openpyxl.load_workbook(io.BytesIO(b.render_xlsx())).worksheets[0]
     assert ws.cell(1, 1).fill.fgColor.rgb.endswith(accent) and ws.cell(1, 1).font.b
 
