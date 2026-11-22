@@ -286,6 +286,11 @@ class BandWriter:
                 F.add_field(p, _LIVE[part], "1", lambda r: style(r))
             elif part in ("section", "chapter"):
                 sample = self.sample.get(part, "")
+                level = self.r.band_heading_level(part)
+                if not any(b.type == "heading" and b.level == level for b in self.r.sem.blocks):
+                    if sample:                   # no such heading: Word would print "Reference source not found"
+                        style(p.add_run(sample), sample)
+                    continue
                 F.add_field(p, f'STYLEREF "{self.r.band_heading_style(part)}"', sample, lambda r, s=sample: style(r, s))
             elif part:
                 style(p.add_run(part), part)

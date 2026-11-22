@@ -437,8 +437,22 @@ def _render_flowchart(block, theme):
     colors = block.colors or _FALLBACK_COLORS
 
     positions = _layout_flowchart(nodes, edges, direction)
+    # boxes as wide as their longest line and as tall as their lines, the layout spread to hold them, and
+    # the figure drawn at one scale so the whole of it, text and boxes alike, shrinks together to fit
+    lines = [ln for n in nodes for ln in str(n["label"]).split("\n")] or [""]
+    nw = max(1.6, max(len(ln) for ln in lines) * 0.085 + 0.5)
+    nh = max(0.7, max(len(str(n["label"]).split("\n")) for n in nodes) * 0.3 + 0.25) if nodes else 0.7
+    lr = direction == "LR"                           # the layout puts layers 2.5 apart across, 2.0 down
+    sx = (nw + (0.9 if lr else 0.5)) / 2.5
+    sy = (nh + (0.5 if lr else 0.8)) / 2.0
+    positions = {k: (x * sx, y * sy) for k, (x, y) in positions.items()}
+    xs = [x for x, _ in positions.values()] or [0.0]
+    ys = [y for _, y in positions.values()] or [0.0]
+    x0, x1 = min(xs) - nw / 2 - 0.4, max(xs) + nw / 2 + 0.4
+    y0, y1 = min(ys) - nh / 2 - 0.4, max(ys) + nh / 2 + 0.4
+    unit = 0.75                                      # inches per layout unit
 
-    fig, ax = plt.subplots(figsize=(block.width, block.height))
+    fig, ax = plt.subplots(figsize=((x1 - x0) * unit, (y1 - y0) * unit + (0.4 if block.title else 0)))
     fig.patch.set_facecolor("white")
     ax.set_facecolor("white")
 
@@ -451,7 +465,7 @@ def _render_flowchart(block, theme):
                        label=e.get("label", ""), directed=directed,
                        edge_color=e.get("color", "#555555"),
                        edge_style=e.get("style", "solid"),
-                       curve=curve)
+                       node_width=nw, node_height=nh, curve=curve)
 
     # Draw nodes
     for i, node in enumerate(nodes):
@@ -464,21 +478,22 @@ def _render_flowchart(block, theme):
         text_color = node.get("text_color", "#FFFFFF")
         border_style = node.get("border_style", "solid")
         _draw_node(ax, x, y, node["label"], shape=shape, color=color,
-                   text_color=text_color, border_style=border_style)
+                   text_color=text_color, border_style=border_style, node_width=nw, node_height=nh)
 
     # Title
     if block.title:
         ax.set_title(block.title, fontsize=11, fontweight="bold",
                      color="#222222", pad=12, fontfamily="sans-serif")
 
+    ax.set_xlim(x0, x1)
+    ax.set_ylim(y0, y1)
     ax.set_aspect("equal")
     ax.axis("off")
-    ax.autoscale(tight=True)
-    margin = 0.8
-    ax.margins(margin / block.width, margin / block.height)
     fig.tight_layout(pad=0.5)
-
-    return _fig_to_drawing(fig, block.width, block.height)
+    # a tall chart may take more of the page than the default height rather than shrink its text; a height
+    # the author set is kept
+    tall = block.height if "height" in block.model_fields_set else max(block.height, min(6.5, fig.get_figheight()))
+    return _fig_to_drawing(fig, block.width, tall)
 
 
 def _render_tree(block, theme):

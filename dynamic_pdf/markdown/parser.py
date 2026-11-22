@@ -18,7 +18,7 @@ from ..schema.blocks import (
 
 
 _FN_DEF_SENTINEL = "\u2063FNDEF\u2063"
-_FN_DEF_RE = re.compile("(?m)^" + _FN_DEF_SENTINEL + r"(\w+):[ \t]*(.*?)(?=\n" + _FN_DEF_SENTINEL + r"|\Z)",
+_FN_DEF_RE = re.compile("(?m)^" + _FN_DEF_SENTINEL + r"([\w-]+):[ \t]*(.*?)(?=\n" + _FN_DEF_SENTINEL + r"|\Z)",
                         re.DOTALL)
 
 
@@ -71,7 +71,7 @@ def _tokens(md_text: str) -> list:
     """markdown-it tokens exactly as the block parser sees them (also used by streaming)."""
     # Footnote definitions ("[^1]: text") would otherwise be consumed by
     # CommonMark as link reference definitions and silently disappear.
-    md_text = re.sub(r'(?m)^\[\^(\w+)\]:', _FN_DEF_SENTINEL + r'\1:', md_text)
+    md_text = re.sub(r'(?m)^\[\^([\w-]+)\]:', _FN_DEF_SENTINEL + r'\1:', md_text)
     md = MarkdownIt("commonmark", {"html": False}).enable(["table", "strikethrough"])
     return md.parse(md_text)
 
@@ -168,7 +168,25 @@ def _parse_body(md_text: str) -> list:
             # "Table: caption {#id}" right after a table is that table's caption (Pandoc's form)
             cap = _TABLE_CAPTION.match(content)
             if cap and blocks and blocks[-1].type == "table" and not blocks[-1].caption:
-                caption, anchor = _attr_id(cap.group(1))
+                text = cap.group(1)
+                # Pandoc's classes beside the id: {.vertical-headers} sets the headers on their side, {.level-headers} not
+                attrs = re.search(r"\s*\{([^{}]*)\}\s*$", text)
+                if attrs:
+                    from ..design.table_looks import parse as table_look
+                    toks, rest = attrs.group(1).split(), []
+                    look = next((t[1:] for t in toks if t.startswith(".") and table_look(t[1:])), None)
+                    accent = next((t[1:] for t in toks if re.fullmatch(r"\.accent-[1-6]", t)), None)
+                    for t in toks:
+                        if t in (".vertical-headers", ".level-headers"):    # left alone, the page decides
+                            blocks[-1].vertical_headers = t == ".vertical-headers"
+                        elif t[1:] in (look, accent):     # Word's gallery: {.grid-table-4 .accent-2}
+                            continue
+                        else:
+                            rest.append(t)
+                    if look:
+                        blocks[-1].style = f"{look}-{accent}" if accent else look
+                    text = text[:attrs.start()] + (f" {{{' '.join(rest)}}}" if rest else "")
+                caption, anchor = _attr_id(text)
                 blocks[-1].caption, blocks[-1].id = caption, anchor or blocks[-1].id
                 blocks[-1].hints = {"table_caption": True}
                 idx += 2

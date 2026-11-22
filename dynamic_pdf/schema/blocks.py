@@ -3,7 +3,7 @@ Block models — complete catalog of content primitives.
 Every block is a Pydantic v2 model with Literal discriminator.
 """
 from typing import List, Optional, Union, Dict, Any, Literal, Annotated
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from .media import ImageTreatment, MediaPlacement, RepeatScope
 from .media_intent import MediaIntent
 
@@ -102,6 +102,27 @@ class TableBlock(BaseBlock):
     header_text_color: Optional[str] = None
     footer_row: Optional[List[str]] = None          # Summary/total row
     table_number: Optional[int] = None              # Auto-numbering: "Table 1"
+    # header cells set on their side, read top to bottom: "auto" where many narrow columns need it
+    vertical_headers: Union[bool, Literal["auto"]] = "auto"
+    merged_down: List[List[int]] = Field(default_factory=list)   # [row, column, rows]: "^^" joins a cell to the one above
+
+    @model_validator(mode="after")
+    def _join_down(self):
+        """A data cell of ``^^`` joins the cell above it, as in MultiMarkdown tables: the cells are merged."""
+        cover: Dict[int, int] = {}          # column -> first row of the merge that reaches the row before
+        found = {}
+        for r, row in enumerate(self.rows):
+            nxt = {}
+            for c, v in enumerate(row):
+                if r and str(v).strip() == "^^":
+                    row[c] = ""
+                    s = cover.get(c, r - 1)
+                    found[(s, c)] = r - s + 1
+                    nxt[c] = s
+            cover = nxt
+        if found:
+            self.merged_down = sorted([s, c, n] for (s, c), n in found.items())
+        return self
 
 # ─────────────────────── Code ───────────────────────
 

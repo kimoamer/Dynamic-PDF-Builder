@@ -88,8 +88,9 @@ Text: `**bold**`, `*italic*`, `~~struck~~`, `` `code` ``, `==highlight==`, `x^2^
 `[link](https://example.com)`, footnotes `text[^1]` with `[^1]: the note` anywhere below. Notes are
 numbered 1, 2, 3 in the order they are defined, in the PDF and in Word (`[^method]` is a number too); a
 one-character mark such as `*` or `†` is shown as written. The PDF and Word both set a note at the foot of
-the page its first reference falls on, wherever it is defined; one defined before anything refers to it
-stays where it is written.
+the page its first reference falls on, wherever it is defined, even inside a long table or paragraph that
+breaks across pages; one defined before anything refers to it stays where it is written. Keys may hold
+letters, digits and hyphens (`[^gross-margin]`).
 
 Blocks:
 
@@ -190,6 +191,34 @@ Table: Invoice lines {#invoice}
   Codes: SAR, EGP, AED, KWD, QAR, OMR, BHD, JOD, USD, EUR, and GBP in English.
 - Text can quote a cell: `The total due is {=invoice!D5}.`
 - A formula that cannot be computed stops the render with the table, the cell and the reason.
+- Word's table style gallery: `Table: Revenue by region {.grid-table-4 .accent-2}` (or
+  `b.table(..., style="Grid Table 4 Accent 2")`). Plain Table 1-5, Grid Table 1-7 and List Table 1-7, each
+  Grid and List style in black or Accent 1-6, which are the theme's (or brand's) colours. The PDF, Word and
+  the workbook draw the same fills, text and rules; the first column, which names the rows, is the one the
+  table starts from, on the right in Arabic. Combines with `.vertical-headers`.
+- Text on its side, read from top to bottom, is set where the page needs it, not by default:
+  - headers stay level first: a name too long for its column breaks between its words into up to three
+    even lines. Only a table of five columns or more, each after the first narrower than its name (a matrix
+    of ticks or short figures), that fits level nowhere within 2pt of its size sets them on their side
+    (about ten such columns on an A4 page). The first header, which names the rows, stays level. Ask for it with `{.vertical-headers}` (`vertical_headers=True`),
+    refuse it with `{.level-headers}` (`False`); left alone (`"auto"`), the page decides.
+  - merged cells: a cell of `^^` joins the cell above it (MultiMarkdown's rowspan), in Markdown, JSON and
+    `b.table(...)` rows alike:
+
+    ```markdown
+    | Quarter | Region | Revenue |
+    |---|---|---:|
+    | First quarter | North | 18.4 |
+    | ^^ | South | 9.6 |
+    | ^^ | East | 12.1 |
+    ```
+
+    The joined cell is one cell, its label in the middle. A long label that runs down a group of rows (every
+    label of its column joins two rows or more) is set on its side when it fits the rows it joins; a short
+    one ("Q1") stays level.
+  - in the PDF, Word and the workbook alike. Arabic turns the other way so it too starts at the top. A
+    right-to-left table in Word keeps its text level, with a `vertical_headers_level` warning: LibreOffice
+    does not draw side-set cells in a right-to-left section.
 - `export("tables.xlsx")` writes every table as a sheet with working formulas.
 
 ## Academic

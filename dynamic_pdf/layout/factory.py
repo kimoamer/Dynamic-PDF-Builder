@@ -466,7 +466,12 @@ def _md_inline(text: str) -> str:
     # Footnote ref: [^N]
     from ..core.numbering import current as _numbering
     num = _numbering()
-    text = re.sub(r'\[\^(\w+)\]', lambda m: f"<super>{num.note(m.group(1)) if num else m.group(1)}</super>", text)
+    def _ref(m):
+        key = m.group(1)
+        mark = (f'<onDraw name="_dpb_note" label="{key}"/>'        # the page sets the note at its foot
+                if num is not None and key in getattr(num, "page_notes", ()) else "")
+        return f"<super>{num.note(key) if num else key}</super>{mark}"
+    text = re.sub(r'\[\^([\w-]+)\]', _ref, text)
     # Characters the standard fonts lack (✓ → ≥ …) are drawn with a bundled
     # face that has them instead of ReportLab's silent wrong-glyph substitution.
     text = _glyph_fallback(text)
@@ -804,11 +809,14 @@ class HorizontalProgressBar(Flowable):
         y_mid = self.height / 2
         bar_h = 14
         bar_y = y_mid - bar_h / 2
+        room = min(self.label_width, self.width * 0.45) - 10      # the label column, never under the bar
+        # the longest label of the group sets one size for every row: smaller to fit, never cut
+        size = max(6.5, self.font_size * min(1.0, room / max(1.0, self.label_width - 14)))
         c.setFillColor(_safe_color(self.text_color))
-        c.setFont(self.font_name, self.font_size)
+        c.setFont(self.font_name, size)
         c.drawString(0, y_mid - 4, self.label)
-        bar_x = self.label_width
-        bar_w = self.width - self.label_width - self.value_width - self.delta_width - 10
+        bar_x = room + 10
+        bar_w = self.width - bar_x - self.value_width - self.delta_width - 10
         c.setFillColor(_safe_color(self.bg_color))
         c.roundRect(bar_x, bar_y, bar_w, bar_h, 3, fill=1, stroke=0)
         fill_w = max(0, min(bar_w, bar_w * (self.value / self.max_value)))
@@ -860,21 +868,23 @@ class ScoreDisplay(Flowable):
     def draw(self):
         c = self.canv
         c.saveState()
-        c.setFillColor(_safe_color(self.score_color))
+        from ..utils.color import legible
+        ink = legible(self.score_color)                 # a light accent reads too faintly on paper
+        c.setFillColor(_safe_color(ink))
         c.setFont(self.font_name, self.big_size)
-        ss = str(int(self.score))
+        ss = f"{self.score:g}"                          # as given: 4.6 stays 4.6
         c.drawString(10, 20, ss)
         sw = c.stringWidth(ss, self.font_name, self.big_size)
         c.setFillColor(_safe_color("#5A6577"))
         c.setFont(self.font_name, self.big_size * 0.4)
-        c.drawString(10 + sw + 2, 20 + self.big_size * 0.1, f"/{int(self.max_score)}")
-        mw = c.stringWidth(f"/{int(self.max_score)}", self.font_name, self.big_size * 0.4)
+        c.drawString(10 + sw + 2, 20 + self.big_size * 0.1, f"/{self.max_score:g}")
+        mw = c.stringWidth(f"/{self.max_score:g}", self.font_name, self.big_size * 0.4)
         lx = 10 + sw + mw + 20
         c.setFillColor(_safe_color(self.label_color or "#1A1A2E"))
         c.setFont(self.font_name, self.label_size)
-        c.drawString(lx, 20 + self.big_size * 0.4, self.label_str)
+        c.drawString(lx, 20 + self.big_size * 0.55, self.label_str)
         if self.sublabel_str:
-            c.setFillColor(_safe_color(self.score_color))
+            c.setFillColor(_safe_color(ink))
             c.setFont(self.font_name, self.label_size + 2)
             c.drawString(lx, 20 + self.big_size * 0.05, self.sublabel_str)
         c.restoreState()
@@ -1713,6 +1723,36 @@ def _render_rtl_list(items, list_type, theme, bs, sp, start=1):
     return out
 
 
+class VerticalText(Flowable):
+    """A cell's text set on its side, reading from top to bottom: turned a quarter clockwise, so its lines
+    go from right to left (Word's tbRl); Arabic, which runs from the right, is turned the other way so it
+    too starts at the top. Lines wrap at ``max_len`` points, the most the side-set text runs down."""
+
+    def __init__(self, para, max_len: float = 150.0):
+        super().__init__()
+        self.para, self.max_len = para, max_len
+        self.rtl = _is_rtl(getattr(para, "text", "") or "")
+
+    def wrap(self, aW, aH):
+        self.para.wrap(self.max_len, 1e6)
+        length = max(self.para.getActualLineWidths0() or [0.0]) + 1.0
+        _, across = self.para.wrap(length, 1e6)         # set at its own length, so alignment cannot shift it
+        self.width, self.height = across, length
+        return self.width, self.height
+
+    def draw(self):
+        c = self.canv
+        c.saveState()
+        if self.rtl:
+            c.translate(self.width, 0)
+            c.rotate(90)
+        else:
+            c.translate(0, self.height)
+            c.rotate(-90)
+        self.para.drawOn(c, 0, 0)
+        c.restoreState()
+
+
 def _render_table(block, theme, bs, ctx=None):
     hints = block.hints or {}
     # Column order follows the table's own language (majority of header cells),
@@ -1747,6 +1787,11 @@ def _render_table(block, theme, bs, ctx=None):
                for ci, c in enumerate(cells)]
         return list(reversed(out)) if tbl_rtl else out
     data = [_row(block.headers or [], h_sty, h_num)] if block.headers else []
+    for c, lines in (hints.get("header_lines") or {}).items():      # a wrapping header, in even lines
+        c = int(c)
+        if data and c < ncols:
+            vc = ncols - 1 - c if tbl_rtl else c
+            data[0][vc] = Paragraph("<br/>".join(_md_inline(x) for x in lines), data[0][vc].style)
     totals = set(hints.get("total_rows") or [])       # rows the author labelled total: set bold, ruled above
     t_sty = ParagraphStyle('TDt', parent=c_sty, fontName=body_font)
     t_num = ParagraphStyle('TDtn', parent=t_sty, alignment=2)
@@ -1757,6 +1802,34 @@ def _render_table(block, theme, bs, ctx=None):
         f_sty = ParagraphStyle('TF', parent=bs, firstLineIndent=0,
                                fontName=body_font, alignment=tbl_align)
         data.append(_row(block.footer_row, f_sty, ParagraphStyle('TFn', parent=f_sty, alignment=2)))
+    # a Word gallery style (Grid Table 4 Accent 2 ...): each cell's fill, text and rules, by its logical place
+    from ..design.table_looks import look_for
+    look = look_for(block.style, theme)
+    look_cmds = []
+    if look is not None:
+        rows_n = len(data)
+        for r in range(rows_n):
+            for vc in range(ncols):
+                lc = ncols - 1 - vc if tbl_rtl else vc
+                cell = look.cell(r, lc, rows_n, ncols, bool(block.headers), bool(block.footer_row))
+                para = data[r][vc]
+                face = (_arabic_font(theme, bold=cell.bold) if tbl_rtl else
+                        get_font_name(theme.typography.body_family, bold=cell.bold, italic=cell.italic))
+                data[r][vc] = Paragraph(para.text, ParagraphStyle(
+                    f'TL{r}_{vc}', parent=para.style, fontName=face,
+                    textColor=_safe_color(cell.color or theme.colors.text_primary)))
+                if cell.fill:
+                    look_cmds.append(('BACKGROUND', (vc, r), (vc, r), _safe_color(cell.fill)))
+                for side, (colour, width) in cell.rules.items():
+                    op = {"top": "LINEABOVE", "bottom": "LINEBELOW",
+                          "start": "LINEAFTER" if tbl_rtl else "LINEBEFORE",
+                          "end": "LINEBEFORE" if tbl_rtl else "LINEAFTER"}[side]
+                    look_cmds.append((op, (vc, r), (vc, r), width, _safe_color(colour)))
+    from ..core.table_types import side_set
+    side_heads, side_groups = side_set(block)       # decided by the planner from the page, by need
+    if side_heads and block.headers:
+        data[0] = [VerticalText(p) if (ncols - 1 - vc if tbl_rtl else vc) in side_heads else p
+                   for vc, p in enumerate(data[0])]
     hbg = _safe_color(block.header_bg or theme.colors.primary)
     cmds = [
         ('BACKGROUND', (0, 0), (-1, 0), hbg),
@@ -1780,7 +1853,28 @@ def _render_table(block, theme, bs, ctx=None):
         from .art import table_commands
         cmds = table_commands(design, theme, len(data), ncols, bool(block.headers), bool(block.footer_row),
                               pad, hints.get("current_col"), tbl_rtl)
+    if look is not None:                             # the look replaces the theme's fills and rules
+        cmds = [c for c in cmds if c[0] in ('ALIGN', 'VALIGN', 'TOPPADDING', 'BOTTOMPADDING', 'LEFTPADDING',
+                                            'RIGHTPADDING')] + look_cmds
+    if side_heads and block.headers:                 # side-set headers stand on the rule above the rows
+        cmds += [('VALIGN', (0, 0), (-1, 0), 'BOTTOM'), ('ALIGN', (0, 0), (-1, 0), 'CENTER')]
     head = 1 if block.headers else 0
+    row_h = c_sty.leading + 2 * (7 if pad >= 9 else 4)
+    def fill_at(vc, r):                              # the last fill drawn on a cell, else the page's
+        got = _safe_color(theme.colors.background)
+        for cmd in cmds:
+            if cmd[0] == 'BACKGROUND':
+                (x0, y0), (x1, y1) = [(a % ncols, b % len(data)) for a, b in cmd[1:3]]
+                if x0 <= vc <= x1 and y0 <= r <= y1:
+                    got = cmd[3]
+        return got
+    for r0, c, k in block.merged_down:               # "^^": a cell joined with those under it
+        vc, top = (ncols - 1 - c if tbl_rtl else c), r0 + head
+        cmds += [('SPAN', (vc, top), (vc, top + k - 1)), ('VALIGN', (vc, top), (vc, top), 'MIDDLE'),
+                 ('BACKGROUND', (vc, top), (vc, top + k - 1), fill_at(vc, top))]   # one cell, one fill
+        if c in side_groups:                         # its label on its side, down the rows it joins
+            data[top][vc] = VerticalText(data[top][vc], max_len=k * row_h - 8)
+            cmds.append(('ALIGN', (vc, top), (vc, top), 'CENTER'))
     from ..core.table_types import row_spans
     raw_rows = [list(r) for r in block.rows] + ([list(block.footer_row)] if block.footer_row else [])
     for ri, (first, last, content) in row_spans(block).items():
@@ -1880,6 +1974,9 @@ def _render_code(block, theme):
                 ct = ct.parent
             val = html_mod.escape(value).replace("\n", "<br/>").replace(" ", "&nbsp;")
             if color:
+                if pname == "default":              # a stock colour that reads too faintly on the code ground
+                    from ..utils.color import legible
+                    color = legible("#" + color, theme.colors.code_bg).lstrip("#")
                 parts.append(f'<font color="#{color}">{val}</font>')
             else:
                 parts.append(f'<font color="{theme.colors.code_text}">{val}</font>')
@@ -2396,8 +2493,15 @@ def _render_progress(block, theme):
         sub = ParagraphStyle('PSub', fontSize=theme.typography.base_size * theme.typography.caption_size_ratio,
                              textColor=_safe_color(theme.colors.text_muted), spaceAfter=8)
         flowables.append(Paragraph(_md_inline(block.subtitle), sub))
+    from reportlab.pdfbase.pdfmetrics import stringWidth
+    font = get_font_name(theme.typography.body_family)
+    size = theme.typography.base_size * 0.9
+    label_w = max(160, max((stringWidth(i.label, font, size) for i in block.items), default=0) + 14)
+    if flowables:
+        flowables[-1].keepWithNext = 1               # the title stays with its bars
     for item in block.items:
         flowables.append(HorizontalProgressBar(
+            label_width=label_w,
             label=item.label, value=item.value, max_value=item.max_value,
             bar_color=item.color or theme.colors.primary, benchmark=item.benchmark,     # as Word draws it
             delta=item.delta, text_color=theme.colors.text_primary,
@@ -2885,7 +2989,8 @@ def _build_list_flowable(items, bullet_type, theme, bs, sp, start=1, depth=0):
             parent=bs,
             firstLineIndent=0,
         )
-        text = _md_inline(item.text).replace("\n", "<br/>")
+        # the item's paragraphs on lines of their own; a single newline is a soft break, a space
+        text = re.sub(r"\n{2,}", "<br/>", _md_inline(item.text)).replace("\n", " ")
         if item.checked is not None:
             text = (CHECK_ON if item.checked else CHECK_OFF) + "  " + text
         para = Paragraph(text, item_sty)

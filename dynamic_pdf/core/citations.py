@@ -20,7 +20,7 @@ CITE = re.compile(r"\[(@[^\[\]]+?)\]")
 _ONE = re.compile(r"^\s*@([\w:.\-/]+)\s*(?:,\s*(.+?))?\s*$")
 _SKIP_TYPES = {"code", "math", "mermaid", "diagram", "qrcode", "shape", "bibliography", "citation"}
 _SKIP_FIELDS = {"type", "id", "src", "url", "key", "style", "language", "hints", "lang", "chart_type", "color",
-                "colors", "variant", "icon", "align", "alignment"}
+                "colors", "variant", "icon", "align", "alignment", "vertical_headers"}
 
 
 # ── BibTeX ─────────────────────────────────────────────────────────────────────────────
@@ -74,6 +74,8 @@ def parse_bibtex(text: str) -> Dict[str, Dict[str, str]]:
             else:
                 v = re.compile(r"[^,]*").match(rest, j)
                 value, j = v.group(0).strip(), v.end()
+            if name in ("author", "editor"):       # {World Health Organization}: one name, not a family "Organization"
+                value = " and ".join(_corporate(n) for n in re.split(r"\s+and\s+", value))
             fields[name] = _latex(value)
             c = re.compile(r"\s*,?").match(rest, j)
             j = c.end()
@@ -84,6 +86,17 @@ def parse_bibtex(text: str) -> Dict[str, Dict[str, str]]:
 
 # ── names ──────────────────────────────────────────────────────────────────────────────
 
+_WHOLE = "\ue000"           # a space inside an organisation's name, until the name is read
+
+
+def _corporate(name: str) -> str:
+    """A name wholly in braces is an organisation's: its spaces are marked so it is never split."""
+    n = name.strip()
+    if n.startswith("{") and n.endswith("}") and "{" not in n[1:-1] and "}" not in n[1:-1]:
+        return n[1:-1].replace(" ", _WHOLE)
+    return name
+
+
 def _people(field: str) -> List[Tuple[str, str]]:
     """(family, given) for each name of a BibTeX ``author`` field."""
     people = []
@@ -91,7 +104,9 @@ def _people(field: str) -> List[Tuple[str, str]]:
         name = name.strip()
         if not name:
             continue
-        if "," in name:
+        if _WHOLE in name and " " not in name:     # an organisation: the whole name, no initials
+            family, given = name.replace(_WHOLE, " "), ""
+        elif "," in name:
             family, _, given = name.partition(",")
         else:
             parts = name.split()

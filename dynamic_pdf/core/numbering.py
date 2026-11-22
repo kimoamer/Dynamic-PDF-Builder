@@ -69,7 +69,7 @@ def _content_key(block):
 def numbered_note(marker: str) -> bool:
     """A footnote key Markdown numbers (``[^1]``, ``[^method]``); a one-character mark that
     is not a digit ("*", "†", "a") is shown as written."""
-    return bool(re.fullmatch(r"\w+", marker or "")) and (marker.isdigit() or len(marker) > 1)
+    return bool(re.fullmatch(r"[\w-]+", marker or "")) and (marker.isdigit() or len(marker) > 1)
 
 
 def _walk(blocks):

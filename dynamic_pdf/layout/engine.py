@@ -149,6 +149,12 @@ _ARABIC_BASE = __import__("re").compile("[\u0600-\u06FF\u0750-\u077F]")
 class _BidiCanvas(Canvas):
     """Shapes Arabic in header/footer strings (drawn with canvas.drawString)."""
     _dpb_bidi = False
+    _dpb_notes_to = None
+
+    def _dpb_note(self, canv, kind, label):
+        """A footnote reference's mark is drawn: the document sets its note at this page's foot."""
+        if self._dpb_notes_to is not None:
+            self._dpb_notes_to(canv, kind, label)
 
     def _shape(self, text):
         if not (self._dpb_bidi and isinstance(text, str) and _ARABIC_BASE.search(text)):
@@ -316,10 +322,24 @@ class _EngineDocTemplate(BaseDocTemplate):
 
     def handle_flowable(self, flowables):
         self._expand_float(flowables)
-        from .footnotes import FootnoteAnchor
-        if flowables and isinstance(flowables[0], FootnoteAnchor):
+        from .footnotes import FootnoteAnchor, NoteCarrier
+        if flowables and isinstance(flowables[0], (FootnoteAnchor, NoteCarrier)):
             flowables[0].frame = self.frame          # it reserves its notes' room in this frame
         super().handle_flowable(flowables)
+
+    def handle_pageBegin(self):
+        super().handle_pageBegin()
+        self.canv._dpb_notes_to = self._note_drawn   # a reference's mark calls it as it is drawn
+        if hasattr(self.canv, "setNamedCB"):          # newer ReportLab looks callbacks up by name
+            self.canv.setNamedCB("_dpb_note", self.canv._dpb_note)
+
+    def _note_drawn(self, canv, kind, label):
+        """A reference is drawn on this page: its note goes to this page's foot, once."""
+        from .footnotes import reserve
+        notes, drawn = getattr(self, "_dpb_page_notes", ({}, set()))
+        if label in notes and label not in drawn:
+            drawn.add(label)
+            reserve(self.frame, notes[label])
 
     def handle_pageEnd(self):
         from .footnotes import draw_notes
@@ -349,6 +369,9 @@ class _EngineDocTemplate(BaseDocTemplate):
         flowables[i:i + 1] = flowables[i].expand(width, room, frame._y2 - frame._y1p - frame._topPadding)
 
     def handle_documentBegin(self):
+        notes = getattr(self, "_dpb_page_notes", None)
+        if notes is not None:
+            notes[1].clear()                         # each build pass places the notes afresh
         self._heading_seq = 0
         self._outline_level = -1
         geo = getattr(self, "_dpb_geometry", None)
@@ -1330,6 +1353,11 @@ class LayoutEngine:
             from .footnotes import REF, FootnoteAnchor
             notes = {b.marker: (k, b) for k, b in enumerate(self.document.blocks) if getattr(b, "type", None) == "footnote"}
             placed: set = set()
+            from .footnotes import NoteCarrier, keys_in
+            page_notes, drawn = {}, set()            # key -> its note's paragraphs; keys set on a page
+            doc_template._dpb_page_notes = (page_notes, drawn)
+            numbering = self.diagnostics.numbering
+            numbering.page_notes = set()             # references the text marks for the page to place
             for i, block in enumerate(self.document.blocks):
                 if i <= skip_to:
                     continue
@@ -1371,7 +1399,32 @@ class LayoutEngine:
                 fresh = [k for k in dict.fromkeys(m for t in block_text(block) for m in REF.findall(t))
                          if k in notes and k not in placed]
                 if fresh and result:
+                    # rebuilt with its references marked: each piece of the block that holds one leaves room
+                    # for its note on the page it falls on
+                    numbering.page_notes.update(fresh)
+                    marked = create_flowables(block, theme, ctx)
+                    found = set().union(*(keys_in(f) for f in marked)) & set(fresh)
+                    if found:
+                        for k in found:
+                            page_notes[k] = create_flowables(notes[k][1], theme, ctx)
+                        role_of = _role_for(block)
+                        result = []
+                        for f in marked:
+                            if keys_in(f) & found:
+                                c = NoteCarrier(f, page_notes, drawn)
+                                c._dpb_role = role_of(f)
+                                c._dpb_extra_blocks = tuple(notes[k][0] for k in sorted(keys_in(f) & found))
+                                f = c
+                            result.append(f)
+                    else:
+                        numbering.page_notes.difference_update(fresh)
+                    placed.update(found)
+                    fresh = [k for k in fresh if k not in found]
+                if fresh and result:
                     placed.update(fresh)
+                    self.diagnostics.warn(
+                        "footnote_after_block", f"footnote {', '.join(fresh)}: its reference could not be found in the "
+                        "laid-out block, so the note is set at the foot of the page where the block ends")
                     anchor = FootnoteAnchor(p for k in fresh for p in create_flowables(notes[k][1], theme, ctx))
                     # the notes' blocks are laid out where the anchor is, for the gates that count every block
                     anchor._dpb_extra_blocks, anchor._dpb_role = tuple(notes[k][0] for k in fresh), "decorative"

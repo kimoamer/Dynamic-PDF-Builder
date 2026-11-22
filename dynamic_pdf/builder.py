@@ -657,12 +657,18 @@ class DocumentBuilder:
               caption: Optional[str] = None, column_widths: Optional[List[float]] = None,
               header_bg: Optional[str] = None, footer_row: Optional[List[str]] = None,
               table_number: Optional[int] = None,
-              header_text_color: Optional[str] = None) -> 'DocumentBuilder':
+              header_text_color: Optional[str] = None,
+              vertical_headers: Union[bool, str] = "auto") -> 'DocumentBuilder':
+        """``vertical_headers``: whether the header cells after the first stand on their side, read top to
+        bottom (in the PDF, Word and the workbook). ``"auto"``: only where the page needs it, for many
+        columns narrower than their names that fit no other way. A cell of ``"^^"`` joins the cell above
+        it; a long merged label that runs down a group of rows is set on its side when that saves its
+        column's width."""
         self._blocks.append(TableBlock(headers=headers, rows=rows, style=style,
                                        caption=caption, column_widths=column_widths,
                                        header_bg=header_bg, footer_row=footer_row,
                                        table_number=table_number,
-                                       header_text_color=header_text_color))
+                                       header_text_color=header_text_color, vertical_headers=vertical_headers))
         return self
 
     # ─── Code ──────────────────────────────────────────────────────
@@ -768,12 +774,13 @@ class DocumentBuilder:
                 directed: Optional[bool] = None,
                 colors: Optional[List[str]] = None,
                 width: float = 6.0,
-                height: float = 4.0) -> 'DocumentBuilder':
+                height: Optional[float] = None) -> 'DocumentBuilder':
+        """``height`` in inches (4 by default); left out, a tall flowchart may take more to keep its text."""
         self._blocks.append(DiagramBlock(
             diagram_type=diagram_type,
             nodes=nodes or [], edges=edges or [],
             title=title, direction=direction, directed=directed,
-            colors=colors, width=width, height=height,
+            colors=colors, width=width, **({"height": height} if height is not None else {}),
         ))
         return self
 
@@ -1197,7 +1204,21 @@ class DocumentBuilder:
         from .renderers.xlsx_renderer import render_xlsx
         self._refuse_unprotected("workbook")
         doc = self.build()
-        data = render_xlsx(self._blocks, doc.blocks, doc.meta)
+        from .themes import get_theme
+        try:
+            theme = get_theme(doc.theme) if isinstance(doc.theme, str) else doc.theme
+        except Exception:  # noqa: BLE001 - a theme the workbook cannot name leaves Word's own accents
+            theme = None
+        blocks = list(doc.blocks)
+        tables = [i for i, b in enumerate(blocks) if b.type == "table"]
+        if self._design_mode is not None and any(blocks[i].merged_down or (blocks[i].vertical_headers == "auto"
+                                                 and len(blocks[i].headers or []) >= 5) for i in tables):
+            # what stands on its side is decided on the page: the sheet follows the designed layout
+            planned = [b for b in self._prepared()[0].blocks if b.type == "table"]
+            for i, p in zip(tables, planned):
+                side = {k: v for k, v in (p.hints or {}).items() if k.startswith("side_")}
+                blocks[i] = blocks[i].model_copy(update={"hints": {**(blocks[i].hints or {}), **side}})
+        data = render_xlsx(self._blocks, blocks, doc.meta, theme)
         if output is None:
             return data
         from .layout.engine import _write_output

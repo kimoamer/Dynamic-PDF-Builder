@@ -85,7 +85,7 @@ def _sheet_name(caption: Optional[str], n: int, used: set) -> str:
     return name
 
 
-def render_xlsx(source_blocks, computed_blocks, meta) -> bytes:
+def render_xlsx(source_blocks, computed_blocks, meta, theme=None) -> bytes:
     try:
         from openpyxl import Workbook
         from openpyxl.styles import Alignment, Font, PatternFill
@@ -105,6 +105,11 @@ def render_xlsx(source_blocks, computed_blocks, meta) -> bytes:
         grid = [list(src.headers)] + [list(r) for r in src.rows] + ([list(src.footer_row)] if src.footer_row else [])
         shown = [list(done.headers)] + [list(r) for r in done.rows] + ([list(done.footer_row)] if done.footer_row else [])
         widths = [0] * max(len(row) for row in grid)
+        from ..design.table_looks import look_for
+        look = look_for(src.style, theme)       # a Word gallery style: its fills and text, as in the PDF
+        from ..core.table_types import side_set
+        side_heads, side_groups = side_set(done)  # as the planner set them in the PDF
+        tops = {(r0 + 1, c): k for r0, c, k in src.merged_down}
         for r, row in enumerate(grid):
             for c, raw in enumerate(row):
                 text = str(raw or "")
@@ -125,8 +130,23 @@ def render_xlsx(source_blocks, computed_blocks, meta) -> bytes:
                     cell.number_format = fmt
                 if src.footer_row and r == len(grid) - 1:
                     cell.font = Font(bold=True)
+                if look is not None:
+                    x = look.cell(r, c, len(grid), len(widths), True, bool(src.footer_row))
+                    cell.fill = PatternFill("solid", fgColor=x.fill.lstrip("#")) if x.fill else PatternFill()
+                    cell.font = Font(bold=x.bold, italic=x.italic, color=(x.color or look.ink).lstrip("#").upper())
+                if (r == 0 and c in side_heads) or ((r, c) in tops and c in side_groups):
+                    # on its side, read top to bottom as in the PDF (Excel: 180 = a quarter clockwise)
+                    from ..rtl import is_rtl
+                    cell.alignment = Alignment(text_rotation=90 if is_rtl(plain_text(seen)) else 180,
+                                               vertical="bottom" if r == 0 else "center", horizontal="center")
+                    continue
+                if (r, c) in tops:
+                    cell.alignment = Alignment(wrap_text=True, vertical="center")
+                    continue
                 cell.alignment = Alignment(wrap_text=len(seen) > 40, vertical="top")
                 widths[c] = max(widths[c], min(len(plain_text(seen)), 40))
+        for (r, c), k in tops.items():          # "^^": joined with the cells under it, once all are written
+            ws.merge_cells(start_row=r + 1, start_column=c + 1, end_row=r + k, end_column=c + 1)
         for c, w in enumerate(widths):
             ws.column_dimensions[col_letter(c)].width = max(8, w + 2)
         ws.freeze_panes = "A2"

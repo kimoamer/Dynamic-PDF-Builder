@@ -25,7 +25,7 @@ from docx.enum.section import WD_ORIENT
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK, WD_COLOR_INDEX, WD_TAB_ALIGNMENT
 from docx.oxml.ns import qn
-from docx.shared import Emu, Pt
+from docx.shared import Emu, Pt, RGBColor
 from docx.table import _Cell
 
 from .. import policy as _policy
@@ -955,6 +955,16 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         hdr_bg = b.header_bg or self.tokens.colors["table_header_bg"]
         hdr_fg = b.header_text_color or self.tokens.colors["table_header_text"]
         r0 = 0
+        # side-set headers; a right-to-left section's side-set cells LibreOffice does not draw at all, so
+        # there the headers stay level rather than risk going missing
+        from ..core.table_types import side_set
+        side_heads, side_groups = side_set(b)         # decided by the planner from the page, by need
+        side = not self.rtl_doc and not is_rtl_table(sample)
+        if (side_heads or side_groups) and not side:
+            self.col.warn("vertical_headers_level", "the Word file sets this right-to-left table's text level: "
+                          "LibreOffice does not draw side-set cells in a right-to-left section (the PDF and the "
+                          "workbook set it on its side)")
+        side_heads = side_heads if side else []
         if has_header:
             row = t.rows[0]
             F.set_repeat_table_header(row)
@@ -967,8 +977,23 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                 if ci in numeric_cols:
                     p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
                 p.paragraph_format.keep_with_next = True
-                self._runs(p, str(h), bold=True, size=size,
+                lines = (hints.get("header_lines") or {}).get(ci) or (hints.get("header_lines") or {}).get(str(ci))
+                self._runs(p, "  \n".join(lines) if lines and ci not in side_heads else str(h), bold=True, size=size,
                            color=self.tokens.colors["text_primary"] if design else hdr_fg)
+                from docx.enum.table import WD_ALIGN_VERTICAL
+                if ci in side_heads:                # on its side, as the PDF sets it
+                    # turned, a line's end is the cell's foot and its "vertical" alignment runs across:
+                    # set at the line's end, in the middle across, it stands on the rule as in the PDF
+                    p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+                    F.set_cell_text_direction(cell, "tbRl")
+                    cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+                elif side_heads:
+                    cell.vertical_alignment = WD_ALIGN_VERTICAL.BOTTOM
+            if side_heads:
+                from docx.enum.table import WD_ROW_HEIGHT_RULE
+                pt = float(size or self.tokens.body_size)
+                longest = max(len(plain_text(str(headers[c]))) for c in side_heads) * pt * 0.55 + 12
+                row.height, row.height_rule = Pt(min(longest, 150.0)), WD_ROW_HEIGHT_RULE.AT_LEAST
             r0 = 1
         alt = self.tokens.colors.get("table_row_alt", "#F7F9FC")
         all_rows = rows + ([list(b.footer_row)] if b.footer_row else [])
@@ -1007,6 +1032,22 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                 tblW = F._get_or_add(t._tbl.tblPr, "w:tblW")
                 tblW.set(F.qn("w:type"), "dxa")
                 tblW.set(F.qn("w:w"), str(int(sum(nats) * 20)))
+        from ..design.table_looks import look_for
+        look = look_for(b.style, self.theme)
+        if look is not None:                # a Word gallery style: each cell's fill, text and rules, as in the PDF
+            F.set_table_borders(t, size=0)
+            rtl_table = is_rtl_table(sample)
+            for r, row in enumerate(t.rows):
+                for ci, cell in enumerate(row.cells):
+                    x = look.cell(r, ci, len(t.rows), ncols, has_header, bool(b.footer_row))
+                    # a right-to-left (bidiVisual) table reads a cell's left and right as its start and end
+                    F.set_cell_look(cell, x.fill, {{"start": "left", "end": "right"}.get(side, side): rule
+                                                   for side, rule in x.rules.items()})
+                    for p in cell.paragraphs:
+                        for run in p.runs:
+                            run.bold, run.italic = x.bold, x.italic and not rtl_table
+                            run.font.color.rgb = RGBColor.from_string((x.color or look.ink).lstrip("#").upper())
+                            run.font.cs_bold = x.bold
         if widths:
             F.set_table_layout_fixed(t)
             for ci, wv in enumerate(widths):
@@ -1023,6 +1064,24 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             for p in merged.paragraphs:              # a text, not a figure: aligned as text reads
                 if p.text.strip():
                     p.alignment = WD_ALIGN_PARAGRAPH.RIGHT if is_rtl_text(p.text) else WD_ALIGN_PARAGRAPH.LEFT
+        from docx.enum.table import WD_ALIGN_VERTICAL
+        for top, ci, k in b.merged_down:              # "^^": a cell joined with those under it
+            merged = t.cell(r0 + top, ci).merge(t.cell(r0 + top + k - 1, ci))
+            for p in list(merged.paragraphs):
+                if not p.text.strip() and len(merged.paragraphs) > 1:
+                    p._p.getparent().remove(p._p)
+            merged.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+            if side and ci in side_groups:            # its label on its side, down the rows it joins
+                F.set_cell_text_direction(merged, "tbRl")
+                for p in merged.paragraphs:
+                    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                from docx.enum.table import WD_ROW_HEIGHT_RULE
+                long = len(plain_text(merged.text)) * float(size or self.tokens.body_size) * 0.55 + 12
+                for row in t.rows[r0 + top:r0 + top + k]:     # rows tall enough between them for the label
+                    if row.height is None or row.height < Pt(long / k):
+                        row.height, row.height_rule = Pt(long / k), WD_ROW_HEIGHT_RULE.AT_LEAST
+                    for cell in row.cells:                    # the rows' own cells in their middle
+                        cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
         if design:
             self._art_table(t, {**hints, "design": design}, has_header, bool(b.footer_row), {r0 + ri for ri in totals})
         self._spacer_after(c)
@@ -1878,6 +1937,14 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
 
     def _page_break(self, c):
         if isinstance(c, _Cell):
+            return
+        # at the end of the paragraph before, not in a paragraph of its own: a page that text fills to its
+        # foot would push a break paragraph over to the next page, which it would then leave empty
+        body = getattr(getattr(c, "element", None), "body", None)
+        kids = [e for e in body if not e.tag.endswith("}sectPr")] if body is not None else []
+        if kids and kids[-1].tag.endswith("}p") and not kids[-1].xpath(".//w:sectPr"):
+            from docx.text.paragraph import Paragraph as _P
+            _P(kids[-1], c).add_run().add_break(WD_BREAK.PAGE)
             return
         p = c.add_paragraph()
         p.add_run().add_break(WD_BREAK.PAGE)

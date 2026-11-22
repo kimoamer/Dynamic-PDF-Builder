@@ -293,7 +293,7 @@ def table_types(block) -> TableTypes:
 
 
 __all__ = ["Cell", "Column", "FIGURES", "TableTypes", "ascii_digits", "header_unit", "infer_table", "measured_rows",
-           "read_cell", "row_spans", "table_types"]
+           "read_cell", "row_spans", "side_set", "table_types"]
 
 
 def row_spans(block) -> Dict[int, Tuple[int, int, int]]:
@@ -313,7 +313,10 @@ def row_spans(block) -> Dict[int, Tuple[int, int, int]]:
     if block.footer_row:
         totals.add(len(rows) - 1)
     out: Dict[int, Tuple[int, int, int]] = {}
+    down = {r for r0, _, n in getattr(block, "merged_down", []) for r in range(r0, r0 + n)}
     for ri, row in enumerate(rows):
+        if ri in down:                  # a row a cell runs down through is not joined across as well
+            continue
         cells = [str(row[ci]).strip() if ci < len(row) else "" for ci in range(ncols)]
         full = [ci for ci, c in enumerate(cells) if c]
         if full == [0]:
@@ -327,6 +330,17 @@ def row_spans(block) -> Dict[int, Tuple[int, int, int]]:
             elif kind == "label" and len(cells[last]) > 12:
                 out[ri] = (1, last, last)
     return out
+
+
+def side_set(block) -> Tuple[List[int], List[int]]:
+    """(columns whose header stands on its side, columns whose merged labels do), as the planner decided
+    from the page (``hints``); without a plan only an explicit ``vertical_headers=True`` sets headers on
+    their side, every one but the first."""
+    h = block.hints or {}
+    if "side_headers" in h:
+        return list(h["side_headers"]), list(h.get("side_groups") or [])
+    n = max([len(block.headers or [])] + [len(r) for r in block.rows] + [1])
+    return (list(range(1, n)) if block.vertical_headers is True and block.headers else []), []
 
 
 def measured_rows(block) -> List[List[str]]:
