@@ -85,6 +85,7 @@
   "headings: shallow outline: stronger H1 contrast",
   "measure: 80 chars/line",
   "tables: table 5: 2 cols, 2 rows; 10.5pt; kept on one page; columns: category, period",
-  "pagination: 1 page: fits on one page; nothing to tighten"
+  "title: the title set at the head of page one",
+  "pagination: tightened vertical rhythm (step 1): 2→1 pages (last page was 13% full)"
  ]
 }

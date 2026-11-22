@@ -30,6 +30,15 @@ PERMISSIVE = RenderPolicy(error_mode="permissive")
 STRICT = RenderPolicy(error_mode="strict")
 
 
+def first(d, kind):
+    """The first block of a kind: the design may set the title at the head of the page before it."""
+    return next(b for b in d.blocks if b.type == kind)
+
+
+def at(d, kind) -> int:
+    return next(i for i, b in enumerate(d.blocks) if b.type == kind)
+
+
 @pytest.fixture(scope="module")
 def a(tmp_path_factory):
     return cases.assets(tmp_path_factory.mktemp("assets"))
@@ -165,7 +174,7 @@ def test_lossless_max_height_cannot_drop_a_row(a):
 
 def test_running_titles_are_measured_by_width_not_by_letter_count(a):
     d, t = prepared(a)
-    heading = d.blocks[0]
+    heading = first(d, "heading")
     d.blocks.insert(0, heading.model_copy(update={"text": "W" * 110}))
     d.blocks.insert(0, heading.model_copy(update={"text": "i" * 130}))
     d.meta.page_system = PageSystem(header=Band(rows=[BandRow(start=["{section}"], max_lines=1)]), lossless=True)
@@ -179,15 +188,16 @@ def test_float_image_and_its_paragraphs_are_placed(a, side):
     d, t = floated(a, side)
     geo, _ = rendered(d, t)
     assert not score_layout(geo, d, t).hard_errors
-    assert {"figure", "caption"} <= {r.role for r in geo.regions if r.block == 2}
-    assert {r.block for r in geo.regions} >= {3, 4}
+    i = at(d, "image")
+    assert {"figure", "caption"} <= {r.role for r in geo.regions if r.block == i}
+    assert {r.block for r in geo.regions} >= {i + 1, i + 2}
 
 
 def test_float_regions_sit_beside_each_other_not_as_one_rectangle(a):
     d, t = floated(a)
     geo, _ = rendered(d, t)
     figure = next(r for r in geo.regions if r.role == "figure")
-    beside = [r for r in geo.regions if r.block == 3 and r.page == figure.page]
+    beside = [r for r in geo.regions if r.block == at(d, "image") + 1 and r.page == figure.page]
     assert beside and all(r.x1 <= figure.x0 + .5 or r.x0 >= figure.x1 - .5 for r in beside)
 
 
@@ -217,8 +227,8 @@ def test_ledger_ignores_layout_and_keeps_repeats(a):
     d, t = prepared(a)
     base = build_content_ledger(d, None, t)
     moved = d.model_copy(deep=True)
-    moved.blocks[2].placement = resolve_placement("float_end")
-    moved.blocks[2].width = 180
+    first(moved, "image").placement = resolve_placement("float_end")
+    first(moved, "image").width = 180
     moved_ledger = build_content_ledger(moved, None, t)
     assert base.fingerprint() == moved_ledger.fingerprint() and not base.diff(moved_ledger)
     assert base.strings().count(cases.EN) == 10
@@ -228,8 +238,8 @@ def test_ledger_ignores_layout_and_keeps_repeats(a):
     (lambda d: d.blocks.pop(), "lost"),
     (lambda d: d.blocks.append(d.blocks[-1]), "added"),
     (lambda d: d.blocks.__setitem__(slice(0, 2), [d.blocks[1], d.blocks[0]]), "reordered"),
-    (lambda d: setattr(d.blocks[2], "caption", "Other"), "lost"),
-    (lambda d: setattr(d.blocks[2], "alt_text", "Other"), "lost"),
+    (lambda d: setattr(first(d, "image"), "caption", "Other"), "lost"),
+    (lambda d: setattr(first(d, "image"), "alt_text", "Other"), "lost"),
 ])
 def test_ledger_detects_loss_repeats_order_and_rewording(a, change, word):
     d, t = prepared(a)
@@ -243,7 +253,7 @@ def test_ledger_keeps_diacritics_exact(a):
     d, t = prepared(a, "arabic_dense_bands")
     base = build_content_ledger(d, None, t)
     other = d.model_copy(deep=True)
-    other.blocks[1].text = other.blocks[1].text.replace("َ", "")
+    first(other, "paragraph").text = first(other, "paragraph").text.replace("َ", "")
     assert base.diff(build_content_ledger(other, None, t))
 
 
@@ -273,7 +283,7 @@ def test_arabic_extraction_mismatch_is_unknown_not_a_pass(a):
     d, t = prepared(a, "arabic_dense_bands")
     _, pdf = rendered(d, t)
     altered = d.model_copy(deep=True)
-    altered.blocks[1].text = "كلمة " * 40 + altered.blocks[1].text
+    first(altered, "paragraph").text = "كلمة " * 40 + first(altered, "paragraph").text
     report = check_preservation(build_content_ledger(altered, None, t), pdf=pdf)
     assert report.layer("pdf").status == "unknown"
 
@@ -282,7 +292,7 @@ def test_lost_latin_words_fail_the_pdf_layer(a):
     d, t = prepared(a)
     _, pdf = rendered(d, t)
     altered = d.model_copy(deep=True)
-    altered.blocks[1].text += " Zebrafish"
+    first(altered, "paragraph").text += " Zebrafish"
     assert check_preservation(build_content_ledger(altered, None, t), pdf=pdf).status == "failed"
 
 
@@ -290,7 +300,7 @@ def test_a_missing_or_repeated_paragraph_fails_the_docx_layer(a):
     d, t = prepared(a)
     base = render_docx(normalize(d), t)[0]
     longer = d.model_copy(deep=True)
-    longer.blocks.append(longer.blocks[1].model_copy(update={"text": "A paragraph the DOCX never received."}))
+    longer.blocks.append(first(longer, "paragraph").model_copy(update={"text": "A paragraph the DOCX never received."}))
     assert check_preservation(build_content_ledger(longer, None, t), docx=base).status == "failed"
     shorter = d.model_copy(deep=True)
     shorter.blocks.pop()

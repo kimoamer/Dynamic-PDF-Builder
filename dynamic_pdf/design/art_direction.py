@@ -375,8 +375,9 @@ def _opens_with_title(sem) -> bool:
     first = next((b for b in sem.blocks if b.type not in ("table_of_contents", "watermark", "page_media",
                                                           "page_section")), None)
     return (first is not None and first.type == "heading" and first.level == 1
-            and " ".join(plain_text(first.text).split()).casefold()
-            == " ".join((sem.meta.title or "").split()).casefold())
+            and ((first.hints or {}).get("document_title")          # a kit's own title line ("INVOICE")
+                 or " ".join(plain_text(first.text).split()).casefold()
+                 == " ".join((sem.meta.title or "").split()).casefold()))
 
 
 def _cover_crop(src) -> ImageTreatment:

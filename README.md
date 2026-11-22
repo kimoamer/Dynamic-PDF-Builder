@@ -1700,6 +1700,11 @@ each page in the PDF and in Word)
   86,000).
 - A footer without a first line sets its company name level with the page number.
 - The PDF check no longer calls a heading stranded when a chart drawn as vectors follows it.
+- A document without a cover shows its front-matter title at the head of page one, header band or not: the
+  band's running title is a reminder, not the title (an agent's Arabic report showed its title only in the
+  band). Not when the document opens with its own title or a page it designs itself (an opener, a
+  certificate), nor in a letter; a kit's first heading counts as its title. A title at the head of the page
+  is no cover, so page one keeps its header band.
 - Readiness for agents, from a review of the MCP path: `review` returns `verified` and `unverified` beside
   `passed` (a Word file not laid out is not a check that passed); `first_page` shows pages 9 and on of a long
   document; `kit` checks the file it writes (status, reasons, diagnostics), names every missing field at once

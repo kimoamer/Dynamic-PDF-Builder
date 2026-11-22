@@ -765,6 +765,9 @@ def kit(name: str, data: dict, theme: Optional[str] = None):
                          f"kit_example({name!r}) shows every field")
         err.missing = missing
         raise err
+    first = b._blocks[0] if b._blocks else None
+    if first is not None and first.type == "heading" and first.level == 1:   # the kit's title line is the title
+        first.hints = {**(first.hints or {}), "document_title": True}
     if data.get("logo") and name in _LOGO_HEADER:       # the brand at the head of every page
         party = data.get("seller") or data.get("sender") or {}
         values = {"company": party.get("name") or data.get("company") or data.get("prepared_by"),

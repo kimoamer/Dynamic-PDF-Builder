@@ -178,5 +178,6 @@ def settled(system: PageSystem, blocks) -> PageSystem:
     """``auto`` leaves a cover clean and treats any other first page like the rest."""
     if system.first_page != "auto":
         return system
-    cover = bool(blocks) and getattr(blocks[0], "type", None) == "cover_page"
+    cover = (bool(blocks) and getattr(blocks[0], "type", None) == "cover_page"
+             and not (getattr(blocks[0], "hints", None) or {}).get("title_block"))   # a title at the head is no cover
     return system.model_copy(update={"first_page": "none" if cover else "same"})

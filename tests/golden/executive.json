@@ -56,6 +56,7 @@
  "layout": [
   "headings: shallow outline: stronger H1 contrast",
   "measure: 83 chars/line",
+  "title: the title set at the head of page one",
   "pagination: 1 page: fits on one page; nothing to tighten"
  ]
 }

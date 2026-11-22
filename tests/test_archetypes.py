@@ -212,9 +212,8 @@ def test_docx_opener_after_a_page_break_leaves_no_blank_page_marker():
     b.paragraph("Before.")
     b.section_opener("Chapter")
     d = Document(io.BytesIO(b.render_docx()))
-    host = d.paragraphs[0]._p
+    host = next(p for p in d.paragraphs if p.text == "Before.")._p      # the paragraph before the opener
     assert host.pPr is not None and host.pPr.find(qn("w:sectPr")) is not None
-    assert d.paragraphs[0].text == "Before."
 
 
 # ─── performance page ───
