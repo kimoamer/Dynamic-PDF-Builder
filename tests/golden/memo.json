@@ -17,7 +17,7 @@
  "docx_sections": 1,
  "layout": [
   "measure: 85 chars/line",
-  "title: no header band: the title set at the head of page one",
+  "title: the title set at the head of page one",
   "pagination: 1 page: fits on one page; nothing to tighten"
  ]
 }

@@ -63,6 +63,7 @@
  "layout": [
   "headings: shallow outline: stronger H1 contrast",
   "measure: 83 chars/line",
+  "title: the title set at the head of page one",
   "pagination: 2 pages, last 70% full; kept rhythm (tightening within limits would not save a page)",
   "contents: 1 page of content measured: no contents page under 4 pages unless the author adds one"
  ]

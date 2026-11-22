@@ -161,8 +161,10 @@ def test_explicit_choices_are_hard_constraints(a, field, value):
     wanted = b._blocks[2].model_dump_json()
     b.compose("smart", media=AUTO)
     b.render()
-    assert b._prepared()[0].blocks[2].model_dump_json() == wanted
-    assert all(x["block"] != 2 or x["code"] == "explicit_locked"
+    done = b._prepared()[0].blocks
+    i = next(i for i, x in enumerate(done) if x.type == "image")       # the title may now stand before it
+    assert done[i].model_dump_json() == wanted
+    assert all(x["block"] != i or x["code"] == "explicit_locked"
                for x in b.last_composition.media_decisions) if b.last_composition.media_decisions else True
 
 
@@ -379,10 +381,11 @@ def test_placement_check_finds_overlap_and_the_wrong_side(a):
     geo = Geometry()
     from dynamic_pdf.intelligence.geometry import PageInfo
     geo.pages[1] = PageInfo(1, "main", 780, 60, 60, 480)
-    geo.regions += [Region(1, "main", 700, 500, 100, 280, 2, "figure", in_float=True),
-                    Region(1, "main", 690, 600, 90, 300, 3, "body")]
+    i = next(i for i, x in enumerate(done.blocks) if x.type == "image")
+    geo.regions += [Region(1, "main", 700, 500, 100, 280, i, "figure", in_float=True),
+                    Region(1, "main", 690, 600, 90, 300, i + 1, "body")]
     assert any("overlaps" in e for e in check_placement(d, done, geo, plan, False))
-    geo.regions[1] = Region(1, "main", 690, 600, 300, 520, 3, "body")
+    geo.regions[1] = Region(1, "main", 690, 600, 300, 520, i + 1, "body")
     assert any("wrong side" in e for e in check_placement(d, done, geo, plan, False))
     assert not check_placement(d, done, geo, plan, True)
 

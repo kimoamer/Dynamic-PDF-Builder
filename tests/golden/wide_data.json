@@ -52,6 +52,7 @@
   "measure: 85 chars/line",
   "tables: table 2: 9 cols, 30 rows; 9.5pt; splits across pages with repeated header; numeric columns [2, 3, 4, 5, 6] right-aligned; columns: category×3, currency×2, percent×2, measure, period",
   "exhibits: 1 heading intro(s) kept with the table or figure they introduce",
-  "pagination: 3 pages, last 35% full; kept rhythm (tightening within limits would not save a page)"
+  "title: the title set at the head of page one",
+  "pagination: 3 pages, last 48% full; kept rhythm (tightening within limits would not save a page)"
  ]
 }

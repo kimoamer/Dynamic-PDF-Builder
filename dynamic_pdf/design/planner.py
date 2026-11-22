@@ -253,13 +253,24 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
             sem.blocks.remove(next(b for b in sem.blocks if b.type == "heading"))
         sem.blocks.insert(0, cover)
         lp.log("cover", f"~{lp.estimated_pages:.1f} pages with a title: cover built from metadata")
-    # ── a short document whose design has no header band still shows its title (a letter does not) ──
-    elif (not plan.recipe.header_enabled and not st.has_cover and sem.meta.title and not _opens_with_title(sem)
-            and profile != Profile.LETTER):
+    # ── a document without a cover shows its title at the head of page one, header band or not: the band's
+    # running title is a reminder, not the title (a letter does not) ──
+    elif (not st.has_cover and sem.meta.title and not _opens_with_title(sem) and profile != Profile.LETTER
+            and _opens_with_flow(sem)):
         sem.blocks.insert(0, CoverPageBlock(title=sem.meta.title, subtitle=sem.meta.subject or sem.meta.description,
                                             author=sem.meta.author, hints={"title_block": True}))
-        lp.log("title", "no header band: the title set at the head of page one")
+        lp.log("title", "the title set at the head of page one")
     return lp
+
+
+_FLOW = {"heading", "paragraph", "bullet_list", "numbered_list", "checklist", "table", "chart", "image", "callout",
+         "quote", "metric_row", "two_column", "definition_list", "code", "math", "timeline"}
+
+
+def _opens_with_flow(sem: SemanticDocument) -> bool:
+    """The document starts with running content, not a page it designs itself (an opener, a certificate)."""
+    first = next((b for b in sem.blocks if b.type not in ("table_of_contents", "watermark", "page_section")), None)
+    return first is not None and first.type in _FLOW
 
 
 # ─────────────────────────── column runs ───────────────────────────
