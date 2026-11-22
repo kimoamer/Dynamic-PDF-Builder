@@ -352,8 +352,11 @@ def format_result(value, table: _Table, r: int, c: int) -> str:
     column = [table.raw(row, c) for row in range(1, len(table.grid)) if c < len(table.grid[row])]
     if re.match(r"\s*=\s*IRR\s*\(", table.raw(r, c), re.I):        # a rate, whatever its column holds
         return _digits(value * 100, 1, False, any(re.search("[٠-٩]", t) for t in column)) + "%"
+    rounded = re.match(r"\s*=\s*ROUND\s*\(.*,\s*(\d+)\s*\)\s*$", table.raw(r, c), re.I)
     if found is None:
         places = 2 if "/" in table.raw(r, c) else max([cell.decimals for _, cell in read] + [0])
+        if rounded:                                     # ROUND(x, 1) shows the places it keeps
+            places = int(rounded.group(1))
         return _digits(value, places, _grouping(column + [t for t, _ in read]), indic=False)
     text, cell = found
     if cell.kind == "percent":

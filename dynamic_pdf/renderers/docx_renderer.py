@@ -1938,6 +1938,14 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
     def _page_break(self, c):
         if isinstance(c, _Cell):
             return
+        # at the end of the paragraph before, not in a paragraph of its own: a page that text fills to its
+        # foot would push a break paragraph over to the next page, which it would then leave empty
+        body = getattr(getattr(c, "element", None), "body", None)
+        kids = [e for e in body if not e.tag.endswith("}sectPr")] if body is not None else []
+        if kids and kids[-1].tag.endswith("}p") and not kids[-1].xpath(".//w:sectPr"):
+            from docx.text.paragraph import Paragraph as _P
+            _P(kids[-1], c).add_run().add_break(WD_BREAK.PAGE)
+            return
         p = c.add_paragraph()
         p.add_run().add_break(WD_BREAK.PAGE)
         p.paragraph_format.space_after = Pt(0)

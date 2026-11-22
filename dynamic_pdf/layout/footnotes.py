@@ -47,7 +47,7 @@ def reserve(frame, paras) -> None:
     need = note_need(frame, paras)
     frame.__dict__.setdefault("_dpb_notes", []).extend(paras)
     frame._dpb_notes_h = frame.__dict__.get("_dpb_notes_h", 0) + need
-    frame._y1p += need              # the text after stops short of the notes; the next page resets it
+    frame._y1p += need              # the text after stops short of the notes; draw_notes gives it back
 
 
 class NoteCarrier(Flowable):
@@ -77,17 +77,17 @@ class NoteCarrier(Flowable):
         return note_need(self.frame, [p for k in keys for p in self.notes[k]])
 
     def wrap(self, aW, aH):
-        self.width, self.height = self.inner.wrap(aW, aH)
+        self.width, self.height = self.inner.wrapOn(self.canv, aW, aH)     # a list measures on the canvas
         need = self._need(self.inner)
         return self.width, self.height + (need if self.height + need > aH else 0)   # too tall: split it
 
     def split(self, aW, aH):
-        parts = self.inner.split(aW, aH)
+        parts = self.inner.splitOn(self.canv, aW, aH)
         if len(parts) < 2:
             return []
         need = self._need(parts[0])
         if need:                         # the first piece holds a reference: it leaves its note's room
-            parts = self.inner.split(aW, aH - need)
+            parts = self.inner.splitOn(self.canv, aW, aH - need)
             if len(parts) < 2:
                 return []
         head, rest = parts[0], parts[1:]
@@ -133,6 +133,7 @@ def draw_notes(canv, frames, color, rtl: bool) -> None:
     for frame in frames:
         notes = frame.__dict__.pop("_dpb_notes", None)
         height = frame.__dict__.pop("_dpb_notes_h", 0)
+        frame._y1p -= height            # the frame is reused: the next page gets its full height back
         if not notes:
             continue
         x, width = frame._x1 + frame._leftPadding, frame._aW

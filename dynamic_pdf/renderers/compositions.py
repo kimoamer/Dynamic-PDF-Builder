@@ -90,6 +90,8 @@ def _cell_flow(cell, theme, ctx, width: float, height: float, base: float) -> li
     if cell.value:
         out.append(_text(theme, cell.value, base * 2.6, A.ink(theme), edge, True, 1.15))
     if cell.label:
+        if cell.value:
+            out.append(Spacer(1, 3))           # a large figure's descent clears the line under it
         out.append(_text(theme, cell.label, base * 0.86, theme.colors.text_secondary, edge, False, 1.3, False))
     if cell.note:
         out += [Spacer(1, 2), _text(theme, cell.note, base * 0.78, theme.colors.text_secondary, edge, False, 1.3, False)]
