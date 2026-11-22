@@ -169,7 +169,7 @@ def _parse_body(md_text: str) -> list:
             cap = _TABLE_CAPTION.match(content)
             if cap and blocks and blocks[-1].type == "table" and not blocks[-1].caption:
                 text = cap.group(1)
-                # Pandoc's classes beside the id: {.vertical-headers} sets the headers on their side
+                # Pandoc's classes beside the id: {.vertical-headers} sets the headers on their side, {.level-headers} not
                 attrs = re.search(r"\s*\{([^{}]*)\}\s*$", text)
                 if attrs:
                     from ..design.table_looks import parse as table_look
@@ -177,8 +177,8 @@ def _parse_body(md_text: str) -> list:
                     look = next((t[1:] for t in toks if t.startswith(".") and table_look(t[1:])), None)
                     accent = next((t[1:] for t in toks if re.fullmatch(r"\.accent-[1-6]", t)), None)
                     for t in toks:
-                        if t == ".vertical-headers":
-                            blocks[-1].vertical_headers = True
+                        if t in (".vertical-headers", ".level-headers"):    # left alone, the page decides
+                            blocks[-1].vertical_headers = t == ".vertical-headers"
                         elif t[1:] in (look, accent):     # Word's gallery: {.grid-table-4 .accent-2}
                             continue
                         else:

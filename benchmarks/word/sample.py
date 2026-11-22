@@ -43,12 +43,20 @@ Table: Revenue by region
 Orders booked for the first quarter of next year already cover 70% of its plan.
 :::
 
-| Region | Retail | Wholesale | Online | Export |
-|---|:-:|:-:|:-:|:-:|
-| North | ✓ | ✓ | ✓ | — |
-| South | ✓ | — | ✓ | ✓ |
+| Region | Retail stores | Wholesale | Online shop | Export agents | Field sales | Partners | Call centre | Marketplace |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| North | ✓ | ✓ | ✓ | — | ✓ | — | ✓ | ✓ |
+| South | ✓ | — | ✓ | ✓ | — | ✓ | ✓ | — |
 
-Table: Channels by region {.vertical-headers}
+Table: Channels by region
+
+| Quarter | Region | Revenue ($M) |
+|---|---|---:|
+| First quarter | North | 18.4 |
+| ^^ | South | 9.6 |
+| ^^ | East | 12.1 |
+
+Table: Revenue by quarter
 
 ## Outlook
 

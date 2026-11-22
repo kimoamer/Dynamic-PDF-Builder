@@ -1721,11 +1721,17 @@ each page in the PDF and in Word)
   starts from), and with side-set headers.
 - A Word file without headings no longer shows "Error: Reference source not found" in its running title:
   where the document has no heading for it, the title is plain text, as in the PDF.
-- Tables can set their headers on their side (`Table: Caption {.vertical-headers}` or
-  `table(..., vertical_headers=True)`): the first header stays level, the others read from top to bottom in
-  the PDF, Word (`tbRl`) and the workbook, and no longer widen their columns. Arabic headers turn the other
-  way so they start at the top; a right-to-left Word table keeps them level, with a warning, since
-  LibreOffice does not draw side-set cells in a right-to-left section.
+- Table text set on its side, read from top to bottom, where the page needs it and not elsewhere:
+  - headers, when a table has many columns (five or more), each after the first narrower than its name,
+    and it fits at its size only with them on their side (a matrix of ticks or short figures). The first
+    header, which names the rows, stays level. `{.vertical-headers}` / `vertical_headers=True` asks for it,
+    `{.level-headers}` / `False` refuses it.
+  - merged cells: a cell of `^^` joins the cell above it, as in MultiMarkdown (`merged_down` in the
+    schema). A long label that runs down a group of rows, two or more for every label of its column, is set
+    on its side when it fits the rows it joins; a short one ("Q1") stays level.
+  - in the PDF, Word (`tbRl`, a merge with `vMerge`) and the workbook (rotated, merged). Arabic turns the
+    other way so it starts at the top; a right-to-left Word table keeps it level, with a warning, since
+    LibreOffice does not draw side-set cells in a right-to-left section.
 - A footnote referred to from inside a long table or paragraph sits on the page its reference is drawn
   on, not the page where the block ends: the reference marks the page as it is drawn, and the piece of
   the block that holds it leaves room for the note. A note that cannot be placed so is set after its block

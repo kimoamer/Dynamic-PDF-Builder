@@ -20,7 +20,7 @@ CITE = re.compile(r"\[(@[^\[\]]+?)\]")
 _ONE = re.compile(r"^\s*@([\w:.\-/]+)\s*(?:,\s*(.+?))?\s*$")
 _SKIP_TYPES = {"code", "math", "mermaid", "diagram", "qrcode", "shape", "bibliography", "citation"}
 _SKIP_FIELDS = {"type", "id", "src", "url", "key", "style", "language", "hints", "lang", "chart_type", "color",
-                "colors", "variant", "icon", "align", "alignment"}
+                "colors", "variant", "icon", "align", "alignment", "vertical_headers"}
 
 
 # ── BibTeX ─────────────────────────────────────────────────────────────────────────────

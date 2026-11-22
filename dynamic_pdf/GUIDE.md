@@ -196,12 +196,28 @@ Table: Invoice lines {#invoice}
   Grid and List style in black or Accent 1-6, which are the theme's (or brand's) colours. The PDF, Word and
   the workbook draw the same fills, text and rules; the first column, which names the rows, is the one the
   table starts from, on the right in Arabic. Combines with `.vertical-headers`.
-- Side-set headers, for many narrow columns under long names: `Table: Plans compared {.vertical-headers}`
-  (or `b.table(..., vertical_headers=True)`). The first header, which names the rows, stays level; the
-  others stand on their side and read from top to bottom, in the PDF, Word and the workbook. Arabic headers
-  turn the other way so they too start at the top. A right-to-left table in Word keeps its headers level,
-  with a `vertical_headers_level` warning: LibreOffice does not draw side-set cells in a right-to-left
-  section.
+- Text on its side, read from top to bottom, is set where the page needs it, not by default:
+  - headers: when a table has five columns or more, each after the first narrower than its name, and it
+    fits at its size only with them on their side (a matrix of ticks or short figures). The first header,
+    which names the rows, stays level. Ask for it with `{.vertical-headers}` (`vertical_headers=True`),
+    refuse it with `{.level-headers}` (`False`); left alone (`"auto"`), the page decides.
+  - merged cells: a cell of `^^` joins the cell above it (MultiMarkdown's rowspan), in Markdown, JSON and
+    `b.table(...)` rows alike:
+
+    ```markdown
+    | Quarter | Region | Revenue |
+    |---|---|---:|
+    | First quarter | North | 18.4 |
+    | ^^ | South | 9.6 |
+    | ^^ | East | 12.1 |
+    ```
+
+    The joined cell is one cell, its label in the middle. A long label that runs down a group of rows (every
+    label of its column joins two rows or more) is set on its side when it fits the rows it joins; a short
+    one ("Q1") stays level.
+  - in the PDF, Word and the workbook alike. Arabic turns the other way so it too starts at the top. A
+    right-to-left table in Word keeps its text level, with a `vertical_headers_level` warning: LibreOffice
+    does not draw side-set cells in a right-to-left section.
 - `export("tables.xlsx")` writes every table as a sheet with working formulas.
 
 ## Academic

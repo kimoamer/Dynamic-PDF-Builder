@@ -22,7 +22,7 @@ from .normalize import _NON_TEXT_FIELDS
 
 # How a block is presented, not what it says. An image's size and place belong here.
 PRESENTATION_FIELDS = {"id", "hints", "placement", "treatment", "width", "height", "alignment", "border",
-                       "shadow", "intent", "lang"}
+                       "shadow", "intent", "lang", "vertical_headers", "merged_down"}
 _META_FIELDS = ("title", "subject", "author", "language")
 _LIVE = ("{page}", "{pages}", "{section}", "{chapter}", "{date}")
 

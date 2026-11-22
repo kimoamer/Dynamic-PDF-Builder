@@ -38,6 +38,7 @@ _NON_TEXT_FIELDS = {"side", "tone", "panel_color",
     "background_image", "background_treatment", "background_color", "placement", "treatment",
     "overlay_color", "scope", "layer", "intent",
     "kind",                                  # which list a contents block draws (contents, figures, tables)
+    "vertical_headers",                      # "auto": a setting, not text
 }
 
 _block_adapter = TypeAdapter(Block)

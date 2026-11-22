@@ -1815,10 +1815,11 @@ def _render_table(block, theme, bs, ctx=None):
                           "start": "LINEAFTER" if tbl_rtl else "LINEBEFORE",
                           "end": "LINEBEFORE" if tbl_rtl else "LINEAFTER"}[side]
                     look_cmds.append((op, (vc, r), (vc, r), width, _safe_color(colour)))
-    if block.vertical_headers and block.headers:
-        # the first column names the rows: its header stays level, the data columns' stand on their side
-        stub = len(data[0]) - 1 if tbl_rtl else 0
-        data[0] = [p if i == stub else VerticalText(p) for i, p in enumerate(data[0])]
+    from ..core.table_types import side_set
+    side_heads, side_groups = side_set(block)       # decided by the planner from the page, by need
+    if side_heads and block.headers:
+        data[0] = [VerticalText(p) if (ncols - 1 - vc if tbl_rtl else vc) in side_heads else p
+                   for vc, p in enumerate(data[0])]
     hbg = _safe_color(block.header_bg or theme.colors.primary)
     cmds = [
         ('BACKGROUND', (0, 0), (-1, 0), hbg),
@@ -1845,9 +1846,25 @@ def _render_table(block, theme, bs, ctx=None):
     if look is not None:                             # the look replaces the theme's fills and rules
         cmds = [c for c in cmds if c[0] in ('ALIGN', 'VALIGN', 'TOPPADDING', 'BOTTOMPADDING', 'LEFTPADDING',
                                             'RIGHTPADDING')] + look_cmds
-    if block.vertical_headers and block.headers:     # side-set headers stand on the rule above the rows
+    if side_heads and block.headers:                 # side-set headers stand on the rule above the rows
         cmds += [('VALIGN', (0, 0), (-1, 0), 'BOTTOM'), ('ALIGN', (0, 0), (-1, 0), 'CENTER')]
     head = 1 if block.headers else 0
+    row_h = c_sty.leading + 2 * (7 if pad >= 9 else 4)
+    def fill_at(vc, r):                              # the last fill drawn on a cell, else the page's
+        got = _safe_color(theme.colors.background)
+        for cmd in cmds:
+            if cmd[0] == 'BACKGROUND':
+                (x0, y0), (x1, y1) = [(a % ncols, b % len(data)) for a, b in cmd[1:3]]
+                if x0 <= vc <= x1 and y0 <= r <= y1:
+                    got = cmd[3]
+        return got
+    for r0, c, k in block.merged_down:               # "^^": a cell joined with those under it
+        vc, top = (ncols - 1 - c if tbl_rtl else c), r0 + head
+        cmds += [('SPAN', (vc, top), (vc, top + k - 1)), ('VALIGN', (vc, top), (vc, top), 'MIDDLE'),
+                 ('BACKGROUND', (vc, top), (vc, top + k - 1), fill_at(vc, top))]   # one cell, one fill
+        if c in side_groups:                         # its label on its side, down the rows it joins
+            data[top][vc] = VerticalText(data[top][vc], max_len=k * row_h - 8)
+            cmds.append(('ALIGN', (vc, top), (vc, top), 'CENTER'))
     from ..core.table_types import row_spans
     raw_rows = [list(r) for r in block.rows] + ([list(block.footer_row)] if block.footer_row else [])
     for ri, (first, last, content) in row_spans(block).items():

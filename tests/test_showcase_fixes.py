@@ -233,6 +233,60 @@ def test_an_arabic_word_table_keeps_its_headers_level_and_says_why(tmp_path):
     assert [d["code"] for d in res.diagnostics] == ["vertical_headers_level"]
 
 
+
+def _dirs(pdf: bytes) -> dict:
+    """Each line of the first page's text, and the way it runs: (1, 0) level, (0, ±1) on its side."""
+    page = fitz.open(stream=pdf, filetype="pdf")[0]
+    return {"".join(s["text"] for s in ln["spans"]).strip(): ln["dir"]
+            for bl in page.get_text("dict")["blocks"] for ln in bl.get("lines", [])}
+
+
+CHANNELS = ("| Region | Retail stores | Wholesale | Online shop | Export agents | Field sales | Partners | Call centre "
+            "| Marketplace |\n|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|\n| North | ✓ | ✓ | ✓ | — | ✓ | — | ✓ | ✓ |\n"
+            "| South | ✓ | — | ✓ | ✓ | — | ✓ | ✓ | — |\n\nTable: Channels{}\n")
+
+
+def test_headers_stand_on_their_side_only_where_many_narrow_columns_need_it():
+    few = "| Region | Retail | Wholesale | Online |\n|---|:-:|:-:|:-:|\n| North | ✓ | ✓ | ✓ |\n"
+    assert abs(_dirs(DocumentBuilder.from_markdown(few).render())["Wholesale"][0]) > 0.99    # room enough: level
+    dirs = _dirs(DocumentBuilder.from_markdown(CHANNELS.format("")).render())
+    assert abs(dirs["Wholesale"][1]) > 0.99 and abs(dirs["Region"][0]) > 0.99   # eight narrow ones: on their side
+    level = _dirs(DocumentBuilder.from_markdown(CHANNELS.format(" {.level-headers}")).render())
+    assert all(abs(d[0]) > 0.99 for d in level.values())                       # the author's word stands
+
+
+MERGED = """| Quarter | Region | Revenue |
+|---|---|---:|
+| First quarter | North | 18.4 |
+| ^^ | South | 9.6 |
+| ^^ | East | 12.1 |
+| Second quarter | North | 19.0 |
+| ^^ | South | 10.2 |
+| ^^ | East | 12.8 |
+
+Table: Revenue by quarter
+"""
+
+
+def test_a_merged_label_is_one_cell_and_on_its_side_only_when_that_saves_its_column():
+    b = DocumentBuilder.from_markdown(MERGED)
+    table = b.build().blocks[0]
+    assert table.merged_down == [[0, 0, 3], [3, 0, 3]] and table.rows[1][0] == ""
+    pdf = b.render()
+    dirs = _dirs(pdf)
+    assert abs(dirs["First quarter"][1]) > 0.99            # a long label down three rows: on its side
+    assert "^^" not in _text(pdf)
+    short = _dirs(DocumentBuilder.from_markdown(MERGED.replace("First quarter", "Q1").replace("Second quarter", "Q2"))
+                  .render())
+    assert abs(short["Q1"][0]) > 0.99 and abs(short["Q2"][0]) > 0.99    # a short one saves nothing: level
+    xml = zipfile.ZipFile(io.BytesIO(b.render_docx())).read("word/document.xml").decode()
+    assert xml.count('<w:vMerge w:val="restart"/>') == 2 and 'w:textDirection w:val="tbRl"' in xml
+    openpyxl = pytest.importorskip("openpyxl")
+    ws = openpyxl.load_workbook(io.BytesIO(b.render_xlsx())).worksheets[0]
+    assert sorted(str(r) for r in ws.merged_cells.ranges) == ["A2:A4", "A5:A7"]
+    assert ws["A2"].alignment.text_rotation == ws["A5"].alignment.text_rotation == 180
+
+
 GALLERY = "| Region | Revenue | Share |\n|---|---:|---:|\n| North | 18.4 | 38% |\n| East | 12.1 | 25% |\n\nTable: Regions {{.{}}}\n"
 
 

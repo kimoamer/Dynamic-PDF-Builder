@@ -105,7 +105,7 @@ def test_the_workbook_prints_one_page_wide_and_keeps_a_change_sign(tmp_path):
     openpyxl = pytest.importorskip("openpyxl")
     wide = [f"Column header {i}" for i in range(9)]
     b = (DocumentBuilder().table(["Region", "Change"], [["North", "+16%"], ["South", "-3%"]])
-         .table(wide, [[str(i) for i in range(9)]]))
+         .table(wide, [[str(i) for i in range(9)]], vertical_headers=False))
     first, second = openpyxl.load_workbook(io.BytesIO(b.render_xlsx())).worksheets
     assert first["B2"].number_format.startswith("+") and first["B2"].value == 0.16
     assert first.sheet_properties.pageSetUpPr.fitToPage and first.page_setup.fitToWidth == 1

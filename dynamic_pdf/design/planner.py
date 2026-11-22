@@ -26,7 +26,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 from ..core.inline import plain_text
-from ..core.table_types import table_types
+from ..core.table_types import side_set, table_types
 from ..core.normalize import SemanticDocument
 from ..schema.blocks import CoverPageBlock
 from ..schema.enums import Orientation, PageSize
@@ -161,11 +161,13 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
         hints["cell_padding"] = pad
         from ..core.table_types import measured_rows
         measured = measured_rows(b)              # a cell that runs over empty ones takes their room, not its column's
+        hints["side_headers"], hints["side_groups"] = _side_set(b, measured, ty.body_family, size, pad, avail)
+        b.hints = hints
+        measured = _width_rows(b, measured)
         while size >= MIN_TABLE_SIZE:
             mins, nats = column_metrics(_width_headers(b), measured, ty.body_family, size, 2 * pad)
-            fracs, fits = fit_columns(mins, nats, avail)
-            # "fits" also requires readable cells: on average ≤ 2.2 lines per cell
-            fits = fits and wrap_ratio(nats, fracs, avail) <= 1.8 and sum(mins) <= 0.85 * avail
+            fracs, _ = fit_columns(mins, nats, avail)
+            fits = _fits(mins, nats, avail)      # readable cells too: on average ≤ 2.2 lines per cell
             if fits:
                 break
             size -= 0.5
@@ -196,6 +198,8 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
         if numeric:
             what += f"; numeric columns {numeric} right-aligned"
         what += f"; columns: {types.summary()}"
+        if hints["side_headers"] or hints["side_groups"]:
+            what += f"; on their side: headers {hints['side_headers']}, merged labels {hints['side_groups']}"
         if types.chart_suggestion():
             what += f" (would also read as a {types.chart_suggestion()})"
         b.hints = hints
@@ -353,11 +357,62 @@ def _tighten(theme, spacing: float, margins: float, leading_cut: float):
     ty.line_height = min(ty.line_height, max(1.3, round(ty.line_height - leading_cut, 2)))
 
 
+SIDE = "MM"          # a side-set cell is measured across, as one line of text is wide
+
+
 def _width_headers(b) -> list:
-    """The header text a column's width answers to: only the first (level) one when the others stand on
-    their side."""
-    heads = list(b.headers or [])
-    return heads[:1] + [""] * (len(heads) - 1) if getattr(b, "vertical_headers", False) else heads
+    """The header text a column's width answers to: a header set on its side takes a line's width."""
+    side, _ = side_set(b)
+    return [SIDE if ci in side else h for ci, h in enumerate(b.headers or [])]
+
+
+def _width_rows(b, rows) -> list:
+    """The cells a column's width answers to: a merged label set on its side takes a line's width."""
+    _, groups = side_set(b)
+    return [[SIDE if ci in groups and str(x).strip() else x for ci, x in enumerate(r)] for r in rows]
+
+
+def _fits(mins, nats, avail) -> bool:
+    """Every column at least its longest word, and cells read in about two lines or fewer."""
+    fracs, fits = fit_columns(mins, nats, avail)
+    return fits and wrap_ratio(nats, fracs, avail) <= 1.8 and sum(mins) <= 0.85 * avail
+
+
+def _side_set(b, measured, family: str, size: float, pad: float, avail: float):
+    """Which headers and which merged labels stand on their side, decided by need, as a typesetter would:
+
+    - a merged label, when every label of its column runs down two rows or more, is long enough that
+      setting it on its side saves its column most of its width, and fits the height of the rows it joins;
+    - headers, when there are many columns (five or more), each after the first narrower than its header, and
+      the table only fits at its size with them on their side. The first column names the rows: its
+      header stays level. ``vertical_headers=True`` or ``False`` decides it instead.
+    """
+    from .measure import text_width
+    n = max([len(b.headers or [])] + [len(r) for r in b.rows] + [1])
+    line = size * 1.3
+    row_h = line + 2 * (7 if pad >= 9 else 4)
+    starts = {(r, c): k for r, c, k in b.merged_down}
+    groups = []
+    for c in sorted({c for _, c, _ in b.merged_down}):
+        cells = [(r, plain_text(str(row[c]))) for r, row in enumerate(b.rows) if c < len(row) and str(row[c]).strip()]
+        if cells and all((r, c) in starts and 3 * line < text_width(t, family, size) <= starts[(r, c)] * row_h - 8
+                         for r, t in cells):
+            groups.append(c)
+    heads = [str(h) for h in b.headers or []]
+    if not heads or b.vertical_headers is False:
+        return [c for c in groups if c < len(heads)], groups
+    stub = next((c for c in range(n) if c not in groups), 0)       # the column that names the rows
+    every = [c for c in range(len(heads)) if c != stub]
+    if b.vertical_headers is True:
+        return every, groups
+    rows = [[SIDE if ci in groups and x.strip() else x for ci, x in enumerate(r)] for r in measured]
+    level = column_metrics([SIDE if c in groups else h for c, h in enumerate(heads)], rows, family, size, 2 * pad)
+    side = column_metrics([SIDE if c in every else h for c, h in enumerate(heads)], rows, family, size, 2 * pad)
+    narrow = all(level[0][c] > side[1][c] + 4 for c in every if c not in groups)
+    if n >= 5 and narrow and not _fits(*level, avail) and _fits(*side, avail):
+        return every, groups
+    return [c for c in groups if c < len(heads)], groups
+
 
 def fit_pages(sem: SemanticDocument, plan: DesignPlan, policy=None, max_trials: int = 2) -> None:
     """Avoid a near-empty final page by tightening vertical rhythm (bounded).
