@@ -466,7 +466,12 @@ def _md_inline(text: str) -> str:
     # Footnote ref: [^N]
     from ..core.numbering import current as _numbering
     num = _numbering()
-    text = re.sub(r'\[\^(\w+)\]', lambda m: f"<super>{num.note(m.group(1)) if num else m.group(1)}</super>", text)
+    def _ref(m):
+        key = m.group(1)
+        mark = (f'<onDraw name="_dpb_note" label="{key}"/>'        # the page sets the note at its foot
+                if num is not None and key in getattr(num, "page_notes", ()) else "")
+        return f"<super>{num.note(key) if num else key}</super>{mark}"
+    text = re.sub(r'\[\^([\w-]+)\]', _ref, text)
     # Characters the standard fonts lack (✓ → ≥ …) are drawn with a bundled
     # face that has them instead of ReportLab's silent wrong-glyph substitution.
     text = _glyph_fallback(text)

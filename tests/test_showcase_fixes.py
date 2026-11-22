@@ -176,3 +176,25 @@ def test_the_forecast_lets_two_spaces_between_blocks_overlap_as_the_frame_does()
     i = next(k for k, blk in enumerate(doc.blocks) if blk.type == "numbered_list")
     gap = tops[i - 1] - tops[i] - (ms[i - 1].height - ms[i - 1].space_after)
     assert gap <= max(ms[i - 1].space_after, ms[i].space_before) + 0.5
+
+
+def _page_with_span(doc, text):
+    return next((i for i, p in enumerate(doc) for b in p.get_text("dict")["blocks"] for ln in b.get("lines", [])
+                 if any(s["text"].strip() == text for s in ln["spans"])), None)
+
+
+@pytest.mark.parametrize("row", [1, 45, 88])
+def test_a_note_in_a_long_table_sits_on_its_references_page(row):
+    body = "\n".join((f"| Row {k}[^row-note] | {k * 10} |" if k == row else f"| Row {k} | {k * 10} |")
+                     for k in range(1, 90))
+    md = f"| Item | Value |\n|---|---:|\n{body}\n\n[^row-note]: Note for this row.\n"
+    doc = fitz.open(stream=DocumentBuilder.from_markdown(md).render(), filetype="pdf")
+    note = next(i for i, p in enumerate(doc) if "Note for this row" in p.get_text())
+    assert _page_with_span(doc, f"Row {row}") == note and len(doc) > 2
+
+
+def test_a_note_at_the_start_of_a_long_paragraph_sits_on_its_first_page():
+    para = "Opening sentence with a source.[^p] " + "Revenue grew in every region, led by the north. " * 150
+    doc = fitz.open(stream=DocumentBuilder.from_markdown(para + "\n\n[^p]: Note for the opening.\n").render(),
+                    filetype="pdf")
+    assert len(doc) > 2 and "Note for the opening" in doc[0].get_text() and "Opening sentence" in doc[0].get_text()

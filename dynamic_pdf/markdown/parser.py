@@ -18,7 +18,7 @@ from ..schema.blocks import (
 
 
 _FN_DEF_SENTINEL = "\u2063FNDEF\u2063"
-_FN_DEF_RE = re.compile("(?m)^" + _FN_DEF_SENTINEL + r"(\w+):[ \t]*(.*?)(?=\n" + _FN_DEF_SENTINEL + r"|\Z)",
+_FN_DEF_RE = re.compile("(?m)^" + _FN_DEF_SENTINEL + r"([\w-]+):[ \t]*(.*?)(?=\n" + _FN_DEF_SENTINEL + r"|\Z)",
                         re.DOTALL)
 
 
@@ -71,7 +71,7 @@ def _tokens(md_text: str) -> list:
     """markdown-it tokens exactly as the block parser sees them (also used by streaming)."""
     # Footnote definitions ("[^1]: text") would otherwise be consumed by
     # CommonMark as link reference definitions and silently disappear.
-    md_text = re.sub(r'(?m)^\[\^(\w+)\]:', _FN_DEF_SENTINEL + r'\1:', md_text)
+    md_text = re.sub(r'(?m)^\[\^([\w-]+)\]:', _FN_DEF_SENTINEL + r'\1:', md_text)
     md = MarkdownIt("commonmark", {"html": False}).enable(["table", "strikethrough"])
     return md.parse(md_text)
 

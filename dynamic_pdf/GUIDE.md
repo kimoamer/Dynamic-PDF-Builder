@@ -88,8 +88,9 @@ Text: `**bold**`, `*italic*`, `~~struck~~`, `` `code` ``, `==highlight==`, `x^2^
 `[link](https://example.com)`, footnotes `text[^1]` with `[^1]: the note` anywhere below. Notes are
 numbered 1, 2, 3 in the order they are defined, in the PDF and in Word (`[^method]` is a number too); a
 one-character mark such as `*` or `†` is shown as written. The PDF and Word both set a note at the foot of
-the page its first reference falls on, wherever it is defined; one defined before anything refers to it
-stays where it is written.
+the page its first reference falls on, wherever it is defined, even inside a long table or paragraph that
+breaks across pages; one defined before anything refers to it stays where it is written. Keys may hold
+letters, digits and hyphens (`[^gross-margin]`).
 
 Blocks:
 

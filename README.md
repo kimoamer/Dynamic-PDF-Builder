@@ -1715,6 +1715,10 @@ each page in the PDF and in Word)
   its results to `word-check/<branch>` rather than to the branch itself.
 - The page forecast lets the space after one block and before the next overlap, as the frame does,
   rather than adding both.
+- A footnote referred to from inside a long table or paragraph sits on the page its reference is drawn
+  on, not the page where the block ends: the reference marks the page as it is drawn, and the piece of
+  the block that holds it leaves room for the note. A note that cannot be placed so is set after its block
+  with a `footnote_after_block` warning. Keys may hold a hyphen (`[^gross-margin]`).
 - PDF footnotes sit at the foot of the page their first reference falls on, under a short rule, as Word
   sets them (they were printed where they were defined). The text above stops short of them; a note with
   no room left goes to the next page with the text after its reference.
