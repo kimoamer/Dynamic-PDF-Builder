@@ -1700,6 +1700,14 @@ each page in the PDF and in Word)
   86,000).
 - A footer without a first line sets its company name level with the page number.
 - The PDF check no longer calls a heading stranded when a chart drawn as vectors follows it.
+- Readiness for agents, from a review of the MCP path: `review` returns `verified` and `unverified` beside
+  `passed` (a Word file not laid out is not a check that passed); `first_page` shows pages 9 and on of a long
+  document; `kit` checks the file it writes (status, reasons, diagnostics), names every missing field at once
+  and takes a `theme`, and `review` takes `kit` and `kit_data`, so a ready-made document goes through the same
+  review loop; every refusal is one JSON shape (`error_code`, `field`, `fields`, `message`, `fix`,
+  `retryable`), unexpected failures included. `tests/test_mcp_client.py` drives the server as an agent does: a
+  real MCP client starts it as a process over stdio, discovers the tools and works whole tasks (three
+  languages, a kit's write-review loop, refusals, a long document, a Word review); CI runs it with `mcp`.
 - Two agents (Claude Code with only the MCP server, one in English and one in Arabic) each made a document
   from a plain request. What they hit is fixed: `review` now returns the pages as pictures, since an
   agent without file access could not see them; `render` checks a PDF or DOCX as it writes it, so a clean

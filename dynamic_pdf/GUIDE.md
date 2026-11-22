@@ -48,9 +48,12 @@ dynamic-pdf lint report.md
 AI agents over MCP (`pip install "dynamic-pdf-builder[mcp]"`, then
 `python -m dynamic_pdf.ai.mcp_server --out-dir ./out`): tools `guide`, `render`, `review`, `variants`,
 `explain`, `lint`, `kit` and `schema`. `render`, `review`, `variants`, `explain` and `lint` take `markdown` (a
-string) or `document` (JSON). The loop that works: write Markdown, `review` (it returns the issues and the
-pages as pictures to look at), fix what it lists, `review` again, then `render` the PDF and DOCX; `render`
-checks each as it writes it and refuses one that fails, naming what failed.
+string) or `document` (JSON). The loop that works: write Markdown, `review` (it returns the issues and eight
+pages as pictures to look at, from `first_page`), fix what it lists, `review` again until `passed` and
+`verified` are both true, then `render` the PDF and DOCX; `render` checks each as it writes it and refuses one
+that fails, naming what failed. `kit` writes a ready-made document the same way (checked, with every missing
+field named at once, `theme` to pick a look), and `review` takes the same `kit` and `kit_data` to show its
+pages. Every refusal is JSON: `{"error": {"error_code", "field", "fields", "message", "fix", "retryable"}}`.
 
 ## Markdown
 
@@ -237,7 +240,8 @@ Table: Invoice lines {#invoice}
 - `b.review("pages/")` (CLI `review`, MCP `review`): each issue with its page, severity, code, message
   and `fix`, what to change in words; one PNG a page. Nothing is changed. Fix the source and review again.
   `b.review("pages/", format="docx")` (MCP `format: "docx"`) reviews the Word file as LibreOffice lays it
-  out, its pages as the images; without LibreOffice it says so.
+  out, its pages as the images; without LibreOffice it says so: `verified` is false and `unverified` names
+  what was not seen. A document is ready when `passed` and `verified` are both true.
 - `b.lint()` (CLI `lint`): content warnings: totals that do not add up, shares that do not make 100,
   references and citations to nothing, mixed digits or date formats, images without alt text, empty
   sections, formulas that cannot be computed.

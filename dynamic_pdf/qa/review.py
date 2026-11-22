@@ -88,5 +88,8 @@ def collect(builder, data: Optional[bytes], report, folder: Optional[str] = None
                 images.append(path)
         finally:
             pdf.close()
+    # what was not seen: no error there is not the same as a page that passed (a Word file without LibreOffice)
+    unverified = list(dict.fromkeys(list(getattr(report, "unverified", []) or [])
+                                    + [i["code"] for i in issues if i["code"] in ("unreviewed", "visual_check_skipped")]))
     return {"pages": report.pages, "passed": not any(i["severity"] == "error" for i in issues),
-            "issues": issues, "images": images}
+            "verified": not unverified, "unverified": unverified, "issues": issues, "images": images}

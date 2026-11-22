@@ -1165,12 +1165,13 @@ class DocumentBuilder:
         the document and review again. Nothing is changed and nothing is auto-fixed. ``format="docx"``
         reviews the Word file instead, as LibreOffice lays it out (its pages are the images).
 
-        Returns ``{"pages", "passed", "issues", "images"}``. Each issue has ``page`` (None for the
+        Returns ``{"pages", "passed", "verified", "unverified", "issues", "images"}``. Each issue has ``page`` (None for the
         whole document), ``severity`` (``error`` or ``warning``), ``code``, ``message`` and ``fix``,
         what to change, in words. The issues come from the page checks, the page critique (empty
         and repeated pages), render diagnostics and ``lint()``. ``folder`` saves one PNG a page
         there (``page-001.png`` ...) and lists the paths in ``images``; ``passed`` is False when an
-        issue is an error."""
+        issue is an error, and ``verified`` is False when something was not laid out or seen (named in
+        ``unverified``, e.g. the Word layout without LibreOffice): no error is not a check that passed."""
         import dataclasses
 
         from .qa.loop import render_with_qa
