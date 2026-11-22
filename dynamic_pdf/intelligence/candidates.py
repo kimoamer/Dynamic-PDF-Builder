@@ -89,7 +89,8 @@ def _refit_tables(doc, theme, base_theme, page_w: float) -> List[str]:
             continue
         width = (page_h if h.get("landscape") else page_w) - sp.page_margin_left - sp.page_margin_right
         size = h.get("font_size", theme.typography.base_size - 1)
-        mins, nats = column_metrics(b.headers or [], b.rows, theme.typography.body_family, size,
+        from ..design.planner import _width_headers
+        mins, nats = column_metrics(_width_headers(b), b.rows, theme.typography.body_family, size,
                                     2 * h.get("cell_padding", 6))
         fr, fits = fit_columns(mins, nats, width)
         if not fits or wrap_ratio(nats, fr, width) > 2.2:

@@ -955,6 +955,13 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
         hdr_bg = b.header_bg or self.tokens.colors["table_header_bg"]
         hdr_fg = b.header_text_color or self.tokens.colors["table_header_text"]
         r0 = 0
+        # side-set headers; a right-to-left section's side-set cells LibreOffice does not draw at all, so
+        # there the headers stay level rather than risk going missing
+        side = b.vertical_headers and not self.rtl_doc and not is_rtl_table(sample)
+        if b.vertical_headers and not side:
+            self.col.warn("vertical_headers_level", "the Word file sets this right-to-left table's headers level: "
+                          "LibreOffice does not draw side-set cells in a right-to-left section (the PDF and the "
+                          "workbook set them on their side)")
         if has_header:
             row = t.rows[0]
             F.set_repeat_table_header(row)
@@ -969,6 +976,17 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                 p.paragraph_format.keep_with_next = True
                 self._runs(p, str(h), bold=True, size=size,
                            color=self.tokens.colors["text_primary"] if design else hdr_fg)
+                if side and ci > 0:                 # on its side, as the PDF sets it
+                    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                    F.set_cell_text_direction(cell, "tbRl")
+                if side:
+                    from docx.enum.table import WD_ALIGN_VERTICAL
+                    cell.vertical_alignment = WD_ALIGN_VERTICAL.BOTTOM
+            if side and len(headers) > 1:
+                from docx.enum.table import WD_ROW_HEIGHT_RULE
+                pt = float(size or self.tokens.body_size)
+                longest = max(len(plain_text(str(h))) for h in headers[1:]) * pt * 0.55 + 12
+                row.height, row.height_rule = Pt(min(longest, 150.0)), WD_ROW_HEIGHT_RULE.AT_LEAST
             r0 = 1
         alt = self.tokens.colors.get("table_row_alt", "#F7F9FC")
         all_rows = rows + ([list(b.footer_row)] if b.footer_row else [])

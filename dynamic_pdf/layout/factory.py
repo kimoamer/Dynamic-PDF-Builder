@@ -1718,6 +1718,36 @@ def _render_rtl_list(items, list_type, theme, bs, sp, start=1):
     return out
 
 
+class VerticalText(Flowable):
+    """A cell's text set on its side, reading from top to bottom: turned a quarter clockwise, so its lines
+    go from right to left (Word's tbRl); Arabic, which runs from the right, is turned the other way so it
+    too starts at the top. Lines wrap at ``max_len`` points, the most the side-set text runs down."""
+
+    def __init__(self, para, max_len: float = 150.0):
+        super().__init__()
+        self.para, self.max_len = para, max_len
+        self.rtl = _is_rtl(getattr(para, "text", "") or "")
+
+    def wrap(self, aW, aH):
+        self.para.wrap(self.max_len, 1e6)
+        length = max(self.para.getActualLineWidths0() or [0.0]) + 1.0
+        _, across = self.para.wrap(length, 1e6)         # set at its own length, so alignment cannot shift it
+        self.width, self.height = across, length
+        return self.width, self.height
+
+    def draw(self):
+        c = self.canv
+        c.saveState()
+        if self.rtl:
+            c.translate(self.width, 0)
+            c.rotate(90)
+        else:
+            c.translate(0, self.height)
+            c.rotate(-90)
+        self.para.drawOn(c, 0, 0)
+        c.restoreState()
+
+
 def _render_table(block, theme, bs, ctx=None):
     hints = block.hints or {}
     # Column order follows the table's own language (majority of header cells),
@@ -1762,6 +1792,10 @@ def _render_table(block, theme, bs, ctx=None):
         f_sty = ParagraphStyle('TF', parent=bs, firstLineIndent=0,
                                fontName=body_font, alignment=tbl_align)
         data.append(_row(block.footer_row, f_sty, ParagraphStyle('TFn', parent=f_sty, alignment=2)))
+    if block.vertical_headers and block.headers:
+        # the first column names the rows: its header stays level, the data columns' stand on their side
+        stub = len(data[0]) - 1 if tbl_rtl else 0
+        data[0] = [p if i == stub else VerticalText(p) for i, p in enumerate(data[0])]
     hbg = _safe_color(block.header_bg or theme.colors.primary)
     cmds = [
         ('BACKGROUND', (0, 0), (-1, 0), hbg),
@@ -1785,6 +1819,8 @@ def _render_table(block, theme, bs, ctx=None):
         from .art import table_commands
         cmds = table_commands(design, theme, len(data), ncols, bool(block.headers), bool(block.footer_row),
                               pad, hints.get("current_col"), tbl_rtl)
+    if block.vertical_headers and block.headers:     # side-set headers stand on the rule above the rows
+        cmds += [('VALIGN', (0, 0), (-1, 0), 'BOTTOM'), ('ALIGN', (0, 0), (-1, 0), 'CENTER')]
     head = 1 if block.headers else 0
     from ..core.table_types import row_spans
     raw_rows = [list(r) for r in block.rows] + ([list(block.footer_row)] if block.footer_row else [])

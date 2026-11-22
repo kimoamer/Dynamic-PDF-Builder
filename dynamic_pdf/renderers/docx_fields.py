@@ -70,6 +70,18 @@ def add_checkbox(paragraph, checked: bool) -> None:
     paragraph.add_run("  ")
 
 
+def set_cell_text_direction(cell, direction: str) -> None:
+    """Text set on its side in the cell: "tbRl" reads top to bottom (turned clockwise), "btLr" bottom to
+    top (turned the other way). tcPr keeps its children in schema order: textDirection before vAlign."""
+    tcPr = cell._tc.get_or_add_tcPr()
+    el = _get_or_add(tcPr, "w:textDirection")
+    el.set(qn("w:val"), direction)
+    valign = tcPr.find(qn("w:vAlign"))
+    if valign is not None:
+        tcPr.remove(valign)
+        el.addnext(valign)
+
+
 def set_cell_shading(cell, fill_hex: str) -> None:
     tcPr = cell._tc.get_or_add_tcPr()
     shd = _get_or_add(tcPr, "w:shd")

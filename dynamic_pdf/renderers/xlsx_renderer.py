@@ -125,6 +125,12 @@ def render_xlsx(source_blocks, computed_blocks, meta) -> bytes:
                     cell.number_format = fmt
                 if src.footer_row and r == len(grid) - 1:
                     cell.font = Font(bold=True)
+                if r == 0 and c > 0 and getattr(src, "vertical_headers", False):
+                    # on its side, read top to bottom as in the PDF (Excel: 180 = a quarter clockwise)
+                    from ..rtl import is_rtl
+                    cell.alignment = Alignment(text_rotation=90 if is_rtl(plain_text(seen)) else 180,
+                                               vertical="bottom", horizontal="center")
+                    continue
                 cell.alignment = Alignment(wrap_text=len(seen) > 40, vertical="top")
                 widths[c] = max(widths[c], min(len(plain_text(seen)), 40))
         for c, w in enumerate(widths):

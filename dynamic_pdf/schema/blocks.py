@@ -102,6 +102,7 @@ class TableBlock(BaseBlock):
     header_text_color: Optional[str] = None
     footer_row: Optional[List[str]] = None          # Summary/total row
     table_number: Optional[int] = None              # Auto-numbering: "Table 1"
+    vertical_headers: bool = False                  # header cells set on their side, read top to bottom
 
 # ─────────────────────── Code ───────────────────────
 

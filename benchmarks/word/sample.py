@@ -43,6 +43,13 @@ Table: Revenue by region
 Orders booked for the first quarter of next year already cover 70% of its plan.
 :::
 
+| Region | Retail | Wholesale | Online | Export |
+|---|:-:|:-:|:-:|:-:|
+| North | ✓ | ✓ | ✓ | — |
+| South | ✓ | — | ✓ | ✓ |
+
+Table: Channels by region {.vertical-headers}
+
 ## Outlook
 
 We expect steady growth next year. The priorities are margin, cash and the people who deliver both.

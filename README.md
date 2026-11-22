@@ -1715,6 +1715,11 @@ each page in the PDF and in Word)
   its results to `word-check/<branch>` rather than to the branch itself.
 - The page forecast lets the space after one block and before the next overlap, as the frame does,
   rather than adding both.
+- Tables can set their headers on their side (`Table: Caption {.vertical-headers}` or
+  `table(..., vertical_headers=True)`): the first header stays level, the others read from top to bottom in
+  the PDF, Word (`tbRl`) and the workbook, and no longer widen their columns. Arabic headers turn the other
+  way so they start at the top; a right-to-left Word table keeps them level, with a warning, since
+  LibreOffice does not draw side-set cells in a right-to-left section.
 - A footnote referred to from inside a long table or paragraph sits on the page its reference is drawn
   on, not the page where the block ends: the reference marks the page as it is drawn, and the piece of
   the block that holds it leaves room for the note. A note that cannot be placed so is set after its block

@@ -162,7 +162,7 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
         from ..core.table_types import measured_rows
         measured = measured_rows(b)              # a cell that runs over empty ones takes their room, not its column's
         while size >= MIN_TABLE_SIZE:
-            mins, nats = column_metrics(b.headers or [], measured, ty.body_family, size, 2 * pad)
+            mins, nats = column_metrics(_width_headers(b), measured, ty.body_family, size, 2 * pad)
             fracs, fits = fit_columns(mins, nats, avail)
             # "fits" also requires readable cells: on average ≤ 2.2 lines per cell
             fits = fits and wrap_ratio(nats, fracs, avail) <= 1.8 and sum(mins) <= 0.85 * avail
@@ -177,7 +177,7 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
         if not fits:
             land_w = _content_width(sem, theme) + (_PAGE[sem.meta.page_size][1] - _PAGE[sem.meta.page_size][0]) \
                 if sem.meta.orientation != Orientation.LANDSCAPE else avail
-            mins, nats = column_metrics(b.headers or [], measured, ty.body_family, MIN_TABLE_SIZE, 2 * pad)
+            mins, nats = column_metrics(_width_headers(b), measured, ty.body_family, MIN_TABLE_SIZE, 2 * pad)
             fracs2, fits2 = fit_columns(mins, nats, land_w)
             fits2 = fits2 and wrap_ratio(nats, fracs2, land_w) <= 1.8
             # prose wraps; figures, codes and periods cannot, so only they justify turning the page
@@ -352,6 +352,12 @@ def _tighten(theme, spacing: float, margins: float, leading_cut: float):
     sp.page_margin_bottom = max(42.0, round(sp.page_margin_bottom * margins, 1))
     ty.line_height = min(ty.line_height, max(1.3, round(ty.line_height - leading_cut, 2)))
 
+
+def _width_headers(b) -> list:
+    """The header text a column's width answers to: only the first (level) one when the others stand on
+    their side."""
+    heads = list(b.headers or [])
+    return heads[:1] + [""] * (len(heads) - 1) if getattr(b, "vertical_headers", False) else heads
 
 def fit_pages(sem: SemanticDocument, plan: DesignPlan, policy=None, max_trials: int = 2) -> None:
     """Avoid a near-empty final page by tightening vertical rhythm (bounded).

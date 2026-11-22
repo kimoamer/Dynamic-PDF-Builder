@@ -657,12 +657,14 @@ class DocumentBuilder:
               caption: Optional[str] = None, column_widths: Optional[List[float]] = None,
               header_bg: Optional[str] = None, footer_row: Optional[List[str]] = None,
               table_number: Optional[int] = None,
-              header_text_color: Optional[str] = None) -> 'DocumentBuilder':
+              header_text_color: Optional[str] = None, vertical_headers: bool = False) -> 'DocumentBuilder':
+        """``vertical_headers``: the header cells after the first stand on their side, read top to bottom
+        (in the PDF, Word and the workbook), for many narrow columns under long names."""
         self._blocks.append(TableBlock(headers=headers, rows=rows, style=style,
                                        caption=caption, column_widths=column_widths,
                                        header_bg=header_bg, footer_row=footer_row,
                                        table_number=table_number,
-                                       header_text_color=header_text_color))
+                                       header_text_color=header_text_color, vertical_headers=vertical_headers))
         return self
 
     # ─── Code ──────────────────────────────────────────────────────

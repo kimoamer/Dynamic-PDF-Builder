@@ -198,3 +198,36 @@ def test_a_note_at_the_start_of_a_long_paragraph_sits_on_its_first_page():
     doc = fitz.open(stream=DocumentBuilder.from_markdown(para + "\n\n[^p]: Note for the opening.\n").render(),
                     filetype="pdf")
     assert len(doc) > 2 and "Note for the opening" in doc[0].get_text() and "Opening sentence" in doc[0].get_text()
+
+
+VERTICAL_MD = """| Feature | Starter plan | Professional plan | Enterprise plan |
+|---|:-:|:-:|:-:|
+| Single sign-on | — | ✓ | ✓ |
+| Audit log | — | — | ✓ |
+
+Table: Plans compared {#tbl-plans .vertical-headers}
+"""
+
+
+def test_vertical_headers_stand_on_their_side_in_pdf_word_and_the_workbook():
+    import openpyxl
+    b = DocumentBuilder.from_markdown(VERTICAL_MD)
+    table = b.build().blocks[0]
+    assert table.vertical_headers and table.caption == "Plans compared" and table.id == "tbl-plans"
+    page = fitz.open(stream=b.render(), filetype="pdf")[0]
+    dirs = {"".join(s["text"] for s in ln["spans"]).strip(): ln["dir"]
+            for bl in page.get_text("dict")["blocks"] for ln in bl.get("lines", [])}
+    assert abs(dirs["Starter plan"][1]) > 0.99 and abs(dirs["Feature"][0]) > 0.99   # side-set; the first level
+    xml = zipfile.ZipFile(io.BytesIO(b.render_docx())).read("word/document.xml").decode()
+    assert xml.count('w:textDirection w:val="tbRl"') == 3
+    ws = openpyxl.load_workbook(io.BytesIO(b.render_xlsx())).worksheets[0]
+    assert [ws.cell(1, c).alignment.text_rotation for c in range(1, 5)] == [0, 180, 180, 180]
+
+
+def test_an_arabic_word_table_keeps_its_headers_level_and_says_why(tmp_path):
+    md = "---\nlanguage: ar\n---\n\n| الميزة | الباقة الأساسية |\n|---|:-:|\n| الدخول الموحد | ✓ |\n\nTable: مقارنة {.vertical-headers}\n"
+    with pytest.warns(RuntimeWarning, match="vertical_headers_level"):
+        res = DocumentBuilder.from_markdown(md).export(str(tmp_path / "a.docx"))
+    xml = zipfile.ZipFile(str(tmp_path / "a.docx")).read("word/document.xml").decode()
+    assert "w:textDirection" not in xml
+    assert [d["code"] for d in res.diagnostics] == ["vertical_headers_level"]

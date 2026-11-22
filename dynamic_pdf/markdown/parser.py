@@ -168,7 +168,14 @@ def _parse_body(md_text: str) -> list:
             # "Table: caption {#id}" right after a table is that table's caption (Pandoc's form)
             cap = _TABLE_CAPTION.match(content)
             if cap and blocks and blocks[-1].type == "table" and not blocks[-1].caption:
-                caption, anchor = _attr_id(cap.group(1))
+                text = cap.group(1)
+                # Pandoc's classes beside the id: {.vertical-headers} sets the headers on their side
+                attrs = re.search(r"\s*\{([^{}]*)\}\s*$", text)
+                if attrs and ".vertical-headers" in attrs.group(1).split():
+                    blocks[-1].vertical_headers = True
+                    rest = " ".join(t for t in attrs.group(1).split() if t != ".vertical-headers")
+                    text = text[:attrs.start()] + (f" {{{rest}}}" if rest else "")
+                caption, anchor = _attr_id(text)
                 blocks[-1].caption, blocks[-1].id = caption, anchor or blocks[-1].id
                 blocks[-1].hints = {"table_caption": True}
                 idx += 2

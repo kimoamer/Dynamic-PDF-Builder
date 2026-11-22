@@ -191,6 +191,12 @@ Table: Invoice lines {#invoice}
   Codes: SAR, EGP, AED, KWD, QAR, OMR, BHD, JOD, USD, EUR, and GBP in English.
 - Text can quote a cell: `The total due is {=invoice!D5}.`
 - A formula that cannot be computed stops the render with the table, the cell and the reason.
+- Side-set headers, for many narrow columns under long names: `Table: Plans compared {.vertical-headers}`
+  (or `b.table(..., vertical_headers=True)`). The first header, which names the rows, stays level; the
+  others stand on their side and read from top to bottom, in the PDF, Word and the workbook. Arabic headers
+  turn the other way so they too start at the top. A right-to-left table in Word keeps its headers level,
+  with a `vertical_headers_level` warning: LibreOffice does not draw side-set cells in a right-to-left
+  section.
 - `export("tables.xlsx")` writes every table as a sheet with working formulas.
 
 ## Academic
