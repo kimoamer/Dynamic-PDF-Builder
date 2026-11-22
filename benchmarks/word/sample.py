@@ -50,6 +50,13 @@ Orders booked for the first quarter of next year already cover 70% of its plan.
 
 Table: Channels by region
 
+| Region | Retail stores | Wholesale | Online shop | Export agents | Field sales | Partners | Call centre | Marketplace | Distributors | Franchises | Kiosks | Catalogue |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| North | ✓ | ✓ | ✓ | — | ✓ | — | ✓ | ✓ | ✓ | — | ✓ | — |
+| South | ✓ | — | ✓ | ✓ | — | ✓ | ✓ | — | ✓ | ✓ | — | ✓ |
+
+Table: Every channel by region
+
 | Quarter | Region | Revenue ($M) |
 |---|---|---:|
 | First quarter | North | 18.4 |

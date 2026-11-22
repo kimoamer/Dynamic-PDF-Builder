@@ -977,7 +977,8 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                 if ci in numeric_cols:
                     p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
                 p.paragraph_format.keep_with_next = True
-                self._runs(p, str(h), bold=True, size=size,
+                lines = (hints.get("header_lines") or {}).get(ci) or (hints.get("header_lines") or {}).get(str(ci))
+                self._runs(p, "  \n".join(lines) if lines and ci not in side_heads else str(h), bold=True, size=size,
                            color=self.tokens.colors["text_primary"] if design else hdr_fg)
                 from docx.enum.table import WD_ALIGN_VERTICAL
                 if ci in side_heads:                # on its side, as the PDF sets it

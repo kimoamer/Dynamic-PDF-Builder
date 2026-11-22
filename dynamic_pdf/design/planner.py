@@ -21,6 +21,7 @@ Decisions
 """
 from __future__ import annotations
 
+import re
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
@@ -161,11 +162,13 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
         hints["cell_padding"] = pad
         from ..core.table_types import measured_rows
         measured = measured_rows(b)              # a cell that runs over empty ones takes their room, not its column's
+        b.hints = hints
         hints["side_headers"], hints["side_groups"] = _side_set(b, measured, ty.body_family, size, pad, avail)
+        hints.update({k: v for k, v in b.hints.items() if k == "wrap_headers"})
         b.hints = hints
         measured = _width_rows(b, measured)
         while size >= MIN_TABLE_SIZE:
-            mins, nats = column_metrics(_width_headers(b), measured, ty.body_family, size, 2 * pad)
+            mins, nats = _metrics(b, measured, ty.body_family, size, pad, avail)
             fracs, _ = fit_columns(mins, nats, avail)
             fits = _fits(mins, nats, avail)      # readable cells too: on average ≤ 2.2 lines per cell
             if fits:
@@ -179,7 +182,7 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
         if not fits:
             land_w = _content_width(sem, theme) + (_PAGE[sem.meta.page_size][1] - _PAGE[sem.meta.page_size][0]) \
                 if sem.meta.orientation != Orientation.LANDSCAPE else avail
-            mins, nats = column_metrics(_width_headers(b), measured, ty.body_family, MIN_TABLE_SIZE, 2 * pad)
+            mins, nats = _metrics(b, measured, ty.body_family, MIN_TABLE_SIZE, pad, land_w)
             fracs2, fits2 = fit_columns(mins, nats, land_w)
             fits2 = fits2 and wrap_ratio(nats, fracs2, land_w) <= 1.8
             # prose wraps; figures, codes and periods cannot, so only they justify turning the page
@@ -190,6 +193,9 @@ def plan_layout(sem: SemanticDocument, plan: DesignPlan) -> LayoutPlan:
                 what += "; too wide for portrait → landscape page" + ("" if fits2 else " (cells wrap)")
             else:
                 what += "; cells wrap at minimum size"
+        lines = _balanced_headers(b, hints, land_w if hints.get("landscape") else avail, ty.body_family, size, pad)
+        if lines:
+            hints["header_lines"] = lines
         if len(b.rows) <= 12:
             hints["keep_together"] = True
             what += "; kept on one page"
@@ -384,7 +390,8 @@ def _side_set(b, measured, family: str, size: float, pad: float, avail: float):
     - a merged label, when every label of its column runs down two rows or more, is long enough that
       setting it on its side saves its column most of its width, and fits the height of the rows it joins;
     - headers, when there are many columns (five or more), each after the first narrower than its header, and
-      the table only fits at its size with them on their side. The first column names the rows: its
+      they fit level nowhere within 2pt of the table's size, even broken between their words into up to
+      three even lines; level comes first. The first column names the rows: its
       header stays level. ``vertical_headers=True`` or ``False`` decides it instead.
     """
     from .measure import text_width
@@ -408,10 +415,65 @@ def _side_set(b, measured, family: str, size: float, pad: float, avail: float):
     rows = [[SIDE if ci in groups and x.strip() else x for ci, x in enumerate(r)] for r in measured]
     level = column_metrics([SIDE if c in groups else h for c, h in enumerate(heads)], rows, family, size, 2 * pad)
     side = column_metrics([SIDE if c in every else h for c, h in enumerate(heads)], rows, family, size, 2 * pad)
-    narrow = all(level[0][c] > side[1][c] + 4 for c in every if c not in groups)
-    if n >= 5 and narrow and not _fits(*level, avail) and _fits(*side, avail):
+    narrow = all(level[0][c] > side[1][c] + 4 for c in every if c not in groups)    # the names, not the data
+    # level first: a header may take up to three even lines, broken between its words, over its column's
+    # data, and the table may come down 2pt to keep them level; only past that do they stand on their side
+    level_heads = [SIDE if c in groups else h for c, h in enumerate(heads)]
+    if n >= 5 and narrow and \
+            not any(_fits(*_wrapped(level_heads, rows, family, size - k / 2, pad), avail) for k in range(5)):
         return every, groups
+    b.hints = {**(b.hints or {}), "wrap_headers": n >= 5 and narrow}
     return [c for c in groups if c < len(heads)], groups
+
+
+def _wrapped(heads, rows, family: str, size: float, pad: float):
+    """(mins, naturals) with each header counted as up to three lines over its column's data."""
+    dm, dn = column_metrics([""] * len(heads), rows, family, size, 2 * pad)
+    hm, hn = column_metrics(heads, [], family, size, 2 * pad)
+    mins = [max(a, h) for a, h in zip(dm, hm)]
+    return mins, [max(d, h / 3, m) for d, h, m in zip(dn, hn, mins)]
+
+
+def _metrics(b, rows, family: str, size: float, pad: float, avail: float):
+    """Column widths' (mins, naturals); level headers over narrow data wrap, so count as up to three lines."""
+    whole = column_metrics(_width_headers(b), rows, family, size, 2 * pad)
+    if (b.hints or {}).get("wrap_headers") and sum(whole[1]) > avail:
+        return _wrapped(_width_headers(b), rows, family, size, pad)
+    return whole                                  # room for every header on one line: none wraps
+
+
+def _balanced_headers(b, hints, avail: float, family: str, size: float, pad: float) -> dict:
+    """{column: lines} for the level headers that wrap in their column, broken into as many lines as they
+    need but as even as can be ("Single sign-on" over "Single sign-" / "on" reads as one name), as a
+    typesetter balances a heading. Headers with inline markup are left to wrap as they fall."""
+    from itertools import combinations
+    from .measure import text_width
+    fr = hints.get("col_fractions")
+    if not fr or not b.headers:
+        return {}
+    side = set(hints.get("side_headers") or [])
+    total = sum(fr) or 1.0
+    out = {}
+    for c, h in enumerate(b.headers):
+        words = str(h).split()
+        if c in side or c >= len(fr) or len(words) < 2 or re.search(r"[*_`\[\]<>\\]", str(h)):
+            continue
+        room = fr[c] / total * (avail - 1.0) - 2 * pad - 4        # the slack keeps a balanced line from re-wrapping
+        w = lambda ws: text_width(" ".join(ws), family, size, bold=True)
+        if w(words) <= room or max(w([x]) for x in words) > room:
+            continue
+        best = None
+        for k in range(2, min(4, len(words) + 1)):                  # the fewest lines that fit, then the most even
+            for cuts in combinations(range(1, len(words)), k - 1):
+                parts = [words[a:z] for a, z in zip((0,) + cuts, cuts + (len(words),))]
+                widest = max(w(p) for p in parts)
+                if widest <= room and (best is None or widest < best[0]):
+                    best = (widest, [" ".join(p) for p in parts])
+            if best:
+                break
+        if best:
+            out[c] = best[1]
+    return out
 
 
 def fit_pages(sem: SemanticDocument, plan: DesignPlan, policy=None, max_trials: int = 2) -> None:

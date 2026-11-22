@@ -241,18 +241,25 @@ def _dirs(pdf: bytes) -> dict:
             for bl in page.get_text("dict")["blocks"] for ln in bl.get("lines", [])}
 
 
-CHANNELS = ("| Region | Retail stores | Wholesale | Online shop | Export agents | Field sales | Partners | Call centre "
-            "| Marketplace |\n|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|\n| North | ✓ | ✓ | ✓ | — | ✓ | — | ✓ | ✓ |\n"
-            "| South | ✓ | — | ✓ | ✓ | — | ✓ | ✓ | — |\n\nTable: Channels{}\n")
+NAMES = ["Retail stores", "Wholesale", "Online shop", "Export agents", "Field sales", "Partners", "Call centre",
+         "Marketplace", "Distributors", "Franchises", "Kiosks", "Catalogue"]
 
 
-def test_headers_stand_on_their_side_only_where_many_narrow_columns_need_it():
-    few = "| Region | Retail | Wholesale | Online |\n|---|:-:|:-:|:-:|\n| North | ✓ | ✓ | ✓ |\n"
-    assert abs(_dirs(DocumentBuilder.from_markdown(few).render())["Wholesale"][0]) > 0.99    # room enough: level
-    dirs = _dirs(DocumentBuilder.from_markdown(CHANNELS.format("")).render())
-    assert abs(dirs["Wholesale"][1]) > 0.99 and abs(dirs["Region"][0]) > 0.99   # eight narrow ones: on their side
-    level = _dirs(DocumentBuilder.from_markdown(CHANNELS.format(" {.level-headers}")).render())
-    assert all(abs(d[0]) > 0.99 for d in level.values())                       # the author's word stands
+def _channels(n: int, attrs: str = "") -> str:
+    head = ["Region"] + NAMES[:n]
+    return ("| " + " | ".join(head) + " |\n|" + "---|" * len(head) + "\n| North |" + " ✓ |" * n
+            + f"\n\nTable: Channels{attrs}\n")
+
+
+def test_headers_stay_level_in_even_lines_and_stand_on_their_side_only_past_that():
+    few = _dirs(DocumentBuilder.from_markdown(_channels(4)).render())
+    assert "Retail stores" in few and abs(few["Retail stores"][0]) > 0.99          # room enough: one line
+    some = _dirs(DocumentBuilder.from_markdown(_channels(7)).render())
+    assert {"Retail", "stores", "Online", "shop"} <= set(some) and all(abs(d[0]) > 0.99 for d in some.values())
+    many = _dirs(DocumentBuilder.from_markdown(_channels(12)).render())
+    assert abs(many["Wholesale"][1]) > 0.99 and abs(many["Region"][0]) > 0.99    # no level fit: on their side
+    level = _dirs(DocumentBuilder.from_markdown(_channels(12, " {.level-headers}")).render())
+    assert all(abs(d[0]) > 0.99 for d in level.values())                         # the author's word stands
 
 
 MERGED = """| Quarter | Region | Revenue |

@@ -1782,6 +1782,11 @@ def _render_table(block, theme, bs, ctx=None):
                for ci, c in enumerate(cells)]
         return list(reversed(out)) if tbl_rtl else out
     data = [_row(block.headers or [], h_sty, h_num)] if block.headers else []
+    for c, lines in (hints.get("header_lines") or {}).items():      # a wrapping header, in even lines
+        c = int(c)
+        if data and c < ncols:
+            vc = ncols - 1 - c if tbl_rtl else c
+            data[0][vc] = Paragraph("<br/>".join(_md_inline(x) for x in lines), data[0][vc].style)
     totals = set(hints.get("total_rows") or [])       # rows the author labelled total: set bold, ruled above
     t_sty = ParagraphStyle('TDt', parent=c_sty, fontName=body_font)
     t_num = ParagraphStyle('TDtn', parent=t_sty, alignment=2)

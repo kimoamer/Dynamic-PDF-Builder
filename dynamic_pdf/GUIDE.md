@@ -197,9 +197,10 @@ Table: Invoice lines {#invoice}
   the workbook draw the same fills, text and rules; the first column, which names the rows, is the one the
   table starts from, on the right in Arabic. Combines with `.vertical-headers`.
 - Text on its side, read from top to bottom, is set where the page needs it, not by default:
-  - headers: when a table has five columns or more, each after the first narrower than its name, and it
-    fits at its size only with them on their side (a matrix of ticks or short figures). The first header,
-    which names the rows, stays level. Ask for it with `{.vertical-headers}` (`vertical_headers=True`),
+  - headers stay level first: a name too long for its column breaks between its words into up to three
+    even lines. Only a table of five columns or more, each after the first narrower than its name (a matrix
+    of ticks or short figures), that fits level nowhere within 2pt of its size sets them on their side
+    (about ten such columns on an A4 page). The first header, which names the rows, stays level. Ask for it with `{.vertical-headers}` (`vertical_headers=True`),
     refuse it with `{.level-headers}` (`False`); left alone (`"auto"`), the page decides.
   - merged cells: a cell of `^^` joins the cell above it (MultiMarkdown's rowspan), in Markdown, JSON and
     `b.table(...)` rows alike:

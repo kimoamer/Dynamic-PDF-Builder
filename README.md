@@ -1722,9 +1722,11 @@ each page in the PDF and in Word)
 - A Word file without headings no longer shows "Error: Reference source not found" in its running title:
   where the document has no heading for it, the title is plain text, as in the PDF.
 - Table text set on its side, read from top to bottom, where the page needs it and not elsewhere:
-  - headers, when a table has many columns (five or more), each after the first narrower than its name,
-    and it fits at its size only with them on their side (a matrix of ticks or short figures). The first
-    header, which names the rows, stays level. `{.vertical-headers}` / `vertical_headers=True` asks for it,
+  - headers stay level first: a name too long for its column breaks between its words into up to three
+    lines, as even as can be ("Retail" / "stores", not "Retail stores" over a lone word), in the PDF and
+    Word. Only a table of five columns or more, each after the first narrower than its name (a matrix of
+    ticks or short figures), that fits level nowhere within 2pt of its size, sets them on their side. The
+    first header, which names the rows, stays level. `{.vertical-headers}` / `vertical_headers=True` asks for it,
     `{.level-headers}` / `False` refuses it.
   - merged cells: a cell of `^^` joins the cell above it, as in MultiMarkdown (`merged_down` in the
     schema). A long label that runs down a group of rows, two or more for every label of its column, is set
