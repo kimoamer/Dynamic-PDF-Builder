@@ -368,3 +368,14 @@ def test_a_list_item_wrapped_in_the_source_reads_as_one_line_of_text():
 def test_round_shows_the_places_it_keeps():
     md = "| A | B | C |\n|---|---:|---:|\n| x | 534 | =ROUND(B2/B3*100, 1) |\n| T | 812 | =ROUND(B3/B3*100, 0) |\n"
     assert [r[2] for r in DocumentBuilder.from_markdown(md).build().blocks[0].rows] == ["65.8", "100"]
+
+
+def test_a_tall_flowchart_keeps_its_text_and_a_height_the_author_set():
+    nodes = [{"id": str(i), "label": f"Step {i}\nwith a second line"} for i in range(5)]
+    edges = [[str(i), str(i + 1)] for i in range(4)]
+    def drawn_height(**kw):
+        b = DocumentBuilder().diagram("flowchart", nodes=nodes, edges=edges, direction="TB", **kw)
+        page = fitz.open(stream=b.design(None).render(), filetype="pdf")[0]
+        boxes = [d["rect"] for d in page.get_drawings() if d.get("fill") and d["rect"].width < page.rect.width / 2]
+        return max(r.y1 for r in boxes) - min(r.y0 for r in boxes)
+    assert drawn_height() > drawn_height(height=3) * 1.5      # free to grow; held to the 3 inches asked

@@ -490,9 +490,10 @@ def _render_flowchart(block, theme):
     ax.set_aspect("equal")
     ax.axis("off")
     fig.tight_layout(pad=0.5)
-    # a tall chart may take more of the page than the default height rather than shrink its text
-    tall = min(6.5, fig.get_figheight())
-    return _fig_to_drawing(fig, block.width, max(block.height, tall))
+    # a tall chart may take more of the page than the default height rather than shrink its text; a height
+    # the author set is kept
+    tall = block.height if "height" in block.model_fields_set else max(block.height, min(6.5, fig.get_figheight()))
+    return _fig_to_drawing(fig, block.width, tall)
 
 
 def _render_tree(block, theme):

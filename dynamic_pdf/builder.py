@@ -774,12 +774,13 @@ class DocumentBuilder:
                 directed: Optional[bool] = None,
                 colors: Optional[List[str]] = None,
                 width: float = 6.0,
-                height: float = 4.0) -> 'DocumentBuilder':
+                height: Optional[float] = None) -> 'DocumentBuilder':
+        """``height`` in inches (4 by default); left out, a tall flowchart may take more to keep its text."""
         self._blocks.append(DiagramBlock(
             diagram_type=diagram_type,
             nodes=nodes or [], edges=edges or [],
             title=title, direction=direction, directed=directed,
-            colors=colors, width=width, height=height,
+            colors=colors, width=width, **({"height": height} if height is not None else {}),
         ))
         return self
 
