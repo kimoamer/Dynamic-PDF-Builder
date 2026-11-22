@@ -55,12 +55,20 @@ _INVOICE_EXAMPLE = {
 }
 
 
+class MissingField(ValueError):
+    """A required field the data does not hold; ``path`` names it (``seller.name``)."""
+
+    def __init__(self, path: str):
+        super().__init__(f"{path!r} is missing. Fix: add it; the kit's example shows every field")
+        self.path = path
+
+
 def _need(data: dict, path: str):
     value = data
     for key in path.split("."):
         value = value.get(key) if isinstance(value, dict) else None
     if value in (None, "", [], {}):
-        raise ValueError(f"{path!r} is missing. Fix: add it; the kit's example shows every field")
+        raise MissingField(path)
     return value
 
 
@@ -707,6 +715,15 @@ KITS = {"invoice": (_invoice, _INVOICE_EXAMPLE),
         "certificate": (_certificate, _CERTIFICATE_EXAMPLE)}
 
 
+def _put(data: dict, path: str, value) -> None:
+    keys = path.split(".")
+    for key in keys[:-1]:
+        if not isinstance(data.get(key), dict):
+            data[key] = {}
+        data = data[key]
+    data[keys[-1]] = value
+
+
 def kits() -> list:
     """The names of the ready-made documents."""
     return sorted(KITS)
@@ -722,10 +739,32 @@ def kit(name: str, data: dict, theme: Optional[str] = None):
     Missing or malformed data raises ``ValueError`` naming the field and the fix."""
     if not isinstance(data, dict):
         raise ValueError(f"{name}: the data must be an object (a dict); kit_example({name!r}) shows one")
-    try:
-        b = _find(name)[0](data)
-    except ValueError as e:
-        raise ValueError(f"{name}: {e}") from None
+    make, example = _find(name)
+    # every missing field at once: each one found is filled from the example and the kit tried again
+    trial, missing = copy.deepcopy(data), []
+    for _ in range(40):
+        try:
+            b = make(trial)
+            break
+        except MissingField as e:
+            filler = example
+            for key in e.path.split("."):
+                filler = filler.get(key) if isinstance(filler, dict) else None
+            if filler in (None, "", [], {}) or e.path in missing:      # inside a list item: cannot be filled
+                missing.append(e.path)
+                break
+            missing.append(e.path)
+            _put(trial, e.path, copy.deepcopy(filler))
+        except ValueError as e:
+            if missing:                                                # report the missing fields first
+                break
+            raise ValueError(f"{name}: {e}") from None
+    if missing:
+        what = f"{missing[0]!r} is missing" if len(missing) == 1 else f"missing {', '.join(map(repr, missing))}"
+        err = ValueError(f"{name}: {what}. Fix: add {'it' if len(missing) == 1 else 'them'}; "
+                         f"kit_example({name!r}) shows every field")
+        err.missing = missing
+        raise err
     if data.get("logo") and name in _LOGO_HEADER:       # the brand at the head of every page
         party = data.get("seller") or data.get("sender") or {}
         values = {"company": party.get("name") or data.get("company") or data.get("prepared_by"),
@@ -743,5 +782,5 @@ _LOGO_HEADER = {"invoice": "modern", "quote": "modern", "letter": "letterhead", 
 
 def _find(name: str):
     if name not in KITS:
-        raise ValueError(f"no kit {name!r}; kits: {', '.join(kits())}")
+        raise ValueError(f"no kit {name!r}. Fix: use one of {', '.join(kits())}")
     return KITS[name]
