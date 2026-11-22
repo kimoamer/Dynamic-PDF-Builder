@@ -979,11 +979,14 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                 p.paragraph_format.keep_with_next = True
                 self._runs(p, str(h), bold=True, size=size,
                            color=self.tokens.colors["text_primary"] if design else hdr_fg)
+                from docx.enum.table import WD_ALIGN_VERTICAL
                 if ci in side_heads:                # on its side, as the PDF sets it
-                    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                    # turned, a line's end is the cell's foot and its "vertical" alignment runs across:
+                    # set at the line's end, in the middle across, it stands on the rule as in the PDF
+                    p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
                     F.set_cell_text_direction(cell, "tbRl")
-                if side_heads:
-                    from docx.enum.table import WD_ALIGN_VERTICAL
+                    cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+                elif side_heads:
                     cell.vertical_alignment = WD_ALIGN_VERTICAL.BOTTOM
             if side_heads:
                 from docx.enum.table import WD_ROW_HEIGHT_RULE
