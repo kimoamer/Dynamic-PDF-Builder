@@ -171,10 +171,21 @@ def _parse_body(md_text: str) -> list:
                 text = cap.group(1)
                 # Pandoc's classes beside the id: {.vertical-headers} sets the headers on their side
                 attrs = re.search(r"\s*\{([^{}]*)\}\s*$", text)
-                if attrs and ".vertical-headers" in attrs.group(1).split():
-                    blocks[-1].vertical_headers = True
-                    rest = " ".join(t for t in attrs.group(1).split() if t != ".vertical-headers")
-                    text = text[:attrs.start()] + (f" {{{rest}}}" if rest else "")
+                if attrs:
+                    from ..design.table_looks import parse as table_look
+                    toks, rest = attrs.group(1).split(), []
+                    look = next((t[1:] for t in toks if t.startswith(".") and table_look(t[1:])), None)
+                    accent = next((t[1:] for t in toks if re.fullmatch(r"\.accent-[1-6]", t)), None)
+                    for t in toks:
+                        if t == ".vertical-headers":
+                            blocks[-1].vertical_headers = True
+                        elif t[1:] in (look, accent):     # Word's gallery: {.grid-table-4 .accent-2}
+                            continue
+                        else:
+                            rest.append(t)
+                    if look:
+                        blocks[-1].style = f"{look}-{accent}" if accent else look
+                    text = text[:attrs.start()] + (f" {{{' '.join(rest)}}}" if rest else "")
                 caption, anchor = _attr_id(text)
                 blocks[-1].caption, blocks[-1].id = caption, anchor or blocks[-1].id
                 blocks[-1].hints = {"table_caption": True}

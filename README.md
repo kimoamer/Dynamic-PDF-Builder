@@ -1715,6 +1715,12 @@ each page in the PDF and in Word)
   its results to `word-check/<branch>` rather than to the branch itself.
 - The page forecast lets the space after one block and before the next overlap, as the frame does,
   rather than adding both.
+- Word's table style gallery: `style="Grid Table 4 Accent 2"` or `Table: Caption {.grid-table-4 .accent-2}`.
+  Plain Table 1-5, Grid Table 1-7 and List Table 1-7, in black or six accents taken from the theme, drawn
+  alike in the PDF, Word and the workbook, in either direction (the first column is the one the table
+  starts from), and with side-set headers.
+- A Word file without headings no longer shows "Error: Reference source not found" in its running title:
+  where the document has no heading for it, the title is plain text, as in the PDF.
 - Tables can set their headers on their side (`Table: Caption {.vertical-headers}` or
   `table(..., vertical_headers=True)`): the first header stays level, the others read from top to bottom in
   the PDF, Word (`tbRl`) and the workbook, and no longer widen their columns. Arabic headers turn the other

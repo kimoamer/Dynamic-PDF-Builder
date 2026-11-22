@@ -191,6 +191,11 @@ Table: Invoice lines {#invoice}
   Codes: SAR, EGP, AED, KWD, QAR, OMR, BHD, JOD, USD, EUR, and GBP in English.
 - Text can quote a cell: `The total due is {=invoice!D5}.`
 - A formula that cannot be computed stops the render with the table, the cell and the reason.
+- Word's table style gallery: `Table: Revenue by region {.grid-table-4 .accent-2}` (or
+  `b.table(..., style="Grid Table 4 Accent 2")`). Plain Table 1-5, Grid Table 1-7 and List Table 1-7, each
+  Grid and List style in black or Accent 1-6, which are the theme's (or brand's) colours. The PDF, Word and
+  the workbook draw the same fills, text and rules; the first column, which names the rows, is the one the
+  table starts from, on the right in Arabic. Combines with `.vertical-headers`.
 - Side-set headers, for many narrow columns under long names: `Table: Plans compared {.vertical-headers}`
   (or `b.table(..., vertical_headers=True)`). The first header, which names the rows, stays level; the
   others stand on their side and read from top to bottom, in the PDF, Word and the workbook. Arabic headers

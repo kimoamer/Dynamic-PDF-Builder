@@ -1199,7 +1199,12 @@ class DocumentBuilder:
         from .renderers.xlsx_renderer import render_xlsx
         self._refuse_unprotected("workbook")
         doc = self.build()
-        data = render_xlsx(self._blocks, doc.blocks, doc.meta)
+        from .themes import get_theme
+        try:
+            theme = get_theme(doc.theme) if isinstance(doc.theme, str) else doc.theme
+        except Exception:  # noqa: BLE001 - a theme the workbook cannot name leaves Word's own accents
+            theme = None
+        data = render_xlsx(self._blocks, doc.blocks, doc.meta, theme)
         if output is None:
             return data
         from .layout.engine import _write_output

@@ -25,7 +25,7 @@ from docx.enum.section import WD_ORIENT
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK, WD_COLOR_INDEX, WD_TAB_ALIGNMENT
 from docx.oxml.ns import qn
-from docx.shared import Emu, Pt
+from docx.shared import Emu, Pt, RGBColor
 from docx.table import _Cell
 
 from .. import policy as _policy
@@ -1025,6 +1025,22 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                 tblW = F._get_or_add(t._tbl.tblPr, "w:tblW")
                 tblW.set(F.qn("w:type"), "dxa")
                 tblW.set(F.qn("w:w"), str(int(sum(nats) * 20)))
+        from ..design.table_looks import look_for
+        look = look_for(b.style, self.theme)
+        if look is not None:                # a Word gallery style: each cell's fill, text and rules, as in the PDF
+            F.set_table_borders(t, size=0)
+            rtl_table = is_rtl_table(sample)
+            for r, row in enumerate(t.rows):
+                for ci, cell in enumerate(row.cells):
+                    x = look.cell(r, ci, len(t.rows), ncols, has_header, bool(b.footer_row))
+                    # a right-to-left (bidiVisual) table reads a cell's left and right as its start and end
+                    F.set_cell_look(cell, x.fill, {{"start": "left", "end": "right"}.get(side, side): rule
+                                                   for side, rule in x.rules.items()})
+                    for p in cell.paragraphs:
+                        for run in p.runs:
+                            run.bold, run.italic = x.bold, x.italic and not rtl_table
+                            run.font.color.rgb = RGBColor.from_string((x.color or look.ink).lstrip("#").upper())
+                            run.font.cs_bold = x.bold
         if widths:
             F.set_table_layout_fixed(t)
             for ci, wv in enumerate(widths):

@@ -1792,6 +1792,29 @@ def _render_table(block, theme, bs, ctx=None):
         f_sty = ParagraphStyle('TF', parent=bs, firstLineIndent=0,
                                fontName=body_font, alignment=tbl_align)
         data.append(_row(block.footer_row, f_sty, ParagraphStyle('TFn', parent=f_sty, alignment=2)))
+    # a Word gallery style (Grid Table 4 Accent 2 ...): each cell's fill, text and rules, by its logical place
+    from ..design.table_looks import look_for
+    look = look_for(block.style, theme)
+    look_cmds = []
+    if look is not None:
+        rows_n = len(data)
+        for r in range(rows_n):
+            for vc in range(ncols):
+                lc = ncols - 1 - vc if tbl_rtl else vc
+                cell = look.cell(r, lc, rows_n, ncols, bool(block.headers), bool(block.footer_row))
+                para = data[r][vc]
+                face = (_arabic_font(theme, bold=cell.bold) if tbl_rtl else
+                        get_font_name(theme.typography.body_family, bold=cell.bold, italic=cell.italic))
+                data[r][vc] = Paragraph(para.text, ParagraphStyle(
+                    f'TL{r}_{vc}', parent=para.style, fontName=face,
+                    textColor=_safe_color(cell.color or theme.colors.text_primary)))
+                if cell.fill:
+                    look_cmds.append(('BACKGROUND', (vc, r), (vc, r), _safe_color(cell.fill)))
+                for side, (colour, width) in cell.rules.items():
+                    op = {"top": "LINEABOVE", "bottom": "LINEBELOW",
+                          "start": "LINEAFTER" if tbl_rtl else "LINEBEFORE",
+                          "end": "LINEBEFORE" if tbl_rtl else "LINEAFTER"}[side]
+                    look_cmds.append((op, (vc, r), (vc, r), width, _safe_color(colour)))
     if block.vertical_headers and block.headers:
         # the first column names the rows: its header stays level, the data columns' stand on their side
         stub = len(data[0]) - 1 if tbl_rtl else 0
@@ -1819,6 +1842,9 @@ def _render_table(block, theme, bs, ctx=None):
         from .art import table_commands
         cmds = table_commands(design, theme, len(data), ncols, bool(block.headers), bool(block.footer_row),
                               pad, hints.get("current_col"), tbl_rtl)
+    if look is not None:                             # the look replaces the theme's fills and rules
+        cmds = [c for c in cmds if c[0] in ('ALIGN', 'VALIGN', 'TOPPADDING', 'BOTTOMPADDING', 'LEFTPADDING',
+                                            'RIGHTPADDING')] + look_cmds
     if block.vertical_headers and block.headers:     # side-set headers stand on the rule above the rows
         cmds += [('VALIGN', (0, 0), (-1, 0), 'BOTTOM'), ('ALIGN', (0, 0), (-1, 0), 'CENTER')]
     head = 1 if block.headers else 0

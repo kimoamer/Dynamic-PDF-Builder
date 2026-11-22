@@ -70,6 +70,37 @@ def add_checkbox(paragraph, checked: bool) -> None:
     paragraph.add_run("  ")
 
 
+def set_cell_look(cell, fill, rules: dict) -> None:
+    """A cell's fill (or none) and its rules alone: rules maps top/left/bottom/right to (colour, points);
+    a side not named has none. Written in the schema's order, which Word holds to."""
+    tcPr = cell._tc.get_or_add_tcPr()
+    for tag in ("w:tcBorders", "w:shd"):
+        old = tcPr.find(qn(tag))
+        if old is not None:
+            tcPr.remove(old)
+    borders = OxmlElement("w:tcBorders")
+    for side in ("top", "left", "bottom", "right"):
+        el = OxmlElement(f"w:{side}")
+        if side in rules:
+            colour, width = rules[side]
+            el.set(qn("w:val"), "single")
+            el.set(qn("w:sz"), str(max(2, round(width * 8))))
+            el.set(qn("w:space"), "0")
+            el.set(qn("w:color"), colour.lstrip("#").upper())
+        else:
+            el.set(qn("w:val"), "nil")
+        borders.append(el)
+    # tcPr order: tcW, gridSpan, vMerge, tcBorders, shd, noWrap, tcMar, textDirection, tcFitText, vAlign
+    after = [c for c in tcPr if c.tag in (qn("w:tcW"), qn("w:gridSpan"), qn("w:hMerge"), qn("w:vMerge"))]
+    (after[-1].addnext if after else (lambda el: tcPr.insert(0, el)))(borders)
+    if fill:
+        shd = OxmlElement("w:shd")
+        shd.set(qn("w:val"), "clear")
+        shd.set(qn("w:color"), "auto")
+        shd.set(qn("w:fill"), fill.lstrip("#").upper())
+        borders.addnext(shd)
+
+
 def set_cell_text_direction(cell, direction: str) -> None:
     """Text set on its side in the cell: "tbRl" reads top to bottom (turned clockwise), "btLr" bottom to
     top (turned the other way). tcPr keeps its children in schema order: textDirection before vAlign."""

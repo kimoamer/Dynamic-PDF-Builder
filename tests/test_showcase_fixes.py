@@ -231,3 +231,46 @@ def test_an_arabic_word_table_keeps_its_headers_level_and_says_why(tmp_path):
     xml = zipfile.ZipFile(str(tmp_path / "a.docx")).read("word/document.xml").decode()
     assert "w:textDirection" not in xml
     assert [d["code"] for d in res.diagnostics] == ["vertical_headers_level"]
+
+
+GALLERY = "| Region | Revenue | Share |\n|---|---:|---:|\n| North | 18.4 | 38% |\n| East | 12.1 | 25% |\n\nTable: Regions {{.{}}}\n"
+
+
+def test_word_gallery_names_are_read_and_unknown_ones_left_alone():
+    from dynamic_pdf.design.table_looks import parse
+    assert parse("Grid Table 4 Accent 2") == parse("grid-table-4-accent-2") == ("grid", 4, 2)
+    assert parse("List Table 5 Dark") == ("list", 5, 0) and parse("Plain Table 3") == ("plain", 3, 0)
+    assert parse("plain-table-6") is None and parse("striped") is None
+    table = DocumentBuilder.from_markdown(GALLERY.format("grid-table-4 .accent-2")).build().blocks[0]
+    assert table.style == "grid-table-4-accent-2" and table.caption == "Regions"
+
+
+def test_a_gallery_style_fills_the_header_with_its_accent_in_pdf_word_and_the_workbook():
+    import openpyxl
+    from dynamic_pdf.design.table_looks import accents
+    b = DocumentBuilder.from_markdown(GALLERY.format("grid-table-4-accent-1")).theme("executive")
+    accent = accents(b._prepared()[1])[1].lstrip("#").upper()
+    page = fitz.open(stream=b.render(), filetype="pdf")[0]
+    fills = {"%02X%02X%02X" % tuple(round(v * 255) for v in d["fill"]) for d in page.get_drawings() if d.get("fill")}
+    assert accent in fills
+    xml = zipfile.ZipFile(io.BytesIO(b.render_docx())).read("word/document.xml").decode()
+    assert f'w:fill="{accent}"' in xml and "<w:tcBorders>" in xml
+    ws = openpyxl.load_workbook(io.BytesIO(b.render_xlsx())).worksheets[0]
+    assert ws.cell(1, 1).fill.fgColor.rgb.endswith(accent) and ws.cell(1, 1).font.b
+
+
+def test_a_right_to_left_gallery_table_rules_its_first_column_on_the_data_side():
+    md = ("---\nlanguage: ar\n---\n\n| المنطقة | الإيرادات |\n|---|---:|\n| الشمال | 18.4 |\n| الشرق | 12.1 |\n\n"
+          "Table: المناطق {.list-table-7-colorful-accent-1 .vertical-headers}\n")
+    b = DocumentBuilder.from_markdown(md)
+    assert b.render()[:4] == b"%PDF"
+    xml = zipfile.ZipFile(io.BytesIO(b.render_docx())).read("word/document.xml").decode()
+    body = xml[xml.index("<w:tr>", xml.index("<w:tr>") + 1):]          # a body row's first (start) cell
+    first = body[:body.index("</w:tc>")]
+    assert '<w:right w:val="single"' in first and '<w:left w:val="nil"' in first   # a bidi table's right is its end
+
+
+def test_a_word_file_without_headings_has_no_running_title_field():
+    b = DocumentBuilder.from_markdown("Just a paragraph.\n").theme("executive")
+    z = zipfile.ZipFile(io.BytesIO(b.render_docx()))
+    assert not any("STYLEREF" in z.read(n).decode() for n in z.namelist() if n.startswith("word/header"))
