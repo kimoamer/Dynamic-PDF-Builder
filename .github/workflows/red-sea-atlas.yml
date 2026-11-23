@@ -1,0 +1,73 @@
+name: Red Sea Atlas - Dynamic PDF Builder
+
+on:
+  push:
+    branches:
+      - experiment/red-sea-130-github-actions
+    paths:
+      - 'examples/red_sea_atlas_130/**'
+      - '.github/workflows/red-sea-atlas.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render-atlas:
+    name: Render Arabic atlas (PDF + DOCX + QA)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact branch
+        uses: actions/checkout@v4
+
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install original Dynamic-PDF-Builder and review dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . 'pymupdf>=1.23' 'basemap>=2,<3'
+          python -c "from dynamic_pdf import DocumentBuilder; import fitz; from mpl_toolkits.basemap import Basemap; print('Real package imports passed')"
+
+      - name: Confirm report structure and syntax
+        run: |
+          python -m py_compile examples/red_sea_atlas_130/render_gha.py
+          python - <<'PY'
+          from pathlib import Path
+          import importlib.util
+          p = Path("examples/red_sea_atlas_130/render_gha.py")
+          spec = importlib.util.spec_from_file_location("atlas", p)
+          m = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(m)
+          items = m.parse_sections(p.with_name("content_ar.md").read_text(encoding="utf-8"))
+          assert len(items) == 130
+          assert len(m.LATLON) == 38
+          print("Verified 130 original editorial units and 38 city locators")
+          PY
+
+      - name: Render genuine library PDF, Word and previews
+        run: |
+          PYTHONUNBUFFERED=1 python examples/red_sea_atlas_130/render_gha.py
+
+      - name: Report output files
+        if: always()
+        run: |
+          find examples/red_sea_atlas_130/artifacts -maxdepth 2 -type f -printf '%p %k KiB\n' || true
+
+      - name: Upload atlas and QA evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: red-sea-atlas-dynamic-pdf-builder
+          path: |
+            examples/red_sea_atlas_130/artifacts/*.pdf
+            examples/red_sea_atlas_130/artifacts/*.docx
+            examples/red_sea_atlas_130/artifacts/*.jpg
+            examples/red_sea_atlas_130/artifacts/*.json
+            examples/red_sea_atlas_130/artifacts/*.txt
+          if-no-files-found: warn
+          retention-days: 14
