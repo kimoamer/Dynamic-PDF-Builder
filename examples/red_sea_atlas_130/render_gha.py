@@ -63,7 +63,7 @@ def create_locator(name, coord=None, overview=False):
         "south":(35.5,45.2,10.8,21.1),
     }
     w, e, s, n = bounds[region]
-    fig = plt.figure(figsize=(5.3, 4.1 if coord else 7.1), dpi=120)
+    fig = plt.figure(figsize=(5.3, 4.1 if coord else 7.1), dpi=220)
     ax = fig.add_axes([.03,.03,.94,.94])
     m = Basemap(projection="cyl", llcrnrlon=w, urcrnrlon=e, llcrnrlat=s,
                 urcrnrlat=n, resolution="l", ax=ax)
@@ -80,7 +80,7 @@ def create_locator(name, coord=None, overview=False):
             fontsize=5.6,color="#34576b",alpha=.65)
     ax.axis("off")
     path = ASSETS / (("locator_" + str(list(LATLON).index(name)) + ".png") if coord else "overview.png")
-    fig.savefig(path, dpi=120, facecolor="#ffffff", bbox_inches="tight", pad_inches=.02)
+    fig.savefig(path, dpi=220, facecolor="#ffffff", bbox_inches="tight", pad_inches=.02)
     plt.close(fig)
     return path
 
