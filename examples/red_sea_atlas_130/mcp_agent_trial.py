@@ -132,10 +132,19 @@ async def main():
                     return value
                 except Exception as error:
                     trace["steps"].append({"name":name,"ok":False,"error":str(error)[:400]})
+                    # The agent acts on the MCP refusal contract, not on an invented API.
+                    # A direction id is not a document type: retry the supported "auto" mode.
+                    if payload.get("design") == "editorial_modern" and ("Unknown document type" in str(error)):
+                        trace.setdefault("recoveries",[]).append({
+                            "tool":name,"reason":"art-direction id was passed to document-type parameter",
+                            "fix":"design=auto; retain Arabic profile through content metadata and variant review"})
+                        return await call(name,{**payload,"design":"auto"})
                     return {"error":str(error)[:900]}
             for topic in ("markdown","arabic","design","review-and-changes"):await call("guide",{"topic":topic})
             await call("schema",{})
             trace["variants"]=await call("variants",{"markdown":pilot,"n":2,"folder":"design_variants"})
+            trace["recommended_design"]=trace["variants"].get("recommended") if isinstance(trace["variants"],dict) else None
+            trace["selection_note"]="MCP render does not accept variants direction ids in its design parameter; use auto and review chosen outcome."
             trace["lint"]=await call("lint",{"markdown":full})
             trace["design_explain"]=await call("explain",{"markdown":full,"design":"editorial_modern"})
             trace["pdf_review"]=await call("review",{"markdown":full,"design":"editorial_modern","folder":"review_pdf","dpi":60})
