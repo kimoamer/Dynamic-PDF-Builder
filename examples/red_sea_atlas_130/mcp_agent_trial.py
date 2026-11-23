@@ -77,7 +77,7 @@ def compose(sections,max_entries=None):
             for p in paras:
                 for line in p.splitlines():
                     if re.match(r"\[S\d+\]",line):md.extend(["- "+line,""])
-    return "\n\n".join(md)
+    return "\n".join(md)
 
 def decoded(result):
     if result.is_error:raise RuntimeError(result.content[0].text[:700])
