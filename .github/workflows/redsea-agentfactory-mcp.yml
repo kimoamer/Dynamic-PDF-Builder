@@ -1,0 +1,44 @@
+name: AgentFactory-style MCP Red Sea acceptance
+on:
+  push:
+    branches:
+      - experiment/red-sea-agentfactory-mcp
+    paths:
+      - '.github/workflows/redsea-agentfactory-mcp.yml'
+      - 'examples/red_sea_atlas_130/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    name: Real MCP client discovers, designs, reviews and exports
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install the actual library with its MCP service
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[mcp,qa]' 'basemap>=2,<3'
+      - name: Install LibreOffice for independent Word layout checks
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libreoffice-writer fonts-noto-core
+      - name: Verify agent runner syntax
+        run: python -m py_compile examples/red_sea_atlas_130/mcp_agent_trial.py
+      - name: Execute agent-authored workflow through stdio MCP
+        run: |
+          PYTHONUNBUFFERED=1 python examples/red_sea_atlas_130/mcp_agent_trial.py
+      - name: Upload complete tool trace and render artifacts (even on QA rejection)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: redsea-agentfactory-mcp-acceptance
+          path: examples/red_sea_atlas_130/mcp_agent_results/
+          if-no-files-found: warn
+          retention-days: 14
