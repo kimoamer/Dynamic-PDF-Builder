@@ -103,7 +103,7 @@ Blocks:
 | `- item`, `1. item`, nested by indenting | lists |
 | `- [x] done` / `- [ ] to do` | a checklist |
 | `Term` then `: definition` on the next line | a definition list |
-| a GFM table, then `Table: caption {#id}` on its own line under it | a table with a caption and an id |
+| a GFM table, then `Table: caption {#id}` on its own line under it | a table with a caption and an id; `{source="SDG Report 2026, table 3"}` sets "Source: ..." under it |
 | `![alt text](photo.jpg "caption"){#fig-id}` alone in a paragraph | a figure |
 | `> quoted text`, then `> — Name` as its last line | a quote with its attribution, a bar along its start edge |
 | `> [!pullquote]` or `> [!epigraph]` as the quote's first line | a statement set large, or a short epigraph toward the end edge |
@@ -137,7 +137,8 @@ Types: bar, vertical_bar, horizontal_bar, grouped_bar, stacked_bar, line, area, 
 bubble, histogram, heatmap, waterfall, funnel, gauge, sparkline, treemap.
 
 Data: one series is `{"label": value}`. Several series (grouped_bar, stacked_bar, line, area) are
-`{"categories": ["Q1", "Q2"], "series": {"2025": [3, 4], "2026": [4, 6]}}`. Optional keys: `x_label`,
+`{"categories": ["Q1", "Q2"], "series": {"2025": [3, 4], "2026": [4, 6]}}`. Optional keys: `source` (where the
+data come from: "Source: ..." under the chart, a link stays a link), `x_label`,
 `y_label`, `colors` (a list of hex colours; without them a chart takes the theme's or brand's colours, then
 distinct stock hues), `legend` (true or false). A bubble chart takes `[{"x": 412, "y": 14.2, "size": 18,
 "label": "Region"}]`: the bubble's area stands for `size`. Shares in a pie must be parts of
@@ -247,7 +248,8 @@ Table: Invoice lines {#invoice}
   sections, formulas that cannot be computed.
   Each warning names its rule: `total_mismatch`, `percent_sum`, `repeated_heading`, `unresolved_ref`,
   `mixed_digits`, `number_format`, `date_format`, `missing_alt_text`, `empty_section`, `formula_error`,
-  `unresolved_citation`; `lint(rules=[...])` runs only some.
+  `unresolved_citation`, `missing_source` (a chart or table without its source, in a document that gives
+  sources for others); `lint(rules=[...])` runs only some.
 - Suggested edits and comments in any text (CriticMarkup): `{++added++}`, `{--removed--}`,
   `{~~old~>new~~}`, `{==text==}{>>comment<<}`, `{>>comment<<}`. Word gets tracked changes and comments
   signed by `reviewer`; the PDF is a review copy.

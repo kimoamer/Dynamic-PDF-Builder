@@ -13,6 +13,7 @@ it looked and what it found, so the author can decide. Rules:
 ``date_format``       full dates written in more than one format
 ``missing_alt_text``  an image with no alt text
 ``empty_section``     a heading with nothing under it
+``missing_source``    a chart or table without its source, in a document that gives sources for others
 """
 from __future__ import annotations
 
@@ -28,7 +29,7 @@ from ..core.table_types import ascii_digits, infer_table, read_cell
 
 RULES = ("total_mismatch", "percent_sum", "repeated_heading", "unresolved_ref", "mixed_digits",
          "number_format", "date_format", "missing_alt_text", "empty_section", "formula_error",
-         "unresolved_citation")
+         "unresolved_citation", "missing_source")
 _NOT_PROSE = {"code", "mermaid", "math", "diagram", "qrcode", "shape", "spacer", "divider", "page_break",
               "watermark", "page_media", "table_of_contents"}
 _NOT_ADDITIVE = re.compile(r"average|mean|median|avg|rate|ratio|per\b|price|متوسط|معدل|نسبة|سعر", re.I)
@@ -326,6 +327,19 @@ def _alt(sem, warn):
             warn("missing_alt_text", f"image {image.src!r} has no alt text for readers who cannot see it", i)
 
 
+def _sources(sem, warn):
+    """Where some exhibits say where their figures come from, the others are queried too; a document that
+    names no source anywhere is left alone (a sketch or a form has none to give)."""
+    exhibits = [(i, b) for i, b in _walk(sem.blocks) if b.type in ("chart", "table", "image")]
+    if not any(getattr(b, "source", None) for _, b in exhibits):
+        return
+    for i, b in exhibits:
+        if b.type != "image" and not getattr(b, "source", None):
+            what = b.caption if b.type == "table" else b.title
+            warn("missing_source", f"{b.type} {plain_text(what or '')!r} gives no source, unlike others in the "
+                                   "document: say where its figures come from (source=...)", i, b.type)
+
+
 def _citations(sem, warn):
     from ..core.citations import unresolved
     for i, b in _walk(sem.blocks):
@@ -370,6 +384,7 @@ def lint(sem: SemanticDocument, rules: Optional[Iterable[str]] = None) -> List[L
     _dates(sem, warn)
     _headings(sem, warn)
     _alt(sem, warn)
+    _sources(sem, warn)
     out.sort(key=lambda w: (w.block if w.block is not None else -1, RULES.index(w.rule)))
     return out
 

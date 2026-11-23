@@ -103,6 +103,7 @@ class TableBlock(BaseBlock):
     footer_row: Optional[List[str]] = None          # Summary/total row
     table_number: Optional[int] = None              # Auto-numbering: "Table 1"
     # header cells set on their side, read top to bottom: "auto" where many narrow columns need it
+    source: Optional[str] = None                    # where the figures come from, set under the table
     vertical_headers: Union[bool, Literal["auto"]] = "auto"
     merged_down: List[List[int]] = Field(default_factory=list)   # [row, column, rows]: "^^" joins a cell to the one above
 
@@ -164,6 +165,7 @@ class ChartBlock(BaseBlock):
     legend: bool = True
     width: float = 6.0                              # inches
     height: float = 4.0                             # inches
+    source: Optional[str] = None                    # where the data come from, set under the chart
 
 # ─────────────────────── Math & Diagrams ───────────────────────
 

@@ -658,17 +658,18 @@ class DocumentBuilder:
               header_bg: Optional[str] = None, footer_row: Optional[List[str]] = None,
               table_number: Optional[int] = None,
               header_text_color: Optional[str] = None,
-              vertical_headers: Union[bool, str] = "auto") -> 'DocumentBuilder':
+              vertical_headers: Union[bool, str] = "auto", source: Optional[str] = None) -> 'DocumentBuilder':
         """``vertical_headers``: whether the header cells after the first stand on their side, read top to
         bottom (in the PDF, Word and the workbook). ``"auto"``: only where the page needs it, for many
         columns narrower than their names that fit no other way. A cell of ``"^^"`` joins the cell above
         it; a long merged label that runs down a group of rows is set on its side when that saves its
-        column's width."""
+        column's width. ``source``: where the figures come from, set under the table."""
         self._blocks.append(TableBlock(headers=headers, rows=rows, style=style,
                                        caption=caption, column_widths=column_widths,
                                        header_bg=header_bg, footer_row=footer_row,
                                        table_number=table_number,
-                                       header_text_color=header_text_color, vertical_headers=vertical_headers))
+                                       header_text_color=header_text_color, vertical_headers=vertical_headers,
+                                       source=source))
         return self
 
     # ─── Code ──────────────────────────────────────────────────────
@@ -752,10 +753,12 @@ class DocumentBuilder:
     def chart(self, chart_type: str, data: Any, title: Optional[str] = None,
               colors: Optional[List[str]] = None, width: float = 6.0,
               height: float = 4.0, x_label: Optional[str] = None,
-              y_label: Optional[str] = None, legend: bool = True) -> 'DocumentBuilder':
+              y_label: Optional[str] = None, legend: bool = True,
+              source: Optional[str] = None) -> 'DocumentBuilder':
+        """``source``: where the data come from, set under the chart ("Source: ..."); links stay links."""
         self._blocks.append(ChartBlock(chart_type=chart_type, data=data, title=title,
                                        colors=colors, width=width, height=height,
-                                       x_label=x_label, y_label=y_label, legend=legend))
+                                       x_label=x_label, y_label=y_label, legend=legend, source=source))
         return self
 
     def math(self, latex: str) -> 'DocumentBuilder':

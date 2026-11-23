@@ -1084,6 +1084,7 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
                         cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
         if design:
             self._art_table(t, {**hints, "design": design}, has_header, bool(b.footer_row), {r0 + ri for ri in totals})
+        self._source(c, b)
         self._spacer_after(c)
 
     def _art_table(self, t, hints, has_header, has_footer, total_rows=()):
@@ -1364,7 +1365,14 @@ class DocxRenderer(ArchetypeDocx, CompositionDocx):
             self._picture(c, png, alt, max_width_pt=min(self.content_width_pt, 6.3 * 72))
         if label:
             self._caption(c, label, b.title, anchor)
+        self._source(c, b)
         self._spacer_after(c)
+
+    def _source(self, c, b):
+        """"Source: ..." under a chart or table, as the PDF sets it."""
+        if getattr(b, "source", None):
+            from ..i18n import label as _i18n
+            self._caption(c, "", f"{_i18n('source', 'ar' if self.rtl_doc else self.sem.language)}: {b.source}")
 
     def _native_chart(self, c, b, alt: str, title: Optional[str]) -> bool:
         """The chart as a Word chart, when Word has one like it; False leaves it to the picture,

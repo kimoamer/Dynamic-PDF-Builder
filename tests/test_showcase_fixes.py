@@ -379,3 +379,27 @@ def test_a_tall_flowchart_keeps_its_text_and_a_height_the_author_set():
         boxes = [d["rect"] for d in page.get_drawings() if d.get("fill") and d["rect"].width < page.rect.width / 2]
         return max(r.y1 for r in boxes) - min(r.y0 for r in boxes)
     assert drawn_height() > drawn_height(height=3) * 1.5      # free to grow; held to the 3 inches asked
+
+
+def test_charts_and_tables_say_where_their_figures_come_from():
+    md = ("| Region | Poor (m) |\n|---|---:|\n| South Asia | 154 |\n\nTable: Extreme poverty {source=\"SDG Report 2026, goal 1\"}\n\n"
+          '```chart\n{"type": "bar", "title": "Out of school", "data": {"2023": 250, "2024": 273}, '
+          '"source": "[GEM Report 2026](https://www.unesco.org/reports/gem-report/)"}\n```\n\n'
+          '```chart\n{"type": "bar", "title": "Warming", "data": {"2024": 1.55, "2025": 1.43}}\n```\n')
+    b = DocumentBuilder.from_markdown(md)
+    table, chart = b.build().blocks[0], b.build().blocks[1]
+    assert table.source == "SDG Report 2026, goal 1" and table.caption == "Extreme poverty"
+    pdf = b.render()
+    page = fitz.open(stream=pdf, filetype="pdf")[0]
+    text = page.get_text()
+    assert "Source: SDG Report 2026, goal 1" in text and "Source: GEM Report 2026" in text
+    assert any("unesco.org" in (link.get("uri") or "") for link in page.get_links())   # the link stays a link
+    assert all(s["size"] >= 8 for bl in page.get_text("dict")["blocks"] for ln in bl.get("lines", [])
+               for s in ln["spans"] if "Source" in s["text"])
+    xml = zipfile.ZipFile(io.BytesIO(b.render_docx())).read("word/document.xml").decode()
+    assert "SDG Report 2026, goal 1" in xml and "GEM Report 2026" in xml
+    warned = [w for w in b.lint() if w.rule == "missing_source"]
+    assert len(warned) == 1 and "Warming" in warned[0].message      # only the one left without a source
+    assert not [w for w in DocumentBuilder.from_markdown(md.replace(' {source="SDG Report 2026, goal 1"}', "")
+                .replace(', "source": "[GEM Report 2026](https://www.unesco.org/reports/gem-report/)"', ""))
+                .lint() if w.rule == "missing_source"]                  # a document with no sources: left alone

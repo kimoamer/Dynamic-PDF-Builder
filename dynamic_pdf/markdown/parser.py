@@ -173,7 +173,11 @@ def _parse_body(md_text: str) -> list:
                 attrs = re.search(r"\s*\{([^{}]*)\}\s*$", text)
                 if attrs:
                     from ..design.table_looks import parse as table_look
-                    toks, rest = attrs.group(1).split(), []
+                    inner = attrs.group(1)
+                    src = re.search(r'source="([^"]*)"', inner)       # {source="SDG Report 2026, table 3"}
+                    if src:
+                        blocks[-1].source, inner = src.group(1), inner.replace(src.group(0), " ")
+                    toks, rest = inner.split(), []
                     look = next((t[1:] for t in toks if t.startswith(".") and table_look(t[1:])), None)
                     accent = next((t[1:] for t in toks if re.fullmatch(r"\.accent-[1-6]", t)), None)
                     for t in toks:

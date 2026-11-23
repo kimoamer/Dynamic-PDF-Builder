@@ -1700,6 +1700,13 @@ each page in the PDF and in Word)
   86,000).
 - A footer without a first line sets its company name level with the page number.
 - The PDF check no longer calls a heading stranded when a chart drawn as vectors follows it.
+- Charts and tables say where their figures come from: `source` (`b.chart(..., source=...)`, `b.table(...,
+  source=...)`, `"source"` in a chart block, `{source="..."}` beside a table's caption) sets "Source: ..." under
+  them in the PDF and Word, never under 8pt, a link kept a link. `lint` rule `missing_source` queries a chart
+  or table without one in a document that gives sources for others. Measured on a 98-page Arabic report made
+  with the library, against an audit's criteria: all 19,442 Arabic words copy out as written (PyMuPDF and
+  pdftotext: "على" and "إلى" whole, none broken into presentation forms), the content ledger verified against
+  the PDF and the Word file, 38 external and 180 internal links live, 90 bookmarks, metadata filled.
 - A document without a cover shows its front-matter title at the head of page one, header band or not: the
   band's running title is a reminder, not the title (an agent's Arabic report showed its title only in the
   band). Not when the document opens with its own title or a page it designs itself (an opener, a

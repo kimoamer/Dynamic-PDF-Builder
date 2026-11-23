@@ -48,6 +48,8 @@ PLANTED = {
     "empty_section": "# Overview\n\n# Details\n\nText.\n",
     "unresolved_citation": "# Method\n\nAs shown [@smith2024].\n",
     "formula_error": "# Costs\n\nText.\n\n| Item | Amount |\n|---|---|\n| Rent | 1,200 |\n| Twice | =A2*2 |\n",
+    "missing_source": ("# Poverty\n\n| Region | Poor |\n|---|---:|\n| South | 154 |\n\nTable: Poor {source=\"SDG 2026\"}\n\n"
+                       "| Region | Schools |\n|---|---:|\n| South | 12 |\n\nTable: Schools\n"),
 }
 
 

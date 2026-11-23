@@ -1504,6 +1504,8 @@ def _create_inner(block, theme: Theme, ctx: RenderContext = None) -> list:
         figure = _cached_figure(ctx, drawn, theme, lambda: _render_chart(drawn, theme))
         if number:
             figure = _chart_caption(figure, block, number, anchor, theme, bs_no_indent)
+        if block.source:
+            figure = list(figure) + [_source_note(block.source, theme)]
         return _fit_figure(figure, block)
 
     # ─── Diagram ───
@@ -1941,6 +1943,9 @@ def _render_table(block, theme, bs, ctx=None):
             cap._exhibit_entry = ("table", plain_text(label), anchor)
         flowables.append(cap)
     flowables.append(t)
+    if block.source:
+        t.spaceAfter = 2
+        flowables.append(_source_note(block.source, theme))
     if hints.get("keep_together"):
         return [KeepTogether(flowables)]
     return flowables
@@ -2071,17 +2076,24 @@ def _figure_text(block, theme, width=None):
             from ..core.inline import plain_text
             out[-1]._exhibit_entry = ("figure", plain_text(text), anchor)
     if block.source:
-        note = f"{_i18n('source', lang)}: {block.source}"
-        rtl = _is_rtl(note)
-        sty = ParagraphStyle('ImgSrc', fontSize=size * 0.9, leading=size * (1.4 if rtl else 1.15),
-                             fontName=get_font_name(theme.typography.arabic_family or "Amiri") if rtl
-                             else "Helvetica",
-                             textColor=_safe_color(theme.colors.text_muted),
-                             alignment=2 if rtl and width else 1, spaceAfter=theme.spacing.block_gap)
         if out:
             out[-1].style = out[-1].style.clone('ImgCap2', spaceAfter=2)
-        out.append(Paragraph(_md_inline(note), sty))
+        out.append(_source_note(block.source, theme, align=2 if _is_rtl(block.source) and width else 1))
     return out
+
+
+def _source_note(source: str, theme, align: Optional[int] = None):
+    """"Source: ..." under a figure, chart or table, in the document's language; links stay links. Never
+    under 8pt: a reader must be able to follow it."""
+    from ..i18n import label as _i18n
+    note = f"{_i18n('source', _diag.current().language)}: {source}"
+    rtl = _is_rtl(note)
+    size = max(8.0, theme.typography.base_size * theme.typography.caption_size_ratio * 0.9)
+    sty = ParagraphStyle('Src', fontSize=size, leading=size * (1.55 if rtl else 1.3),
+                         fontName=get_font_name(theme.typography.arabic_family or "Amiri") if rtl else "Helvetica",
+                         textColor=_safe_color(theme.colors.text_muted),
+                         alignment=(2 if rtl else 0) if align is None else align, spaceAfter=theme.spacing.block_gap)
+    return Paragraph(_md_inline(note), sty)
 
 
 def _render_image(block, theme, available_width=460, available_height=None, ctx=None):
