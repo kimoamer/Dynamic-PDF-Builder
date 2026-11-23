@@ -92,8 +92,8 @@ def build():
                author="Independent Editorial Atlas",language="ar",
                subject="جغرافيا البحر الأحمر ومدنه ونظمه البيئية وتاريخه واقتصاده",
                keywords=["البحر الأحمر","الأطلس","المدن","الشعاب","الموانئ"])
-         .direction("rtl"))
-    for index, (title, paragraphs) in enumerate(sections):
+         .direction("rtl").design(None))
+    # The atlas has its own two-page editorial index. Disable generated duplicate TOC,\n    # which otherwise adds five unrequested pages to a 130-unit reference.\n    for index, (title, paragraphs) in enumerate(sections):
         if index == 0:
             b.cover_page(
                 "البحر الأحمر: مدن ومياه وذاكرة مشتركة",
